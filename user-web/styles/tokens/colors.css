@@ -1,0 +1,101 @@
+/* AssignX Design System - Color Tokens */
+/* Notion-inspired warm neutrals + vibrant pops */
+
+:root {
+  /* Background colors */
+  --background: 30 50% 99%;           /* #FFFCF9 warm cream */
+  --background-rgb: 255, 252, 249;
+
+  --surface: 0 0% 100%;               /* #FFFFFF */
+  --surface-rgb: 255, 255, 255;
+
+  --surface-muted: 30 15% 96%;        /* #F7F5F2 warm gray */
+  --surface-muted-rgb: 247, 245, 242;
+
+  /* Text colors */
+  --foreground: 0 0% 10%;             /* #1A1A1A */
+  --foreground-rgb: 26, 26, 26;
+
+  --muted: 0 0% 42%;                  /* #6B6B6B */
+  --muted-rgb: 107, 107, 107;
+
+  --muted-foreground: 0 0% 61%;       /* #9B9B9B */
+  --muted-foreground-rgb: 155, 155, 155;
+
+  /* Primary - Coral Orange */
+  --primary: 14 100% 60%;             /* #FF5C35 */
+  --primary-rgb: 255, 92, 53;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary */
+  --secondary: 30 15% 96%;
+  --secondary-foreground: 0 0% 10%;
+
+  /* Accent colors */
+  --success: 160 100% 39%;            /* #00C48C mint */
+  --success-rgb: 0, 196, 140;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 43 100% 50%;             /* #FFB800 gold */
+  --warning-rgb: 255, 184, 0;
+  --warning-foreground: 0 0% 10%;
+
+  --info: 220 80% 65%;                /* #5B8DEF blue */
+  --info-rgb: 91, 141, 239;
+  --info-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;           /* #E53935 */
+  --destructive-rgb: 229, 57, 53;
+  --destructive-foreground: 0 0% 100%;
+
+  --accent-purple: 282 39% 53%;       /* #9B59B6 */
+  --accent-purple-rgb: 155, 89, 182;
+
+  /* Border & Ring */
+  --border: 30 15% 90%;
+  --ring: 14 100% 60%;
+
+  /* Card */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+
+  /* Popover */
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+
+  /* Input */
+  --input: 30 15% 90%;
+
+  /* Chart colors */
+  --chart-1: 14 100% 60%;
+  --chart-2: 160 100% 39%;
+  --chart-3: 220 80% 65%;
+  --chart-4: 43 100% 50%;
+  --chart-5: 282 39% 53%;
+}
+
+.dark {
+  --background: 0 0% 7%;              /* #121212 */
+  --background-rgb: 18, 18, 18;
+
+  --surface: 0 0% 11%;                /* #1C1C1C */
+  --surface-rgb: 28, 28, 28;
+
+  --surface-muted: 0 0% 15%;          /* #262626 */
+  --surface-muted-rgb: 38, 38, 38;
+
+  --foreground: 0 0% 95%;             /* #F2F2F2 */
+  --foreground-rgb: 242, 242, 242;
+
+  --muted: 0 0% 60%;
+  --muted-foreground: 0 0% 45%;
+
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+
+  --card: 0 0% 11%;
+  --card-foreground: 0 0% 95%;
+
+  --popover: 0 0% 11%;
+  --popover-foreground: 0 0% 95%;
+}

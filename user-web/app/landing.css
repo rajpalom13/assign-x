@@ -1,0 +1,323 @@
+/**
+ * @fileoverview Landing page scoped styles
+ *
+ * Contains color tokens, typography, and utility classes specific to the
+ * marketing landing page. These styles are scoped to avoid affecting
+ * the dashboard and other authenticated pages.
+ */
+
+/* ============================================
+   FONTS
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Landing Page Color Tokens */
+:root {
+  /* Backgrounds */
+  --landing-bg-primary: #FAF9F7;
+  --landing-bg-elevated: #FFFFFF;
+  --landing-bg-dark: #171A14;
+
+  /* Text */
+  --landing-text-primary: #171A14;
+  --landing-text-secondary: #5C5A52;
+  --landing-text-muted: #9C9A92;
+  --landing-text-inverse: #FAF9F7;
+
+  /* Accents - Indigo/Purple theme for AssignX */
+  --landing-accent-primary: #6366f1;
+  --landing-accent-primary-hover: #4f46e5;
+  --landing-accent-purple: #a855f7;
+  --landing-accent-terracotta: #C4775A;
+  --landing-accent-green: #4A6741;
+  --landing-accent-green-hover: #3D5636;
+
+  /* Borders */
+  --landing-border: #E8E6E1;
+  --landing-border-light: rgba(255, 255, 255, 0.1);
+
+  /* Shadows */
+  --landing-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --landing-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --landing-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+  --landing-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+
+  /* Animation Timing */
+  --landing-ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Apply to html/body when on landing page */
+html:has(.landing-page),
+body:has(.landing-page) {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html:has(.landing-page)::-webkit-scrollbar,
+body:has(.landing-page)::-webkit-scrollbar {
+  display: none;
+}
+
+/* Landing Typography Classes */
+@layer components {
+  /* Instrument Serif for headings */
+  .landing-heading {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .landing-heading-xl {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 72px;
+    line-height: 1.05;
+  }
+
+  .landing-heading-lg {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 48px;
+    line-height: 1.1;
+  }
+
+  .landing-heading-md {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 36px;
+    line-height: 1.15;
+  }
+
+  .landing-heading-sm {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 32px;
+    line-height: 1.2;
+  }
+
+  .landing-font-display {
+    font-family: 'Instrument Serif', Georgia, serif;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  /* Dark section styling */
+  .landing-dark-section {
+    background-color: var(--landing-bg-dark);
+    color: var(--landing-text-inverse);
+  }
+
+  /* Glassmorphism */
+  .landing-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .landing-glass-dark {
+    background: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--landing-border-light);
+  }
+
+  /* Badge styling */
+  .landing-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .landing-badge-primary {
+    background-color: rgba(99, 102, 241, 0.15);
+    color: var(--landing-accent-primary);
+  }
+
+  .landing-badge-purple {
+    background-color: rgba(168, 85, 247, 0.15);
+    color: var(--landing-accent-purple);
+  }
+
+  .landing-badge-terracotta {
+    background-color: rgba(196, 119, 90, 0.15);
+    color: var(--landing-accent-terracotta);
+  }
+
+  .landing-badge-green {
+    background-color: rgba(74, 103, 65, 0.15);
+    color: var(--landing-accent-green);
+  }
+
+  /* Platform pill styling */
+  .landing-platform-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--landing-bg-elevated);
+    border: 1px solid var(--landing-border);
+    border-radius: 100px;
+    font-size: 14px;
+    color: var(--landing-text-primary);
+    transition: all 0.2s ease;
+  }
+
+  .landing-platform-pill:hover {
+    border-color: var(--landing-accent-primary);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  }
+
+  /* Button variants */
+  .landing-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px;
+    padding: 0 24px;
+    background: linear-gradient(135deg, var(--landing-accent-primary) 0%, var(--landing-accent-purple) 100%);
+    color: white;
+    font-weight: 500;
+    font-size: 16px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .landing-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Input styling */
+  .landing-input {
+    height: 56px;
+    width: 100%;
+    max-width: 320px;
+    padding: 0 20px;
+    background-color: var(--landing-bg-elevated);
+    border: 1px solid var(--landing-border);
+    border-radius: 12px;
+    font-size: 16px;
+    color: var(--landing-text-primary);
+    transition: all 0.2s ease;
+  }
+
+  .landing-input::placeholder {
+    color: var(--landing-text-muted);
+  }
+
+  .landing-input:focus {
+    outline: none;
+    border-color: var(--landing-accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  /* Floating card styling */
+  .landing-floating-card {
+    background-color: var(--landing-bg-elevated);
+    border: 1px solid var(--landing-border);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(23, 26, 20, 0.08);
+  }
+
+  /* Browser frame mockup */
+  .landing-browser-frame {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(23, 26, 20, 0.15);
+    transform: rotate(2deg);
+  }
+
+  .landing-browser-chrome {
+    height: 40px;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .landing-browser-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .landing-browser-dot-red { background-color: #ff5f57; }
+  .landing-browser-dot-yellow { background-color: #febc2e; }
+  .landing-browser-dot-green { background-color: #28c840; }
+}
+
+/* Floating animation for cards */
+@keyframes landing-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-landing-float {
+  animation: landing-float 4s ease-in-out infinite;
+}
+
+.animate-landing-float-delayed {
+  animation: landing-float 4s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+/* Gradient shift animation */
+@keyframes landing-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Text gradient */
+.landing-text-gradient {
+  background: linear-gradient(135deg, var(--landing-accent-primary) 0%, var(--landing-accent-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-landing-float,
+  .animate-landing-float-delayed {
+    animation: none;
+  }
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  .landing-heading-xl {
+    font-size: 44px;
+  }
+
+  .landing-heading-lg {
+    font-size: 36px;
+  }
+
+  .landing-heading-md {
+    font-size: 28px;
+  }
+
+  .landing-heading-sm {
+    font-size: 24px;
+  }
+}

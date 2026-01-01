@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)",
+      "Bash(flutter pub upgrade:*)",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(claude mcp add context7 -s user -- npx -y @upstash/context7-mcp)",
+      "Bash(claude mcp add:*)"
+    ]
+  }
+}

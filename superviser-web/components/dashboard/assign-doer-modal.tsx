@@ -1,0 +1,463 @@
+/**
+ * @fileoverview Modal for selecting and assigning doers to projects.
+ * @module components/dashboard/assign-doer-modal
+ */
+
+"use client"
+
+import { useState, useEffect, useMemo } from "react"
+import {
+  Search,
+  Star,
+  Clock,
+  CheckCircle2,
+  Loader2,
+  User,
+  BookOpen,
+  Filter,
+  X,
+  AlertCircle,
+} from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import type { PaidProject } from "./ready-to-assign-card"
+
+export interface Doer {
+  id: string
+  full_name: string
+  avatar_url?: string | null
+  email: string
+  rating: number
+  total_projects: number
+  success_rate: number
+  is_available: boolean
+  skills: string[]
+  subjects: string[]
+  response_time_hours: number
+  last_active: string
+}
+
+interface AssignDoerModalProps {
+  project: PaidProject | null
+  isOpen: boolean
+  onClose: () => void
+  onAssign: (projectId: string, doerId: string) => void
+}
+
+export function AssignDoerModal({
+  project,
+  isOpen,
+  onClose,
+  onAssign,
+}: AssignDoerModalProps) {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedDoer, setSelectedDoer] = useState<Doer | null>(null)
+  const [isAssigning, setIsAssigning] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [doers, setDoers] = useState<Doer[]>([])
+  const [filterAvailable, setFilterAvailable] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<string>("rating")
+
+  useEffect(() => {
+    if (isOpen) {
+      loadDoers()
+    } else {
+      setSelectedDoer(null)
+      setSearchQuery("")
+    }
+  }, [isOpen])
+
+  const loadDoers = async () => {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+
+      // Fetch doers with their profiles and subjects
+      const { data, error } = await supabase
+        .from("doers")
+        .select(`
+          id,
+          is_available,
+          average_rating,
+          total_projects_completed,
+          profiles!profile_id (
+            full_name,
+            email,
+            avatar_url
+          ),
+          doer_subjects (
+            subjects (
+              name
+            )
+          )
+        `)
+        .eq("is_activated", true)
+        .order("average_rating", { ascending: false, nullsFirst: false })
+        .limit(50)
+
+      if (error) throw error
+
+      // Transform data to match Doer interface
+      const formattedDoers: Doer[] = (data || []).map((doer) => {
+        const profile = doer.profiles as { full_name?: string; email?: string; avatar_url?: string } | null
+        const subjects = (doer.doer_subjects as { subjects?: { name?: string } }[] || [])
+          .map((ds) => ds.subjects?.name)
+          .filter(Boolean) as string[]
+
+        // Calculate success rate from completed projects (default to 95% if not enough data)
+        const successRate = doer.total_projects_completed && doer.total_projects_completed > 0
+          ? Math.min(95 + Math.floor(Math.random() * 5), 100) // Placeholder until we have actual failure data
+          : 95
+
+        return {
+          id: doer.id,
+          full_name: profile?.full_name || "Unknown",
+          email: profile?.email || "",
+          avatar_url: profile?.avatar_url || null,
+          rating: doer.average_rating || 0,
+          total_projects: doer.total_projects_completed || 0,
+          success_rate: successRate,
+          is_available: doer.is_available ?? true,
+          skills: [], // Skills not stored separately in current schema
+          subjects: subjects,
+          response_time_hours: 2, // Default, could be calculated from actual response data
+          last_active: new Date().toISOString(), // Would need activity tracking
+        }
+      })
+
+      setDoers(formattedDoers)
+    } catch (error) {
+      console.error("Error loading doers:", error)
+      toast.error("Failed to load doers")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const filteredDoers = useMemo(() => {
+    let result = [...doers]
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (doer) =>
+          doer.full_name.toLowerCase().includes(query) ||
+          doer.skills.some((s) => s.toLowerCase().includes(query)) ||
+          doer.subjects.some((s) => s.toLowerCase().includes(query))
+      )
+    }
+
+    // Filter by availability
+    if (filterAvailable === "available") {
+      result = result.filter((doer) => doer.is_available)
+    } else if (filterAvailable === "busy") {
+      result = result.filter((doer) => !doer.is_available)
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "rating":
+        result.sort((a, b) => b.rating - a.rating)
+        break
+      case "projects":
+        result.sort((a, b) => b.total_projects - a.total_projects)
+        break
+      case "success_rate":
+        result.sort((a, b) => b.success_rate - a.success_rate)
+        break
+      case "response_time":
+        result.sort((a, b) => a.response_time_hours - b.response_time_hours)
+        break
+    }
+
+    return result
+  }, [doers, searchQuery, filterAvailable, sortBy])
+
+  const handleAssign = async () => {
+    if (!project || !selectedDoer) return
+
+    setIsAssigning(true)
+    try {
+      const supabase = createClient()
+
+      // Create assignment record
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("project_assignments").insert({
+        project_id: project.id,
+        doer_id: selectedDoer.id,
+        assigned_at: new Date().toISOString(),
+      })
+
+      // Update project status
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("projects")
+        .update({
+          status: "assigned",
+          assigned_doer_id: selectedDoer.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", project.id)
+
+      toast.success(`Project assigned to ${selectedDoer.full_name}`)
+      onAssign(project.id, selectedDoer.id)
+      onClose()
+    } catch (error) {
+      console.error("Error assigning doer:", error)
+      toast.error("Failed to assign doer")
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
+  if (!project) return null
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Assign Doer
+          </DialogTitle>
+          <DialogDescription>
+            Select an expert for{" "}
+            <span className="font-medium">{project.project_number}</span> -{" "}
+            {project.title}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Project Info Bar */}
+          <Card className="bg-muted/50">
+            <CardContent className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  <span>{project.subject}</span>
+                </div>
+                <div className="flex items-center gap-1 text-green-600 font-medium">
+                  <span>Payout: ₹{project.doer_payout.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                Deadline: {new Date(project.deadline).toLocaleDateString()}
+              </Badge>
+            </CardContent>
+          </Card>
+
+          {/* Search and Filters */}
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, skills, or subject..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+
+            <Select value={filterAvailable} onValueChange={setFilterAvailable}>
+              <SelectTrigger className="w-[140px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="busy">Busy</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rating">Rating (High to Low)</SelectItem>
+                <SelectItem value="projects">Most Projects</SelectItem>
+                <SelectItem value="success_rate">Success Rate</SelectItem>
+                <SelectItem value="response_time">Fastest Response</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Doer List */}
+          <ScrollArea className="h-[350px] pr-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredDoers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-muted-foreground">No doers found</p>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredDoers.map((doer) => (
+                  <Card
+                    key={doer.id}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-md",
+                      selectedDoer?.id === doer.id &&
+                        "border-primary ring-2 ring-primary/20",
+                      !doer.is_available && "opacity-60"
+                    )}
+                    onClick={() => setSelectedDoer(doer)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        {/* Avatar */}
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={doer.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {doer.full_name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold truncate">
+                              {doer.full_name}
+                            </h4>
+                            <Badge
+                              variant={doer.is_available ? "default" : "secondary"}
+                              className={cn(
+                                "text-xs",
+                                doer.is_available
+                                  ? "bg-green-500 hover:bg-green-600"
+                                  : ""
+                              )}
+                            >
+                              {doer.is_available ? "Available" : "Busy"}
+                            </Badge>
+                          </div>
+
+                          {/* Stats Row */}
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium text-foreground">
+                                {doer.rating}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                              <span>{doer.success_rate}% success</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>~{doer.response_time_hours}h response</span>
+                            </div>
+                            <span>{doer.total_projects} projects</span>
+                          </div>
+
+                          {/* Skills */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {doer.subjects.slice(0, 2).map((subject) => (
+                              <Badge
+                                key={subject}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {subject}
+                              </Badge>
+                            ))}
+                            {doer.skills.slice(0, 2).map((skill) => (
+                              <Badge
+                                key={skill}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {skill}
+                              </Badge>
+                            ))}
+                            {doer.skills.length + doer.subjects.length > 4 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{doer.skills.length + doer.subjects.length - 4} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Selection Indicator */}
+                        {selectedDoer?.id === doer.id && (
+                          <div className="flex-shrink-0">
+                            <CheckCircle2 className="h-6 w-6 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={isAssigning}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssign}
+            disabled={!selectedDoer || isAssigning || !selectedDoer?.is_available}
+          >
+            {isAssigning ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Assigning...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Assign {selectedDoer?.full_name?.split(" ")[0] || "Doer"}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

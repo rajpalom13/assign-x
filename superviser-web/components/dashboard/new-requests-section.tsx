@@ -1,0 +1,135 @@
+/**
+ * @fileoverview Section displaying new incoming project requests.
+ * @module components/dashboard/new-requests-section
+ */
+
+"use client"
+
+import { useState } from "react"
+import { FileText, RefreshCw } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { RequestCard, type ProjectRequest } from "./request-card"
+import { AnalyzeQuoteModal } from "./analyze-quote-modal"
+
+interface NewRequestsSectionProps {
+  requests: ProjectRequest[]
+  isLoading?: boolean
+  onRefresh?: () => void
+  onQuoteSubmit?: (requestId: string, data: { userQuote: number; doerPayout: number; notes?: string }) => void
+}
+
+export function NewRequestsSection({
+  requests,
+  isLoading = false,
+  onRefresh,
+  onQuoteSubmit,
+}: NewRequestsSectionProps) {
+  const [selectedRequest, setSelectedRequest] = useState<ProjectRequest | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleAnalyze = (request: ProjectRequest) => {
+    setSelectedRequest(request)
+    setIsModalOpen(true)
+  }
+
+  const handleQuoteSubmit = (requestId: string, data: { userQuote: number; doerPayout: number; notes?: string }) => {
+    onQuoteSubmit?.(requestId, data)
+    setIsModalOpen(false)
+    setSelectedRequest(null)
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+              <CardTitle className="text-lg">New Requests</CardTitle>
+              {requests.length > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  ({requests.length})
+                </span>
+              )}
+            </div>
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </Button>
+            )}
+          </div>
+          <CardDescription>
+            Projects awaiting your analysis and quote
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg border bg-card"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-24" />
+                      </div>
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <div className="flex gap-4">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-9 w-32" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground">No new requests</p>
+              <p className="text-sm text-muted-foreground">
+                New project requests will appear here
+              </p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-3 pr-4">
+                {requests.map((request) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    onAnalyze={handleAnalyze}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+
+      <AnalyzeQuoteModal
+        request={selectedRequest}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedRequest(null)
+        }}
+        onQuoteSubmit={handleQuoteSubmit}
+      />
+    </>
+  )
+}
