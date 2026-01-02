@@ -503,9 +503,29 @@
       ]
     }
   },
-  "qa_signoff": {"status": "approved", "timestamp": "2026-01-02T01:15:00.000Z", "qa_session": 1, "verified_by": "qa_agent"},
+  "qa_signoff": {
+    "status": "approved",
+    "timestamp": "2026-01-02T01:15:00.000Z",
+    "qa_session": 1,
+    "verified_by": "qa_agent"
+  },
   "status": "qa_approved",
   "planStatus": "review",
   "updated_at": "2026-01-02T00:04:41.615Z",
-  "last_updated": "2026-01-02T00:49:27.910121+00:00"
+  "last_updated": "2026-01-02T00:49:27.910121+00:00",
+  "qa_iteration_history": [
+    {
+      "iteration": 1,
+      "status": "approved",
+      "timestamp": "2026-01-02T00:57:10.355903+00:00",
+      "issues": [],
+      "duration_seconds": 436.48
+    }
+  ],
+  "qa_stats": {
+    "total_iterations": 1,
+    "last_iteration": 1,
+    "last_status": "approved",
+    "issues_by_type": {}
+  }
 }
