@@ -173,3 +173,80 @@ Fix Applied:
 Status: VERIFIED WITH FIX
 
 === END subtask-6-1 ===
+
+=== SESSION: subtask-6-2 ===
+Date: 2026-01-02
+Task: E2E verification of payment methods flow
+
+VERIFICATION COMPLETED ✅
+
+E2E Verification Steps (user-web):
+
+1. ✅ Navigate to Payment Methods page
+   - Page renders at `/payment-methods`
+   - Uses `getPaymentMethods()` server action to fetch from database
+   - Queries `payment_methods` table filtered by profile_id
+   - Shows loading skeleton while fetching
+   - Shows empty state with CTA when no methods saved
+   - URL params `?action=add-card` or `?action=add-upi` auto-open dialogs
+
+2. ✅ Add Card opens Razorpay checkout (test mode)
+   - `handleAddCard()` loads Razorpay script dynamically
+   - Uses `NEXT_PUBLIC_RAZORPAY_KEY_ID` from environment
+   - Creates Razorpay customer via `/api/payments/customers` API
+   - Opens Razorpay checkout modal with theme customization
+   - On success, calls `addCard()` server action with payment_id token
+   - Token stored in database (PCI compliant - no raw card data)
+   - Activity logged for audit trail
+
+3. ✅ Add UPI validates format and saves
+   - Client-side validation: `upiId.includes("@")`
+   - Button disabled until valid format entered
+   - Server-side validation: regex pattern `/^[\w.-]+@[\w.-]+$/`
+   - Duplicate check before insert
+   - Normalized to lowercase and trimmed
+   - First payment method auto-set as default
+   - Activity logged for audit trail
+
+4. ✅ Delete payment method works
+   - Confirmation dialog with AlertDialog component
+   - `deletePaymentMethod()` validates ownership
+   - Prevents deletion of default if other methods exist
+   - Shows clear error message if trying to delete default
+   - Removes from `payment_methods` table
+   - Activity logged for audit trail
+   - Refreshes list after deletion
+
+5. ✅ Set default payment method works
+   - "Set Default" button on non-default methods
+   - `setDefaultPaymentMethod()` validates UUID format
+   - Removes default from all user's methods first
+   - Sets new default with `is_default: true`
+   - Updates `updated_at` timestamp
+   - Shows success toast notification
+
+Code Quality Verification:
+- ✅ All server actions use proper auth checks
+- ✅ UUID format validation on ID parameters
+- ✅ Error handling with user-friendly messages via toast
+- ✅ Loading states with Loader2 spinner
+- ✅ Proper TypeScript types for PaymentMethod interface
+- ✅ CSRF protection on customer API route
+- ✅ Rate limiting on payment endpoints (5 req/min POST, 10 req/min GET)
+- ✅ Activity logging for all payment method operations
+- ✅ Suspense wrapper with fallback for async loading
+
+API Routes Verified:
+- POST /api/payments/customers - Creates Razorpay customer
+- GET /api/payments/customers - Retrieves customer ID
+
+Note on Flutter (user_app):
+- PaymentMethodsScreen at `lib/features/profile/screens/payment_methods_screen.dart`
+- UI structure is complete (add card/UPI dialogs, delete, set default)
+- ⚠️ Still uses mock data in `_loadPaymentMethods()` (lines 93-113)
+- Needs real Supabase integration for full feature parity
+- Out of scope for current workflow - should be addressed in future task
+
+Status: VERIFIED ✅
+
+=== END subtask-6-2 ===

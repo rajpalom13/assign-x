@@ -312,7 +312,9 @@
               "Favorite toggle persists to database"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "E2E verification completed. All marketplace flows verified working with real Supabase data. Fixed category mapping bug by adding mapCategoryToListingType() function to properly convert UI category tabs to database listing_type values. Verified: 1) Connect page loads real listings or empty state, 2) Search functionality works with real data, 3) Category filter updates listings, 4) Create listing saves to database, 5) Favorite toggle persists to database. Committed with hash d22177a.",
+          "updated_at": "2026-01-02T00:38:32.912652+00:00"
         },
         {
           "id": "subtask-6-2",
@@ -331,7 +333,9 @@
               "Set default payment method works"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "E2E verification completed. All 5 verification steps passed for user-web: (1) Payment Methods page renders with real data from Supabase, (2) Add Card opens Razorpay checkout modal for secure tokenization, (3) Add UPI validates format client-side and server-side before saving, (4) Delete payment method works with proper ownership check, (5) Set default payment method works with proper state management. Code quality verified: proper auth checks, UUID validation, CSRF protection, rate limiting, activity logging, loading states, and error handling. Note: Flutter user_app payment methods screen still uses mock data - out of scope for this task.",
+          "updated_at": "2026-01-02T00:42:58.857358+00:00"
         },
         {
           "id": "subtask-6-3",
@@ -501,5 +505,5 @@
   "status": "human_review",
   "planStatus": "review",
   "updated_at": "2026-01-02T00:04:41.615Z",
-  "last_updated": "2026-01-02T00:33:17.108847+00:00"
+  "last_updated": "2026-01-02T00:42:58.857369+00:00"
 }
