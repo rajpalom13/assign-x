@@ -163,14 +163,16 @@
               "No console errors"
             ]
           },
-          "status": "pending",
+          "status": "completed",
           "implementation_notes": [
             "Remove mock data imports (mockProducts, mockHousing, etc.)",
             "Call getMarketplaceListings() server action",
             "Implement real favorite toggle with toggleFavorite()",
             "Add proper loading and error states",
             "Keep existing UI/UX (masonry grid, filters, search)"
-          ]
+          ],
+          "notes": "Updated Connect page to use real Supabase data. Replaced mock data with getMarketplaceListings and toggleFavorite actions. Added loading skeleton following wallet page pattern. Fixed pagination race condition with pageOverride parameter.",
+          "updated_at": "2026-01-02T00:23:08.164699+00:00"
         },
         {
           "id": "subtask-3-2",
@@ -192,13 +194,15 @@
               "Submit button present"
             ]
           },
-          "status": "pending",
+          "status": "in_progress",
           "implementation_notes": [
             "Create form for new marketplace listing",
             "Support all listing types: product, housing, opportunity, community",
             "Use createListing() server action",
             "Add image upload support"
-          ]
+          ],
+          "notes": "Updating existing create listing page to use real createListing server action instead of mock data",
+          "updated_at": "2026-01-02T00:24:43.170015+00:00"
         }
       ]
     },
@@ -493,5 +497,5 @@
   "status": "human_review",
   "planStatus": "review",
   "updated_at": "2026-01-02T00:04:41.615Z",
-  "last_updated": "2026-01-02T00:19:17.378202+00:00"
+  "last_updated": "2026-01-02T00:24:43.170025+00:00"
 }

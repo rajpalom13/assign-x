@@ -5,14 +5,15 @@ import { revalidatePath } from "next/cache";
 
 /**
  * Listing type enum matching database schema
+ * Maps to Supabase marketplace_listings.listing_type column
  */
-export type ListingType = "item" | "housing" | "opportunity" | "community";
+export type ListingType = "sell" | "rent" | "free" | "opportunity" | "housing";
 
 /**
  * Options for fetching marketplace listings
  */
 export interface GetListingsOptions {
-  category?: ListingType | "all";
+  category?: ListingType | ListingType[] | "all";
   search?: string;
   limit?: number;
   offset?: number;
@@ -30,9 +31,33 @@ export interface CreateListingData {
   title: string;
   description?: string;
   price?: number;
+  priceNegotiable?: boolean;
   imageUrl?: string;
   categoryId?: string;
-  // Type-specific fields stored in metadata
+  city?: string;
+  locationText?: string;
+
+  // Product-specific fields
+  itemCondition?: "new" | "like_new" | "good" | "fair" | "poor";
+
+  // Housing-specific fields
+  housingType?: "single" | "shared" | "flat" | "pg" | "hostel";
+  bedrooms?: number;
+  rentPeriod?: string;
+  availableFrom?: string;
+
+  // Opportunity-specific fields
+  opportunityType?: "internship" | "job" | "event" | "gig" | "workshop" | "competition";
+  opportunityUrl?: string;
+  applicationDeadline?: string;
+  companyName?: string;
+
+  // Community/Poll fields
+  pollOptions?: { id: string; text: string; votes: number }[];
+  pollEndsAt?: string;
+  postContent?: string;
+
+  // Additional metadata
   metadata?: Record<string, unknown>;
 }
 
@@ -65,7 +90,11 @@ export async function getMarketplaceListings(options: GetListingsOptions = {}) {
 
   // Filter by category/listing_type
   if (options.category && options.category !== "all") {
-    query = query.eq("listing_type", options.category);
+    if (Array.isArray(options.category)) {
+      query = query.in("listing_type", options.category);
+    } else {
+      query = query.eq("listing_type", options.category);
+    }
   }
 
   // Search in title and description
@@ -290,10 +319,36 @@ export async function createListing(data: CreateListingData) {
       title: data.title.trim(),
       description: data.description?.trim() || null,
       price: data.price || null,
+      price_negotiable: data.priceNegotiable ?? true,
       image_url: data.imageUrl || null,
       category_id: data.categoryId || null,
       university_id: universityId,
+      city: data.city?.trim() || null,
+      location_text: data.locationText?.trim() || null,
+
+      // Product-specific fields
+      item_condition: data.itemCondition || null,
+
+      // Housing-specific fields
+      housing_type: data.housingType || null,
+      bedrooms: data.bedrooms || null,
+      rent_period: data.rentPeriod || null,
+      available_from: data.availableFrom || null,
+
+      // Opportunity-specific fields
+      opportunity_type: data.opportunityType || null,
+      opportunity_url: data.opportunityUrl || null,
+      application_deadline: data.applicationDeadline || null,
+      company_name: data.companyName || null,
+
+      // Community/Poll fields
+      poll_options: data.pollOptions || null,
+      poll_ends_at: data.pollEndsAt || null,
+      post_content: data.postContent || null,
+
+      // Metadata and status
       metadata: data.metadata || {},
+      status: "active",
       is_active: true,
       view_count: 0,
     })
