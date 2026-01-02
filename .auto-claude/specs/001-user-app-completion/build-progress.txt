@@ -83,3 +83,36 @@ Then verify these pages:
   - http://localhost:3000/wallet (already uses real data - reference)
 
 === END SESSION 1 ===
+
+=== SESSION: subtask-5-1 ===
+Date: 2026-01-02
+Task: Verify marketplace repository uses real Supabase queries
+
+VERIFICATION COMPLETED ✅
+
+Analyzed: user_app/lib/data/repositories/marketplace_repository.dart
+
+Findings:
+1. ✅ Uses `package:supabase_flutter/supabase_flutter.dart` import
+2. ✅ Has `SupabaseClient _supabase` field with proper initialization
+3. ✅ All repository methods use real Supabase queries:
+   - getListings() - queries `marketplace_listings` with filters and pagination
+   - getListingById() - fetches single listing with view count increment
+   - createListing() - inserts new listing with category lookup
+   - toggleLike() - manages `marketplace_favorites` table
+   - getUserListings() - filters listings by current user
+   - reportListing() - inserts into `marketplace_reports`
+4. ✅ Uses proper Supabase features:
+   - Foreign key joins: `seller:profiles!seller_id(full_name, avatar_url)`
+   - RPC calls: `increment_favorites_count`, `decrement_favorites_count`
+   - Query methods: `.eq()`, `.ilike()`, `.or()`, `.order()`, `.range()`
+   - Single/multiple results: `.maybeSingle()`, `.single()`
+5. ✅ Proper error handling with try-catch and Logger
+6. ✅ Authentication check via `_currentUserId` getter
+
+Note: flutter/dart analyze commands not available in sandbox,
+but manual code review confirms full Supabase integration.
+
+Status: VERIFIED - No changes needed
+
+=== END subtask-5-1 ===
