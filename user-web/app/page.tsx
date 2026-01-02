@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Home page - Modern landing page for AssignX
- * Features GSAP animations, Lenis smooth scroll, and horizontal showcase
+ * Home page - Landing page for AssignX
+ * Matches saas template structure exactly with same sections
  */
 
 import "./landing.css";
@@ -11,10 +11,6 @@ import {
   Navigation,
   HeroSection,
   HorizontalShowcase,
-  FeaturesSection,
-  HowItWorks,
-  TestimonialsSection,
-  StatsSection,
   CTASection,
   Footer,
 } from "@/components/landing";
@@ -22,35 +18,23 @@ import {
 export default function Home() {
   return (
     <LenisProvider>
-      <div className="relative bg-background">
-        {/* Navigation */}
+      <div className="landing-page min-h-screen bg-[var(--landing-bg-primary)]">
+        {/* Navigation - Fixed with pill style on scroll */}
         <Navigation />
 
         {/* Main content */}
         <main>
-          {/* Hero Section - Animated headline with magnetic buttons */}
+          {/* Hero Section - Light background, 55/45 split */}
           <HeroSection />
 
-          {/* Horizontal Showcase - Services with horizontal scroll */}
+          {/* Horizontal Showcase - Text-based horizontal scroll */}
           <HorizontalShowcase />
-
-          {/* Features Section - 8-feature grid with staggered reveals */}
-          <FeaturesSection />
-
-          {/* How It Works - 4-step process with line animation */}
-          <HowItWorks />
-
-          {/* Stats Section - Counting number animations */}
-          <StatsSection />
-
-          {/* Testimonials - Customer reviews with parallax */}
-          <TestimonialsSection />
 
           {/* CTA Section - Final call to action */}
           <CTASection />
         </main>
 
-        {/* Footer */}
+        {/* Footer - Dark with ghost text animation */}
         <Footer />
       </div>
     </LenisProvider>

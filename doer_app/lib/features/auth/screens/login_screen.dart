@@ -74,12 +74,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// Handles the login form submission.
   ///
   /// Validates the form, then attempts to sign in using the
-  /// [AuthProvider]. On success, navigates to the appropriate
-  /// screen based on user activation status. On failure,
-  /// displays an error message via SnackBar.
-  ///
-  /// The method includes a brief delay after successful auth
-  /// to ensure the auth state is fully updated before navigation.
+  /// [AuthProvider]. On success, router automatically navigates
+  /// based on user activation status. On failure, displays an
+  /// error message via SnackBar.
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -94,20 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (success) {
-        // Wait briefly for auth state to fully update
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return;
-
-        final user = ref.read(currentUserProvider);
-        if (user != null && user.isActivated) {
-          context.go(RouteNames.dashboard);
-        } else if (user != null && user.hasDoerProfile) {
-          context.go(RouteNames.activationGate);
-        } else {
-          context.go(RouteNames.profileSetup);
-        }
-      } else {
+      if (!success) {
         final errorMessage = ref.read(authProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -116,12 +100,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
       }
+      // Router will automatically navigate based on auth state
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('An error occurred. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handles Google OAuth sign-in.
+  ///
+  /// Initiates the native Google Sign-In flow. If successful,
+  /// router automatically navigates based on activation status.
+  /// Cancellation is handled silently; only errors show notifications.
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final success = await ref.read(authProvider.notifier).signInWithGoogle();
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (!success) {
+        final errorMessage = ref.read(authProvider).errorMessage;
+        if (errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+      // Router will automatically navigate based on auth state
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google sign in failed: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -257,12 +281,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: AppSpacing.xl),
 
-                // Social login buttons (placeholder)
+                // Google Sign In button
                 AppButton(
                   text: 'Continue with Google',
-                  onPressed: () {
-                    // TODO: Implement Google sign in
-                  },
+                  onPressed: _handleGoogleSignIn,
                   variant: AppButtonVariant.outline,
                   isFullWidth: true,
                   icon: Icons.g_mobiledata,

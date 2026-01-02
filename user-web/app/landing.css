@@ -2,48 +2,38 @@
  * @fileoverview Landing page scoped styles
  *
  * Contains color tokens, typography, and utility classes specific to the
- * marketing landing page. These styles are scoped to avoid affecting
- * the dashboard and other authenticated pages.
+ * marketing landing page. Uses a unique warm/cool palette:
+ * - #C0BCB5 - Warm gray (light backgrounds)
+ * - #4A6C6F - Teal (primary accent)
+ * - #846075 - Mauve (secondary accent)
+ * - #AF5D63 - Dusty rose (tertiary/CTA accent)
  */
-
-/* ============================================
-   FONTS
-   ============================================ */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
 
 /* Landing Page Color Tokens */
 :root {
   /* Backgrounds */
-  --landing-bg-primary: #FAF9F7;
+  --landing-bg-primary: #F7F6F4;
+  --landing-bg-secondary: #C0BCB5;
   --landing-bg-elevated: #FFFFFF;
-  --landing-bg-dark: #171A14;
+  --landing-bg-dark: #1E2326;
 
   /* Text */
-  --landing-text-primary: #171A14;
-  --landing-text-secondary: #5C5A52;
-  --landing-text-muted: #9C9A92;
-  --landing-text-inverse: #FAF9F7;
+  --landing-text-primary: #1E2326;
+  --landing-text-secondary: #4A4A4A;
+  --landing-text-muted: #7A7A7A;
+  --landing-text-inverse: #F7F6F4;
 
-  /* Accents - Indigo/Purple theme for AssignX */
-  --landing-accent-primary: #6366f1;
-  --landing-accent-primary-hover: #4f46e5;
-  --landing-accent-purple: #a855f7;
-  --landing-accent-terracotta: #C4775A;
-  --landing-accent-green: #4A6741;
-  --landing-accent-green-hover: #3D5636;
+  /* Accents - Unique palette */
+  --landing-accent-primary: #4A6C6F;
+  --landing-accent-primary-hover: #3D5A5D;
+  --landing-accent-secondary: #846075;
+  --landing-accent-secondary-hover: #6D4F61;
+  --landing-accent-tertiary: #AF5D63;
+  --landing-accent-tertiary-hover: #954E53;
 
   /* Borders */
-  --landing-border: #E8E6E1;
-  --landing-border-light: rgba(255, 255, 255, 0.1);
-
-  /* Shadows */
-  --landing-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --landing-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --landing-shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
-  --landing-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-
-  /* Animation Timing */
-  --landing-ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --landing-border: #D8D5D0;
+  --landing-border-light: #E8E6E2;
 }
 
 /* Hide scrollbar but keep functionality */
@@ -72,40 +62,34 @@ body:has(.landing-page)::-webkit-scrollbar {
 @layer components {
   /* Instrument Serif for headings */
   .landing-heading {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: var(--font-instrument-serif), Georgia, serif;
     font-weight: 400;
     line-height: 1.05;
     letter-spacing: -0.02em;
   }
 
   .landing-heading-xl {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: var(--font-instrument-serif), Georgia, serif;
     font-size: 72px;
     line-height: 1.05;
   }
 
   .landing-heading-lg {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: var(--font-instrument-serif), Georgia, serif;
     font-size: 48px;
     line-height: 1.1;
   }
 
   .landing-heading-md {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: var(--font-instrument-serif), Georgia, serif;
     font-size: 36px;
     line-height: 1.15;
   }
 
   .landing-heading-sm {
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: var(--font-instrument-serif), Georgia, serif;
     font-size: 32px;
     line-height: 1.2;
-  }
-
-  .landing-font-display {
-    font-family: 'Instrument Serif', Georgia, serif;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
   }
 
   /* Dark section styling */
@@ -114,27 +98,13 @@ body:has(.landing-page)::-webkit-scrollbar {
     color: var(--landing-text-inverse);
   }
 
-  /* Glassmorphism */
-  .landing-glass {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
-
-  .landing-glass-dark {
-    background: rgba(15, 15, 15, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--landing-border-light);
-  }
-
   /* Badge styling */
   .landing-badge {
     display: inline-flex;
     align-items: center;
     padding: 8px 16px;
     border-radius: 100px;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-inter), system-ui, sans-serif;
     font-weight: 500;
     font-size: 13px;
     text-transform: uppercase;
@@ -142,23 +112,18 @@ body:has(.landing-page)::-webkit-scrollbar {
   }
 
   .landing-badge-primary {
-    background-color: rgba(99, 102, 241, 0.15);
+    background-color: rgba(74, 108, 111, 0.12);
     color: var(--landing-accent-primary);
   }
 
-  .landing-badge-purple {
-    background-color: rgba(168, 85, 247, 0.15);
-    color: var(--landing-accent-purple);
+  .landing-badge-secondary {
+    background-color: rgba(132, 96, 117, 0.12);
+    color: var(--landing-accent-secondary);
   }
 
-  .landing-badge-terracotta {
-    background-color: rgba(196, 119, 90, 0.15);
-    color: var(--landing-accent-terracotta);
-  }
-
-  .landing-badge-green {
-    background-color: rgba(74, 103, 65, 0.15);
-    color: var(--landing-accent-green);
+  .landing-badge-tertiary {
+    background-color: rgba(175, 93, 99, 0.12);
+    color: var(--landing-accent-tertiary);
   }
 
   /* Platform pill styling */
@@ -177,7 +142,7 @@ body:has(.landing-page)::-webkit-scrollbar {
 
   .landing-platform-pill:hover {
     border-color: var(--landing-accent-primary);
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 2px 8px rgba(74, 108, 111, 0.15);
   }
 
   /* Button variants */
@@ -186,18 +151,39 @@ body:has(.landing-page)::-webkit-scrollbar {
     align-items: center;
     justify-content: center;
     height: 56px;
-    padding: 0 24px;
-    background: linear-gradient(135deg, var(--landing-accent-primary) 0%, var(--landing-accent-purple) 100%);
+    padding: 0 28px;
+    background-color: var(--landing-accent-tertiary);
     color: white;
     font-weight: 500;
     font-size: 16px;
-    border-radius: 12px;
+    border-radius: 14px;
     transition: all 0.2s ease;
   }
 
   .landing-btn-primary:hover {
+    background-color: var(--landing-accent-tertiary-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 4px 16px rgba(175, 93, 99, 0.35);
+  }
+
+  .landing-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px;
+    padding: 0 28px;
+    background-color: var(--landing-accent-primary);
+    color: white;
+    font-weight: 500;
+    font-size: 16px;
+    border-radius: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .landing-btn-secondary:hover {
+    background-color: var(--landing-accent-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(74, 108, 111, 0.35);
   }
 
   /* Input styling */
@@ -208,7 +194,7 @@ body:has(.landing-page)::-webkit-scrollbar {
     padding: 0 20px;
     background-color: var(--landing-bg-elevated);
     border: 1px solid var(--landing-border);
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 16px;
     color: var(--landing-text-primary);
     transition: all 0.2s ease;
@@ -221,78 +207,135 @@ body:has(.landing-page)::-webkit-scrollbar {
   .landing-input:focus {
     outline: none;
     border-color: var(--landing-accent-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 3px rgba(74, 108, 111, 0.15);
   }
 
   /* Floating card styling */
   .landing-floating-card {
     background-color: var(--landing-bg-elevated);
     border: 1px solid var(--landing-border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 16px;
-    box-shadow: 0 4px 20px rgba(23, 26, 20, 0.08);
+    box-shadow: 0 4px 24px rgba(30, 35, 38, 0.1);
   }
 
-  /* Browser frame mockup */
+  /* Browser frame mockup - More rounded, softer style */
   .landing-browser-frame {
-    border-radius: 16px;
+    border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(23, 26, 20, 0.15);
-    transform: rotate(2deg);
+    box-shadow:
+      0 30px 70px -15px rgba(74, 108, 111, 0.25),
+      0 10px 30px -10px rgba(30, 35, 38, 0.15);
+    transform: rotate(0deg);
+    border: 1px solid var(--landing-border);
   }
 
   .landing-browser-chrome {
-    height: 40px;
-    background-color: #f5f5f5;
+    height: 48px;
+    background: linear-gradient(135deg, #fafaf9 0%, #f5f4f2 100%);
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    gap: 8px;
+    padding: 0 20px;
+    gap: 10px;
+    border-bottom: 1px solid var(--landing-border-light);
   }
 
   .landing-browser-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
   }
 
-  .landing-browser-dot-red { background-color: #ff5f57; }
-  .landing-browser-dot-yellow { background-color: #febc2e; }
-  .landing-browser-dot-green { background-color: #28c840; }
+  .landing-browser-dot-red { background-color: var(--landing-accent-tertiary); }
+  .landing-browser-dot-yellow { background-color: var(--landing-accent-secondary); }
+  .landing-browser-dot-green { background-color: var(--landing-accent-primary); }
+
+  /* Glassmorphism */
+  .landing-glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
 
-/* Floating animation for cards */
+/* Floating animation for cards - Gentler movement */
 @keyframes landing-float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+}
+
+@keyframes landing-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 24px rgba(74, 108, 111, 0.15);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(74, 108, 111, 0.25);
   }
 }
 
 .animate-landing-float {
-  animation: landing-float 4s ease-in-out infinite;
+  animation: landing-float 6s ease-in-out infinite, landing-pulse-glow 6s ease-in-out infinite;
 }
 
 .animate-landing-float-delayed {
-  animation: landing-float 4s ease-in-out infinite;
-  animation-delay: 0.5s;
+  animation: landing-float 6s ease-in-out infinite, landing-pulse-glow 6s ease-in-out infinite;
+  animation-delay: 1.5s;
 }
 
-/* Gradient shift animation */
-@keyframes landing-gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Text gradient */
+/* Gradient text - Unique tri-color gradient */
 .landing-text-gradient {
-  background: linear-gradient(135deg, var(--landing-accent-primary) 0%, var(--landing-accent-purple) 100%);
+  background: linear-gradient(135deg, var(--landing-accent-primary) 0%, var(--landing-accent-secondary) 50%, var(--landing-accent-tertiary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Accent underline decoration */
+.landing-accent-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.landing-accent-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--landing-accent-primary), var(--landing-accent-tertiary));
+  border-radius: 2px;
+}
+
+/* Decorative shapes */
+.landing-shape-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.landing-shape-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--landing-accent-primary);
+}
+
+.landing-shape-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--landing-accent-secondary);
+}
+
+.landing-shape-blob-3 {
+  width: 250px;
+  height: 250px;
+  background: var(--landing-accent-tertiary);
 }
 
 /* Respect reduced motion */

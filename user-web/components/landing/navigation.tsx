@@ -1,310 +1,192 @@
-"use client";
-
 /**
- * Navigation - Premium glassmorphic sticky header
- * Features scroll-triggered background change and mobile menu
- * Adapts colors based on scroll position (dark hero -> light sections)
+ * @fileoverview Navigation - Landing page navigation bar
+ *
+ * Modern navbar with unique styling. Transforms on scroll.
+ * Uses unique warm/cool color palette.
  */
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { gsap } from "gsap";
-import { Menu, X, ChevronDown, Sparkles } from "lucide-react";
+"use client";
 
+import { useState, useEffect } from "react";
+import { Menu, X, GraduationCap } from "lucide-react";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ASSIGNX_EASE } from "@/lib/animations/constants";
 import "@/app/landing.css";
 
-const navLinks = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  {
-    label: "Services",
-    href: "#services",
-    children: [
-      { label: "Academic Reports", href: "/services/reports" },
-      { label: "Proofreading", href: "/services/proofreading" },
-      { label: "1-on-1 Tutoring", href: "/services/tutoring" },
-      { label: "Consultation", href: "/services/consultation" },
-    ],
-  },
-  { label: "Testimonials", href: "#testimonials" },
-  { label: "Pricing", href: "/pricing" },
-];
-
 export function Navigation() {
-  const headerRef = useRef<HTMLElement>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
 
+  // Track scroll position
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headerRef.current,
-        { y: -100, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: ASSIGNX_EASE as unknown as string,
-          delay: 0.1,
-        }
-      );
-    }, headerRef);
-
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 100);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
-    return () => {
-      ctx.revert();
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <header
-      ref={headerRef}
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-        isScrolled
-          ? "landing-glass shadow-lg"
-          : "bg-transparent"
-      )}
-    >
-      <div className="container px-6 md:px-8 lg:px-12">
-        <nav className="flex items-center justify-between h-20 md:h-24">
-          {/* Logo */}
-          <Link href="/" className="relative z-10 flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-purple)] flex items-center justify-center">
-              <Sparkles className="size-5 text-white" />
-            </div>
-            <span
-              className={cn(
-                "text-xl font-bold landing-font-display transition-colors duration-300",
-                isScrolled ? "text-[var(--landing-text-primary)]" : "text-white"
-              )}
+    <>
+      {/* Spacer for absolute positioning */}
+      <div className="h-16" />
+
+      <motion.nav
+        initial={prefersReducedMotion ? {} : { y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className={cn(
+          "fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out",
+          scrolled
+            ? "top-4 w-auto bg-[var(--landing-bg-dark)]/90 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/20 rounded-full"
+            : "top-4 w-full max-w-7xl bg-transparent border border-transparent"
+        )}
+      >
+        <div className={cn(
+          "flex items-center justify-between transition-all duration-500",
+          scrolled ? "h-14 px-4 pl-5 gap-4" : "h-16 px-4 sm:px-6"
+        )}>
+          {/* Left: Logo */}
+          <Link href="/">
+            <motion.div
+              className="flex items-center gap-2"
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+              whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
             >
-              AssignX
-            </span>
+              <div className={cn(
+                "h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-300",
+                scrolled
+                  ? "bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)]"
+                  : "bg-[var(--landing-accent-primary)]"
+              )}>
+                <GraduationCap className="h-5 w-5 text-white" />
+              </div>
+              <span className={cn(
+                "font-bold text-xl tracking-tight transition-colors duration-300",
+                scrolled ? "text-white" : "text-[var(--landing-text-primary)]"
+              )}>
+                Assign<span className="text-[var(--landing-accent-tertiary)]">X</span>
+              </span>
+            </motion.div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <div key={link.label} className="relative group">
-                {link.children ? (
-                  <>
-                    <button
-                      className={cn(
-                        "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium",
-                        "transition-colors duration-300",
-                        isScrolled
-                          ? "text-[var(--landing-text-secondary)] hover:bg-[var(--landing-accent-primary)]/5"
-                          : "text-white/80 hover:text-white hover:bg-white/10"
-                      )}
-                      onMouseEnter={() => setOpenDropdown(link.label)}
-                      onMouseLeave={() => setOpenDropdown(null)}
-                    >
-                      {link.label}
-                      <ChevronDown className="size-4 transition-transform group-hover:rotate-180" />
-                    </button>
-
-                    {/* Dropdown */}
-                    <div
-                      className={cn(
-                        "absolute top-full left-0 pt-2 opacity-0 invisible",
-                        "group-hover:opacity-100 group-hover:visible",
-                        "transition-all duration-200"
-                      )}
-                      onMouseEnter={() => setOpenDropdown(link.label)}
-                      onMouseLeave={() => setOpenDropdown(null)}
-                    >
-                      <div className="landing-glass rounded-2xl shadow-xl p-2 min-w-[220px]">
-                        {link.children.map((child) => (
-                          <Link
-                            key={child.label}
-                            href={child.href}
-                            className={cn(
-                              "block px-4 py-3 rounded-xl text-sm font-medium",
-                              "transition-colors duration-200",
-                              "text-[var(--landing-text-secondary)]",
-                              "hover:bg-[var(--landing-accent-primary)]/5"
-                            )}
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium",
-                      "transition-colors duration-300",
-                      isScrolled
-                        ? "text-[var(--landing-text-secondary)] hover:bg-[var(--landing-accent-primary)]/5"
-                        : "text-white/80 hover:text-white hover:bg-white/10"
-                    )}
+          {/* Center: Navigation Links (Desktop) - Only visible when scrolled */}
+          <AnimatePresence>
+            {scrolled && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="hidden md:flex items-center gap-1"
+              >
+                {["Services", "How it works", "Pricing"].map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                    className="px-3 py-1.5 text-sm text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
                   >
-                    {link.label}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/login"
-              className={cn(
-                "px-5 py-2.5 rounded-full text-sm font-medium",
-                "transition-colors duration-300",
-                isScrolled
-                  ? "text-[var(--landing-text-secondary)] hover:bg-[var(--landing-accent-primary)]/5"
-                  : "text-white/80 hover:text-white hover:bg-white/10"
-              )}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className={cn(
-                "px-5 py-2.5 rounded-full text-sm font-semibold",
-                "bg-gradient-to-r from-[var(--landing-accent-primary)] to-[var(--landing-accent-purple)]",
-                "text-white shadow-lg shadow-[var(--landing-accent-primary)]/25",
-                "hover:shadow-xl hover:shadow-[var(--landing-accent-primary)]/30",
-                "transition-all duration-300 hover:-translate-y-0.5"
-              )}
-            >
-              Get Started
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className={cn(
-              "lg:hidden relative z-10 p-2 rounded-xl transition-colors",
-              isScrolled ? "hover:bg-[var(--landing-accent-primary)]/5" : "hover:bg-white/10"
+                    {item}
+                  </a>
+                ))}
+              </motion.div>
             )}
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className={cn("size-6", isScrolled ? "text-[var(--landing-text-primary)]" : "text-white")} />
-            ) : (
-              <Menu className={cn("size-6", isScrolled ? "text-[var(--landing-text-primary)]" : "text-white")} />
-            )}
-          </button>
-        </nav>
+          </AnimatePresence>
 
-        {/* Mobile Menu */}
-        <div
-          className={cn(
-            "lg:hidden fixed inset-0 top-20 landing-glass",
-            "transition-all duration-300",
-            isMobileMenuOpen
-              ? "opacity-100 visible"
-              : "opacity-0 invisible pointer-events-none"
-          )}
-        >
-          <div className="container py-8">
-            <div className="space-y-2">
-              {navLinks.map((link) => (
-                <div key={link.label}>
-                  {link.children ? (
-                    <div>
-                      <button
-                        className={cn(
-                          "flex items-center justify-between w-full py-4 px-4 rounded-xl",
-                          "text-lg font-medium transition-colors",
-                          "text-[var(--landing-text-primary)]",
-                          "hover:bg-[var(--landing-accent-primary)]/5"
-                        )}
-                        onClick={() =>
-                          setOpenDropdown(
-                            openDropdown === link.label ? null : link.label
-                          )
-                        }
-                      >
-                        {link.label}
-                        <ChevronDown
-                          className={cn(
-                            "size-5 transition-transform",
-                            openDropdown === link.label && "rotate-180"
-                          )}
-                        />
-                      </button>
-                      <div
-                        className={cn(
-                          "overflow-hidden transition-all duration-300",
-                          openDropdown === link.label
-                            ? "max-h-60 opacity-100"
-                            : "max-h-0 opacity-0"
-                        )}
-                      >
-                        <div className="pl-4 space-y-1 py-2">
-                          {link.children.map((child) => (
-                            <Link
-                              key={child.label}
-                              href={child.href}
-                              className="block py-3 px-4 rounded-xl text-[var(--landing-text-secondary)] hover:bg-[var(--landing-accent-primary)]/5 transition-colors"
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              {child.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      href={link.href}
-                      className={cn(
-                        "block py-4 px-4 rounded-xl text-lg font-medium",
-                        "text-[var(--landing-text-primary)]",
-                        "transition-colors hover:bg-[var(--landing-accent-primary)]/5"
-                      )}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile CTA */}
-            <div className="mt-8 pt-8 border-t border-[var(--landing-border)] space-y-3">
+          {/* Right: CTA Buttons */}
+          <div className="flex items-center gap-3">
+            <motion.div
+              initial={prefersReducedMotion ? {} : { opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-3"
+            >
               <Link
                 href="/login"
-                className="block w-full py-4 text-center text-lg font-medium rounded-xl text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-primary)]/5 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  "hidden sm:inline-flex px-4 py-2 text-sm font-medium transition-colors rounded-full",
+                  scrolled
+                    ? "text-white/70 hover:text-white hover:bg-white/10"
+                    : "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)]"
+                )}
               >
                 Sign In
               </Link>
               <Link
                 href="/signup"
                 className={cn(
-                  "block w-full py-4 text-center rounded-full text-lg font-semibold",
-                  "bg-gradient-to-r from-[var(--landing-accent-primary)] to-[var(--landing-accent-purple)]",
-                  "text-white shadow-lg"
+                  "inline-flex items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
+                  "h-10 px-5 bg-[var(--landing-accent-tertiary)] text-white hover:bg-[var(--landing-accent-tertiary-hover)]",
+                  !scrolled && "hover:shadow-md hover:shadow-[var(--landing-accent-tertiary)]/25"
                 )}
-                onClick={() => setIsMobileMenuOpen(false)}
               >
                 Get Started
               </Link>
-            </div>
+            </motion.div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className={cn(
+                "p-2 md:hidden rounded-full transition-colors",
+                scrolled ? "hover:bg-white/10" : "hover:bg-black/5"
+              )}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className={cn("h-5 w-5", scrolled ? "text-white" : "text-[var(--landing-text-primary)]")} />
+              ) : (
+                <Menu className={cn("h-5 w-5", scrolled ? "text-white" : "text-[var(--landing-text-primary)]")} />
+              )}
+            </button>
           </div>
         </div>
-      </div>
-    </header>
+      </motion.nav>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-4 right-4 z-40 bg-white/95 backdrop-blur-xl rounded-2xl border border-[var(--landing-border)] shadow-lg p-4 md:hidden"
+          >
+            <div className="flex flex-col gap-2">
+              {["Services", "How it works", "Pricing"].map((item) => (
+                <a
+                  key={item}
+                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                  className="px-4 py-3 text-sm text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-black/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item}
+                </a>
+              ))}
+              <div className="border-t border-[var(--landing-border)] mt-2 pt-2">
+                <Link
+                  href="/login"
+                  className="block px-4 py-3 text-sm text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-black/5"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block mt-2 px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-tertiary)] rounded-xl text-center hover:bg-[var(--landing-accent-tertiary-hover)] transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

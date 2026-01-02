@@ -1,378 +1,350 @@
-"use client";
-
-import { useRef, useEffect, useState } from "react";
-import Link from "next/link";
-import { gsap } from "gsap";
-import { CheckCircle2, Clock, Shield, Users, Sparkles, TrendingUp, Star, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { GoogleSignInButton } from "@/components/auth/google-signin-button";
-import { cn } from "@/lib/utils";
-
 /**
- * Login page with Google OAuth
- * Features split layout with animated benefits and subtle hover effects
+ * @fileoverview Premium Login Page
+ *
+ * Split-screen login with animated visual panel,
+ * floating cards, and smooth animations. Uses unique warm/cool color palette.
+ *
+ * @route /login
+ * @access public
  */
 
-// Floating notification card component
-function FloatingNotification({
-  className,
-  delay = 0
-}: {
-  className?: string;
-  delay?: number;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
+"use client";
 
-  useEffect(() => {
-    if (!cardRef.current) return;
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  Star,
+  TrendingUp,
+  Shield,
+  Zap,
+  Lock,
+  Sparkles,
+} from "lucide-react";
 
-    gsap.fromTo(
-      cardRef.current,
-      { opacity: 0, y: 20, scale: 0.9 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        delay,
-        ease: "power2.out",
-      }
-    );
-  }, [delay]);
+import "./login.css";
 
+// Google logo SVG component
+function GoogleIcon({ className }: { className?: string }) {
   return (
-    <div
-      ref={cardRef}
-      className={cn(
-        "absolute bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-2xl p-4 shadow-xl border border-white/20",
-        "animate-[float_6s_ease-in-out_infinite]",
-        className
-      )}
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-          <TrendingUp className="size-5 text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">+127%</p>
-          <p className="text-xs text-muted-foreground">Success rate</p>
-        </div>
-      </div>
-    </div>
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </svg>
   );
 }
 
-function FloatingBadge({
+// Floating card component
+function FloatingCard({
+  icon: Icon,
+  iconBg,
+  title,
+  value,
+  label,
   className,
-  delay = 0
+  delay,
 }: {
-  className?: string;
-  delay?: number;
+  icon: React.ElementType;
+  iconBg: string;
+  title: string;
+  value: string;
+  label: string;
+  className: string;
+  delay: number;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    gsap.fromTo(
-      cardRef.current,
-      { opacity: 0, y: 20, scale: 0.9 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        delay,
-        ease: "power2.out",
-      }
-    );
-  }, [delay]);
+  const prefersReducedMotion = useReducedMotion();
 
   return (
-    <div
-      ref={cardRef}
-      className={cn(
-        "absolute bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-full px-4 py-2 shadow-xl border border-white/20",
-        "animate-[float_5s_ease-in-out_infinite_0.5s]",
-        className
-      )}
+    <motion.div
+      initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+      className={`login-float-card ${className}`}
     >
-      <div className="flex items-center gap-2">
-        <Star className="size-4 text-yellow-500 fill-yellow-500" />
-        <span className="text-sm font-medium text-foreground">4.9 Rating</span>
+      <div className={`login-float-card-icon ${iconBg}`}>
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <div className="login-float-card-title">{title}</div>
+      <div className="login-float-card-value">{value}</div>
+      <div className="login-float-card-label">{label}</div>
+    </motion.div>
+  );
+}
+
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefersReducedMotion = useReducedMotion();
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        router.replace("/home");
+      }
+    };
+    checkUser();
+  }, [router, supabase.auth]);
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: callbackUrl,
+      },
+    });
+    setLoading(false);
+  };
+
+  return (
+    <div className="login-page">
+      {/* Left Panel - Visual Side */}
+      <div className="login-visual">
+        {/* Floating cards */}
+        <div className="login-floating-cards">
+          <FloatingCard
+            icon={TrendingUp}
+            iconBg="login-float-card-icon-primary"
+            title="Success Rate"
+            value="98%"
+            label="This month"
+            className="login-float-card-1"
+            delay={0.8}
+          />
+          <FloatingCard
+            icon={Star}
+            iconBg="login-float-card-icon-tertiary"
+            title="Student Rating"
+            value="4.9"
+            label="500+ reviews"
+            className="login-float-card-2"
+            delay={1.0}
+          />
+        </div>
+
+        {/* Content */}
+        <div className="login-visual-content">
+          <motion.div
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            className="login-visual-logo"
+          >
+            <span>
+              <Sparkles className="w-4 h-4" />
+              AssignX
+            </span>
+          </motion.div>
+
+          <motion.h1
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            className="login-visual-heading"
+          >
+            Your academic <span>success</span> starts here
+          </motion.h1>
+
+          <motion.p
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            className="login-visual-subheading"
+          >
+            Expert guidance for reports, research, and academic excellence.
+            Join thousands of students achieving their goals.
+          </motion.p>
+        </div>
+
+        {/* Footer stats */}
+        <motion.div
+          initial={prefersReducedMotion ? {} : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="login-visual-footer"
+        >
+          <div className="login-visual-stat">
+            <span className="login-visual-stat-value">50K+</span>
+            <span className="login-visual-stat-label">Projects done</span>
+          </div>
+          <div className="login-visual-stat">
+            <span className="login-visual-stat-value">10K+</span>
+            <span className="login-visual-stat-label">Students</span>
+          </div>
+          <div className="login-visual-stat">
+            <span className="login-visual-stat-value">24/7</span>
+            <span className="login-visual-stat-label">Support</span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Right Panel - Login Form */}
+      <div className="login-form-panel">
+        <div className="login-form-container">
+          {/* Mobile logo */}
+          <motion.div
+            initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="login-mobile-logo"
+          >
+            <span>
+              <Sparkles className="w-4 h-4" />
+              AssignX
+            </span>
+          </motion.div>
+
+          {/* Heading */}
+          <motion.h1
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="login-heading"
+          >
+            Welcome back
+          </motion.h1>
+
+          <motion.p
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="login-subheading"
+          >
+            Sign in to continue to your dashboard
+          </motion.p>
+
+          {/* Google Button */}
+          <motion.button
+            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            onClick={handleGoogle}
+            disabled={loading}
+            className="login-google-btn"
+          >
+            <GoogleIcon />
+            {loading ? "Connecting..." : "Continue with Google"}
+          </motion.button>
+
+          {/* Divider */}
+          <motion.div
+            initial={prefersReducedMotion ? {} : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="login-divider"
+          >
+            <div className="login-divider-line" />
+            <span className="login-divider-text">Secure & Fast</span>
+            <div className="login-divider-line" />
+          </motion.div>
+
+          {/* Info */}
+          <motion.p
+            initial={prefersReducedMotion ? {} : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="login-info"
+          >
+            No password needed. We use Google for secure, one-click
+            authentication.
+          </motion.p>
+
+          {/* Sign up link */}
+          <motion.div
+            initial={prefersReducedMotion ? {} : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+            className="login-signup-link"
+          >
+            <span>Don&apos;t have an account?</span>
+            <Link href="/signup">Sign up</Link>
+          </motion.div>
+
+          {/* Terms */}
+          <motion.p
+            initial={prefersReducedMotion ? {} : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="login-terms"
+          >
+            By continuing, you agree to our{" "}
+            <Link href="/terms">Terms of Service</Link> and{" "}
+            <Link href="/privacy">Privacy Policy</Link>.
+          </motion.p>
+
+          {/* Trust badges */}
+          <motion.div
+            initial={prefersReducedMotion ? {} : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="login-trust"
+          >
+            <div className="login-trust-item">
+              <Shield />
+              <span>Secure</span>
+            </div>
+            <div className="login-trust-item">
+              <Lock />
+              <span>Encrypted</span>
+            </div>
+            <div className="login-trust-item">
+              <Zap />
+              <span>Fast</span>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
 }
 
 export default function LoginPage() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
-
-  const features = [
-    {
-      icon: CheckCircle2,
-      title: "Expert Professionals",
-      description: "Access to 500+ verified experts across all subjects",
-      color: "from-indigo-500 to-purple-600",
-      bgColor: "bg-indigo-500/10",
-    },
-    {
-      icon: Clock,
-      title: "On-Time Delivery",
-      description: "99.8% of projects delivered before deadline",
-      color: "from-blue-500 to-cyan-600",
-      bgColor: "bg-blue-500/10",
-    },
-    {
-      icon: Shield,
-      title: "Secure & Confidential",
-      description: "Your data and projects are always protected",
-      color: "from-green-500 to-emerald-600",
-      bgColor: "bg-green-500/10",
-    },
-    {
-      icon: Users,
-      title: "24/7 Support",
-      description: "Round-the-clock assistance whenever you need it",
-      color: "from-orange-500 to-amber-600",
-      bgColor: "bg-orange-500/10",
-    },
-  ];
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Animate features
-      if (featuresRef.current) {
-        const featureItems = featuresRef.current.querySelectorAll(".feature-item");
-        gsap.fromTo(
-          featureItems,
-          { opacity: 0, x: -30 },
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: "power2.out",
-            delay: 0.2,
-          }
-        );
-      }
-
-      // Animate form
-      if (formRef.current) {
-        gsap.fromTo(
-          formRef.current,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power2.out",
-            delay: 0.3,
-          }
-        );
-      }
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div ref={containerRef} className="flex min-h-screen">
-      {/* Left side - Features/Benefits (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5" />
-
-        {/* Animated orbs */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/15 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[150px]" />
-
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center p-12 max-w-xl mx-auto">
-          <div className="mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Sparkles className="size-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Trusted by 10,000+ Students</span>
+    <Suspense
+      fallback={
+        <div className="login-page">
+          <div className="login-form-panel">
+            <div className="login-form-container">
+              <div className="animate-pulse">
+                <div className="h-10 w-32 bg-gray-200 rounded-full mx-auto mb-8" />
+                <div className="h-8 w-48 bg-gray-200 rounded mx-auto mb-4" />
+                <div className="h-4 w-64 bg-gray-200 rounded mx-auto mb-8" />
+                <div className="h-14 w-full bg-gray-200 rounded-xl" />
+              </div>
             </div>
-
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
-              Welcome back to{" "}
-              <span className="bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient_3s_linear_infinite]">
-                AssignX
-              </span>
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Your trusted partner for academic and professional project assistance.
-            </p>
-          </div>
-
-          {/* Feature list with hover effects */}
-          <div ref={featuresRef} className="space-y-4">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "feature-item group flex items-start gap-4 p-4 rounded-2xl transition-all duration-300 cursor-pointer",
-                  "hover:bg-white/60 dark:hover:bg-slate-800/60 hover:shadow-lg hover:shadow-primary/5",
-                  "border border-transparent hover:border-primary/10",
-                  hoveredFeature === index && "bg-white/60 dark:bg-slate-800/60 shadow-lg border-primary/10"
-                )}
-                onMouseEnter={() => setHoveredFeature(index)}
-                onMouseLeave={() => setHoveredFeature(null)}
-              >
-                <div className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
-                  feature.bgColor,
-                  "group-hover:scale-110 group-hover:shadow-lg"
-                )}>
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {feature.description}
-                  </p>
-                </div>
-                <ArrowRight className={cn(
-                  "size-5 text-muted-foreground transition-all duration-300 opacity-0 -translate-x-2",
-                  "group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary"
-                )} />
-              </div>
-            ))}
-          </div>
-
-          {/* Stats with hover effects */}
-          <div className="mt-12 flex gap-6">
-            {[
-              { value: "10K+", label: "Happy Students" },
-              { value: "50K+", label: "Projects Done" },
-              { value: "4.9", label: "Avg. Rating" },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "group p-4 rounded-xl transition-all duration-300 cursor-default",
-                  "hover:bg-white/60 dark:hover:bg-slate-800/60 hover:shadow-lg"
-                )}
-              >
-                <div className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent group-hover:scale-110 transition-transform origin-left">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
-
-        {/* Floating notification cards */}
-        <FloatingNotification
-          className="top-32 right-16"
-          delay={0.8}
-        />
-        <FloatingBadge
-          className="bottom-40 right-24"
-          delay={1.2}
-        />
-      </div>
-
-      {/* Right side - Login form */}
-      <div className="flex w-full lg:w-1/2 flex-col items-center justify-center px-4 py-12 bg-background">
-        <div ref={formRef} className="w-full max-w-sm space-y-8">
-          {/* Logo */}
-          <div className="text-center">
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/25">
-                <Sparkles className="size-6 text-white" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl font-bold" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                  AssignX
-                </span>
-                <Badge variant="secondary" className="text-xs">
-                  Beta
-                </Badge>
-              </div>
-            </div>
-            <p className="text-muted-foreground">Sign in to your account</p>
-          </div>
-
-          {/* Sign in form */}
-          <div className="space-y-4">
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border border-border/50 shadow-sm">
-              <GoogleSignInButton />
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-4 text-muted-foreground">
-                New to AssignX?
-              </span>
-            </div>
-          </div>
-
-          {/* Sign up link */}
-          <div className="text-center">
-            <Link
-              href="/onboarding"
-              className={cn(
-                "inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium",
-                "border-2 border-primary/20 text-primary",
-                "hover:bg-primary/5 hover:border-primary/40 transition-all duration-300",
-                "group"
-              )}
-            >
-              Create an account
-              <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Terms */}
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-foreground transition-colors">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-foreground transition-colors">
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* CSS for animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(1deg); }
-        }
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
-    </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

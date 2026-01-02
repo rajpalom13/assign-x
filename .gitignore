@@ -182,3 +182,6 @@ GoogleService-Info.plist
 # -----------------------------------------------
 claude-flow
 Complete
+
+# Auto Claude data directory
+.auto-claude/

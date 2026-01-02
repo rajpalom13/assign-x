@@ -141,20 +141,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!mounted) return;
 
-    if (success) {
-      final authState = ref.read(authProvider);
-      if (authState.isActivated) {
-        context.go('/dashboard');
-      } else {
-        context.go('/activation');
-      }
-    } else {
+    if (!success) {
       // Show error snackbar
       final error = ref.read(authProvider).error;
       if (error != null) {
         context.showErrorSnackBar(error);
       }
     }
+    // Router will automatically navigate based on auth state
   }
 
   /// Handles Google OAuth sign-in.
@@ -171,20 +165,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!mounted) return;
 
-    if (success) {
-      final authState = ref.read(authProvider);
-      if (authState.isActivated) {
-        context.go('/dashboard');
-      } else {
-        context.go('/activation');
-      }
-    } else {
+    if (!success) {
       // Show error snackbar if there's an error (not just cancelled)
       final error = ref.read(authProvider).error;
       if (error != null) {
         context.showErrorSnackBar(error);
       }
     }
+    // Router will automatically navigate based on auth state
   }
 
   @override
