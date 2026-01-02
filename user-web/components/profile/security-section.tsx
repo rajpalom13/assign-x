@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   PasswordCard,
@@ -9,10 +10,17 @@ import {
   PasswordChangeDialog,
   RevokeAllDialog,
 } from "./security";
+import {
+  getActiveSessions,
+  revokeSession,
+  revokeAllOtherSessions,
+  type SessionInfo,
+} from "@/lib/actions/auth";
 import type {
   SecuritySettings,
   PasswordChangeData,
   FormErrors,
+  ActiveSession,
 } from "@/types/profile";
 
 /**
@@ -32,16 +40,31 @@ interface SecuritySectionProps {
 }
 
 /**
+ * Convert SessionInfo from server action to ActiveSession for UI
+ */
+function toActiveSession(session: SessionInfo): ActiveSession {
+  return {
+    id: session.id,
+    device: session.device,
+    browser: session.browser,
+    location: session.location,
+    ipAddress: session.ipAddress,
+    lastActive: session.lastActive,
+    current: session.current,
+  };
+}
+
+/**
  * Security settings section component
  * Manages password, 2FA, and active sessions
+ * Fetches real session data from Supabase Auth API
  */
 export function SecuritySection({
   security,
   onPasswordChange,
   onToggle2FA,
-  onRevokeSession,
-  onRevokeAllSessions,
 }: SecuritySectionProps) {
+  const router = useRouter();
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [revokeAllDialogOpen, setRevokeAllDialogOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState<PasswordChangeData>({
@@ -54,6 +77,34 @@ export function SecuritySection({
   const [isToggling2FA, setIsToggling2FA] = useState(false);
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [isRevokingAll, setIsRevokingAll] = useState(false);
+
+  // Session state - fetched from Supabase Auth API
+  const [sessions, setSessions] = useState<ActiveSession[]>(security.activeSessions);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+
+  /** Fetch active sessions from Supabase Auth API */
+  const fetchSessions = useCallback(async () => {
+    setIsLoadingSessions(true);
+    try {
+      const result = await getActiveSessions();
+      if (result.error) {
+        // Use default session on error
+        setSessions(security.activeSessions);
+      } else {
+        setSessions(result.sessions.map(toActiveSession));
+      }
+    } catch {
+      // Use default session on error
+      setSessions(security.activeSessions);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [security.activeSessions]);
+
+  // Fetch sessions on mount
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   /** Validates password form fields */
   const validatePassword = (): boolean => {
@@ -102,11 +153,45 @@ export function SecuritySection({
     }
   };
 
-  /** Handles single session revocation */
+  /** Handles single session revocation via Supabase Auth API */
   const handleRevokeSession = async (sessionId: string) => {
+    // Find the session to check if it's current
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) {
+      toast.error("Session not found");
+      return;
+    }
+
     setRevokingSessionId(sessionId);
     try {
-      await onRevokeSession(sessionId);
+      const result = await revokeSession(sessionId, session.current);
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      if (result.shouldRedirect) {
+        // Current session was revoked, redirect to login
+        toast.success("Session revoked. Redirecting to login...");
+        // Clear local storage before redirect
+        if (typeof window !== "undefined") {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith("sb-") && key.includes("-auth-token"))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.push("user-storage", "auth-storage", "wallet-storage", "notification-storage", "project-storage");
+          keysToRemove.forEach((key) => localStorage.removeItem(key));
+        }
+        router.push("/login");
+        return;
+      }
+
+      // Update local state for non-current sessions
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
       toast.success("Session revoked");
     } catch {
       toast.error("Failed to revoke session");
@@ -115,13 +200,35 @@ export function SecuritySection({
     }
   };
 
-  /** Handles all sessions revocation */
+  /** Handles all sessions revocation via Supabase Auth API */
   const handleRevokeAllSessions = async () => {
     setIsRevokingAll(true);
     try {
-      await onRevokeAllSessions();
-      toast.success("All other sessions revoked");
+      const result = await revokeAllOtherSessions();
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Global signout was performed - redirect to login
+      toast.success("All sessions revoked. Redirecting to login...");
       setRevokeAllDialogOpen(false);
+
+      // Clear local storage before redirect
+      if (typeof window !== "undefined") {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith("sb-") && key.includes("-auth-token"))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.push("user-storage", "auth-storage", "wallet-storage", "notification-storage", "project-storage");
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+      }
+
+      router.push("/login");
     } catch {
       toast.error("Failed to revoke sessions");
     } finally {
@@ -146,7 +253,7 @@ export function SecuritySection({
         onToggle={handleToggle2FA}
       />
       <ActiveSessionsCard
-        sessions={security.activeSessions}
+        sessions={sessions}
         revokingSessionId={revokingSessionId}
         onRevokeSession={handleRevokeSession}
         onRevokeAllClick={() => setRevokeAllDialogOpen(true)}

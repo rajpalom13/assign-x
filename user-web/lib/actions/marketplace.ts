@@ -2,39 +2,48 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type {
+  MarketplaceFilters,
+  ListingType,
+  ProductCondition,
+  AnyListing,
+  ProductListing,
+  HousingListing,
+  OpportunityListing,
+  CommunityPost,
+} from "@/types/marketplace";
 
 /**
- * Listing type enum matching database schema
- * Maps to Supabase marketplace_listings.listing_type column
+ * Database listing type mapping
  */
-export type ListingType = "sell" | "rent" | "free" | "opportunity" | "housing";
+const listingTypeMap: Record<string, ListingType> = {
+  sell: "product",
+  housing: "housing",
+  opportunity: "opportunity",
+  community_post: "community",
+};
 
-/**
- * Options for fetching marketplace listings
- */
-export interface GetListingsOptions {
-  category?: ListingType | ListingType[] | "all";
-  search?: string;
-  limit?: number;
-  offset?: number;
-  priceMin?: number;
-  priceMax?: number;
-  sortBy?: "recent" | "price_low" | "price_high" | "popular";
-  universityOnly?: boolean;
-}
+const reverseListingTypeMap: Record<ListingType, string> = {
+  product: "sell",
+  housing: "housing",
+  opportunity: "opportunity",
+  community: "community_post",
+};
 
 /**
  * Data for creating a new marketplace listing
  */
 export interface CreateListingData {
-  listingType: ListingType;
+  listingType?: string;
   title: string;
   description?: string;
   price?: number;
   priceNegotiable?: boolean;
   imageUrl?: string;
+  imageUrls?: string[];
   categoryId?: string;
   city?: string;
+  location?: string;
   locationText?: string;
 
   // Product-specific fields
@@ -62,121 +71,256 @@ export interface CreateListingData {
 }
 
 /**
+ * Create listing input type
+ */
+export interface CreateListingInput {
+  type: ListingType;
+  title: string;
+  description?: string;
+  price?: number;
+  categoryId?: string;
+  location?: string;
+  imageUrls?: string[];
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Update listing input type
+ */
+export interface UpdateListingInput {
+  title?: string;
+  description?: string;
+  price?: number;
+  categoryId?: string;
+  location?: string;
+  imageUrls?: string[];
+  isActive?: boolean;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Options for fetching marketplace listings
+ */
+export interface GetListingsOptions {
+  category?: string | string[] | "all";
+  search?: string;
+  limit?: number;
+  offset?: number;
+  priceMin?: number;
+  priceMax?: number;
+  sortBy?: "recent" | "price_low" | "price_high" | "popular";
+  universityOnly?: boolean;
+}
+
+/**
+ * Transform database listing to frontend type
+ */
+function transformListing(dbListing: any): AnyListing | null {
+  if (!dbListing) return null;
+
+  const type = listingTypeMap[dbListing.listing_type] || "product";
+  const baseListing = {
+    id: dbListing.id,
+    type,
+    title: dbListing.title,
+    description: dbListing.description,
+    userId: dbListing.seller_id,
+    userName: dbListing.seller?.full_name || "Unknown",
+    userAvatar: dbListing.seller?.avatar_url,
+    universityId: dbListing.university_id,
+    universityName: dbListing.university?.name,
+    createdAt: dbListing.created_at,
+    imageUrl: dbListing.image_urls?.[0] || dbListing.image_url,
+    likes: dbListing.favorite_count || 0,
+    isLiked: dbListing.is_favorited || false,
+    comments: dbListing.comment_count || 0,
+    views: dbListing.view_count || 0,
+  };
+
+  // Type-specific fields
+  const metadata = dbListing.metadata || {};
+
+  switch (type) {
+    case "product":
+      return {
+        ...baseListing,
+        type: "product",
+        price: dbListing.price || 0,
+        condition: (metadata.condition as ProductCondition) || "good",
+        category: dbListing.category?.name || metadata.category || "Other",
+        distance: metadata.distance,
+        isSold: metadata.is_sold || false,
+        isNegotiable: metadata.is_negotiable || false,
+      } as ProductListing;
+
+    case "housing":
+      return {
+        ...baseListing,
+        type: "housing",
+        monthlyRent: dbListing.price || 0,
+        roomType: metadata.room_type || "single",
+        location: dbListing.location || "",
+        distance: metadata.distance,
+        availableFrom: metadata.available_from,
+        amenities: metadata.amenities || [],
+        isAvailable: metadata.is_available !== false,
+      } as HousingListing;
+
+    case "opportunity":
+      return {
+        ...baseListing,
+        type: "opportunity",
+        opportunityType: metadata.opportunity_type || "internship",
+        company: metadata.company,
+        location: dbListing.location,
+        isRemote: metadata.is_remote || false,
+        deadline: metadata.deadline,
+        stipend: metadata.stipend,
+        duration: metadata.duration,
+      } as OpportunityListing;
+
+    case "community":
+      return {
+        ...baseListing,
+        type: "community",
+        postType: metadata.post_type || "discussion",
+        pollOptions: metadata.poll_options,
+        tags: metadata.tags || [],
+      } as CommunityPost;
+
+    default:
+      return null;
+  }
+}
+
+/**
  * Get marketplace listings with filtering, search, and pagination
  * Fetches from marketplace_listings table with seller profile relations
  */
-export async function getMarketplaceListings(options: GetListingsOptions = {}) {
+export async function getMarketplaceListings(
+  options: GetListingsOptions = {}
+): Promise<{ listings?: AnyListing[]; data?: AnyListing[]; total?: number; error: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Build base query with seller relation
-  let query = supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      seller:profiles!marketplace_listings_seller_id_fkey (
-        id,
-        full_name,
-        avatar_url
-      ),
-      category:marketplace_categories (
-        id,
-        name,
-        slug,
-        is_active
-      )
-    `)
-    .eq("is_active", true);
+  try {
+    // Build base query with seller relation
+    let query = supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        seller:profiles!marketplace_listings_seller_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        ),
+        category:marketplace_categories (
+          id,
+          name,
+          slug,
+          is_active
+        ),
+        university:universities!university_id(id, name)
+      `)
+      .eq("is_active", true);
 
-  // Filter by category/listing_type
-  if (options.category && options.category !== "all") {
-    if (Array.isArray(options.category)) {
-      query = query.in("listing_type", options.category);
-    } else {
-      query = query.eq("listing_type", options.category);
+    // Filter by category/listing_type
+    if (options.category && options.category !== "all") {
+      if (Array.isArray(options.category)) {
+        query = query.in("listing_type", options.category);
+      } else {
+        query = query.eq("listing_type", options.category);
+      }
     }
-  }
 
-  // Search in title and description
-  if (options.search) {
-    const searchTerm = `%${options.search}%`;
-    query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
-  }
-
-  // Price range filters
-  if (options.priceMin !== undefined && options.priceMin > 0) {
-    query = query.gte("price", options.priceMin);
-  }
-  if (options.priceMax !== undefined) {
-    query = query.lte("price", options.priceMax);
-  }
-
-  // University-only filter (requires user to be authenticated)
-  if (options.universityOnly && user) {
-    // Get user's university from their student profile
-    const { data: studentProfile } = await supabase
-      .from("students")
-      .select("university_id")
-      .eq("profile_id", user.id)
-      .single();
-
-    if (studentProfile?.university_id) {
-      query = query.eq("university_id", studentProfile.university_id);
+    // Search in title and description
+    if (options.search) {
+      const searchTerm = `%${options.search}%`;
+      query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
     }
+
+    // Price range filters
+    if (options.priceMin !== undefined && options.priceMin > 0) {
+      query = query.gte("price", options.priceMin);
+    }
+    if (options.priceMax !== undefined) {
+      query = query.lte("price", options.priceMax);
+    }
+
+    // University-only filter (requires user to be authenticated)
+    if (options.universityOnly && user) {
+      // Get user's university from their student profile
+      const { data: studentProfile } = await supabase
+        .from("students")
+        .select("university_id")
+        .eq("profile_id", user.id)
+        .single();
+
+      if (studentProfile?.university_id) {
+        query = query.eq("university_id", studentProfile.university_id);
+      }
+    }
+
+    // Sorting
+    switch (options.sortBy) {
+      case "price_low":
+        query = query.order("price", { ascending: true, nullsFirst: false });
+        break;
+      case "price_high":
+        query = query.order("price", { ascending: false, nullsFirst: false });
+        break;
+      case "popular":
+        query = query.order("view_count", { ascending: false });
+        break;
+      case "recent":
+      default:
+        query = query.order("created_at", { ascending: false });
+    }
+
+    // Pagination
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    if (options.offset) {
+      query = query.range(options.offset, options.offset + (options.limit || 20) - 1);
+    }
+
+    const { data: listings, error, count } = await query;
+
+    if (error) {
+      return { listings: [], total: 0, error: error.message };
+    }
+
+    // Transform listings to frontend format
+    let transformedListings = (listings || [])
+      .map((listing) => transformListing(listing))
+      .filter((l): l is AnyListing => l !== null);
+
+    // If user is authenticated, check for favorites
+    if (user && transformedListings.length > 0) {
+      const listingIds = transformedListings.map((l) => l.id);
+      const { data: favorites } = await supabase
+        .from("marketplace_favorites")
+        .select("listing_id")
+        .in("listing_id", listingIds)
+        .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`);
+
+      const favoriteIds = new Set(favorites?.map((f) => f.listing_id) || []);
+      transformedListings = transformedListings.map((listing) => ({
+        ...listing,
+        isLiked: favoriteIds.has(listing.id),
+      }));
+    }
+
+    return {
+      listings: transformedListings,
+      data: transformedListings,
+      total: count || transformedListings.length || 0,
+      error: null,
+    };
+  } catch (error: any) {
+    return { listings: [], data: [], total: 0, error: error.message };
   }
-
-  // Sorting
-  switch (options.sortBy) {
-    case "price_low":
-      query = query.order("price", { ascending: true, nullsFirst: false });
-      break;
-    case "price_high":
-      query = query.order("price", { ascending: false, nullsFirst: false });
-      break;
-    case "popular":
-      query = query.order("view_count", { ascending: false });
-      break;
-    case "recent":
-    default:
-      query = query.order("created_at", { ascending: false });
-  }
-
-  // Pagination
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
-  if (options.offset) {
-    query = query.range(options.offset, options.offset + (options.limit || 20) - 1);
-  }
-
-  const { data: listings, error, count } = await query;
-
-  if (error) {
-    return { listings: [], total: 0, error: error.message };
-  }
-
-  // If user is authenticated, check for favorites
-  let listingsWithFavorites = listings || [];
-  if (user && listings && listings.length > 0) {
-    const listingIds = listings.map((l) => l.id);
-    const { data: favorites } = await supabase
-      .from("marketplace_favorites")
-      .select("listing_id")
-      .eq("profile_id", user.id)
-      .in("listing_id", listingIds);
-
-    const favoriteIds = new Set(favorites?.map((f) => f.listing_id) || []);
-    listingsWithFavorites = listings.map((listing) => ({
-      ...listing,
-      is_favorited: favoriteIds.has(listing.id),
-    }));
-  }
-
-  return {
-    listings: listingsWithFavorites,
-    total: count || listings?.length || 0,
-    error: null,
-  };
 }
 
 /**
@@ -192,53 +336,70 @@ export async function getListingById(id: string) {
     return null;
   }
 
-  const { data: listing, error } = await supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      seller:profiles!marketplace_listings_seller_id_fkey (
-        id,
-        full_name,
-        avatar_url
-      ),
-      category:marketplace_categories (
-        id,
-        name,
-        slug,
-        is_active
-      )
-    `)
-    .eq("id", id)
-    .eq("is_active", true)
-    .single();
-
-  if (error) {
-    return null;
-  }
-
-  // Increment view count
-  await supabase
-    .from("marketplace_listings")
-    .update({ view_count: (listing.view_count || 0) + 1 })
-    .eq("id", id);
-
-  // Check if favorited by current user
-  let isFavorited = false;
-  if (user) {
-    const { data: favorite } = await supabase
-      .from("marketplace_favorites")
-      .select("id")
-      .eq("profile_id", user.id)
-      .eq("listing_id", id)
+  try {
+    const { data: listing, error } = await supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        seller:profiles!marketplace_listings_seller_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        ),
+        category:marketplace_categories (
+          id,
+          name,
+          slug,
+          is_active
+        ),
+        university:universities!university_id(id, name)
+      `)
+      .eq("id", id)
+      .eq("is_active", true)
       .single();
 
-    isFavorited = !!favorite;
-  }
+    if (error) {
+      return null;
+    }
 
-  return {
-    ...listing,
-    is_favorited: isFavorited,
-  };
+    // Increment view count
+    await supabase
+      .from("marketplace_listings")
+      .update({ view_count: (listing.view_count || 0) + 1 })
+      .eq("id", id);
+
+    // Check if favorited by current user
+    let isFavorited = false;
+    if (user) {
+      const { data: favorite } = await supabase
+        .from("marketplace_favorites")
+        .select("id")
+        .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
+        .eq("listing_id", id)
+        .single();
+
+      isFavorited = !!favorite;
+    }
+
+    const transformed = transformListing(listing);
+    return transformed ? { ...transformed, isLiked: isFavorited } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get a single marketplace listing by ID (alternative name)
+ */
+export async function getMarketplaceListingById(
+  id: string
+): Promise<{ data: AnyListing | null; error: string | null }> {
+  try {
+    const listing = await getListingById(id);
+    return { data: listing, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
 }
 
 /**
@@ -246,38 +407,50 @@ export async function getListingById(id: string) {
  */
 export async function getUserListings(status?: "active" | "inactive" | "all") {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = awaitsupabase.auth.getUser();
 
   if (!user) return [];
 
-  let query = supabase
-    .from("marketplace_listings")
-    .select(`
-      *,
-      category:marketplace_categories (
-        id,
-        name,
-        slug,
-        is_active
-      )
-    `)
-    .eq("seller_id", user.id)
-    .order("created_at", { ascending: false });
+  try {
+    let query = supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        category:marketplace_categories (
+          id,
+          name,
+          slug,
+          is_active
+        ),
+        seller:profiles!marketplace_listings_seller_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        ),
+        university:universities!university_id(id, name)
+      `)
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false });
 
-  if (status === "active") {
-    query = query.eq("is_active", true);
-  } else if (status === "inactive") {
-    query = query.eq("is_active", false);
-  }
-  // "all" doesn't filter by is_active
+    if (status === "active") {
+      query = query.eq("is_active", true);
+    } else if (status === "inactive") {
+      query = query.eq("is_active", false);
+    }
+    // "all" doesn't filter by is_active
 
-  const { data: listings, error } = await query;
+    const { data: listings, error } = await query;
 
-  if (error) {
+    if (error) {
+      return [];
+    }
+
+    return (listings || [])
+      .map((l) => transformListing(l))
+      .filter((l): l is AnyListing => l !== null);
+  } catch {
     return [];
   }
-
-  return listings || [];
 }
 
 /**
@@ -299,68 +472,129 @@ export async function createListing(data: CreateListingData) {
     return { error: "Listing type is required" };
   }
 
-  // Get user's university for university_id if they're a student
-  let universityId: string | null = null;
-  const { data: studentProfile } = await supabase
-    .from("students")
-    .select("university_id")
-    .eq("profile_id", user.id)
-    .single();
+  try {
+    // Get user's university for university_id if they're a student
+    let universityId: string | null = null;
+    const { data: studentProfile } = await supabase
+      .from("students")
+      .select("university_id")
+      .eq("profile_id", user.id)
+      .single();
 
-  if (studentProfile?.university_id) {
-    universityId = studentProfile.university_id;
-  }
+    if (studentProfile?.university_id) {
+      universityId = studentProfile.university_id;
+    }
 
-  const { data: listing, error } = await supabase
-    .from("marketplace_listings")
-    .insert({
-      seller_id: user.id,
-      listing_type: data.listingType,
-      title: data.title.trim(),
-      description: data.description?.trim() || null,
-      price: data.price || null,
-      price_negotiable: data.priceNegotiable ?? true,
-      image_url: data.imageUrl || null,
-      category_id: data.categoryId || null,
-      university_id: universityId,
-      city: data.city?.trim() || null,
-      location_text: data.locationText?.trim() || null,
+    const dbListingType = reverseListingTypeMap[data.listingType as ListingType] || data.listingType;
 
-      // Product-specific fields
-      item_condition: data.itemCondition || null,
+    const { data: listing, error } = await supabase
+      .from("marketplace_listings")
+      .insert({
+        seller_id: user.id,
+        listing_type: dbListingType,
+        title: data.title.trim(),
+        description: data.description?.trim() || null,
+        price: data.price || null,
+        price_negotiable: data.priceNegotiable ?? true,
+        image_url: data.imageUrl || null,
+        image_urls: data.imageUrls || [],
+        category_id: data.categoryId || null,
+        university_id: universityId,
+        city: data.city?.trim() || null,
+        location_text: data.locationText?.trim() || null,
+        location: data.location?.trim() || null,
 
-      // Housing-specific fields
-      housing_type: data.housingType || null,
-      bedrooms: data.bedrooms || null,
-      rent_period: data.rentPeriod || null,
-      available_from: data.availableFrom || null,
+        // Product-specific fields
+        item_condition: data.itemCondition || null,
 
-      // Opportunity-specific fields
-      opportunity_type: data.opportunityType || null,
-      opportunity_url: data.opportunityUrl || null,
-      application_deadline: data.applicationDeadline || null,
-      company_name: data.companyName || null,
+        // Housing-specific fields
+        housing_type: data.housingType || null,
+        bedrooms: data.bedrooms || null,
+        rent_period: data.rentPeriod || null,
+        available_from: data.availableFrom || null,
 
-      // Community/Poll fields
-      poll_options: data.pollOptions || null,
-      poll_ends_at: data.pollEndsAt || null,
-      post_content: data.postContent || null,
+        // Opportunity-specific fields
+        opportunity_type: data.opportunityType || null,
+        opportunity_url: data.opportunityUrl || null,
+        application_deadline: data.applicationDeadline || null,
+        company_name: data.companyName || null,
 
-      // Metadata and status
-      metadata: data.metadata || {},
-      status: "active",
-      is_active: true,
-      view_count: 0,
-    })
-    .select()
-    .single();
+        // Community/Poll fields
+        poll_options: data.pollOptions || null,
+        poll_ends_at: data.pollEndsAt || null,
+        post_content: data.postContent || null,
 
-  if (error) {
+        // Metadata and status
+        metadata: data.metadata || {},
+        status: "active",
+        is_active: true,
+        view_count: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    revalidatePath("/connect");
+    return { success: true, listing };
+  } catch (error: any) {
     return { error: error.message };
   }
+}
 
-  revalidatePath("/connect");
-  return { success: true, listing };
+/**
+ * Create a new marketplace listing (alternative interface)
+ */
+export async function createMarketplaceListing(
+  input: CreateListingInput
+): Promise<{ data: { id: string } | null; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: null, error: "Not authenticated" };
+  }
+
+  try {
+    // Get user's university ID from student profile
+    const { data: student } = await supabase
+      .from("students")
+      .select("university_id")
+      .eq("profile_id", user.id)
+      .single();
+
+    const dbListingType = reverseListingTypeMap[input.type];
+
+    const { data: listing, error } = await supabase
+      .from("marketplace_listings")
+      .insert({
+        seller_id: user.id,
+        title: input.title,
+        description: input.description,
+        price: input.price || 0,
+        listing_type: dbListingType,
+        category_id: input.categoryId,
+        location: input.location,
+        university_id: student?.university_id,
+        image_urls: input.imageUrls || [],
+        is_active: true,
+        view_count: 0,
+        metadata: input.metadata || {},
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath("/connect");
+    return { data: { id: listing.id }, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
 }
 
 /**
@@ -377,42 +611,103 @@ export async function updateListing(
     return { error: "Not authenticated" };
   }
 
-  // Verify ownership
-  const { data: existingListing } = await supabase
-    .from("marketplace_listings")
-    .select("seller_id")
-    .eq("id", id)
-    .single();
+  try {
+    // Verify ownership
+    const { data: existingListing } = await supabase
+      .from("marketplace_listings")
+      .select("seller_id")
+      .eq("id", id)
+      .single();
 
-  if (!existingListing || existingListing.seller_id !== user.id) {
-    return { error: "Listing not found or access denied" };
-  }
+    if (!existingListing || existingListing.seller_id !== user.id) {
+      return { error: "Listing not found or access denied" };
+    }
 
-  // Build update object
-  const updateData: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  };
+    // Build update object
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
 
-  if (data.title !== undefined) updateData.title = data.title.trim();
-  if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-  if (data.price !== undefined) updateData.price = data.price;
-  if (data.imageUrl !== undefined) updateData.image_url = data.imageUrl;
-  if (data.categoryId !== undefined) updateData.category_id = data.categoryId;
-  if (data.metadata !== undefined) updateData.metadata = data.metadata;
-  if (data.isActive !== undefined) updateData.is_active = data.isActive;
+    if (data.title !== undefined) updateData.title = data.title.trim();
+    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.imageUrl !== undefined) updateData.image_url = data.imageUrl;
+    if (data.imageUrls !== undefined) updateData.image_urls = data.imageUrls;
+    if (data.categoryId !== undefined) updateData.category_id = data.categoryId;
+    if (data.location !== undefined) updateData.location = data.location;
+    if (data.metadata !== undefined) updateData.metadata = data.metadata;
+    if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
-  const { error } = await supabase
-    .from("marketplace_listings")
-    .update(updateData)
-    .eq("id", id);
+    const { error } = await supabase
+      .from("marketplace_listings")
+      .update(updateData)
+      .eq("id", id);
 
-  if (error) {
+    if (error) {
+      return { error: error.message };
+    }
+
+    revalidatePath("/connect");
+    revalidatePath(`/connect/${id}`);
+    return { success: true };
+  } catch (error: any) {
     return { error: error.message };
   }
+}
 
-  revalidatePath("/connect");
-  revalidatePath(`/connect/${id}`);
-  return { success: true };
+/**
+ * Update an existing marketplace listing (alternative interface)
+ */
+export async function updateMarketplaceListing(
+  id: string,
+  input: UpdateListingInput
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from("marketplace_listings")
+      .select("seller_id")
+      .eq("id", id)
+      .single();
+
+    if (!existing || existing.seller_id !== user.id) {
+      return { success: false, error: "Listing not found or access denied" };
+    }
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (input.title !== undefined) updateData.title = input.title;
+    if (input.description !== undefined) updateData.description = input.description;
+    if (input.price !== undefined) updateData.price = input.price;
+    if (input.categoryId !== undefined) updateData.category_id = input.categoryId;
+    if (input.location !== undefined) updateData.location = input.location;
+    if (input.imageUrls !== undefined) updateData.image_urls = input.imageUrls;
+    if (input.isActive !== undefined) updateData.is_active = input.isActive;
+    if (input.metadata !== undefined) updateData.metadata = input.metadata;
+
+    const { error } = await supabase
+      .from("marketplace_listings")
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) throw error;
+
+    revalidatePath("/connect");
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 /**
@@ -426,29 +721,75 @@ export async function deleteListing(id: string) {
     return { error: "Not authenticated" };
   }
 
-  // Verify ownership
-  const { data: existingListing } = await supabase
-    .from("marketplace_listings")
-    .select("seller_id")
-    .eq("id", id)
-    .single();
+  try {
+    // Verify ownership
+    const { data: existingListing } = await supabase
+      .from("marketplace_listings")
+      .select("seller_id")
+      .eq("id", id)
+      .single();
 
-  if (!existingListing || existingListing.seller_id !== user.id) {
-    return { error: "Listing not found or access denied" };
-  }
+    if (!existingListing || existingListing.seller_id !== user.id) {
+      return { error: "Listing not found or access denied" };
+    }
 
-  // Soft delete by setting is_active to false
-  const { error } = await supabase
-    .from("marketplace_listings")
-    .update({ is_active: false, updated_at: new Date().toISOString() })
-    .eq("id", id);
+    // Soft delete by setting is_active to false
+    const { error } = await supabase
+      .from("marketplace_listings")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("id", id);
 
-  if (error) {
+    if (error) {
+      return { error: error.message };
+    }
+
+    revalidatePath("/connect");
+    return { success: true };
+  } catch (error: any) {
     return { error: error.message };
   }
+}
 
-  revalidatePath("/connect");
-  return { success: true };
+/**
+ * Delete a marketplace listing (alternative interface)
+ */
+export async function deleteMarketplaceListing(
+  id: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Verify ownership
+    const { data: existing } = await supabase
+      .from("marketplace_listings")
+      .select("seller_id")
+      .eq("id", id)
+      .single();
+
+    if (!existing || existing.seller_id !== user.id) {
+      return { success: false, error: "Listing not found or access denied" };
+    }
+
+    // Soft delete
+    const { error } = await supabase
+      .from("marketplace_listings")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    revalidatePath("/connect");
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 /**
@@ -462,42 +803,98 @@ export async function toggleFavorite(listingId: string) {
     return { error: "Not authenticated" };
   }
 
-  // Check if already favorited
-  const { data: existingFavorite } = await supabase
-    .from("marketplace_favorites")
-    .select("id")
-    .eq("profile_id", user.id)
-    .eq("listing_id", listingId)
-    .single();
-
-  if (existingFavorite) {
-    // Remove favorite
-    const { error } = await supabase
+  try {
+    // Check if already favorited
+    const { data: existingFavorite } = await supabase
       .from("marketplace_favorites")
-      .delete()
-      .eq("id", existingFavorite.id);
+      .select("id")
+      .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
+      .eq("listing_id", listingId)
+      .single();
 
-    if (error) {
-      return { error: error.message };
+    if (existingFavorite) {
+      // Remove favorite
+      const { error } = await supabase
+        .from("marketplace_favorites")
+        .delete()
+        .eq("id", existingFavorite.id);
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      revalidatePath("/connect");
+      return { success: true, isFavorited: false };
+    } else {
+      // Add favorite
+      const { error } = await supabase
+        .from("marketplace_favorites")
+        .insert({
+          profile_id: user.id,
+          user_id: user.id,
+          listing_id: listingId,
+        });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      revalidatePath("/connect");
+      return { success: true, isFavorited: true };
     }
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
 
-    revalidatePath("/connect");
-    return { success: true, isFavorited: false };
-  } else {
-    // Add favorite
-    const { error } = await supabase
+/**
+ * Toggle favorite status for a listing (alternative interface)
+ */
+export async function toggleMarketplaceFavorite(
+  listingId: string
+): Promise<{ success: boolean; isFavorited: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, isFavorited: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Check if already favorited
+    const { data: existing } = await supabase
       .from("marketplace_favorites")
-      .insert({
-        profile_id: user.id,
-        listing_id: listingId,
-      });
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("listing_id", listingId)
+      .single();
 
-    if (error) {
-      return { error: error.message };
+    if (existing) {
+      // Remove favorite
+      const { error } = await supabase
+        .from("marketplace_favorites")
+        .delete()
+        .eq("id", existing.id);
+
+      if (error) throw error;
+
+      revalidatePath("/connect");
+      return { success: true, isFavorited: false, error: null };
+    } else {
+      // Add favorite
+      const { error } = await supabase
+        .from("marketplace_favorites")
+        .insert({ user_id: user.id, listing_id: listingId });
+
+      if (error) throw error;
+
+      revalidatePath("/connect");
+      return { success: true, isFavorited: true, error: null };
     }
-
-    revalidatePath("/connect");
-    return { success: true, isFavorited: true };
+  } catch (error: any) {
+    return { success: false, isFavorited: false, error: error.message };
   }
 }
 
@@ -510,37 +907,102 @@ export async function getFavoriteListings(limit = 20) {
 
   if (!user) return [];
 
-  const { data: favorites, error } = await supabase
-    .from("marketplace_favorites")
-    .select(`
-      listing:marketplace_listings (
-        *,
-        seller:profiles!marketplace_listings_seller_id_fkey (
-          id,
-          full_name,
-          avatar_url
-        ),
-        category:marketplace_categories (
-          id,
-          name,
-          slug,
-          is_active
+  try {
+    const { data: favorites, error } = await supabase
+      .from("marketplace_favorites")
+      .select(`
+        listing:marketplace_listings (
+          *,
+          seller:profiles!marketplace_listings_seller_id_fkey (
+            id,
+            full_name,
+            avatar_url
+          ),
+          category:marketplace_categories (
+            id,
+            name,
+            slug,
+            is_active
+          ),
+          university:universities!university_id(id, name)
         )
-      )
-    `)
-    .eq("profile_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+      `)
+      .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-  if (error) {
+    if (error) {
+      return [];
+    }
+
+    // Extract listings and mark as favorited
+    return (favorites || [])
+      .map((f) => f.listing)
+      .filter((l) => l !== null && l.is_active)
+      .map((l) => {
+        const transformed = transformListing(l);
+        return transformed ? { ...transformed, isLiked: true } : null;
+      })
+      .filter((l): l is AnyListing => l !== null);
+  } catch {
     return [];
   }
+}
 
-  // Extract listings and mark as favorited
-  return (favorites || [])
-    .map((f) => f.listing)
-    .filter((l) => l !== null && l.is_active)
-    .map((l) => ({ ...l, is_favorited: true }));
+/**
+ * Get user's favorite listings (alternative interface)
+ */
+export async function getUserFavoriteListings(): Promise<{
+  data: AnyListing[] | null;
+  error: string | null;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: null, error: "Not authenticated" };
+  }
+
+  try {
+    const { data: favorites, error: favError } = await supabase
+      .from("marketplace_favorites")
+      .select("listing_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (favError) throw favError;
+
+    if (!favorites || favorites.length === 0) {
+      return { data: [], error: null };
+    }
+
+    const listingIds = favorites.map((f) => f.listing_id);
+
+    const { data: listings, error } = await supabase
+      .from("marketplace_listings")
+      .select(
+        `
+        *,
+        seller:profiles!seller_id(id, full_name, avatar_url),
+        category:marketplace_categories!category_id(id, name, slug),
+        university:universities!university_id(id, name)
+      `
+      )
+      .in("id", listingIds);
+
+    if (error) throw error;
+
+    const transformed = (listings || [])
+      .map((l) => transformListing(l))
+      .filter((l): l is AnyListing => l !== null)
+      .map((l) => ({ ...l, isLiked: true }));
+
+    return { data: transformed, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
 }
 
 /**
@@ -549,17 +1011,21 @@ export async function getFavoriteListings(limit = 20) {
 export async function getMarketplaceCategories() {
   const supabase = await createClient();
 
-  const { data: categories, error } = await supabase
-    .from("marketplace_categories")
-    .select("*")
-    .eq("is_active", true)
-    .order("display_order", { ascending: true });
+  try {
+    const { data: categories, error } = await supabase
+      .from("marketplace_categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
 
-  if (error) {
+    if (error) {
+      return [];
+    }
+
+    return categories || [];
+  } catch {
     return [];
   }
-
-  return categories || [];
 }
 
 /**
@@ -571,20 +1037,24 @@ export async function searchListings(query: string, limit = 5) {
     return [];
   }
 
-  const supabase = await createClient();
-  const searchTerm = `%${query.trim()}%`;
+  try {
+    const supabase = await createClient();
+    const searchTerm = `%${query.trim()}%`;
 
-  const { data: listings, error } = await supabase
-    .from("marketplace_listings")
-    .select("id, title, listing_type, price")
-    .eq("is_active", true)
-    .ilike("title", searchTerm)
-    .order("view_count", { ascending: false })
-    .limit(limit);
+    const { data: listings, error } = await supabase
+      .from("marketplace_listings")
+      .select("id, title, listing_type, price")
+      .eq("is_active", true)
+      .ilike("title", searchTerm)
+      .order("view_count", { ascending: false })
+      .limit(limit);
 
-  if (error) {
+    if (error) {
+      return [];
+    }
+
+    return listings || [];
+  } catch {
     return [];
   }
-
-  return listings || [];
 }

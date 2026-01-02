@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -17,6 +17,8 @@ import {
   Tag,
   Building2,
   Clock,
+  Upload,
+  AlertCircle,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -33,67 +35,70 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { createListing } from "@/lib/actions/marketplace";
-import type { ProductCondition } from "@/types/marketplace";
+import type { ListingType, ProductCondition } from "@/types/marketplace";
+import {
+  uploadMarketplaceImage,
+  createMarketplaceListing,
+} from "@/lib/actions/marketplace";
 
 /**
- * UI listing type - used for the form selection
+ * Image upload state interface
  */
-type UIListingType = "product" | "housing" | "opportunity" | "community";
+interface UploadedImage {
+  id: string;
+  url: string;
+  previewUrl: string;
+  status: "uploading" | "complete" | "error";
+  progress: number;
+  error?: string;
+}
+
+/**
+ * Maximum file size in bytes (5MB)
+ */
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * Allowed image types
+ */
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 /**
  * Listing type configuration
  */
 const listingTypes = [
   {
-    id: "product" as UIListingType,
+    id: "product" as ListingType,
     label: "Product",
     description: "Books, gadgets, supplies",
     icon: Package,
     color: "bg-blue-500",
   },
   {
-    id: "housing" as UIListingType,
+    id: "housing" as ListingType,
     label: "Housing",
     description: "Rooms, flatmates",
     icon: Home,
     color: "bg-green-500",
   },
   {
-    id: "opportunity" as UIListingType,
+    id: "opportunity" as ListingType,
     label: "Opportunity",
     description: "Jobs, internships, events",
     icon: Briefcase,
     color: "bg-purple-500",
   },
   {
-    id: "community" as UIListingType,
+    id: "community" as ListingType,
     label: "Community",
     description: "Questions, reviews, polls",
     icon: MessageSquare,
     color: "bg-orange-500",
   },
 ];
-
-/**
- * Map UI listing type to database listing type
- */
-function mapUITypeToDBType(uiType: UIListingType): "sell" | "rent" | "free" | "opportunity" | "housing" {
-  switch (uiType) {
-    case "product":
-      return "sell";
-    case "housing":
-      return "housing";
-    case "opportunity":
-      return "opportunity";
-    case "community":
-      return "free";
-    default:
-      return "sell";
-  }
-}
 
 /**
  * Product categories
@@ -146,9 +151,11 @@ const roomTypes = [
  */
 export default function CreateListingPage() {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<UIListingType | null>(null);
+  const [selectedType, setSelectedType] = useState<ListingType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Common fields
   const [title, setTitle] = useState("");
@@ -184,32 +191,200 @@ export default function CreateListingPage() {
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   /**
-   * Handle image upload
+   * Validate file before upload
    */
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    if (images.length + files.length > 5) {
-      toast.error("Maximum 5 images allowed");
-      return;
+  const validateFile = useCallback((file: File): string | null => {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return `File type not supported: ${file.name}. Allowed: JPEG, PNG, WebP, GIF`;
     }
+    if (file.size > MAX_FILE_SIZE) {
+      return `File too large: ${file.name} (max 5MB)`;
+    }
+    return null;
+  }, []);
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImages((prev) => [...prev, reader.result as string]);
+  /**
+   * Upload a single file to Supabase Storage
+   */
+  const uploadFile = useCallback(async (file: File): Promise<UploadedImage | null> => {
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Create local preview URL
+    const previewUrl = URL.createObjectURL(file);
+
+    // Add to state as uploading
+    const uploadingImage: UploadedImage = {
+      id,
+      url: "",
+      previewUrl,
+      status: "uploading",
+      progress: 0,
+    };
+
+    setImages((prev) => [...prev, uploadingImage]);
+
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setImages((prev) =>
+        prev.map((img) =>
+          img.id === id && img.status === "uploading"
+            ? { ...img, progress: Math.min(img.progress + 20, 80) }
+            : img
+        )
+      );
+    }, 200);
+
+    try {
+      // Convert file to base64
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Upload to Supabase Storage via server action
+      const result = await uploadMarketplaceImage({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        base64Data,
+      });
+
+      clearInterval(progressInterval);
+
+      if (result.error) {
+        // Update state with error
+        setImages((prev) =>
+          prev.map((img) =>
+            img.id === id
+              ? { ...img, status: "error", error: result.error || "Upload failed", progress: 0 }
+              : img
+          )
+        );
+        toast.error(result.error);
+        return null;
+      }
+
+      // Update state with success
+      const completedImage: UploadedImage = {
+        id,
+        url: result.data!.url,
+        previewUrl,
+        status: "complete",
+        progress: 100,
       };
-      reader.readAsDataURL(file);
-    });
-  };
+
+      setImages((prev) =>
+        prev.map((img) => (img.id === id ? completedImage : img))
+      );
+
+      return completedImage;
+    } catch (error) {
+      clearInterval(progressInterval);
+
+      setImages((prev) =>
+        prev.map((img) =>
+          img.id === id
+            ? { ...img, status: "error", error: "Upload failed", progress: 0 }
+            : img
+        )
+      );
+
+      toast.error("Failed to upload image");
+      return null;
+    }
+  }, []);
+
+  /**
+   * Process files for upload
+   */
+  const processFiles = useCallback(
+    async (files: FileList | null) => {
+      if (!files) return;
+
+      setUploadError(null);
+
+      const currentImageCount = images.filter(
+        (img) => img.status !== "error"
+      ).length;
+
+      if (currentImageCount + files.length > 5) {
+        setUploadError("Maximum 5 images allowed");
+        toast.error("Maximum 5 images allowed");
+        return;
+      }
+
+      // Validate all files first
+      for (const file of Array.from(files)) {
+        const validationError = validateFile(file);
+        if (validationError) {
+          setUploadError(validationError);
+          toast.error(validationError);
+          return;
+        }
+      }
+
+      // Upload files
+      for (const file of Array.from(files)) {
+        await uploadFile(file);
+      }
+    },
+    [images, validateFile, uploadFile]
+  );
+
+  /**
+   * Handle file input change
+   */
+  const handleImageUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      processFiles(e.target.files);
+      e.target.value = ""; // Reset input
+    },
+    [processFiles]
+  );
+
+  /**
+   * Handle drag over
+   */
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  /**
+   * Handle drag leave
+   */
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  /**
+   * Handle drop
+   */
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      processFiles(e.dataTransfer.files);
+    },
+    [processFiles]
+  );
 
   /**
    * Remove image
    */
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  const removeImage = useCallback((imageId: string) => {
+    setImages((prev) => {
+      const imageToRemove = prev.find((img) => img.id === imageId);
+      if (imageToRemove?.previewUrl) {
+        URL.revokeObjectURL(imageToRemove.previewUrl);
+      }
+      return prev.filter((img) => img.id !== imageId);
+    });
+    setUploadError(null);
+  }, []);
 
   /**
    * Add amenity
@@ -297,58 +472,79 @@ export default function CreateListingPage() {
   const handleSubmit = async () => {
     if (!validateForm() || !selectedType) return;
 
+    // Check if there are pending uploads
+    const pendingUploads = images.filter((img) => img.status === "uploading");
+    if (pendingUploads.length > 0) {
+      toast.error("Please wait for all images to finish uploading");
+      return;
+    }
+
+    // Get successfully uploaded image URLs
+    const imageUrls = images
+      .filter((img) => img.status === "complete" && img.url)
+      .map((img) => img.url);
+
     setIsSubmitting(true);
     try {
-      // Map UI type to database type
-      const dbListingType = mapUITypeToDBType(selectedType);
+      // Build metadata based on type
+      let metadata: Record<string, any> = {};
+      let priceValue = 0;
+      let locationValue: string | undefined;
 
-      // Build the listing data based on type
-      const listingData: Parameters<typeof createListing>[0] = {
-        listingType: dbListingType,
-        title,
-        description: description || undefined,
-        imageUrl: images[0] || undefined, // Use first image as main image
-      };
-
-      // Add type-specific fields
       switch (selectedType) {
         case "product":
-          listingData.price = parseFloat(price) || undefined;
-          listingData.priceNegotiable = isNegotiable;
-          listingData.itemCondition = condition;
-          // Store category in metadata since we don't have category_id
-          listingData.metadata = { category, images: images.slice(1) };
+          priceValue = parseFloat(price) || 0;
+          metadata = {
+            condition,
+            category,
+            is_negotiable: isNegotiable,
+          };
           break;
-
         case "housing":
-          listingData.price = parseFloat(monthlyRent) || undefined;
-          listingData.housingType = roomType as "single" | "shared" | "flat";
-          listingData.locationText = location;
-          listingData.availableFrom = availableFrom || undefined;
-          listingData.metadata = { amenities, images: images.slice(1) };
+          priceValue = parseFloat(monthlyRent) || 0;
+          locationValue = location;
+          metadata = {
+            room_type: roomType,
+            available_from: availableFrom || undefined,
+            amenities,
+            is_available: true,
+          };
           break;
-
         case "opportunity":
-          listingData.opportunityType = opportunityType as "internship" | "job" | "event" | "gig" | "workshop";
-          listingData.companyName = company || undefined;
-          listingData.locationText = oppLocation || undefined;
-          listingData.applicationDeadline = deadline || undefined;
-          listingData.price = stipend ? parseFloat(stipend) : undefined;
-          listingData.metadata = { isRemote, duration, images: images.slice(1) };
+          locationValue = oppLocation;
+          metadata = {
+            opportunity_type: opportunityType,
+            company: company || undefined,
+            is_remote: isRemote,
+            deadline: deadline || undefined,
+            stipend: stipend ? parseFloat(stipend) : undefined,
+            duration: duration || undefined,
+          };
           break;
-
         case "community":
-          listingData.postContent = description;
-          if (postType === "poll") {
-            listingData.pollOptions = pollOptions
-              .filter((o) => o.trim())
-              .map((text, i) => ({ id: `opt-${i}`, text, votes: 0 }));
-          }
-          listingData.metadata = { postType, tags, images: images.slice(1) };
+          metadata = {
+            post_type: postType,
+            tags,
+            poll_options:
+              postType === "poll"
+                ? pollOptions
+                    .filter((o) => o.trim())
+                    .map((text, i) => ({ id: `opt-${i}`, text, votes: 0 }))
+                : undefined,
+          };
           break;
       }
 
-      const result = await createListing(listingData);
+      // Create listing via server action
+      const result = await createMarketplaceListing({
+        type: selectedType,
+        title,
+        description: description || undefined,
+        price: priceValue,
+        location: locationValue,
+        imageUrls,
+        metadata,
+      });
 
       if (result.error) {
         toast.error(result.error);
@@ -429,29 +625,67 @@ export default function CreateListingPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Photos</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex gap-3 flex-wrap">
-                  {images.map((img, index) => (
-                    <div
-                      key={index}
-                      className="relative w-20 h-20 rounded-lg overflow-hidden"
-                    >
-                      <img
-                        src={img}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        className="absolute top-1 right-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center"
-                        onClick={() => removeImage(index)}
+              <CardContent className="space-y-4">
+                {uploadError && (
+                  <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-700">{uploadError}</p>
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "border-2 border-dashed rounded-lg p-6 transition-colors",
+                    isDragging
+                      ? "border-primary bg-primary/5"
+                      : "border-muted-foreground/25"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="flex gap-3 flex-wrap mb-4">
+                    {images.map((img) => (
+                      <div
+                        key={img.id}
+                        className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted"
                       >
-                        <X className="h-3 w-3 text-white" />
-                      </button>
-                    </div>
-                  ))}
-                  {images.length < 5 && (
-                    <label className="w-20 h-20 rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/50">
-                      <Camera className="h-6 w-6 text-muted-foreground" />
+                        <img
+                          src={img.previewUrl}
+                          alt={`Upload ${img.id}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {img.status === "uploading" && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Progress value={img.progress} className="w-10" />
+                          </div>
+                        )}
+                        {img.status === "error" && (
+                          <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center">
+                            <AlertCircle className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                        {img.status !== "uploading" && (
+                          <button
+                            className="absolute top-1 right-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70"
+                            onClick={() => removeImage(img.id)}
+                          >
+                            <X className="h-3 w-3 text-white" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {images.filter((img) => img.status !== "error").length < 5 && (
+                    <label className="flex flex-col items-center gap-2 cursor-pointer">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-foreground">
+                          Drop images or click to upload
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG, WebP, GIF • Max 5MB per image
+                        </p>
+                      </div>
                       <input
                         type="file"
                         accept="image/*"
@@ -462,7 +696,7 @@ export default function CreateListingPage() {
                     </label>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground">
                   Add up to 5 photos
                 </p>
               </CardContent>
@@ -501,37 +735,29 @@ export default function CreateListingPage() {
             {selectedType === "product" && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Pricing & Condition
-                  </CardTitle>
+                  <CardTitle className="text-base">Product Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="price">Price (₹) *</Label>
+                      <Label htmlFor="price">Price *</Label>
                       <Input
                         id="price"
                         type="number"
-                        placeholder="0"
+                        placeholder="₹0"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Condition</Label>
-                      <Select
-                        value={condition}
-                        onValueChange={(v) =>
-                          setCondition(v as ProductCondition)
-                        }
-                      >
-                        <SelectTrigger>
+                      <Label htmlFor="condition">Condition *</Label>
+                      <Select value={condition} onValueChange={(value) => setCondition(value as ProductCondition)}>
+                        <SelectTrigger id="condition">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="like_new">Like New</SelectItem>
+                          <SelectItem value="like-new">Like New</SelectItem>
                           <SelectItem value="good">Good</SelectItem>
                           <SelectItem value="fair">Fair</SelectItem>
                         </SelectContent>
@@ -540,10 +766,10 @@ export default function CreateListingPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Category *</Label>
+                    <Label htmlFor="category">Category *</Label>
                     <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                      <SelectTrigger id="category">
+                        <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
                         {productCategories.map((cat) => (
@@ -556,7 +782,7 @@ export default function CreateListingPage() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="negotiable">Price Negotiable</Label>
+                    <Label htmlFor="negotiable">Price Negotiable?</Label>
                     <Switch
                       id="negotiable"
                       checked={isNegotiable}
@@ -571,27 +797,24 @@ export default function CreateListingPage() {
             {selectedType === "housing" && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    Housing Details
-                  </CardTitle>
+                  <CardTitle className="text-base">Housing Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="rent">Monthly Rent (₹) *</Label>
-                      <Input
+                      <Label htmlFor="rent">Monthly Rent *</Label>
+<Input
                         id="rent"
                         type="number"
-                        placeholder="0"
+                        placeholder="₹0"
                         value={monthlyRent}
                         onChange={(e) => setMonthlyRent(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Room Type</Label>
+                      <Label htmlFor="room-type">Room Type *</Label>
                       <Select value={roomType} onValueChange={setRoomType}>
-                        <SelectTrigger>
+                        <SelectTrigger id="room-type">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -607,16 +830,12 @@ export default function CreateListingPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="location">Location *</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="location"
-                        placeholder="Area, Landmark"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+                    <Input
+                      id="location"
+                      placeholder="Enter location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -630,37 +849,43 @@ export default function CreateListingPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Amenities</Label>
+                    <Label htmlFor="amenity-input">Amenities</Label>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Add amenity"
+                        id="amenity-input"
+                        placeholder="e.g., WiFi, AC"
                         value={amenityInput}
                         onChange={(e) => setAmenityInput(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && addAmenity()}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            addAmenity();
+                          }
+                        }}
                       />
-                      <Button type="button" onClick={addAmenity}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addAmenity}
+                        className="px-3"
+                      >
                         Add
                       </Button>
                     </div>
-                    {amenities.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {amenities.map((amenity, i) => (
-                          <Badge key={i} variant="secondary">
-                            {amenity}
-                            <button
-                              className="ml-1"
-                              onClick={() =>
-                                setAmenities((a) =>
-                                  a.filter((_, idx) => idx !== i)
-                                )
-                              }
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex gap-2 flex-wrap mt-2">
+                      {amenities.map((amenity) => (
+                        <Badge
+                          key={amenity}
+                          variant="secondary"
+                          className="gap-1 cursor-pointer"
+                          onClick={() =>
+                            setAmenities(amenities.filter((a) => a !== amenity))
+                          }
+                        >
+                          {amenity}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -670,108 +895,85 @@ export default function CreateListingPage() {
             {selectedType === "opportunity" && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    Opportunity Details
-                  </CardTitle>
+                  <CardTitle className="text-base">Opportunity Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Type</Label>
-                      <Select
-                        value={opportunityType}
-                        onValueChange={setOpportunityType}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {opportunityTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Company/Org</Label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="company"
-                          placeholder="Company name"
-                          value={company}
-                          onChange={(e) => setCompany(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="opp-type">Opportunity Type</Label>
+                    <Select value={opportunityType} onValueChange={setOpportunityType}>
+                      <SelectTrigger id="opp-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {opportunityTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="oppLocation">Location</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="oppLocation"
-                          placeholder="City"
-                          value={oppLocation}
-                          onChange={(e) => setOppLocation(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pt-8">
-                      <Switch
-                        id="remote"
-                        checked={isRemote}
-                        onCheckedChange={setIsRemote}
-                      />
-                      <Label htmlFor="remote">Remote</Label>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company/Organization</Label>
+                    <Input
+                      id="company"
+                      placeholder="Company name"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="deadline">Application Deadline</Label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="deadline"
-                          type="date"
-                          value={deadline}
-                          onChange={(e) => setDeadline(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
+                      <Input
+                        id="deadline"
+                        type="date"
+                        value={deadline}
+                        onChange={(e) => setDeadline(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="stipend">Stipend (₹/month)</Label>
+                      <Label htmlFor="stipend">Stipend/Salary</Label>
                       <Input
                         id="stipend"
                         type="number"
-                        placeholder="0"
+                        placeholder="₹0"
                         value={stipend}
                         onChange={(e) => setStipend(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duration</Label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="opp-location">Location</Label>
                       <Input
-                        id="duration"
-                        placeholder="e.g., 3 months"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        className="pl-10"
+                        id="opp-location"
+                        placeholder="Job location"
+                        value={oppLocation}
+                        onChange={(e) => setOppLocation(e.target.value)}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="duration">Duration</Label>
+                      <Input
+                        id="duration"
+                        placeholder="e.g., 2 months"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="remote">Remote?</Label>
+                    <Switch
+                      id="remote"
+                      checked={isRemote}
+                      onCheckedChange={setIsRemote}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -781,16 +983,13 @@ export default function CreateListingPage() {
             {selectedType === "community" && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Post Details
-                  </CardTitle>
+                  <CardTitle className="text-base">Community Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Post Type</Label>
+                    <Label htmlFor="post-type">Post Type</Label>
                     <Select value={postType} onValueChange={setPostType}>
-                      <SelectTrigger>
+                      <SelectTrigger id="post-type">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -803,36 +1002,20 @@ export default function CreateListingPage() {
                     </Select>
                   </div>
 
-                  {/* Poll Options */}
                   {postType === "poll" && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Poll Options</Label>
                       {pollOptions.map((option, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            placeholder={`Option ${index + 1}`}
-                            value={option}
-                            onChange={(e) =>
-                              updatePollOption(index, e.target.value)
-                            }
-                          />
-                          {index > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                setPollOptions((opts) =>
-                                  opts.filter((_, i) => i !== index)
-                                )
-                              }
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        <Input
+                          key={index}
+                          placeholder={`Option ${index + 1}`}
+                          value={option}
+                          onChange={(e) => updatePollOption(index, e.target.value)}
+                        />
                       ))}
                       {pollOptions.length < 6 && (
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={addPollOption}
@@ -843,41 +1026,42 @@ export default function CreateListingPage() {
                     </div>
                   )}
 
-                  {/* Tags */}
                   <div className="space-y-2">
-                    <Label>Tags</Label>
+                    <Label htmlFor="tag-input">Tags</Label>
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Add tag"
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && addTag()}
-                          className="pl-10"
-                        />
-                      </div>
-                      <Button type="button" onClick={addTag}>
+                      <Input
+                        id="tag-input"
+                        placeholder="Add tags"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            addTag();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addTag}
+                        className="px-3"
+                      >
                         Add
                       </Button>
                     </div>
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {tags.map((tag, i) => (
-                          <Badge key={i} variant="secondary">
-                            #{tag}
-                            <button
-                              className="ml-1"
-                              onClick={() =>
-                                setTags((t) => t.filter((_, idx) => idx !== i))
-                              }
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex gap-2 flex-wrap mt-2">
+                      {tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="gap-1 cursor-pointer"
+                          onClick={() => setTags(tags.filter((t) => t !== tag))}
+                        >
+                          #{tag}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -885,10 +1069,10 @@ export default function CreateListingPage() {
 
             {/* Submit Button */}
             <Button
-              className="w-full"
-              size="lg"
               onClick={handleSubmit}
               disabled={isSubmitting}
+              className="w-full"
+              size="lg"
             >
               {isSubmitting ? (
                 <>

@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, MapPin, ArrowRight, Briefcase, CalendarDays } from "lucide-react"
+import { Calendar, Heart, MapPin, ArrowRight, Briefcase, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import type { ListingDisplay } from "./masonry-grid"
  */
 interface BannerCardProps {
   listing: ListingDisplay
+  onFavorite?: (listingId: string) => void
   className?: string
 }
 
@@ -20,8 +21,14 @@ interface BannerCardProps {
  * BannerCard component for events and job posts
  * Full-width card with image, title, date, and CTA
  */
-export function BannerCard({ listing, className }: BannerCardProps) {
+export function BannerCard({ listing, onFavorite, className }: BannerCardProps) {
   const isOpportunity = listing.listing_type === "opportunity"
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onFavorite?.(listing.id)
+  }
 
   return (
     <Link href={`/marketplace/${listing.id}`}>
@@ -32,6 +39,23 @@ export function BannerCard({ listing, className }: BannerCardProps) {
           className
         )}
       >
+        {/* Favorite Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 top-2 z-10 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
+          onClick={handleFavorite}
+        >
+          <Heart
+            className={cn(
+              "h-4 w-4 transition-colors",
+              listing.is_favorited
+                ? "fill-red-500 text-red-500"
+                : "text-gray-600"
+            )}
+          />
+        </Button>
+
         <div className="flex flex-col sm:flex-row">
           {/* Image */}
           <div className="relative h-40 w-full sm:h-auto sm:w-48 flex-shrink-0">

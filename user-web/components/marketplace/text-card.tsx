@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { MessageSquare, ThumbsUp, User } from "lucide-react"
+import { Heart, MessageSquare, ThumbsUp, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import type { ListingDisplay } from "./masonry-grid"
 
 /**
@@ -12,6 +13,7 @@ import type { ListingDisplay } from "./masonry-grid"
  */
 interface TextCardProps {
   listing: ListingDisplay
+  onFavorite?: (listingId: string) => void
   className?: string
 }
 
@@ -31,9 +33,15 @@ const bgColors = [
  * TextCard component for community posts
  * Displays questions, reviews, or discussions with solid background
  */
-export function TextCard({ listing, className }: TextCardProps) {
+export function TextCard({ listing, onFavorite, className }: TextCardProps) {
   // Pick background color based on listing ID
   const bgColor = bgColors[listing.title.length % bgColors.length]
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onFavorite?.(listing.id)
+  }
 
   return (
     <Link href={`/marketplace/${listing.id}`}>
@@ -44,6 +52,23 @@ export function TextCard({ listing, className }: TextCardProps) {
           className
         )}
       >
+        {/* Favorite Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
+          onClick={handleFavorite}
+        >
+          <Heart
+            className={cn(
+              "h-4 w-4 transition-colors",
+              listing.is_favorited
+                ? "fill-red-500 text-red-500"
+                : "text-gray-600"
+            )}
+          />
+        </Button>
+
         {/* Category Badge */}
         {listing.category && (
           <Badge variant="secondary" className="mb-3 text-xs">

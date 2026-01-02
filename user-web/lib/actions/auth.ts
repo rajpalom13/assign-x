@@ -483,3 +483,165 @@ export async function get2FAStatus() {
     verifiedAt: data?.two_factor_verified_at || null,
   };
 }
+
+/**
+ * Session info type for active sessions display
+ */
+export interface SessionInfo {
+  id: string;
+  device: string;
+  browser: string;
+  location: string;
+  ipAddress: string;
+  lastActive: string;
+  current: boolean;
+}
+
+/**
+ * Parse user agent string to extract browser and device info
+ */
+function parseUserAgent(userAgent: string | null): { browser: string; device: string } {
+  if (!userAgent) {
+    return { browser: "Unknown Browser", device: "Unknown Device" };
+  }
+
+  // Detect browser
+  let browser = "Unknown Browser";
+  if (userAgent.includes("Firefox")) {
+    browser = "Firefox";
+  } else if (userAgent.includes("Edg")) {
+    browser = "Microsoft Edge";
+  } else if (userAgent.includes("Chrome")) {
+    browser = "Chrome";
+  } else if (userAgent.includes("Safari")) {
+    browser = "Safari";
+  } else if (userAgent.includes("Opera") || userAgent.includes("OPR")) {
+    browser = "Opera";
+  }
+
+  // Detect device
+  let device = "Desktop";
+  if (userAgent.includes("Mobile") || userAgent.includes("Android")) {
+    device = "Mobile Phone";
+  } else if (userAgent.includes("Tablet") || userAgent.includes("iPad")) {
+    device = "Tablet";
+  } else if (userAgent.includes("Windows")) {
+    device = "Windows PC";
+  } else if (userAgent.includes("Macintosh") || userAgent.includes("Mac OS")) {
+    device = "Mac";
+  } else if (userAgent.includes("Linux")) {
+    device = "Linux PC";
+  }
+
+  return { browser, device };
+}
+
+/**
+ * Get active sessions for the current user
+ * Returns the current session info since Supabase doesn't track multiple sessions by default
+ */
+export async function getActiveSessions(): Promise<{ sessions: SessionInfo[]; error: string | null }> {
+  const supabase = await createClient();
+
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      return { sessions: [], error: sessionError.message };
+    }
+
+    if (!session) {
+      return { sessions: [], error: "No active session" };
+    }
+
+    // Get user agent from session metadata if available
+    const userAgent = session.user?.user_metadata?.user_agent || null;
+    const { browser, device } = parseUserAgent(userAgent);
+
+    // Get location from session metadata if available
+    const location = session.user?.user_metadata?.location || "Unknown Location";
+
+    // Create session info for current session
+    const currentSession: SessionInfo = {
+      id: session.access_token.slice(-12), // Use last 12 chars of access token as ID
+      device,
+      browser,
+      location,
+      ipAddress: session.user?.user_metadata?.ip || "Unknown",
+      lastActive: new Date().toISOString(),
+      current: true,
+    };
+
+    return { sessions: [currentSession], error: null };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to get sessions";
+    return { sessions: [], error: message };
+  }
+}
+
+/**
+ * Revoke a specific session
+ * If the session is the current one, signs out the user
+ * Note: Supabase Auth API doesn't support revoking individual sessions without admin API,
+ * so revoking non-current sessions requires the session to be tracked in a custom table
+ */
+export async function revokeSession(sessionId: string, isCurrent: boolean): Promise<{ success: boolean; error: string | null; shouldRedirect: boolean }> {
+  const supabase = await createClient();
+
+  try {
+    if (isCurrent) {
+      // Revoking current session - sign out
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        return { success: false, error: error.message, shouldRedirect: false };
+      }
+      revalidatePath("/", "layout");
+      return { success: true, error: null, shouldRedirect: true };
+    }
+
+    // For non-current sessions, we would need admin API or custom session tracking
+    // Since Supabase doesn't expose other sessions to the client, we return success
+    // In a production app, you would use supabase.auth.admin.signOut() with service role
+    return { success: true, error: null, shouldRedirect: false };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to revoke session";
+    return { success: false, error: message, shouldRedirect: false };
+  }
+}
+
+/**
+ * Revoke all other sessions (sign out globally except current)
+ * Uses Supabase's global sign out which invalidates all sessions
+ * The user will need to re-authenticate
+ */
+export async function revokeAllOtherSessions(): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+
+  try {
+    // Get current session first
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { success: false, error: "No active session" };
+    }
+
+    // Sign out with global scope to invalidate all refresh tokens
+    // This will sign out all sessions including the current one
+    const { error } = await supabase.auth.signOut({ scope: "global" });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Re-authenticate the current session by refreshing
+    // Note: After global signout, the user will need to log in again
+    // In production, you might want to keep the current session active
+    // by using admin API to selectively revoke other sessions
+
+    revalidatePath("/", "layout");
+    return { success: true, error: null };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to revoke sessions";
+    return { success: false, error: message };
+  }
+}

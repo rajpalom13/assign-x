@@ -10,14 +10,19 @@ import {
   Home,
   Briefcase,
   Users,
+  Loader2,
   X,
+  GraduationCap,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { MasonryGrid } from "@/components/marketplace";
+import { MasonryGrid, type ListingDisplay } from "@/components/marketplace";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -27,55 +32,94 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
 import { toast } from "sonner";
 import {
   getMarketplaceListings,
-  toggleFavorite,
-  type ListingType,
+  toggleMarketplaceFavorite,
 } from "@/lib/actions/marketplace";
-import type { ListingDisplay } from "@/components/marketplace/masonry-grid";
+import type { AnyListing, ListingType, MarketplaceCategory } from "@/types/marketplace";
 
 /**
- * Category type for filtering
+ * Map frontend ListingType to database listing_type for display
  */
-type CategoryTab = "all" | "item" | "housing" | "opportunity" | "community";
+const listingTypeToDbType: Record<ListingType, string> = {
+  product: "sell",
+  housing: "housing",
+  opportunity: "opportunity",
+  community: "community_post",
+};
+
+/**
+ * Transform AnyListing to ListingDisplay format for MasonryGrid
+ */
+function transformToListingDisplay(listing: AnyListing): ListingDisplay {
+  const dbListingType = listingTypeToDbType[listing.type];
+
+  // Get price based on listing type
+  let price: number | undefined;
+  if (listing.type === "product") {
+    price = listing.price;
+  } else if (listing.type === "housing") {
+    price = listing.monthlyRent;
+  } else if (listing.type === "opportunity") {
+    price = listing.stipend;
+  }
+
+  return {
+    id: listing.id,
+    title: listing.title,
+    description: listing.description,
+    price,
+    listing_type: dbListingType,
+    is_active: true,
+    view_count: listing.views,
+    created_at: listing.createdAt,
+    updated_at: listing.createdAt,
+    seller_id: listing.userId,
+    seller: {
+      id: listing.userId,
+      full_name: listing.userName,
+      avatar_url: listing.userAvatar || null,
+    },
+    category: listing.type === "product" && "category" in listing
+      ? { id: "", name: listing.category, slug: listing.category.toLowerCase(), is_active: true }
+      : undefined,
+    is_favorited: listing.isLiked,
+    image_url: listing.imageUrl,
+  };
+}
+
+/**
+ * Category type for filtering - maps to MarketplaceCategory
+ */
+type CategoryTab = "all" | "product" | "housing" | "opportunity" | "community";
+
+/**
+ * Map CategoryTab to MarketplaceCategory for API filter
+ */
+const categoryTabToMarketplace: Record<CategoryTab, MarketplaceCategory> = {
+  all: "all",
+  product: "products",
+  housing: "housing",
+  opportunity: "opportunities",
+  community: "community",
+};
 
 /**
  * Category configuration
  */
 const categories: { id: CategoryTab; label: string; icon: React.ReactNode }[] = [
   { id: "all", label: "All", icon: null },
-  { id: "item", label: "Products", icon: <Package className="h-4 w-4" /> },
+  { id: "product", label: "Products", icon: <Package className="h-4 w-4" /> },
   { id: "housing", label: "Housing", icon: <Home className="h-4 w-4" /> },
   { id: "opportunity", label: "Opportunities", icon: <Briefcase className="h-4 w-4" /> },
   { id: "community", label: "Community", icon: <Users className="h-4 w-4" /> },
 ];
 
 const ITEMS_PER_PAGE = 20;
-
-/**
- * Map UI category tabs to database listing types
- */
-function mapCategoryToListingType(category: CategoryTab): ListingType | ListingType[] | "all" {
-  switch (category) {
-    case "all":
-      return "all";
-    case "item":
-      // Products include sell, rent, and free listings
-      return ["sell", "rent", "free"];
-    case "housing":
-      return "housing";
-    case "opportunity":
-      return "opportunity";
-    case "community":
-      // Community posts are stored as 'free' listing type
-      return "free";
-    default:
-      return "all";
-  }
-}
 
 /**
  * Student Connect / Campus Marketplace page
@@ -86,11 +130,14 @@ export default function ConnectPage() {
   const { user } = useUserStore();
 
   // State
+  const [allListings, setAllListings] = useState<AnyListing[]>([]);
   const [listings, setListings] = useState<ListingDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryTab>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+  const [universityOnly, setUniversityOnly] = useState(true);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -101,54 +148,68 @@ export default function ConnectPage() {
     async (reset = false, pageOverride?: number) => {
       try {
         setIsLoading(true);
+        setError(null);
 
-        const currentPage = reset ? 1 : (pageOverride ?? page);
-        const offset = reset ? 0 : (currentPage - 1) * ITEMS_PER_PAGE;
+        // Build filters for Supabase query
+        const filters = {
+          category: categoryTabToMarketplace[selectedCategory],
+          priceRange: priceRange[0] > 0 || priceRange[1] < 50000
+            ? (priceRange as [number, number])
+            : undefined,
+          universityOnly,
+        };
 
-        // Map category tab to database listing type(s)
-        const categoryFilter = mapCategoryToListingType(selectedCategory);
+        const { data, error: fetchError } = await getMarketplaceListings(filters);
 
-        const { listings: fetchedListings, total: fetchedTotal, error } =
-          await getMarketplaceListings({
-            category: categoryFilter,
-            search: searchQuery || undefined,
-            limit: ITEMS_PER_PAGE,
-            offset,
-            priceMin: priceRange[0] > 0 ? priceRange[0] : undefined,
-            priceMax: priceRange[1] < 50000 ? priceRange[1] : undefined,
-            sortBy: "recent",
-          });
-
-        if (error) {
+        if (fetchError) {
+          setError("Failed to load marketplace listings. Please try again.");
           toast.error("Failed to load listings");
           return;
         }
 
-        // Cast to ListingDisplay type for the MasonryGrid component
-        const listingsData = fetchedListings as ListingDisplay[];
+        const fetchedListings = data || [];
 
-        if (reset) {
-          setListings(listingsData);
-          setPage(1);
-        } else {
-          setListings((prev) => [...prev, ...listingsData]);
+        // Apply client-side search filter
+        let filtered = fetchedListings;
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          filtered = filtered.filter(
+            (l) =>
+              l.title?.toLowerCase().includes(query) ||
+              l.description?.toLowerCase().includes(query)
+          );
         }
 
-        setTotal(fetchedTotal);
-        setHasMore(offset + listingsData.length < fetchedTotal);
-      } catch {
-        toast.error("Failed to load listings");
+        // Store all listings for toggling favorites
+        setAllListings(filtered);
+
+        // Transform to display format
+        const displayListings = filtered.map(transformToListingDisplay);
+
+        if (reset) {
+          setListings(displayListings);
+          setPage(1);
+        } else {
+          setListings((prev) => [...prev, ...displayListings]);
+        }
+
+        setTotal(displayListings.length);
+        setHasMore(false);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load listings";
+        setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
     },
-    [selectedCategory, searchQuery, priceRange, page]
+    [selectedCategory, searchQuery, priceRange, universityOnly]
   );
 
   // Initial fetch and refetch on filter changes
   useEffect(() => {
     fetchListings(true);
-  }, [selectedCategory, searchQuery, priceRange]);
+  }, [selectedCategory, searchQuery, priceRange, universityOnly]);
 
   // Handle favorite toggle using Supabase
   const handleFavorite = async (listingId: string) => {
@@ -158,28 +219,37 @@ export default function ConnectPage() {
     }
 
     // Optimistic update
+    const listing = listings.find((l) => l.id === listingId);
+    const wasLiked = listing?.is_favorited;
+
     setListings((prev) =>
       prev.map((l) =>
         l.id === listingId ? { ...l, is_favorited: !l.is_favorited } : l
       )
     );
 
-    const result = await toggleFavorite(listingId);
+    // Call Supabase to toggle favorite
+    const { success, isFavorited, error } = await toggleMarketplaceFavorite(listingId);
 
-    if (result.error) {
+    if (!success || error) {
       // Revert on error
       setListings((prev) =>
         prev.map((l) =>
-          l.id === listingId ? { ...l, is_favorited: !l.is_favorited } : l
+          l.id === listingId ? { ...l, is_favorited: wasLiked } : l
         )
       );
-      toast.error(result.error);
+      toast.error(error || "Failed to update favorite");
       return;
     }
 
-    toast.success(
-      result.isFavorited ? "Added to favorites" : "Removed from favorites"
+    // Update allListings to keep state in sync
+    setAllListings((prev) =>
+      prev.map((l) =>
+        l.id === listingId ? { ...l, isLiked: isFavorited } : l
+      )
     );
+
+    toast.success(isFavorited ? "Added to favorites" : "Removed from favorites");
   };
 
   // Handle load more for infinite scroll
@@ -196,6 +266,7 @@ export default function ConnectPage() {
     setSearchQuery("");
     setSelectedCategory("all");
     setPriceRange([0, 50000]);
+    setUniversityOnly(true);
     setFilterSheetOpen(false);
   };
 
@@ -203,7 +274,8 @@ export default function ConnectPage() {
     searchQuery ||
     selectedCategory !== "all" ||
     priceRange[0] > 0 ||
-    priceRange[1] < 50000;
+    priceRange[1] < 50000 ||
+    !universityOnly;
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -279,6 +351,21 @@ export default function ConnectPage() {
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
+                {/* University Filter - U74 */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="university-filter" className="text-base">My University Only</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show listings from your campus
+                    </p>
+                  </div>
+                  <Switch
+                    id="university-filter"
+                    checked={universityOnly}
+                    onCheckedChange={setUniversityOnly}
+                  />
+                </div>
+
                 {/* Price Range */}
                 <div className="space-y-4">
                   <Label>Price Range</Label>
@@ -311,8 +398,9 @@ export default function ConnectPage() {
           </Sheet>
         </div>
 
-        {/* Category Tabs - U76: Optional Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Category Tabs & University Toggle - U74, U76 */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Category Tabs */}
           {categories.map((cat) => (
             <Button
               key={cat.id}
@@ -328,6 +416,23 @@ export default function ConnectPage() {
               <span className={cat.icon ? "ml-1.5" : ""}>{cat.label}</span>
             </Button>
           ))}
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-border shrink-0" />
+
+          {/* University Filter Toggle - U74 */}
+          <Button
+            variant={universityOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setUniversityOnly(!universityOnly)}
+            className={cn(
+              "shrink-0 gap-1.5",
+              universityOnly && "bg-primary text-primary-foreground"
+            )}
+          >
+            <GraduationCap className="h-4 w-4" />
+            <span>{universityOnly ? "My Campus" : "All Campuses"}</span>
+          </Button>
         </div>
 
         {/* Active Filters Display */}
@@ -358,6 +463,14 @@ export default function ConnectPage() {
                 </button>
               </Badge>
             )}
+            {!universityOnly && (
+              <Badge variant="secondary" className="gap-1">
+                All Campuses
+                <button onClick={() => setUniversityOnly(true)}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -369,8 +482,31 @@ export default function ConnectPage() {
           </div>
         )}
 
+        {/* Error State */}
+        {error && (
+          <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-200">{error}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchListings(true)}
+                  className="ml-2"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Results Count */}
-        {!isLoading && (
+        {!isLoading && !error && (
           <p className="text-sm text-muted-foreground">
             {total} {total === 1 ? "listing" : "listings"} found
           </p>
@@ -380,7 +516,7 @@ export default function ConnectPage() {
         {isLoading && listings.length === 0 && <LoadingSkeleton />}
 
         {/* Pinterest-style Masonry Grid - U73 */}
-        {(!isLoading || listings.length > 0) && (
+        {(!isLoading || listings.length > 0) && !error && (
           <MasonryGrid
             listings={listings}
             onFavorite={handleFavorite}
@@ -391,7 +527,7 @@ export default function ConnectPage() {
         )}
 
         {/* Empty State */}
-        {!isLoading && listings.length === 0 && (
+        {!isLoading && listings.length === 0 && !error && (
           <div className="relative overflow-hidden rounded-xl border border-dashed bg-gradient-to-br from-muted/30 to-muted/10 py-16 text-center">
             {/* Decorative background */}
             <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-orange-500/5" />
@@ -428,15 +564,11 @@ export default function ConnectPage() {
                 </div>
               )}
 
-              {hasActiveFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear Filters
-                </Button>
-              ) : (
+              {!hasActiveFilters && (
                 <Button asChild>
                   <Link href="/connect/create">
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Listing
+                    Post Your First Listing
                   </Link>
                 </Button>
               )}

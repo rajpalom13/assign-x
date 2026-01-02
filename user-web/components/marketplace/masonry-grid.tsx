@@ -106,7 +106,7 @@ export function MasonryGrid({
     (listing: ListingDisplay) => {
       // Community posts use TextCard
       if (listing.listing_type === "community_post") {
-        return <TextCard key={listing.id} listing={listing} />
+        return <TextCard key={listing.id} listing={listing} onFavorite={onFavorite} />
       }
 
       // Opportunities and featured events use BannerCard
@@ -116,7 +116,7 @@ export function MasonryGrid({
       ) {
         return (
           <div key={listing.id} className="col-span-full">
-            <BannerCard listing={listing} />
+            <BannerCard listing={listing} onFavorite={onFavorite} />
           </div>
         )
       }

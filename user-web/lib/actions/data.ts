@@ -745,3 +745,564 @@ export async function uploadProjectFile(
 
   return { success: true, fileUrl: urlData.publicUrl };
 }
+
+// =============================================================================
+// PAYMENT METHODS ACTIONS
+// =============================================================================
+
+/**
+ * Payment method type definition (aligned with database schema)
+ */
+interface PaymentMethodData {
+  id: string;
+  type: "card" | "upi";
+  isDefault: boolean;
+  isVerified: boolean;
+  // Card fields
+  cardLast4?: string | null;
+  cardBrand?: string | null;
+  cardType?: string | null;
+  cardholderName?: string | null;
+  bankName?: string | null;
+  // UPI fields
+  upiId?: string | null;
+  createdAt?: string | null;
+}
+
+/**
+ * Get user's saved payment methods
+ * Fetches from Supabase payment_methods table
+ */
+export async function getPaymentMethods(): Promise<PaymentMethodData[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data: methods, error } = await supabase
+    .from("payment_methods")
+    .select("*")
+    .eq("profile_id", user.id)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return [];
+  }
+
+  // Transform database schema to frontend format
+  return (methods || []).map((method) => ({
+    id: method.id,
+    type: method.method_type === "upi" ? "upi" : "card",
+    isDefault: method.is_default ?? false,
+    isVerified: method.is_verified ?? false,
+    cardLast4: method.card_last_four,
+    cardBrand: method.card_network,
+    cardType: method.card_type,
+    cardholderName: method.display_name,
+    bankName: method.bank_name,
+    upiId: method.upi_id,
+    createdAt: method.created_at,
+  })) as PaymentMethodData[];
+}
+
+/**
+ * Add a new card payment method
+ * Stores card token and last 4 digits (not full card number)
+ */
+export async function addCardPaymentMethod(data: {
+  cardLast4: string;
+  cardBrand?: string;
+  cardType?: string;
+  cardholderName: string;
+  cardToken?: string;
+  bankName?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Validate card details
+  if (!data.cardLast4 || data.cardLast4.length !== 4) {
+    return { error: "Invalid card last 4 digits" };
+  }
+
+  if (!data.cardholderName || data.cardholderName.trim().length < 2) {
+    return { error: "Invalid cardholder name" };
+  }
+
+  // Check existing payment methods count
+  const { count } = await supabase
+    .from("payment_methods")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", user.id);
+
+  const isFirstMethod = (count ?? 0) === 0;
+
+  const { data: method, error } = await supabase
+    .from("payment_methods")
+    .insert({
+      profile_id: user.id,
+      method_type: "card",
+      card_last_four: data.cardLast4,
+      card_network: data.cardBrand || "unknown",
+      card_type: data.cardType || "debit",
+      display_name: data.cardholderName.trim(),
+      card_token: data.cardToken,
+      bank_name: data.bankName,
+      is_default: isFirstMethod,
+      is_verified: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  // Log activity
+  await supabase.from("activity_logs").insert({
+    profile_id: user.id,
+    action: "payment_method_added",
+    action_category: "payment",
+    description: `Added card ending in ${data.cardLast4}`,
+    metadata: {
+      method_id: method.id,
+      method_type: "card",
+      card_network: data.cardBrand,
+    },
+  });
+
+  revalidatePath("/payment-methods");
+
+  return {
+    success: true,
+    method: {
+      id: method.id,
+      type: "card" as const,
+      isDefault: method.is_default ?? false,
+      isVerified: true,
+      cardLast4: method.card_last_four,
+      cardBrand: method.card_network,
+      cardholderName: method.display_name,
+    },
+  };
+}
+
+/**
+ * Add a new UPI payment method
+ * Stores verified UPI ID
+ */
+export async function addUpiPaymentMethod(data: {
+  upiId: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Validate UPI ID format
+  const upiIdPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
+  if (!data.upiId || !upiIdPattern.test(data.upiId)) {
+    return { error: "Invalid UPI ID format" };
+  }
+
+  // Check for duplicate UPI ID
+  const { data: existing } = await supabase
+    .from("payment_methods")
+    .select("id")
+    .eq("profile_id", user.id)
+    .eq("upi_id", data.upiId.toLowerCase())
+    .maybeSingle();
+
+  if (existing) {
+    return { error: "This UPI ID is already saved" };
+  }
+
+  // Check existing payment methods count
+  const { count } = await supabase
+    .from("payment_methods")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", user.id);
+
+  const isFirstMethod = (count ?? 0) === 0;
+
+  const { data: method, error } = await supabase
+    .from("payment_methods")
+    .insert({
+      profile_id: user.id,
+      method_type: "upi",
+      upi_id: data.upiId.toLowerCase(),
+      display_name: data.upiId.toLowerCase(),
+      is_default: isFirstMethod,
+      is_verified: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  // Log activity
+  await supabase.from("activity_logs").insert({
+    profile_id: user.id,
+    action: "payment_method_added",
+    action_category: "payment",
+    description: `Added UPI ID ${data.upiId}`,
+    metadata: {
+      method_id: method.id,
+      method_type: "upi",
+    },
+  });
+
+  revalidatePath("/payment-methods");
+
+  return {
+    success: true,
+    method: {
+      id: method.id,
+      type: "upi" as const,
+      isDefault: method.is_default ?? false,
+      isVerified: true,
+      upiId: method.upi_id,
+    },
+  };
+}
+
+/**
+ * Set a payment method as default
+ * Unsets all other methods and sets the specified one as default
+ */
+export async function setDefaultPaymentMethod(methodId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Validate method belongs to user
+  const { data: method } = await supabase
+    .from("payment_methods")
+    .select("id, method_type")
+    .eq("id", methodId)
+    .eq("profile_id", user.id)
+    .single();
+
+  if (!method) {
+    return { error: "Payment method not found" };
+  }
+
+  // Unset all defaults for this user
+  await supabase
+    .from("payment_methods")
+    .update({ is_default: false })
+    .eq("profile_id", user.id);
+
+  // Set new default
+  const { error } = await supabase
+    .from("payment_methods")
+    .update({ is_default: true, updated_at: new Date().toISOString() })
+    .eq("id", methodId)
+    .eq("profile_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/payment-methods");
+  return { success: true };
+}
+
+/**
+ * Delete a payment method
+ * Prevents deletion if it's the only default method
+ */
+export async function deletePaymentMethod(methodId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Get the method to check if it's default
+  const { data: method } = await supabase
+    .from("payment_methods")
+    .select("id, is_default, method_type, card_last_four, upi_id")
+    .eq("id", methodId)
+    .eq("profile_id", user.id)
+    .single();
+
+  if (!method) {
+    return { error: "Payment method not found" };
+  }
+
+  // Check if this is the only method and it's default
+  const { count } = await supabase
+    .from("payment_methods")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", user.id);
+
+  if (method.is_default && (count ?? 0) > 1) {
+    return { error: "Please set another method as default before deleting" };
+  }
+
+  // Delete the payment method
+  const { error } = await supabase
+    .from("payment_methods")
+    .delete()
+    .eq("id", methodId)
+    .eq("profile_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  // Log activity
+  const methodDesc = method.method_type === "upi"
+    ? `UPI ID ${method.upi_id}`
+    : `Card ending in ${method.card_last_four}`;
+
+  await supabase.from("activity_logs").insert({
+    profile_id: user.id,
+    action: "payment_method_removed",
+    action_category: "payment",
+    description: `Removed ${methodDesc}`,
+    metadata: {
+      method_id: methodId,
+      method_type: method.method_type,
+    },
+  });
+
+  revalidatePath("/payment-methods");
+  return { success: true };
+}
+
+/**
+ * Get user's default payment method
+ * Returns null if no default is set
+ */
+export async function getDefaultPaymentMethod(): Promise<PaymentMethodData | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: method, error } = await supabase
+    .from("payment_methods")
+    .select("*")
+    .eq("profile_id", user.id)
+    .eq("is_default", true)
+    .maybeSingle();
+
+  if (error || !method) {
+    return null;
+  }
+
+  return {
+    id: method.id,
+    type: method.method_type === "upi" ? "upi" : "card",
+    isDefault: true,
+    isVerified: method.is_verified ?? false,
+    cardLast4: method.card_last_four,
+    cardBrand: method.card_network,
+    cardType: method.card_type,
+    cardholderName: method.display_name,
+    bankName: method.bank_name,
+    upiId: method.upi_id,
+    createdAt: method.created_at,
+  };
+}
+
+// =============================================================================
+// USER PREFERENCES ACTIONS
+// =============================================================================
+
+/**
+ * Notification preferences structure (matches frontend interface)
+ */
+interface NotificationPreferencesData {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  inAppNotifications: boolean;
+  projectUpdates: boolean;
+  marketingEmails: boolean;
+  weeklyDigest: boolean;
+}
+
+/**
+ * User preferences data structure (matches frontend interface)
+ */
+interface UserPreferencesData {
+  id?: string;
+  theme: "light" | "dark" | "system";
+  language: "en" | "es" | "fr";
+  notifications: NotificationPreferencesData;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Default preferences when not set in database
+ */
+const defaultPreferences: Omit<UserPreferencesData, "id" | "createdAt" | "updatedAt"> = {
+  theme: "system",
+  language: "en",
+  notifications: {
+    emailNotifications: true,
+    pushNotifications: true,
+    inAppNotifications: true,
+    projectUpdates: true,
+    marketingEmails: false,
+    weeklyDigest: true,
+  },
+};
+
+/**
+ * Get user's preferences
+ * Returns default preferences if none are stored in database
+ */
+export async function getUserPreferences(): Promise<UserPreferencesData> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return defaultPreferences as UserPreferencesData;
+  }
+
+  const { data: preferences, error } = await supabase
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error || !preferences) {
+    // Return defaults if no preferences found
+    return defaultPreferences as UserPreferencesData;
+  }
+
+  // Transform database format to frontend format
+  return {
+    id: preferences.id,
+    theme: preferences.theme || defaultPreferences.theme,
+    language: preferences.language || defaultPreferences.language,
+    notifications: preferences.notifications || defaultPreferences.notifications,
+    createdAt: preferences.created_at,
+    updatedAt: preferences.updated_at,
+  };
+}
+
+/**
+ * Update user preferences
+ * Creates preferences if they don't exist (upsert)
+ */
+export async function updateUserPreferences(data: {
+  theme?: "light" | "dark" | "system";
+  language?: "en" | "es" | "fr";
+  notifications?: Partial<NotificationPreferencesData>;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Get existing preferences to merge with updates
+  const { data: existing } = await supabase
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const now = new Date().toISOString();
+
+  // Merge notifications with existing or defaults
+  const currentNotifications = existing?.notifications || defaultPreferences.notifications;
+  const mergedNotifications = data.notifications
+    ? { ...currentNotifications, ...data.notifications }
+    : currentNotifications;
+
+  if (existing) {
+    // Update existing preferences
+    const { error } = await supabase
+      .from("user_preferences")
+      .update({
+        theme: data.theme || existing.theme,
+        language: data.language || existing.language,
+        notifications: mergedNotifications,
+        updated_at: now,
+      })
+      .eq("id", existing.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    // Create new preferences record
+    const { error } = await supabase
+      .from("user_preferences")
+      .insert({
+        user_id: user.id,
+        theme: data.theme || defaultPreferences.theme,
+        language: data.language || defaultPreferences.language,
+        notifications: mergedNotifications,
+        created_at: now,
+        updated_at: now,
+      });
+
+    if (error) {
+      return { error: error.message };
+    }
+  }
+
+  revalidatePath("/profile");
+  return { success: true };
+}
+
+/**
+ * Update theme preference only
+ * Convenience method for theme toggle
+ */
+export async function updateThemePreference(theme: "light" | "dark" | "system") {
+  return updateUserPreferences({ theme });
+}
+
+/**
+ * Update language preference only
+ * Convenience method for language selector
+ */
+export async function updateLanguagePreference(language: "en" | "es" | "fr") {
+  return updateUserPreferences({ language });
+}
+
+/**
+ * Update notification preferences
+ * Convenience method for notification settings
+ */
+export async function updateNotificationPreferences(
+  notifications: Partial<NotificationPreferencesData>
+) {
+  return updateUserPreferences({ notifications });
+}
+
+/**
+ * Reset user preferences to defaults
+ * Deletes the user_preferences record, falling back to defaults
+ */
+export async function resetUserPreferences() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("user_preferences")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/profile");
+  return { success: true };
+}

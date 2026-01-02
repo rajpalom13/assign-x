@@ -18,7 +18,12 @@ import {
   AppInfoFooter,
 } from "@/components/profile";
 import { useUserStore, type User } from "@/stores/user-store";
-import { updateProfile, updateStudentProfile } from "@/lib/actions/data";
+import {
+  updateProfile,
+  updateStudentProfile,
+  getUserPreferences,
+  updateUserPreferences,
+} from "@/lib/actions/data";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type {
@@ -143,7 +148,7 @@ export default function ProfilePage() {
   const profile = transformToUserProfile(user);
   const academicInfo = transformToAcademicInfo(user);
 
-  // Local state for preferences and security (not in database yet)
+  // Local state for preferences and security
   const [preferences, setPreferences] = useState(defaultPreferences);
   const [security, setSecurity] = useState(defaultSecurity);
   const [subscription, setSubscription] = useState(defaultSubscription);
@@ -154,6 +159,26 @@ export default function ProfilePage() {
       fetchUser();
     }
   }, [user, isLoading, fetchUser]);
+
+  // Fetch preferences from database on mount
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const prefs = await getUserPreferences();
+        setPreferences({
+          theme: prefs.theme,
+          language: prefs.language,
+          notifications: prefs.notifications,
+        });
+      } catch {
+        // Use defaults on error
+      }
+    };
+
+    if (user) {
+      fetchPreferences();
+    }
+  }, [user]);
 
   // Handle avatar change
   const handleAvatarChange = async (file: File) => {
@@ -242,9 +267,20 @@ export default function ProfilePage() {
   const handlePreferencesSave = async (data: UserPreferences) => {
     setIsSaving(true);
     try {
-      // TODO: Implement preferences update (store in user_preferences table)
-      setPreferences(data);
-      toast.success("Preferences saved");
+      const result = await updateUserPreferences({
+        theme: data.theme,
+        language: data.language,
+        notifications: data.notifications,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        setPreferences(data);
+        toast.success("Preferences saved");
+      }
+    } catch {
+      toast.error("Failed to save preferences");
     } finally {
       setIsSaving(false);
     }

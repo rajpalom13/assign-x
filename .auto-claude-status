@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "001-user-app-completion",
+  "spec": "002-complete-missing-web-app-features-per-requirements",
   "state": "complete",
   "subtasks": {
-    "completed": 11,
-    "total": 11,
+    "completed": 17,
+    "total": 17,
     "in_progress": 0,
     "failed": 0
   },
   "phase": {
-    "current": "Integration & Verification",
+    "current": "Integration & Polish",
     "id": null,
-    "total": 3
+    "total": 4
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 11,
-    "started_at": "2026-01-02T05:34:52.770449"
+    "number": 17,
+    "started_at": "2026-01-02T05:34:25.153923"
   },
-  "last_update": "2026-01-02T06:19:53.850356"
+  "last_update": "2026-01-02T06:40:33.603676"
 }
