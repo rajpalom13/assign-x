@@ -1,0 +1,700 @@
+{
+  "integrations_researched": [
+    {
+      "name": "Supabase",
+      "type": "service",
+      "verified_package": {
+        "web": {
+          "name": "@supabase/ssr + @supabase/supabase-js",
+          "install_command": "npm install @supabase/ssr @supabase/supabase-js",
+          "version": "@supabase/ssr@0.8.0, @supabase/supabase-js@2.89.0",
+          "verified": true
+        },
+        "flutter": {
+          "name": "supabase_flutter",
+          "install_command": "flutter pub add supabase_flutter",
+          "version": "^2.3.0",
+          "verified": true
+        }
+      },
+      "api_patterns": {
+        "imports": {
+          "web_browser": "import { createBrowserClient } from '@supabase/ssr'",
+          "web_server": "import { createServerClient } from '@supabase/ssr'",
+          "flutter": "import 'package:supabase_flutter/supabase_flutter.dart'"
+        },
+        "initialization": {
+          "web_browser": "createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)",
+          "web_server": "createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, { cookies: { getAll, setAll } })",
+          "flutter": "Supabase.initialize(url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY)"
+        },
+        "key_functions": [
+          "supabase.auth.getUser()",
+          "supabase.auth.signInWithOAuth()",
+          "supabase.auth.signOut()",
+          "supabase.from('table').select()",
+          "supabase.from('table').insert()",
+          "supabase.from('table').update()",
+          "supabase.channel().on().subscribe()"
+        ],
+        "verified_against": "Codebase analysis: user-web/lib/supabase/, user_app/lib/providers/"
+      },
+      "configuration": {
+        "env_vars": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "SUPABASE_SERVICE_ROLE_KEY (optional)",
+          "SUPABASE_URL (Flutter)",
+          "SUPABASE_ANON_KEY (Flutter)"
+        ],
+        "config_files": [
+          "user-web/lib/supabase/client.ts",
+          "user-web/lib/supabase/server.ts",
+          "user_app/lib/core/config/supabase_config.dart"
+        ],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Supabase Cloud (hosted PostgreSQL)",
+        "features_used": ["Authentication", "Database", "Realtime", "Storage"]
+      },
+      "gotchas": [
+        "Server client requires async cookies() in Next.js 15+",
+        "Cookie setAll may throw in Server Components - handle gracefully",
+        "Flutter requires initialization in main() before runApp()"
+      ],
+      "research_sources": [
+        "Context7: /supabase/supabase-js",
+        "Codebase: user-web/lib/supabase/*.ts",
+        "Codebase: user_app/lib/providers/auth_provider.dart"
+      ]
+    },
+    {
+      "name": "Razorpay",
+      "type": "service",
+      "verified_package": {
+        "web": {
+          "name": "razorpay",
+          "install_command": "npm install razorpay",
+          "version": "^2.9.6",
+          "verified": true
+        },
+        "flutter": {
+          "name": "razorpay_flutter",
+          "install_command": "flutter pub add razorpay_flutter",
+          "version": "^1.3.7",
+          "verified": true
+        }
+      },
+      "api_patterns": {
+        "imports": {
+          "web": "import Razorpay from 'razorpay'",
+          "flutter": "import 'package:razorpay_flutter/razorpay_flutter.dart'"
+        },
+        "initialization": {
+          "web": "new Razorpay({ key_id: KEY_ID, key_secret: KEY_SECRET })",
+          "flutter": "Razorpay() with event listeners"
+        },
+        "key_functions": [
+          "razorpay.orders.create({ amount, currency, receipt })",
+          "razorpay.open(options) [Flutter]",
+          "Razorpay.EVENT_PAYMENT_SUCCESS",
+          "Razorpay.EVENT_PAYMENT_ERROR"
+        ],
+        "verified_against": "Codebase: user-web/app/api/payments/, user_app/lib/core/services/payment_service.dart"
+      },
+      "configuration": {
+        "env_vars": [
+          "RAZORPAY_KEY_ID",
+          "RAZORPAY_KEY_SECRET",
+          "NEXT_PUBLIC_RAZORPAY_KEY_ID"
+        ],
+        "config_files": [
+          "user_app/lib/core/config/razorpay_config.dart"
+        ],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Razorpay Payment Gateway",
+        "features_used": ["Order creation", "Payment checkout", "Signature verification"]
+      },
+      "gotchas": [
+        "Amount must be in paise (multiply rupees by 100)",
+        "Minimum amount is 100 paise (Rs 1)",
+        "Signature verification should be done server-side",
+        "Flutter requires native SDK setup for Android/iOS"
+      ],
+      "research_sources": [
+        "Context7: /razorpay/razorpay-node",
+        "Codebase: user-web/app/api/payments/create-order/route.ts",
+        "Codebase: user_app/lib/core/services/payment_service.dart"
+      ]
+    },
+    {
+      "name": "Flutter Riverpod",
+      "type": "library",
+      "verified_package": {
+        "name": "flutter_riverpod",
+        "install_command": "flutter pub add flutter_riverpod riverpod_annotation",
+        "version": "^2.4.9",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import 'package:flutter_riverpod/flutter_riverpod.dart'"
+        ],
+        "initialization": "ProviderScope(child: MyApp())",
+        "key_functions": [
+          "Provider<T>((ref) => value)",
+          "FutureProvider<T>((ref) async => value)",
+          "AsyncNotifierProvider<N, T>(() => notifier)",
+          "ref.watch(provider)",
+          "ref.read(provider)",
+          "ConsumerWidget / ConsumerStatefulWidget"
+        ],
+        "verified_against": "Codebase: user_app/lib/providers/*.dart"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": [
+          "riverpod_generator (dev)",
+          "build_runner (dev)",
+          "riverpod_annotation"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "AsyncNotifier requires override of build() method",
+        "Use ref.onDispose() for cleanup",
+        "FutureProvider.family for parameterized providers",
+        "State updates must use AsyncValue.data() wrapper"
+      ],
+      "research_sources": [
+        "Context7: /websites/pub_dev_flutter_riverpod_3_0_1",
+        "Codebase: user_app/lib/providers/auth_provider.dart"
+      ]
+    },
+    {
+      "name": "Next.js",
+      "type": "framework",
+      "verified_package": {
+        "name": "next",
+        "install_command": "npm install next react react-dom",
+        "version": "16.1.1 (with React 19.2.3)",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { NextRequest, NextResponse } from 'next/server'",
+          "import { cookies } from 'next/headers'",
+          "import { redirect } from 'next/navigation'"
+        ],
+        "initialization": "App Router with app/ directory",
+        "key_functions": [
+          "page.tsx - Route pages",
+          "layout.tsx - Shared layouts",
+          "route.ts - API routes",
+          "middleware.ts - Edge middleware",
+          "Server Components (default)",
+          "Client Components ('use client')"
+        ],
+        "verified_against": "Codebase: user-web/app/"
+      },
+      "configuration": {
+        "env_vars": [
+          "NEXT_PUBLIC_* (client-exposed)",
+          "NODE_ENV"
+        ],
+        "config_files": [
+          "next.config.ts",
+          "tsconfig.json"
+        ],
+        "dependencies": [
+          "tailwindcss",
+          "typescript"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "deploy_targets": ["Vercel", "Node.js server", "Docker"]
+      },
+      "gotchas": [
+        "cookies() is now async in Next.js 15+",
+        "Server Actions require 'use server' directive",
+        "Dynamic routes use [param] folder naming",
+        "Route groups use (name) folder naming"
+      ],
+      "research_sources": [
+        "Context7: /websites/nextjs_app",
+        "Codebase: user-web/"
+      ]
+    },
+    {
+      "name": "Firebase Cloud Messaging (FCM)",
+      "type": "service",
+      "verified_package": {
+        "flutter": {
+          "name": "firebase_messaging + firebase_core",
+          "install_command": "flutter pub add firebase_core firebase_messaging",
+          "version": "firebase_messaging: ^15.1.6, firebase_core: ^3.8.1",
+          "verified": true
+        }
+      },
+      "api_patterns": {
+        "imports": [
+          "import 'package:firebase_messaging/firebase_messaging.dart'",
+          "import 'package:firebase_core/firebase_core.dart'"
+        ],
+        "initialization": "Firebase.initializeApp() in main()",
+        "key_functions": [
+          "FirebaseMessaging.instance.requestPermission()",
+          "FirebaseMessaging.instance.getToken()",
+          "FirebaseMessaging.onMessage.listen()",
+          "FirebaseMessaging.onMessageOpenedApp.listen()",
+          "@pragma('vm:entry-point') handler for background"
+        ],
+        "verified_against": "Codebase: user_app/lib/core/services/notification_service.dart"
+      },
+      "configuration": {
+        "env_vars": [
+          "FIREBASE_API_KEY (optional)",
+          "FIREBASE_PROJECT_ID (optional)"
+        ],
+        "config_files": [
+          "android/app/google-services.json",
+          "ios/Runner/GoogleService-Info.plist",
+          "lib/firebase_options.dart (generated)"
+        ],
+        "dependencies": [
+          "flutter_local_notifications"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Firebase Cloud Messaging"
+      },
+      "gotchas": [
+        "Background handler must be top-level function with @pragma",
+        "Android 13+ requires runtime notification permission",
+        "iOS requires proper entitlements setup",
+        "Token refresh should re-register with server"
+      ],
+      "research_sources": [
+        "Context7: /websites/firebase_google",
+        "Codebase: user_app/lib/core/services/notification_service.dart"
+      ]
+    },
+    {
+      "name": "Web Push Notifications",
+      "type": "library",
+      "verified_package": {
+        "name": "web-push",
+        "install_command": "npm install web-push",
+        "version": "^3.6.7",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import webpush from 'web-push'"
+        ],
+        "initialization": "webpush.setVapidDetails(email, publicKey, privateKey)",
+        "key_functions": [
+          "webpush.sendNotification(subscription, payload)",
+          "webpush.generateVAPIDKeys()"
+        ],
+        "verified_against": "Package.json entry + API route structure"
+      },
+      "configuration": {
+        "env_vars": [
+          "VAPID_PRIVATE_KEY",
+          "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+          "VAPID_EMAIL"
+        ],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "VAPID keys must be generated once and stored",
+        "Subscription endpoint stored in database",
+        "Service worker required for receiving push"
+      ],
+      "research_sources": [
+        "Package.json: web-push@3.6.7",
+        "Codebase: user-web/app/api/notifications/"
+      ]
+    },
+    {
+      "name": "WhatsApp Business API",
+      "type": "service",
+      "verified_package": {
+        "name": "Meta Cloud API (HTTP)",
+        "install_command": "N/A - Uses fetch/HTTP",
+        "version": "v18.0",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [],
+        "initialization": "fetch() calls to graph.facebook.com",
+        "key_functions": [
+          "POST /{phone_number_id}/messages",
+          "Template messages with components",
+          "Authorization: Bearer {access_token}"
+        ],
+        "verified_against": "Codebase: user-web/app/api/notifications/whatsapp/route.ts"
+      },
+      "configuration": {
+        "env_vars": [
+          "WHATSAPP_PHONE_NUMBER_ID",
+          "WHATSAPP_ACCESS_TOKEN"
+        ],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "cloud_service": "Meta WhatsApp Business Platform"
+      },
+      "gotchas": [
+        "Requires approved message templates",
+        "Phone numbers must include country code",
+        "Access tokens expire and need refresh",
+        "Feature can be disabled via config if not configured"
+      ],
+      "research_sources": [
+        "Codebase: user-web/app/api/notifications/whatsapp/route.ts",
+        "Meta Cloud API documentation"
+      ]
+    },
+    {
+      "name": "GoRouter",
+      "type": "library",
+      "verified_package": {
+        "name": "go_router",
+        "install_command": "flutter pub add go_router",
+        "version": "^13.0.0",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import 'package:go_router/go_router.dart'"
+        ],
+        "initialization": "GoRouter(routes: [...], redirect: ...)",
+        "key_functions": [
+          "GoRoute(path: '/path', builder: ...)",
+          "context.go('/path')",
+          "context.push('/path')",
+          "context.pop()",
+          "ShellRoute for nested navigation"
+        ],
+        "verified_against": "Context7 + pubspec.yaml"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [
+          "lib/core/router/app_router.dart"
+        ],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Path parameters use :param syntax",
+        "Query parameters via Uri.queryParameters",
+        "Redirect function for auth guards",
+        "refreshListenable for reactive redirects"
+      ],
+      "research_sources": [
+        "Context7: /websites/pub_dev-packages-go_router",
+        "Codebase: pubspec.yaml"
+      ]
+    },
+    {
+      "name": "React Hook Form + Zod",
+      "type": "library",
+      "verified_package": {
+        "react_hook_form": {
+          "name": "react-hook-form",
+          "install_command": "npm install react-hook-form",
+          "version": "^7.69.0",
+          "verified": true
+        },
+        "zod": {
+          "name": "zod",
+          "install_command": "npm install zod @hookform/resolvers",
+          "version": "^4.2.1",
+          "verified": true
+        }
+      },
+      "api_patterns": {
+        "imports": [
+          "import { useForm } from 'react-hook-form'",
+          "import { zodResolver } from '@hookform/resolvers/zod'",
+          "import { z } from 'zod'"
+        ],
+        "initialization": "useForm({ resolver: zodResolver(schema) })",
+        "key_functions": [
+          "z.object({ field: z.string() })",
+          "register('fieldName')",
+          "handleSubmit(onSubmit)",
+          "formState.errors"
+        ],
+        "verified_against": "Package.json + lib/env.ts"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": [
+          "@hookform/resolvers"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Zod v4 has breaking changes from v3",
+        "Schema inference via z.infer<typeof schema>",
+        "Error messages customizable in schema"
+      ],
+      "research_sources": [
+        "Context7: /react-hook-form/documentation",
+        "Package.json"
+      ]
+    },
+    {
+      "name": "Zustand",
+      "type": "library",
+      "verified_package": {
+        "name": "zustand",
+        "install_command": "npm install zustand",
+        "version": "^5.0.9",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { create } from 'zustand'"
+        ],
+        "initialization": "create((set, get) => ({ state, actions }))",
+        "key_functions": [
+          "create() - Create store",
+          "set() - Update state",
+          "get() - Read state",
+          "useStore() - Hook usage"
+        ],
+        "verified_against": "Package.json (store files not found in user-web/stores/)"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Listed in dependencies but stores folder empty",
+        "May be using React hooks/context instead",
+        "Zustand v5 has some API changes from v4"
+      ],
+      "research_sources": [
+        "Context7: /pmndrs/zustand",
+        "Package.json"
+      ]
+    },
+    {
+      "name": "Framer Motion",
+      "type": "library",
+      "verified_package": {
+        "name": "framer-motion",
+        "install_command": "npm install framer-motion",
+        "version": "^12.23.26",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import { motion, AnimatePresence } from 'framer-motion'"
+        ],
+        "initialization": "Use motion.div, motion.span components",
+        "key_functions": [
+          "motion.div with animate, initial, exit",
+          "AnimatePresence for exit animations",
+          "variants for complex animations",
+          "useAnimation() hook"
+        ],
+        "verified_against": "Package.json"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "AnimatePresence needs mode='wait' for sequential",
+        "Layout animations require layoutId prop",
+        "Can conflict with CSS transitions"
+      ],
+      "research_sources": [
+        "Package.json"
+      ]
+    },
+    {
+      "name": "Flutter Local Notifications",
+      "type": "library",
+      "verified_package": {
+        "name": "flutter_local_notifications",
+        "install_command": "flutter pub add flutter_local_notifications",
+        "version": "^18.0.1",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import 'package:flutter_local_notifications/flutter_local_notifications.dart'"
+        ],
+        "initialization": "FlutterLocalNotificationsPlugin().initialize()",
+        "key_functions": [
+          "show(id, title, body, details)",
+          "cancel(id)",
+          "cancelAll()",
+          "onDidReceiveNotificationResponse callback"
+        ],
+        "verified_against": "Codebase: user_app/lib/core/services/notification_service.dart"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [
+          "android/app/src/main/AndroidManifest.xml (permissions)"
+        ],
+        "dependencies": []
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Android requires notification channel setup",
+        "iOS requires permission request",
+        "Payload must be JSON-encodable string"
+      ],
+      "research_sources": [
+        "Codebase: user_app/lib/core/services/notification_service.dart"
+      ]
+    },
+    {
+      "name": "Radix UI",
+      "type": "library",
+      "verified_package": {
+        "name": "@radix-ui/react-*",
+        "install_command": "npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu ...",
+        "version": "Various (see package.json)",
+        "verified": true
+      },
+      "api_patterns": {
+        "imports": [
+          "import * as Dialog from '@radix-ui/react-dialog'",
+          "import * as DropdownMenu from '@radix-ui/react-dropdown-menu'"
+        ],
+        "initialization": "Compound component pattern",
+        "key_functions": [
+          "Dialog.Root, Dialog.Trigger, Dialog.Content",
+          "DropdownMenu.Root, DropdownMenu.Trigger",
+          "Accordion, Tabs, Select, etc."
+        ],
+        "verified_against": "Package.json"
+      },
+      "configuration": {
+        "env_vars": [],
+        "config_files": [
+          "components.json (shadcn/ui config)"
+        ],
+        "dependencies": [
+          "class-variance-authority",
+          "clsx",
+          "tailwind-merge"
+        ]
+      },
+      "infrastructure": {
+        "requires_docker": false
+      },
+      "gotchas": [
+        "Unstyled by default - requires CSS",
+        "Often used with shadcn/ui",
+        "Accessible by default"
+      ],
+      "research_sources": [
+        "Package.json"
+      ]
+    }
+  ],
+  "unverified_claims": [
+    {
+      "claim": "Zustand stores are actively used for state management",
+      "reason": "Package installed but stores/ folder is empty - may be using hooks/context instead",
+      "risk_level": "low"
+    },
+    {
+      "claim": "Sentry integration for error monitoring",
+      "reason": "Mentioned in feature spec but not found in package.json or code",
+      "risk_level": "medium"
+    }
+  ],
+  "recommendations": [
+    "Verify Sentry is set up if error monitoring is required per spec",
+    "Consider implementing Zustand stores or removing the dependency if unused",
+    "Ensure all VAPID keys are generated for web push notifications",
+    "WhatsApp templates need to be pre-approved in Meta Business Manager",
+    "Firebase configuration files (google-services.json, GoogleService-Info.plist) must be present for FCM",
+    "Consider adding rate limiting to all payment endpoints (already implemented)",
+    "Ensure environment variables are properly set in production deployment"
+  ],
+  "technology_stack_summary": {
+    "user_app_flutter": {
+      "framework": "Flutter 3.x (Dart)",
+      "state_management": "Riverpod 2.4.9",
+      "navigation": "GoRouter 13.0.0",
+      "backend": "Supabase Flutter 2.3.0",
+      "auth": "Supabase + Google Sign-In",
+      "payments": "Razorpay Flutter 1.3.7",
+      "notifications": "Firebase Messaging + Flutter Local Notifications"
+    },
+    "user_web_nextjs": {
+      "framework": "Next.js 16.1.1 (React 19)",
+      "state_management": "Zustand 5.0.9 (possibly unused) + React hooks",
+      "styling": "Tailwind CSS 4 + shadcn/ui (Radix)",
+      "backend": "Supabase SSR 0.8.0",
+      "auth": "Supabase Auth",
+      "payments": "Razorpay Node 2.9.6",
+      "notifications": "Web Push 3.6.7 + WhatsApp Business API",
+      "forms": "React Hook Form 7.69.0 + Zod 4.2.1",
+      "animations": "Framer Motion 12.23.26 + GSAP 3.14.2"
+    },
+    "shared_infrastructure": {
+      "database": "Supabase (PostgreSQL)",
+      "auth": "Supabase Auth (Google OAuth)",
+      "realtime": "Supabase Realtime",
+      "storage": "Supabase Storage",
+      "payments": "Razorpay",
+      "notifications": "FCM (mobile) + Web Push + WhatsApp Business API"
+    }
+  },
+  "context7_libraries_used": [
+    "/supabase/supabase-js",
+    "/websites/nextjs_app",
+    "/websites/pub_dev_flutter_riverpod_3_0_1",
+    "/razorpay/razorpay-node",
+    "/pmndrs/zustand",
+    "/websites/firebase_google",
+    "/react-hook-form/documentation",
+    "/websites/pub_dev-packages-go_router"
+  ],
+  "created_at": "2025-01-02T05:15:00Z"
+}

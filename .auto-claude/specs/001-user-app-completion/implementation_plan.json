@@ -1,0 +1,497 @@
+{
+  "feature": "User App Feature Completion - Mock Data to Real Database",
+  "workflow_type": "feature",
+  "workflow_rationale": "This is a feature completion workflow converting mock implementations to production-ready features with real Supabase database integration and Razorpay payment processing. The scope involves replacing placeholder data in the Connect/Marketplace and Payment Methods modules with actual database operations.",
+  "phases": [
+    {
+      "id": "phase-1-marketplace-backend",
+      "name": "Marketplace Backend - Server Actions",
+      "type": "implementation",
+      "description": "Create Supabase server actions for marketplace CRUD operations following existing patterns in lib/actions/data.ts",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Create marketplace server actions with Supabase integration",
+          "service": "user-web",
+          "files_to_modify": [],
+          "files_to_create": [
+            "user-web/lib/actions/marketplace.ts"
+          ],
+          "patterns_from": [
+            "user-web/lib/actions/data.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "cd user-web && npx tsc --noEmit lib/actions/marketplace.ts",
+            "expected": "No TypeScript errors"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Add getMarketplaceListings() with category, search, pagination",
+            "Add createListing() for new marketplace posts",
+            "Add toggleFavorite() for user favorites",
+            "Add getListingById() for detail view",
+            "Add getUserListings() for user's own posts",
+            "Follow existing auth check and error handling patterns"
+          ],
+          "notes": "Created marketplace.ts with all required server actions: getMarketplaceListings, getListingById, getUserListings, createListing, updateListing, deleteListing, toggleFavorite, getFavoriteListings, getMarketplaceCategories, searchListings. All actions follow existing patterns from data.ts with proper auth checks, error handling, and cache revalidation.",
+          "updated_at": "2026-01-02T00:08:04.175397+00:00"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Add marketplace types matching Supabase schema",
+          "service": "user-web",
+          "files_to_modify": [
+            "user-web/types/marketplace.ts"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "user-web/types/marketplace.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "cd user-web && npx tsc --noEmit types/marketplace.ts",
+            "expected": "No TypeScript errors"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Update types to match database schema (listing_type enum, seller relations)",
+            "Ensure types align with Supabase query returns"
+          ],
+          "notes": "Added marketplace types matching Supabase schema: DBListingType enum (sell, rent, free, opportunity, housing), ListingStatus enum, DBMarketplaceListing interface with all database columns, DBMarketplaceCategory, DBSeller, DBMarketplaceFavorite interfaces. Added DBMarketplaceListingWithRelations for joined query results. Kept existing UI types for backward compatibility and added mapping utility functions (mapDBListingTypeToUI, mapUIListingTypeToDB, mapCategoryToDBTypes, convertDBListingToUI).",
+          "updated_at": "2026-01-02T00:11:38.612869+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-payment-backend",
+      "name": "Payment Methods Backend - Razorpay Integration",
+      "type": "implementation",
+      "description": "Create server actions and API routes for Razorpay card/UPI tokenization and management",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Create payment methods server actions for card/UPI management",
+          "service": "user-web",
+          "files_to_modify": [],
+          "files_to_create": [
+            "user-web/lib/actions/payment-methods.ts"
+          ],
+          "patterns_from": [
+            "user-web/lib/actions/data.ts",
+            "user-web/app/api/payments/create-order/route.ts"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "cd user-web && npx tsc --noEmit lib/actions/payment-methods.ts",
+            "expected": "No TypeScript errors"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Add getPaymentMethods() to fetch saved cards/UPI from database",
+            "Add addCard() - integrate Razorpay tokenization",
+            "Add addUPI() - validate format and save",
+            "Add deletePaymentMethod() - remove from Razorpay and database",
+            "Add setDefaultPaymentMethod()",
+            "Store Razorpay customer tokens in database (not card details)"
+          ],
+          "notes": "Created payment-methods.ts with all required server actions: getPaymentMethods, getPaymentMethodById, getDefaultPaymentMethod, addCard (with Razorpay token storage), addUPI (with format validation), setDefaultPaymentMethod, deletePaymentMethod, updatePaymentMethodName, hasPaymentMethods, getPaymentMethodCounts. All actions follow patterns from data.ts with proper auth checks, error handling, activity logging, and cache revalidation. Committed with hash 23b6b15.",
+          "updated_at": "2026-01-02T00:15:35.179753+00:00"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Create API route for Razorpay customer and token creation",
+          "service": "user-web",
+          "files_to_modify": [],
+          "files_to_create": [
+            "user-web/app/api/payments/customers/route.ts"
+          ],
+          "patterns_from": [
+            "user-web/app/api/payments/create-order/route.ts"
+          ],
+          "verification": {
+            "type": "api",
+            "method": "POST",
+            "url": "http://localhost:3000/api/payments/customers",
+            "expected_status": 401,
+            "notes": "Returns 401 when unauthenticated (expected)"
+          },
+          "status": "completed",
+          "implementation_notes": [
+            "Create/get Razorpay customer ID for user",
+            "Include CSRF and rate limiting (copy from create-order)",
+            "Store customer_id in profiles table"
+          ],
+          "notes": "Created API route for Razorpay customer and token creation at user-web/app/api/payments/customers/route.ts. Implemented POST endpoint for creating Razorpay customers using user profile data (name, email, phone) from Supabase. Added GET endpoint for retrieving customer ID. Both endpoints include authentication, CSRF protection, and rate limiting following the pattern from create-order/route.ts. Activity logging added for audit trail. Committed with hash 080f948.",
+          "updated_at": "2026-01-02T00:19:17.378192+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-marketplace-frontend",
+      "name": "Marketplace Frontend - Real Data Integration",
+      "type": "implementation",
+      "description": "Update Connect/Marketplace page to use real Supabase data instead of mock data",
+      "depends_on": [
+        "phase-1-marketplace-backend"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Update Connect page to use real Supabase data",
+          "service": "user-web",
+          "files_to_modify": [
+            "user-web/app/(dashboard)/connect/page.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "user-web/app/(dashboard)/wallet/page.tsx",
+            "user-web/app/(dashboard)/projects/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/connect",
+            "checks": [
+              "Page renders without errors",
+              "Loading skeleton shows",
+              "Empty state shows if no listings",
+              "No console errors"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Remove mock data imports (mockProducts, mockHousing, etc.)",
+            "Call getMarketplaceListings() server action",
+            "Implement real favorite toggle with toggleFavorite()",
+            "Add proper loading and error states",
+            "Keep existing UI/UX (masonry grid, filters, search)"
+          ]
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Create/update Create Listing page for real data submission",
+          "service": "user-web",
+          "files_to_modify": [],
+          "files_to_create": [
+            "user-web/app/(dashboard)/connect/create/page.tsx"
+          ],
+          "patterns_from": [
+            "user-web/app/projects/new/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/connect/create",
+            "checks": [
+              "Form renders",
+              "Category selection works",
+              "Submit button present"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Create form for new marketplace listing",
+            "Support all listing types: product, housing, opportunity, community",
+            "Use createListing() server action",
+            "Add image upload support"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-4-payment-frontend",
+      "name": "Payment Methods Frontend - Razorpay Integration",
+      "type": "implementation",
+      "description": "Update Payment Methods page to use real Razorpay tokenization",
+      "depends_on": [
+        "phase-2-payment-backend"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Update Payment Methods page with real Razorpay integration",
+          "service": "user-web",
+          "files_to_modify": [
+            "user-web/app/(dashboard)/payment-methods/page.tsx"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "user-web/app/(dashboard)/wallet/page.tsx"
+          ],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000/payment-methods",
+            "checks": [
+              "Page renders without errors",
+              "Loading skeleton shows",
+              "Add Card button works",
+              "Add UPI button works"
+            ]
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Replace mock fetchMethods with getPaymentMethods() server action",
+            "Integrate Razorpay Checkout for card tokenization (test mode)",
+            "Connect handleAddCard to real Razorpay flow",
+            "Connect handleDelete to deletePaymentMethod()",
+            "Keep UPI validation (must contain @)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-5-flutter-verification",
+      "name": "Flutter App Verification",
+      "type": "implementation",
+      "description": "Verify Flutter user_app uses real Supabase data and has feature parity",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Verify marketplace repository uses real Supabase queries",
+          "service": "user_app",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [
+            "user_app/lib/providers/marketplace_provider.dart"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "cd user_app && flutter analyze lib/data/repositories/marketplace_repository.dart",
+            "expected": "No issues found"
+          },
+          "status": "pending",
+          "implementation_notes": [
+            "Check if repository uses real Supabase client",
+            "Verify getListings queries marketplace_listings table",
+            "Ensure user authentication check before writes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-6-integration",
+      "name": "Integration & Verification",
+      "type": "integration",
+      "description": "End-to-end verification of marketplace and payment flows",
+      "depends_on": [
+        "phase-3-marketplace-frontend",
+        "phase-4-payment-frontend",
+        "phase-5-flutter-verification"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-6-1",
+          "description": "E2E verification of marketplace flow",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Navigate to Connect page - should load real listings or empty state",
+              "Search functionality works with real data",
+              "Category filter updates listings",
+              "Create new listing - saves to database",
+              "Favorite toggle persists to database"
+            ]
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-6-2",
+          "description": "E2E verification of payment methods flow",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "e2e",
+            "steps": [
+              "Navigate to Payment Methods page",
+              "Add Card opens Razorpay checkout (test mode)",
+              "Add UPI validates format and saves",
+              "Delete payment method works",
+              "Set default payment method works"
+            ]
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-6-3",
+          "description": "Production readiness verification",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "manual",
+            "instructions": "Verify: 1) No console errors on any page, 2) All loading states work, 3) Error handling shows user-friendly messages, 4) No mock data references remain, 5) TypeScript compiles without errors"
+          },
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 6,
+    "total_subtasks": 11,
+    "services_involved": [
+      "user-web",
+      "user_app"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 3,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-1-marketplace-backend",
+            "phase-2-payment-backend",
+            "phase-5-flutter-verification"
+          ],
+          "reason": "All have no dependencies, different file sets, can work in parallel"
+        }
+      ],
+      "recommended_workers": 2,
+      "speedup_estimate": "1.5x faster than sequential"
+    },
+    "startup_command": "source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 001 --parallel 2"
+  },
+  "verification_strategy": {
+    "risk_level": "high",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "integration",
+      "e2e"
+    ],
+    "security_scanning_required": true,
+    "staging_deployment_required": true,
+    "acceptance_criteria": [
+      "All mock data replaced with real Supabase queries",
+      "Razorpay integration working with test credentials",
+      "No console errors during normal operation",
+      "TypeScript compiles without errors",
+      "All existing tests pass"
+    ],
+    "verification_steps": [
+      {
+        "name": "TypeScript Compilation",
+        "command": "cd user-web && npx tsc --noEmit",
+        "expected_outcome": "No compilation errors",
+        "type": "build",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "ESLint Check",
+        "command": "cd user-web && npm run lint",
+        "expected_outcome": "No linting errors",
+        "type": "lint",
+        "required": true,
+        "blocking": false
+      },
+      {
+        "name": "Flutter Analyze",
+        "command": "cd user_app && flutter analyze",
+        "expected_outcome": "No issues found",
+        "type": "lint",
+        "required": true,
+        "blocking": false
+      },
+      {
+        "name": "E2E Tests",
+        "command": "cd user-web && npx playwright test",
+        "expected_outcome": "All E2E tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "High risk due to payment integration (Razorpay) and database operations. Requires comprehensive test coverage and security verification."
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "cd user-web && npm test"
+      ],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": true,
+      "commands": [
+        "cd user-web && npx playwright test"
+      ],
+      "services_to_test": [
+        "user-web"
+      ]
+    },
+    "e2e_tests": {
+      "required": true,
+      "commands": [
+        "cd user-web && npx playwright test e2e/"
+      ],
+      "flows": [
+        "marketplace-create-listing",
+        "payment-method-add",
+        "wallet-topup"
+      ]
+    },
+    "browser_verification": {
+      "required": true,
+      "pages": [
+        {
+          "url": "http://localhost:3000/home",
+          "checks": [
+            "renders",
+            "no-console-errors"
+          ]
+        },
+        {
+          "url": "http://localhost:3000/connect",
+          "checks": [
+            "renders",
+            "real-data-loads"
+          ]
+        },
+        {
+          "url": "http://localhost:3000/payment-methods",
+          "checks": [
+            "renders",
+            "razorpay-integration"
+          ]
+        },
+        {
+          "url": "http://localhost:3000/wallet",
+          "checks": [
+            "renders",
+            "transactions-load"
+          ]
+        }
+      ]
+    },
+    "database_verification": {
+      "required": true,
+      "checks": [
+        "marketplace_listings table accessible",
+        "wallet_transactions populated",
+        "payment_methods table exists"
+      ]
+    }
+  },
+  "qa_signoff": null,
+  "status": "human_review",
+  "planStatus": "review",
+  "updated_at": "2026-01-02T00:04:41.615Z",
+  "last_updated": "2026-01-02T00:19:17.378202+00:00"
+}

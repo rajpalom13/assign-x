@@ -1,0 +1,85 @@
+{
+  "critique_completed": true,
+  "issues_found": [
+    {
+      "severity": "medium",
+      "category": "completeness",
+      "description": "Missing VAPID environment variables for web push notifications",
+      "location": "Required Environment Variables section (Lines 67-72)",
+      "fix_applied": "Added Optional Environment Variables section with VAPID_PRIVATE_KEY, NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_EMAIL, WhatsApp vars, and NEXT_PUBLIC_APP_URL",
+      "verified": true
+    },
+    {
+      "severity": "medium",
+      "category": "accuracy",
+      "description": "Razorpay paise conversion requirement not explicitly documented despite being critical for payment implementation",
+      "location": "Implementation Notes > DO section",
+      "fix_applied": "Added CRITICAL notes about Razorpay amounts in paise (multiply by 100) and minimum 100 paise requirement",
+      "verified": true
+    },
+    {
+      "severity": "medium",
+      "category": "accuracy",
+      "description": "Next.js 15+ async cookies() handling not documented despite being a breaking change gotcha",
+      "location": "Implementation Notes > DO section",
+      "fix_applied": "Added notes about using 'await cookies()' and handling setAll errors gracefully in Server Components",
+      "verified": true
+    },
+    {
+      "severity": "medium",
+      "category": "completeness",
+      "description": "Razorpay create-order route not listed as a reference pattern despite containing critical payment implementation patterns",
+      "location": "Files to Reference section",
+      "fix_applied": "Added app/api/payments/create-order/route.ts as reference for Razorpay order creation with paise validation",
+      "verified": true
+    },
+    {
+      "severity": "low",
+      "category": "completeness",
+      "description": "Flutter Razorpay and Firebase platform configuration requirements not documented",
+      "location": "user_app Environment Variables section",
+      "fix_applied": "Added Platform Configuration Notes about Razorpay native SDK setup, Firebase config files, and Android 13+ permission requirements",
+      "verified": true
+    },
+    {
+      "severity": "low",
+      "category": "alignment",
+      "description": "Sentry error monitoring mentioned in feature spec but not implemented - status unclear",
+      "location": "Out of Scope section",
+      "fix_applied": "Added Sentry to Out of Scope with note 'not yet implemented - consider for future sprint'",
+      "verified": true
+    },
+    {
+      "severity": "low",
+      "category": "completeness",
+      "description": "lib/env.ts not listed as reference pattern despite containing important environment validation patterns with Zod",
+      "location": "Files to Reference section",
+      "fix_applied": "Added lib/env.ts as reference for environment variable validation with Zod",
+      "verified": true
+    },
+    {
+      "severity": "low",
+      "category": "accuracy",
+      "description": "lib/supabase/server.ts description missing key patterns it demonstrates",
+      "location": "Files to Reference section",
+      "fix_applied": "Updated description to include 'async cookies, setAll error handling'",
+      "verified": true
+    }
+  ],
+  "issues_fixed": true,
+  "no_issues_found": false,
+  "critique_summary": "Found 8 issues (0 high, 4 medium, 4 low severity). All issues have been fixed. The spec was generally well-written but missing critical implementation gotchas from the research phase - particularly Razorpay paise conversion requirements, Next.js 15+ async cookies pattern, and optional environment variables for push notifications. The existing codebase already implements these patterns correctly (verified in server.ts and create-order/route.ts), but they weren't documented in the spec. Also clarified Sentry status and added Flutter platform configuration notes.",
+  "confidence_level": "high",
+  "recommendations": [
+    "Verify that marketplace_listings and marketplace_categories tables exist in Supabase before implementation",
+    "Ensure Razorpay test mode credentials are available for development testing",
+    "Consider adding Sentry integration in a future sprint for production error monitoring",
+    "Review Flutter pubspec.yaml to confirm razorpay_flutter and firebase dependencies are current"
+  ],
+  "research_validation_notes": {
+    "zustand_stores_verified": "Research claimed stores/ folder was empty, but 6 store files exist (user-store.ts, notification-store.ts, auth-store.ts, project-store.ts, wallet-store.ts, index.ts). Spec was correct.",
+    "supabase_pattern_verified": "lib/supabase/server.ts already implements async cookies() and setAll try-catch pattern correctly",
+    "razorpay_pattern_verified": "app/api/payments/create-order/route.ts already validates minimum 100 paise and documents 'Amount in paise' in types"
+  },
+  "created_at": "2026-01-02T06:30:00Z"
+}
