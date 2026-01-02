@@ -56,6 +56,28 @@ const categories: { id: CategoryTab; label: string; icon: React.ReactNode }[] = 
 const ITEMS_PER_PAGE = 20;
 
 /**
+ * Map UI category tabs to database listing types
+ */
+function mapCategoryToListingType(category: CategoryTab): ListingType | ListingType[] | "all" {
+  switch (category) {
+    case "all":
+      return "all";
+    case "item":
+      // Products include sell, rent, and free listings
+      return ["sell", "rent", "free"];
+    case "housing":
+      return "housing";
+    case "opportunity":
+      return "opportunity";
+    case "community":
+      // Community posts are stored as 'free' listing type
+      return "free";
+    default:
+      return "all";
+  }
+}
+
+/**
  * Student Connect / Campus Marketplace page
  * Pinterest-style marketplace with multiple categories
  * Implements U73-U85 from feature spec
@@ -83,9 +105,8 @@ export default function ConnectPage() {
         const currentPage = reset ? 1 : (pageOverride ?? page);
         const offset = reset ? 0 : (currentPage - 1) * ITEMS_PER_PAGE;
 
-        // Map category tab to listing type
-        const categoryFilter: ListingType | "all" =
-          selectedCategory === "all" ? "all" : selectedCategory;
+        // Map category tab to database listing type(s)
+        const categoryFilter = mapCategoryToListingType(selectedCategory);
 
         const { listings: fetchedListings, total: fetchedTotal, error } =
           await getMarketplaceListings({
