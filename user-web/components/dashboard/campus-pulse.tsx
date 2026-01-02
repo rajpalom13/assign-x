@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
+import { getMarketplaceListings, type ListingType } from "@/lib/actions/marketplace";
 
 /**
  * Campus Pulse item interface
@@ -23,50 +24,22 @@ interface PulseItem {
 }
 
 /**
- * Mock data - would come from Supabase in production
+ * Map database listing_type to display category
  */
-const mockPulseItems: PulseItem[] = [
-  {
-    id: "1",
-    title: "TI-84 Calculator",
-    price: 45,
-    distance: "0.5 km",
-    category: "product",
-    isHot: true,
-  },
-  {
-    id: "2",
-    title: "Room Available - 2BHK",
-    price: 8500,
-    distance: "1.2 km",
-    category: "housing",
-  },
-  {
-    id: "3",
-    title: "Marketing Internship",
-    category: "opportunity",
-    isHot: true,
-  },
-  {
-    id: "4",
-    title: "Engineering Textbooks Set",
-    price: 120,
-    distance: "0.8 km",
-    category: "product",
-  },
-  {
-    id: "5",
-    title: "Study Group - Data Science",
-    category: "community",
-  },
-  {
-    id: "6",
-    title: "Laptop Stand + Keyboard",
-    price: 35,
-    distance: "2.1 km",
-    category: "product",
-  },
-];
+function mapListingTypeToCategory(listingType: ListingType): PulseItem["category"] {
+  switch (listingType) {
+    case "sell":
+    case "rent":
+    case "free":
+      return "product";
+    case "housing":
+      return "housing";
+    case "opportunity":
+      return "opportunity";
+    default:
+      return "community";
+  }
+}
 
 /**
  * Category colors and icons
@@ -92,12 +65,30 @@ export function CampusPulse() {
   const universityName = user?.students?.university?.name || "Your Campus";
 
   useEffect(() => {
-    // Simulate API fetch - would be replaced with actual Supabase query
     const fetchPulseItems = async () => {
       try {
-        // In production: fetch from marketplace_listings filtered by user's university
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setItems(mockPulseItems);
+        // Fetch trending listings from marketplace (most recent, limited to 6)
+        const { listings, error } = await getMarketplaceListings({
+          limit: 6,
+          sortBy: "recent",
+        });
+
+        if (error || !listings) {
+          setItems([]);
+          return;
+        }
+
+        // Convert listings to PulseItem format
+        const pulseItems: PulseItem[] = listings.map((listing) => ({
+          id: listing.id,
+          title: listing.title,
+          price: listing.price || undefined,
+          category: mapListingTypeToCategory(listing.listing_type as ListingType),
+          imageUrl: listing.images?.[0] || undefined,
+          isHot: listing.favorites_count > 5, // Mark as hot if has many favorites
+        }));
+
+        setItems(pulseItems);
       } finally {
         setIsLoading(false);
       }

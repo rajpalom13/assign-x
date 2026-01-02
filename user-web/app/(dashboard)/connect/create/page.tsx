@@ -35,41 +35,65 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { ListingType, ProductCondition } from "@/types/marketplace";
+import { createListing } from "@/lib/actions/marketplace";
+import type { ProductCondition } from "@/types/marketplace";
+
+/**
+ * UI listing type - used for the form selection
+ */
+type UIListingType = "product" | "housing" | "opportunity" | "community";
 
 /**
  * Listing type configuration
  */
 const listingTypes = [
   {
-    id: "product" as ListingType,
+    id: "product" as UIListingType,
     label: "Product",
     description: "Books, gadgets, supplies",
     icon: Package,
     color: "bg-blue-500",
   },
   {
-    id: "housing" as ListingType,
+    id: "housing" as UIListingType,
     label: "Housing",
     description: "Rooms, flatmates",
     icon: Home,
     color: "bg-green-500",
   },
   {
-    id: "opportunity" as ListingType,
+    id: "opportunity" as UIListingType,
     label: "Opportunity",
     description: "Jobs, internships, events",
     icon: Briefcase,
     color: "bg-purple-500",
   },
   {
-    id: "community" as ListingType,
+    id: "community" as UIListingType,
     label: "Community",
     description: "Questions, reviews, polls",
     icon: MessageSquare,
     color: "bg-orange-500",
   },
 ];
+
+/**
+ * Map UI listing type to database listing type
+ */
+function mapUITypeToDBType(uiType: UIListingType): "sell" | "rent" | "free" | "opportunity" | "housing" {
+  switch (uiType) {
+    case "product":
+      return "sell";
+    case "housing":
+      return "housing";
+    case "opportunity":
+      return "opportunity";
+    case "community":
+      return "free";
+    default:
+      return "sell";
+  }
+}
 
 /**
  * Product categories
@@ -122,7 +146,7 @@ const roomTypes = [
  */
 export default function CreateListingPage() {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<ListingType | null>(null);
+  const [selectedType, setSelectedType] = useState<UIListingType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
 
@@ -271,74 +295,70 @@ export default function CreateListingPage() {
    * Handle form submission
    */
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm() || !selectedType) return;
 
     setIsSubmitting(true);
     try {
-      // Build payload based on type
-      const basePayload = {
-        type: selectedType,
+      // Map UI type to database type
+      const dbListingType = mapUITypeToDBType(selectedType);
+
+      // Build the listing data based on type
+      const listingData: Parameters<typeof createListing>[0] = {
+        listingType: dbListingType,
         title,
-        description,
-        images,
+        description: description || undefined,
+        imageUrl: images[0] || undefined, // Use first image as main image
       };
 
-      let payload;
+      // Add type-specific fields
       switch (selectedType) {
         case "product":
-          payload = {
-            ...basePayload,
-            price: parseFloat(price),
-            condition,
-            category,
-            isNegotiable,
-          };
+          listingData.price = parseFloat(price) || undefined;
+          listingData.priceNegotiable = isNegotiable;
+          listingData.itemCondition = condition;
+          // Store category in metadata since we don't have category_id
+          listingData.metadata = { category, images: images.slice(1) };
           break;
+
         case "housing":
-          payload = {
-            ...basePayload,
-            monthlyRent: parseFloat(monthlyRent),
-            roomType,
-            location,
-            availableFrom,
-            amenities,
-          };
+          listingData.price = parseFloat(monthlyRent) || undefined;
+          listingData.housingType = roomType as "single" | "shared" | "flat";
+          listingData.locationText = location;
+          listingData.availableFrom = availableFrom || undefined;
+          listingData.metadata = { amenities, images: images.slice(1) };
           break;
+
         case "opportunity":
-          payload = {
-            ...basePayload,
-            opportunityType,
-            company,
-            location: oppLocation,
-            isRemote,
-            deadline,
-            stipend: stipend ? parseFloat(stipend) : undefined,
-            duration,
-          };
+          listingData.opportunityType = opportunityType as "internship" | "job" | "event" | "gig" | "workshop";
+          listingData.companyName = company || undefined;
+          listingData.locationText = oppLocation || undefined;
+          listingData.applicationDeadline = deadline || undefined;
+          listingData.price = stipend ? parseFloat(stipend) : undefined;
+          listingData.metadata = { isRemote, duration, images: images.slice(1) };
           break;
+
         case "community":
-          payload = {
-            ...basePayload,
-            postType,
-            tags,
-            pollOptions:
-              postType === "poll"
-                ? pollOptions
-                    .filter((o) => o.trim())
-                    .map((text, i) => ({ id: `opt-${i}`, text, votes: 0 }))
-                : undefined,
-          };
+          listingData.postContent = description;
+          if (postType === "poll") {
+            listingData.pollOptions = pollOptions
+              .filter((o) => o.trim())
+              .map((text, i) => ({ id: `opt-${i}`, text, votes: 0 }));
+          }
+          listingData.metadata = { postType, tags, images: images.slice(1) };
           break;
       }
 
-      // In production: POST to /api/marketplace/listings
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Creating listing:", payload);
+      const result = await createListing(listingData);
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
 
       toast.success("Listing created successfully!");
       router.push("/connect");
-    } catch {
-      toast.error("Failed to create listing");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create listing");
     } finally {
       setIsSubmitting(false);
     }

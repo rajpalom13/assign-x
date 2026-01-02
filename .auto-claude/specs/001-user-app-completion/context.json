@@ -1,0 +1,60 @@
+{
+  "task_description": "Complete all missing features in user app by converting mock data to real Supabase database integration. Focus on Marketplace/Connect and Payment Methods modules.",
+  "scoped_services": ["user-web", "user_app"],
+  "files_to_modify": {
+    "user-web": [
+      "app/(dashboard)/connect/page.tsx",
+      "app/(dashboard)/payment-methods/page.tsx",
+      "types/marketplace.ts"
+    ],
+    "user_app": [
+      "lib/data/repositories/marketplace_repository.dart"
+    ]
+  },
+  "files_to_create": {
+    "user-web": [
+      "lib/actions/marketplace.ts",
+      "lib/actions/payment-methods.ts",
+      "app/api/payments/customers/route.ts",
+      "app/(dashboard)/connect/create/page.tsx"
+    ]
+  },
+  "files_to_reference": [
+    "user-web/lib/actions/data.ts",
+    "user-web/lib/supabase/server.ts",
+    "user-web/app/api/payments/create-order/route.ts",
+    "user-web/stores/user-store.ts",
+    "user-web/app/(dashboard)/wallet/page.tsx",
+    "user-web/app/(dashboard)/projects/page.tsx",
+    "user_app/lib/providers/marketplace_provider.dart"
+  ],
+  "patterns": {
+    "server_action_pattern": "Use 'use server' directive, create Supabase client per-request, check auth before DB access, return typed data with error handling",
+    "api_route_pattern": "Include CSRF validation, rate limiting, auth check, proper error responses",
+    "zustand_store_pattern": "Use persist middleware for offline support, include isLoading states, handle async errors",
+    "riverpod_provider_pattern": "AsyncNotifier for async state, AsyncValue wrapping (Loading/Data/Error), provide refresh methods"
+  },
+  "existing_implementations": {
+    "description": "Connect page uses mock data from lib/data/marketplace.ts. Payment Methods page uses local mock state. Wallet page already uses real data via getWallet() action.",
+    "mock_data_files": ["user-web/lib/data/marketplace.ts"],
+    "working_examples": ["user-web/app/(dashboard)/wallet/page.tsx", "user-web/lib/actions/data.ts"]
+  },
+  "database_tables": {
+    "marketplace": ["marketplace_listings", "marketplace_categories", "marketplace_favorites", "listing_images", "listing_inquiries"],
+    "payments": ["payment_methods", "wallets", "wallet_transactions"],
+    "profiles": ["profiles", "students", "professionals"]
+  },
+  "critical_constraints": {
+    "razorpay": {
+      "amounts_in_paise": "Multiply rupees by 100 (e.g., Rs 50 = 5000 paise)",
+      "minimum_amount": "100 paise (Rs 1)",
+      "security": "Signature verification must be server-side"
+    },
+    "supabase": {
+      "cookie_handling": "Use await cookies() in Next.js 15+",
+      "setall_error": "Handle setAll errors gracefully in Server Components"
+    },
+    "upi_validation": "UPI ID must contain @ symbol"
+  },
+  "created_at": "2026-01-02T05:30:00.000Z"
+}

@@ -1,0 +1,88 @@
+{
+  "complexity": "complex",
+  "workflow_type": "feature",
+  "confidence": 0.85,
+  "reasoning": "This is a comprehensive feature completion task spanning two platforms (user_app Flutter + user-web Next.js) with 100+ features to verify against detailed specifications. While the existing comparison report claims 100% feature parity, numerous TODO comments indicate production-level integrations (Razorpay, Sentry, WhatsApp API, file uploads) are incomplete. The scope involves cross-platform verification, external API integrations, and production readiness requirements.",
+
+  "analysis": {
+    "scope": {
+      "estimated_files": 50,
+      "estimated_services": 2,
+      "is_cross_cutting": true,
+      "notes": "User app spans Flutter (124 Dart files) and Next.js (300+ TS files). Feature completion may require modifications across authentication, payments, notifications, chat, projects, and marketplace modules."
+    },
+    "integrations": {
+      "external_services": ["Razorpay", "Supabase", "WhatsApp Business API", "Firebase Cloud Messaging", "Sentry"],
+      "new_dependencies": [],
+      "research_needed": true,
+      "notes": "TODOs found for payment gateway integration, crash reporting (Sentry), file attachment uploads, and WhatsApp notifications. These require external API documentation research for proper implementation."
+    },
+    "infrastructure": {
+      "docker_changes": false,
+      "database_changes": false,
+      "config_changes": true,
+      "notes": "Production environment configuration needed for external API keys (Razorpay, Sentry DSN, WhatsApp API credentials, VAPID keys for push notifications). No Docker or database schema changes expected."
+    },
+    "knowledge": {
+      "patterns_exist": true,
+      "research_required": true,
+      "unfamiliar_tech": ["WhatsApp Business API", "Razorpay production integration"],
+      "notes": "Codebase has established patterns for Supabase, React/Flutter components, and state management. However, production-level payment processing and WhatsApp integration require API documentation research."
+    },
+    "risk": {
+      "level": "medium",
+      "concerns": [
+        "Payment integration requires careful testing to avoid transaction issues",
+        "Feature parity verification may reveal more gaps than expected",
+        "Production readiness includes security considerations for payments and auth",
+        "WhatsApp Business API compliance requirements"
+      ],
+      "notes": "Primary risk is discovering additional incomplete features during comprehensive gap analysis. Payment and notification integrations are security-sensitive."
+    }
+  },
+
+  "recommended_phases": [
+    "discovery",
+    "requirements",
+    "research",
+    "context",
+    "spec_writing",
+    "self_critique",
+    "planning",
+    "validation"
+  ],
+
+  "flags": {
+    "needs_research": true,
+    "needs_self_critique": true,
+    "needs_infrastructure_setup": false
+  },
+
+  "validation_recommendations": {
+    "risk_level": "high",
+    "skip_validation": false,
+    "minimal_mode": false,
+    "test_types_required": ["unit", "integration", "e2e"],
+    "security_scan_required": true,
+    "staging_deployment_required": true,
+    "reasoning": "Payment integration (Razorpay), authentication flows, and notification services are security-sensitive. Requires comprehensive test coverage including E2E tests for critical user journeys. Security scan needed for payment handling code. Staging deployment recommended to verify external API integrations before production."
+  },
+
+  "task_breakdown_summary": {
+    "phase_1_discovery": "Read all 9 requirement docs in plan folder, map 100 user features to current implementation",
+    "phase_2_gap_analysis": "Create detailed gap list comparing spec vs actual implementation for both user_app and user-web",
+    "phase_3_research": "Document Razorpay, WhatsApp Business API, and Sentry integration patterns",
+    "phase_4_implementation": "Address each gap with production-ready code following existing patterns",
+    "phase_5_optimization": "Performance audit and optimization for production readiness"
+  },
+
+  "estimated_scope": {
+    "platforms": ["user_app (Flutter)", "user-web (Next.js)"],
+    "total_features_to_verify": 100,
+    "identified_todos": 15,
+    "production_integrations_needed": 4,
+    "estimated_effort": "complex"
+  },
+
+  "created_at": "2025-01-02T05:15:00Z"
+}

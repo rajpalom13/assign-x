@@ -10,14 +10,14 @@ import {
   Home,
   Briefcase,
   Users,
-  Loader2,
   X,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { MasonryGrid, FilterBar } from "@/components/marketplace";
+import { MasonryGrid } from "@/components/marketplace";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -31,40 +31,11 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
 import { toast } from "sonner";
 import {
-  mockProducts,
-  mockHousing,
-  mockOpportunities,
-  mockCommunityPosts,
-} from "@/lib/data/marketplace";
-
-/**
- * Simplified listing type for mock data
- */
-interface ListingWithSeller {
-  id: string;
-  title: string;
-  description?: string;
-  price?: number;
-  listing_type: string;
-  is_active: boolean;
-  view_count?: number;
-  created_at: string;
-  updated_at: string;
-  seller_id: string;
-  seller?: {
-    id: string;
-    full_name: string;
-    avatar_url: string | null;
-  };
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-    is_active: boolean;
-  };
-  is_favorited?: boolean;
-  image_url?: string | null;
-}
+  getMarketplaceListings,
+  toggleFavorite,
+  type ListingType,
+} from "@/lib/actions/marketplace";
+import type { ListingDisplay } from "@/components/marketplace/masonry-grid";
 
 /**
  * Category type for filtering
@@ -82,6 +53,30 @@ const categories: { id: CategoryTab; label: string; icon: React.ReactNode }[] = 
   { id: "community", label: "Community", icon: <Users className="h-4 w-4" /> },
 ];
 
+const ITEMS_PER_PAGE = 20;
+
+/**
+ * Map UI category tabs to database listing types
+ */
+function mapCategoryToListingType(category: CategoryTab): ListingType | ListingType[] | "all" {
+  switch (category) {
+    case "all":
+      return "all";
+    case "item":
+      // Products include sell, rent, and free listings
+      return ["sell", "rent", "free"];
+    case "housing":
+      return "housing";
+    case "opportunity":
+      return "opportunity";
+    case "community":
+      // Community posts are stored as 'free' listing type
+      return "free";
+    default:
+      return "all";
+  }
+}
+
 /**
  * Student Connect / Campus Marketplace page
  * Pinterest-style marketplace with multiple categories
@@ -91,7 +86,7 @@ export default function ConnectPage() {
   const { user } = useUserStore();
 
   // State
-  const [listings, setListings] = useState<ListingWithSeller[]>([]);
+  const [listings, setListings] = useState<ListingDisplay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryTab>("all");
@@ -101,169 +96,98 @@ export default function ConnectPage() {
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
 
-  // Fetch listings - uses mock data until marketplace tables are set up
+  // Fetch listings from Supabase
   const fetchListings = useCallback(
-    async (reset = false) => {
+    async (reset = false, pageOverride?: number) => {
       try {
         setIsLoading(true);
 
-        // Convert mock data to ListingWithSeller format
-        const allMockListings: ListingWithSeller[] = [
-          ...mockProducts.map((p) => ({
-            id: p.id,
-            title: p.title,
-            description: p.description,
-            price: p.price,
-            listing_type: "sell" as const,
-            is_active: true,
-            view_count: p.views,
-            created_at: p.createdAt,
-            updated_at: p.createdAt,
-            seller_id: p.userId,
-            seller: {
-              id: p.userId,
-              full_name: p.userName,
-              avatar_url: null,
-            },
-            category: { id: "1", name: p.category, slug: p.category.toLowerCase(), is_active: true },
-            is_favorited: false,
-          })),
-          ...mockHousing.map((h) => ({
-            id: h.id,
-            title: h.title,
-            description: h.description,
-            price: h.monthlyRent,
-            listing_type: "housing" as const,
-            is_active: true,
-            view_count: h.views,
-            created_at: h.createdAt,
-            updated_at: h.createdAt,
-            seller_id: h.userId,
-            seller: {
-              id: h.userId,
-              full_name: h.userName,
-              avatar_url: null,
-            },
-            category: { id: "2", name: "Housing", slug: "housing", is_active: true },
-            is_favorited: false,
-          })),
-          ...mockOpportunities.map((o) => ({
-            id: o.id,
-            title: o.title,
-            description: o.description,
-            price: o.stipend || 0,
-            listing_type: "opportunity" as const,
-            is_active: true,
-            view_count: o.views,
-            created_at: o.createdAt,
-            updated_at: o.createdAt,
-            seller_id: o.userId,
-            seller: {
-              id: o.userId,
-              full_name: o.userName,
-              avatar_url: null,
-            },
-            category: { id: "3", name: "Opportunity", slug: "opportunity", is_active: true },
-            is_favorited: false,
-          })),
-          ...mockCommunityPosts.map((c) => ({
-            id: c.id,
-            title: c.title,
-            description: c.description,
-            price: 0,
-            listing_type: "community_post" as const,
-            is_active: true,
-            view_count: c.views,
-            created_at: c.createdAt,
-            updated_at: c.createdAt,
-            seller_id: c.userId,
-            seller: {
-              id: c.userId,
-              full_name: c.userName,
-              avatar_url: null,
-            },
-            category: { id: "4", name: "Community", slug: "community", is_active: true },
-            is_favorited: false,
-          })),
-        ];
+        const currentPage = reset ? 1 : (pageOverride ?? page);
+        const offset = reset ? 0 : (currentPage - 1) * ITEMS_PER_PAGE;
 
-        // Filter by category
-        let filtered = allMockListings;
-        if (selectedCategory === "item") {
-          filtered = filtered.filter((l) => l.listing_type === "sell");
-        } else if (selectedCategory === "housing") {
-          filtered = filtered.filter((l) => l.listing_type === "housing");
-        } else if (selectedCategory === "opportunity") {
-          filtered = filtered.filter((l) => l.listing_type === "opportunity");
-        } else if (selectedCategory === "community") {
-          filtered = filtered.filter((l) => l.listing_type === "community_post");
+        // Map category tab to database listing type(s)
+        const categoryFilter = mapCategoryToListingType(selectedCategory);
+
+        const { listings: fetchedListings, total: fetchedTotal, error } =
+          await getMarketplaceListings({
+            category: categoryFilter,
+            search: searchQuery || undefined,
+            limit: ITEMS_PER_PAGE,
+            offset,
+            priceMin: priceRange[0] > 0 ? priceRange[0] : undefined,
+            priceMax: priceRange[1] < 50000 ? priceRange[1] : undefined,
+            sortBy: "recent",
+          });
+
+        if (error) {
+          toast.error("Failed to load listings");
+          return;
         }
 
-        // Filter by search
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          filtered = filtered.filter(
-            (l) =>
-              l.title?.toLowerCase().includes(query) ||
-              l.description?.toLowerCase().includes(query)
-          );
-        }
-
-        // Filter by price
-        if (priceRange[0] > 0 || priceRange[1] < 50000) {
-          filtered = filtered.filter(
-            (l) => (l.price || 0) >= priceRange[0] && (l.price || 0) <= priceRange[1]
-          );
-        }
+        // Cast to ListingDisplay type for the MasonryGrid component
+        const listingsData = fetchedListings as ListingDisplay[];
 
         if (reset) {
-          setListings(filtered);
+          setListings(listingsData);
           setPage(1);
         } else {
-          setListings(filtered);
+          setListings((prev) => [...prev, ...listingsData]);
         }
 
-        setTotal(filtered.length);
-        setHasMore(false); // Mock data doesn't paginate
-      } catch (error) {
-        console.error("Error fetching listings:", error);
+        setTotal(fetchedTotal);
+        setHasMore(offset + listingsData.length < fetchedTotal);
+      } catch {
         toast.error("Failed to load listings");
       } finally {
         setIsLoading(false);
       }
     },
-    [selectedCategory, searchQuery, priceRange, page, user?.id]
+    [selectedCategory, searchQuery, priceRange, page]
   );
 
-  // Initial fetch
+  // Initial fetch and refetch on filter changes
   useEffect(() => {
     fetchListings(true);
   }, [selectedCategory, searchQuery, priceRange]);
 
-  // Handle favorite toggle (mock implementation)
+  // Handle favorite toggle using Supabase
   const handleFavorite = async (listingId: string) => {
     if (!user?.id) {
       toast.error("Please sign in to save favorites");
       return;
     }
 
-    // Toggle favorite locally (mock implementation)
+    // Optimistic update
     setListings((prev) =>
       prev.map((l) =>
         l.id === listingId ? { ...l, is_favorited: !l.is_favorited } : l
       )
     );
-    const listing = listings.find((l) => l.id === listingId);
+
+    const result = await toggleFavorite(listingId);
+
+    if (result.error) {
+      // Revert on error
+      setListings((prev) =>
+        prev.map((l) =>
+          l.id === listingId ? { ...l, is_favorited: !l.is_favorited } : l
+        )
+      );
+      toast.error(result.error);
+      return;
+    }
+
     toast.success(
-      listing?.is_favorited ? "Removed from favorites" : "Added to favorites"
+      result.isFavorited ? "Added to favorites" : "Removed from favorites"
     );
   };
 
-  // Handle load more
+  // Handle load more for infinite scroll
   const handleLoadMore = () => {
     if (!isLoading && hasMore) {
-      setPage((p) => p + 1);
-      fetchListings(false);
+      const newPage = page + 1;
+      setPage(newPage);
+      fetchListings(false, newPage);
     }
   };
 
@@ -280,6 +204,21 @@ export default function ConnectPage() {
     selectedCategory !== "all" ||
     priceRange[0] > 0 ||
     priceRange[1] < 50000;
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -437,20 +376,18 @@ export default function ConnectPage() {
           </p>
         )}
 
-        {/* Pinterest-style Masonry Grid - U73 */}
-        <MasonryGrid
-          listings={listings}
-          onFavorite={handleFavorite}
-          onLoadMore={handleLoadMore}
-          hasMore={hasMore}
-          isLoading={isLoading}
-        />
+        {/* Loading Skeleton */}
+        {isLoading && listings.length === 0 && <LoadingSkeleton />}
 
-        {/* Loading State */}
-        {isLoading && listings.length === 0 && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+        {/* Pinterest-style Masonry Grid - U73 */}
+        {(!isLoading || listings.length > 0) && (
+          <MasonryGrid
+            listings={listings}
+            onFavorite={handleFavorite}
+            onLoadMore={handleLoadMore}
+            hasMore={hasMore}
+            isLoading={isLoading}
+          />
         )}
 
         {/* Empty State */}
