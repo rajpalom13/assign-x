@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import {
   CreditCard,
   Plus,
@@ -387,7 +387,7 @@ export default function PaymentMethodsPage() {
                       </div>
 
                       <div>
-                        {method.type === "card" ? (
+{method.type === "card" ? (
                           <>
                             <div className="flex items-center gap-2">
                               <p className="font-medium">
@@ -482,19 +482,20 @@ export default function PaymentMethodsPage() {
         <div className="flex gap-3">
           <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1">
-                <CreditCard className="h-4 w-4 mr-2" />
+              <Button className="flex-1">
+                <Plus className="h-4 w-4 mr-2" />
                 Add Card
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Debit/Credit Card</DialogTitle>
+                <DialogTitle>Add Credit/Debit Card</DialogTitle>
                 <DialogDescription>
-                  Your card details are securely processed
+                  Add a new card for faster checkout
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 pt-4">
+
+              <div className="space-y-4">
                 <div>
                   <Label htmlFor="cardNumber">Card Number</Label>
                   <Input
@@ -504,9 +505,10 @@ export default function PaymentMethodsPage() {
                     onChange={(e) =>
                       setCardNumber(formatCardNumber(e.target.value))
                     }
-                    disabled={isSubmitting}
+                    maxLength={19}
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="cardExpiry">Expiry Date</Label>
@@ -517,9 +519,10 @@ export default function PaymentMethodsPage() {
                       onChange={(e) =>
                         setCardExpiry(formatExpiry(e.target.value))
                       }
-                      disabled={isSubmitting}
+                      maxLength={5}
                     />
                   </div>
+
                   <div>
                     <Label htmlFor="cardCvv">CVV</Label>
                     <Input
@@ -529,11 +532,12 @@ export default function PaymentMethodsPage() {
                       onChange={(e) =>
                         setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))
                       }
-                      disabled={isSubmitting}
                       type="password"
+                      maxLength={4}
                     />
                   </div>
                 </div>
+
                 <div>
                   <Label htmlFor="cardName">Cardholder Name</Label>
                   <Input
@@ -541,18 +545,27 @@ export default function PaymentMethodsPage() {
                     placeholder="John Doe"
                     value={cardName}
                     onChange={(e) => setCardName(e.target.value)}
-                    disabled={isSubmitting}
                   />
                 </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
                 <Button
-                  className="w-full"
+                  variant="outline"
+                  onClick={() => setAddCardOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
                   onClick={handleAddCard}
                   disabled={isSubmitting}
+                  className="flex-1"
                 >
                   {isSubmitting && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
-                  {isSubmitting ? "Adding Card..." : "Add Card"}
+                  Add Card
                 </Button>
               </div>
             </DialogContent>
@@ -561,18 +574,19 @@ export default function PaymentMethodsPage() {
           <Dialog open={addUpiOpen} onOpenChange={setAddUpiOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="flex-1">
-                <Smartphone className="h-4 w-4 mr-2" />
-                Add UPI
+                <Plus className="h-4 w-4 mr-2" />
+                Add UPI ID
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add UPI ID</DialogTitle>
                 <DialogDescription>
-                  Add a UPI ID for faster payments
+                  Add a UPI ID for instant payments
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 pt-4">
+
+              <div className="space-y-4">
                 <div>
                   <Label htmlFor="upiId">UPI ID</Label>
                   <Input
@@ -580,21 +594,30 @@ export default function PaymentMethodsPage() {
                     placeholder="yourname@bankname"
                     value={upiId}
                     onChange={(e) => setUpiId(e.target.value)}
-                    disabled={isSubmitting}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Format: yourname@bankname (e.g., john@okaxis)
                   </p>
                 </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
                 <Button
-                  className="w-full"
+                  variant="outline"
+                  onClick={() => setAddUpiOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
                   onClick={handleAddUpi}
                   disabled={isSubmitting}
+                  className="flex-1"
                 >
                   {isSubmitting && (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   )}
-                  {isSubmitting ? "Adding UPI..." : "Add UPI"}
+                  Add UPI ID
                 </Button>
               </div>
             </DialogContent>

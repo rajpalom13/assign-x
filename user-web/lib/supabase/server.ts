@@ -1,8 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createJsClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
 /**
  * Creates a Supabase client for use in Server Components, Server Actions, and Route Handlers
+ * Uses cookie-based authentication (for web app)
  * @returns Supabase server client instance
  */
 export async function createClient() {
@@ -29,4 +32,38 @@ export async function createClient() {
       },
     }
   );
+}
+
+/**
+ * Creates a Supabase client from a request's Authorization header
+ * Used for API routes that receive requests from mobile apps
+ * Falls back to cookie-based auth if no Authorization header is present
+ * @param request - NextRequest object
+ * @returns Supabase client instance with auth context
+ */
+export async function createClientFromRequest(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+
+  // If Authorization header is present, use token-based auth
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+
+    // Create a client with the access token
+    const supabase = createJsClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    );
+
+    return supabase;
+  }
+
+  // Fall back to cookie-based auth for web requests
+  return createClient();
 }

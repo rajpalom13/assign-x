@@ -8,7 +8,6 @@ import {
   Home,
   Briefcase,
   MessageSquare,
-  Camera,
   X,
   Loader2,
   MapPin,
@@ -606,170 +605,172 @@ export default function CreateListingPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Selected Type Badge */}
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="gap-2 py-1.5">
-                {listingTypes.find((t) => t.id === selectedType)?.label}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedType(null)}
-              >
-                Change Type
-              </Button>
-            </div>
+            {/* Back button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedType(null)}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to type selection
+            </Button>
 
-            {/* Image Upload */}
+            {/* Common fields */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Photos</CardTitle>
+              <CardHeader>
+                <CardTitle>Listing Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {uploadError && (
-                  <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{uploadError}</p>
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-6 transition-colors",
-                    isDragging
-                      ? "border-primary bg-primary/5"
-                      : "border-muted-foreground/25"
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <div className="flex gap-3 flex-wrap mb-4">
-                    {images.map((img) => (
-                      <div
-                        key={img.id}
-                        className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted"
-                      >
-                        <img
-                          src={img.previewUrl}
-                          alt={`Upload ${img.id}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {img.status === "uploading" && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <Progress value={img.progress} className="w-10" />
-                          </div>
-                        )}
-                        {img.status === "error" && (
-                          <div className="absolute inset-0 bg-red-500/50 flex items-center justify-center">
-                            <AlertCircle className="h-4 w-4 text-white" />
-                          </div>
-                        )}
-                        {img.status !== "uploading" && (
-                          <button
-                            className="absolute top-1 right-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70"
-                            onClick={() => removeImage(img.id)}
-                          >
-                            <X className="h-3 w-3 text-white" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {images.filter((img) => img.status !== "error").length < 5 && (
-                    <label className="flex flex-col items-center gap-2 cursor-pointer">
-                      <Upload className="h-6 w-6 text-muted-foreground" />
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-foreground">
-                          Drop images or click to upload
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG, WebP, GIF • Max 5MB per image
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Add up to 5 photos
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Common Fields */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
+                <div>
+                  <Label htmlFor="title">Title</Label>
                   <Input
                     id="title"
-                    placeholder="What are you listing?"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter listing title"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
-                    placeholder="Add more details..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
+                    placeholder="Describe your listing"
+                    rows={4}
                   />
+                </div>
+
+                {/* Image Upload */}
+                <div>
+                  <Label>Images</Label>
+                  <div
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                      isDragging
+                        ? "border-primary bg-primary/5"
+                        : "border-muted-foreground/25 hover:border-primary/50"
+                    )}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById("image-input")?.click()}
+                  >
+                    <input
+                      id="image-input"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="font-medium">Drop images here or click to upload</p>
+                    <p className="text-sm text-muted-foreground">
+                      Max 5 images, 5MB each (JPEG, PNG, WebP, GIF)
+                    </p>
+                  </div>
+
+                  {uploadError && (
+                    <div className="flex gap-2 mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span>{uploadError}</span>
+                    </div>
+                  )}
+
+                  {/* Image previews */}
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-5 gap-2 mt-4">
+                      {images.map((image) => (
+                        <div
+                          key={image.id}
+                          className="relative aspect-square rounded-lg overflow-hidden bg-muted"
+                        >
+                          <img
+                            src={image.previewUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+
+                          {/* Status overlay */}
+                          {image.status === "uploading" && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                              <div className="text-center">
+                                <Loader2 className="h-4 w-4 animate-spin text-white mx-auto mb-1" />
+                                <p className="text-xs text-white">{image.progress}%</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {image.status === "error" && (
+                            <div className="absolute inset-0 bg-destructive/50 flex items-center justify-center">
+                              <AlertCircle className="h-5 w-5 text-white" />
+                            </div>
+                          )}
+
+                          {/* Remove button */}
+                          <button
+                            onClick={() => removeImage(image.id)}
+                            className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+
+                          {/* Upload progress */}
+                          {image.status === "uploading" && (
+                            <div className="absolute bottom-0 left-0 right-0">
+                              <Progress value={image.progress} className="h-1 rounded-none" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Fields */}
+            {/* Product-specific fields */}
             {selectedType === "product" && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Product Details</CardTitle>
+                <CardHeader>
+                  <CardTitle>Product Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price *</Label>
+                    <div>
+                      <Label htmlFor="price">Price</Label>
                       <Input
                         id="price"
                         type="number"
-                        placeholder="₹0"
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
+                        placeholder="₹0"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="condition">Condition *</Label>
-                      <Select value={condition} onValueChange={(value) => setCondition(value as ProductCondition)}>
+                    <div>
+                      <Label htmlFor="condition">Condition</Label>
+                      <Select value={condition} onValueChange={(v) => setCondition(v as ProductCondition)}>
                         <SelectTrigger id="condition">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="like-new">Like New</SelectItem>
+                          <SelectItem value="like_new">Like New</SelectItem>
                           <SelectItem value="good">Good</SelectItem>
                           <SelectItem value="fair">Fair</SelectItem>
+<SelectItem value="poor">Poor</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category *</Label>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger id="category">
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
                         {productCategories.map((cat) => (
@@ -781,8 +782,10 @@ export default function CreateListingPage() {
                     </Select>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="negotiable">Price Negotiable?</Label>
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <Label htmlFor="negotiable" className="cursor-pointer">
+                      Price Negotiable
+                    </Label>
                     <Switch
                       id="negotiable"
                       checked={isNegotiable}
@@ -793,26 +796,26 @@ export default function CreateListingPage() {
               </Card>
             )}
 
-            {/* Housing Fields */}
+            {/* Housing-specific fields */}
             {selectedType === "housing" && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Housing Details</CardTitle>
+                <CardHeader>
+                  <CardTitle>Housing Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="rent">Monthly Rent *</Label>
-<Input
+                    <div>
+                      <Label htmlFor="rent">Monthly Rent</Label>
+                      <Input
                         id="rent"
                         type="number"
-                        placeholder="₹0"
                         value={monthlyRent}
                         onChange={(e) => setMonthlyRent(e.target.value)}
+                        placeholder="₹0"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="room-type">Room Type *</Label>
+                    <div>
+                      <Label htmlFor="room-type">Room Type</Label>
                       <Select value={roomType} onValueChange={setRoomType}>
                         <SelectTrigger id="room-type">
                           <SelectValue />
@@ -828,61 +831,55 @@ export default function CreateListingPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location *</Label>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
-                      placeholder="Enter location"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Enter location"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="available">Available From</Label>
+                  <div>
+                    <Label htmlFor="available-from">Available From</Label>
                     <Input
-                      id="available"
+                      id="available-from"
                       type="date"
                       value={availableFrom}
                       onChange={(e) => setAvailableFrom(e.target.value)}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="amenity-input">Amenities</Label>
-                    <div className="flex gap-2">
+                  <div>
+                    <Label>Amenities</Label>
+                    <div className="flex gap-2 mb-2">
                       <Input
-                        id="amenity-input"
-                        placeholder="e.g., WiFi, AC"
                         value={amenityInput}
                         onChange={(e) => setAmenityInput(e.target.value)}
-                        onKeyPress={(e) => {
+                        placeholder="Add amenity"
+                        onKeyDown={(e) => {
                           if (e.key === "Enter") {
+                            e.preventDefault();
                             addAmenity();
                           }
                         }}
                       />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={addAmenity}
-                        className="px-3"
-                      >
+                      <Button onClick={addAmenity} size="sm">
                         Add
                       </Button>
                     </div>
-                    <div className="flex gap-2 flex-wrap mt-2">
+                    <div className="flex flex-wrap gap-2">
                       {amenities.map((amenity) => (
                         <Badge
                           key={amenity}
                           variant="secondary"
-                          className="gap-1 cursor-pointer"
+                          className="cursor-pointer"
                           onClick={() =>
                             setAmenities(amenities.filter((a) => a !== amenity))
                           }
                         >
-                          {amenity}
-                          <X className="h-3 w-3" />
+                          {amenity} <X className="h-3 w-3 ml-1" />
                         </Badge>
                       ))}
                     </div>
@@ -891,14 +888,14 @@ export default function CreateListingPage() {
               </Card>
             )}
 
-            {/* Opportunity Fields */}
+            {/* Opportunity-specific fields */}
             {selectedType === "opportunity" && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Opportunity Details</CardTitle>
+                <CardHeader>
+                  <CardTitle>Opportunity Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="opp-type">Opportunity Type</Label>
                     <Select value={opportunityType} onValueChange={setOpportunityType}>
                       <SelectTrigger id="opp-type">
@@ -914,19 +911,40 @@ export default function CreateListingPage() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="company">Company/Organization</Label>
                     <Input
                       id="company"
-                      placeholder="Company name"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="opp-location">Location</Label>
+                    <Input
+                      id="opp-location"
+                      value={oppLocation}
+                      onChange={(e) => setOppLocation(e.target.value)}
+                      placeholder="Enter location"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <Label htmlFor="remote" className="cursor-pointer">
+                      Remote
+                    </Label>
+                    <Switch
+                      id="remote"
+                      checked={isRemote}
+                      onCheckedChange={setIsRemote}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="deadline">Application Deadline</Label>
+                    <div>
+                      <Label htmlFor="deadline">Deadline</Label>
                       <Input
                         id="deadline"
                         type="date"
@@ -934,59 +952,39 @@ export default function CreateListingPage() {
                         onChange={(e) => setDeadline(e.target.value)}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="stipend">Stipend/Salary</Label>
                       <Input
                         id="stipend"
                         type="number"
-                        placeholder="₹0"
                         value={stipend}
                         onChange={(e) => setStipend(e.target.value)}
+                        placeholder="₹0 (optional)"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="opp-location">Location</Label>
-                      <Input
-                        id="opp-location"
-                        placeholder="Job location"
-                        value={oppLocation}
-                        onChange={(e) => setOppLocation(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="duration">Duration</Label>
-                      <Input
-                        id="duration"
-                        placeholder="e.g., 2 months"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="remote">Remote?</Label>
-                    <Switch
-                      id="remote"
-                      checked={isRemote}
-                      onCheckedChange={setIsRemote}
+                  <div>
+                    <Label htmlFor="duration">Duration</Label>
+                    <Input
+                      id="duration"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      placeholder="e.g., 2 months"
                     />
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Community Fields */}
+            {/* Community-specific fields */}
             {selectedType === "community" && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Community Details</CardTitle>
+                <CardHeader>
+                  <CardTitle>Community Post Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="post-type">Post Type</Label>
                     <Select value={postType} onValueChange={setPostType}>
                       <SelectTrigger id="post-type">
@@ -1002,72 +1000,71 @@ export default function CreateListingPage() {
                     </Select>
                   </div>
 
-                  {postType === "poll" && (
-                    <div className="space-y-3">
-                      <Label>Poll Options</Label>
-                      {pollOptions.map((option, index) => (
+                  {postType !== "poll" && (
+                    <div>
+                      <Label>Tags</Label>
+                      <div className="flex gap-2 mb-2">
                         <Input
-                          key={index}
-                          placeholder={`Option ${index + 1}`}
-                          value={option}
-                          onChange={(e) => updatePollOption(index, e.target.value)}
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          placeholder="Add tag"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addTag();
+                            }
+                          }}
                         />
-                      ))}
-                      {pollOptions.length < 6 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addPollOption}
-                        >
-                          Add Option
+                        <Button onClick={addTag} size="sm">
+                          Add
                         </Button>
-                      )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => setTags(tags.filter((t) => t !== tag))}
+                          >
+                            {tag} <X className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tag-input">Tags</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="tag-input"
-                        placeholder="Add tags"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            addTag();
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={addTag}
-                        className="px-3"
-                      >
-                        Add
-                      </Button>
+                  {postType === "poll" && (
+                    <div>
+                      <Label>Poll Options</Label>
+                      <div className="space-y-2">
+                        {pollOptions.map((option, index) => (
+                          <Input
+                            key={index}
+                            value={option}
+                            onChange={(e) =>
+                              updatePollOption(index, e.target.value)
+                            }
+                            placeholder={`Option ${index + 1}`}
+                          />
+                        ))}
+                        {pollOptions.length < 6 && (
+                          <Button
+                            onClick={addPollOption}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            Add Option
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap mt-2">
-                      {tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="gap-1 cursor-pointer"
-                          onClick={() => setTags(tags.filter((t) => t !== tag))}
-                        >
-                          #{tag}
-                          <X className="h-3 w-3" />
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             )}
 
-            {/* Submit Button */}
+            {/* Submit button */}
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -1077,7 +1074,7 @@ export default function CreateListingPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  Creating listing...
                 </>
               ) : (
                 "Create Listing"

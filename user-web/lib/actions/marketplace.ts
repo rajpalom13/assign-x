@@ -198,7 +198,7 @@ function transformListing(dbListing: any): AnyListing | null {
  * Fetches from marketplace_listings table with seller profile relations
  */
 export async function getMarketplaceListings(
-  options: GetListingsOptions = {}
+  options: GetListingsOptions | MarketplaceFilters = {}
 ): Promise<{ listings?: AnyListing[]; data?: AnyListing[]; total?: number; error: string | null }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -209,7 +209,7 @@ export async function getMarketplaceListings(
       .from("marketplace_listings")
       .select(`
         *,
-        seller:profiles!marketplace_listings_seller_id_fkey (
+        seller:profiles!seller_id (
           id,
           full_name,
           avatar_url
@@ -224,31 +224,49 @@ export async function getMarketplaceListings(
       `)
       .eq("is_active", true);
 
+    // Handle both GetListingsOptions and MarketplaceFilters
+    const opts = options as any;
+
     // Filter by category/listing_type
-    if (options.category && options.category !== "all") {
-      if (Array.isArray(options.category)) {
-        query = query.in("listing_type", options.category);
+    if (opts.category && opts.category !== "all") {
+      if (Array.isArray(opts.category)) {
+        query = query.in("listing_type", opts.category);
       } else {
-        query = query.eq("listing_type", options.category);
+        const dbType = reverseListingTypeMap[opts.category as ListingType];
+        if (dbType) {
+          query = query.eq("listing_type", dbType);
+        } else {
+          query = query.eq("listing_type", opts.category);
+        }
       }
     }
 
     // Search in title and description
-    if (options.search) {
-      const searchTerm = `%${options.search}%`;
+    if (opts.search) {
+      const searchTerm = `%${opts.search}%`;
       query = query.or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`);
     }
 
     // Price range filters
-    if (options.priceMin !== undefined && options.priceMin > 0) {
-      query = query.gte("price", options.priceMin);
-    }
-    if (options.priceMax !== undefined) {
-      query = query.lte("price", options.priceMax);
+    if (opts.priceRange) {
+      const [minPrice, maxPrice] = opts.priceRange;
+      if (minPrice > 0) {
+        query = query.gte("price", minPrice);
+      }
+      if (maxPrice > 0) {
+        query = query.lte("price", maxPrice);
+      }
+    } else {
+      if (opts.priceMin !== undefined && opts.priceMin > 0) {
+        query = query.gte("price", opts.priceMin);
+      }
+      if (opts.priceMax !== undefined) {
+        query = query.lte("price", opts.priceMax);
+      }
     }
 
     // University-only filter (requires user to be authenticated)
-    if (options.universityOnly && user) {
+    if (opts.universityOnly && user) {
       // Get user's university from their student profile
       const { data: studentProfile } = await supabase
         .from("students")
@@ -262,7 +280,7 @@ export async function getMarketplaceListings(
     }
 
     // Sorting
-    switch (options.sortBy) {
+    switch (opts.sortBy) {
       case "price_low":
         query = query.order("price", { ascending: true, nullsFirst: false });
         break;
@@ -278,17 +296,17 @@ export async function getMarketplaceListings(
     }
 
     // Pagination
-    if (options.limit) {
-      query = query.limit(options.limit);
+    if (opts.limit) {
+      query = query.limit(opts.limit);
     }
-    if (options.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 20) - 1);
+    if (opts.offset) {
+      query = query.range(opts.offset, opts.offset + (opts.limit || 20) - 1);
     }
 
     const { data: listings, error, count } = await query;
 
     if (error) {
-      return { listings: [], total: 0, error: error.message };
+      return { listings: [], data: [], total: 0, error: error.message };
     }
 
     // Transform listings to frontend format
@@ -296,14 +314,23 @@ export async function getMarketplaceListings(
       .map((listing) => transformListing(listing))
       .filter((l): l is AnyListing => l !== null);
 
+    // Apply client-side sorting if needed
+    if (opts.sortBy && (opts.sortBy === "price_low" || opts.sortBy === "price_high")) {
+      transformedListings.sort((a, b) => {
+        const priceA = "price" in a ? a.price : "monthlyRent" in a ? a.monthlyRent : 0;
+        const priceB = "price" in b ? b.price : "monthlyRent" in b ? b.monthlyRent : 0;
+        return opts.sortBy === "price_low" ? priceA - priceB : priceB - priceA;
+      });
+    }
+
     // If user is authenticated, check for favorites
     if (user && transformedListings.length > 0) {
       const listingIds = transformedListings.map((l) => l.id);
       const { data: favorites } = await supabase
         .from("marketplace_favorites")
         .select("listing_id")
-        .in("listing_id", listingIds)
-        .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`);
+        .eq("user_id", user.id)
+        .in("listing_id", listingIds);
 
       const favoriteIds = new Set(favorites?.map((f) => f.listing_id) || []);
       transformedListings = transformedListings.map((listing) => ({
@@ -341,7 +368,7 @@ export async function getListingById(id: string) {
       .from("marketplace_listings")
       .select(`
         *,
-        seller:profiles!marketplace_listings_seller_id_fkey (
+        seller:profiles!seller_id (
           id,
           full_name,
           avatar_url
@@ -374,7 +401,7 @@ export async function getListingById(id: string) {
       const { data: favorite } = await supabase
         .from("marketplace_favorites")
         .select("id")
-        .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
+.eq("user_id", user.id)
         .eq("listing_id", id)
         .single();
 
@@ -389,14 +416,51 @@ export async function getListingById(id: string) {
 }
 
 /**
- * Get a single marketplace listing by ID (alternative name)
+ * Get a single marketplace listing by ID
  */
 export async function getMarketplaceListingById(
   id: string
 ): Promise<{ data: AnyListing | null; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   try {
-    const listing = await getListingById(id);
-    return { data: listing, error: null };
+    const { data: listing, error } = await supabase
+      .from("marketplace_listings")
+      .select(`
+        *,
+        seller:profiles!seller_id(id, full_name, avatar_url),
+        category:marketplace_categories(id, name, slug),
+        university:universities!university_id(id, name)
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+
+    const transformedListing = transformListing(listing);
+
+    // Check if user has favorited this listing
+    if (user && transformedListing) {
+      const { data: favorite } = await supabase
+        .from("marketplace_favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("listing_id", id)
+        .single();
+
+      transformedListing.isLiked = !!favorite;
+    }
+
+    // Increment view count
+    if (listing) {
+      await supabase
+        .from("marketplace_listings")
+        .update({ view_count: (listing.view_count || 0) + 1 })
+        .eq("id", id);
+    }
+
+    return { data: transformedListing, error: null };
   } catch (error: any) {
     return { data: null, error: error.message };
   }
@@ -407,7 +471,7 @@ export async function getMarketplaceListingById(
  */
 export async function getUserListings(status?: "active" | "inactive" | "all") {
   const supabase = await createClient();
-  const { data: { user } } = awaitsupabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return [];
 
@@ -422,7 +486,7 @@ export async function getUserListings(status?: "active" | "inactive" | "all") {
           slug,
           is_active
         ),
-        seller:profiles!marketplace_listings_seller_id_fkey (
+        seller:profiles!seller_id (
           id,
           full_name,
           avatar_url
@@ -545,7 +609,7 @@ export async function createListing(data: CreateListingData) {
 }
 
 /**
- * Create a new marketplace listing (alternative interface)
+ * Create a new marketplace listing (alternative function)
  */
 export async function createMarketplaceListing(
   input: CreateListingInput
@@ -598,65 +662,7 @@ export async function createMarketplaceListing(
 }
 
 /**
- * Update a marketplace listing
- */
-export async function updateListing(
-  id: string,
-  data: Partial<CreateListingData> & { isActive?: boolean }
-) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Not authenticated" };
-  }
-
-  try {
-    // Verify ownership
-    const { data: existingListing } = await supabase
-      .from("marketplace_listings")
-      .select("seller_id")
-      .eq("id", id)
-      .single();
-
-    if (!existingListing || existingListing.seller_id !== user.id) {
-      return { error: "Listing not found or access denied" };
-    }
-
-    // Build update object
-    const updateData: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
-
-    if (data.title !== undefined) updateData.title = data.title.trim();
-    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-    if (data.price !== undefined) updateData.price = data.price;
-    if (data.imageUrl !== undefined) updateData.image_url = data.imageUrl;
-    if (data.imageUrls !== undefined) updateData.image_urls = data.imageUrls;
-    if (data.categoryId !== undefined) updateData.category_id = data.categoryId;
-    if (data.location !== undefined) updateData.location = data.location;
-    if (data.metadata !== undefined) updateData.metadata = data.metadata;
-    if (data.isActive !== undefined) updateData.is_active = data.isActive;
-
-    const { error } = await supabase
-      .from("marketplace_listings")
-      .update(updateData)
-      .eq("id", id);
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    revalidatePath("/connect");
-    revalidatePath(`/connect/${id}`);
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
-  }
-}
-
-/**
- * Update an existing marketplace listing (alternative interface)
+ * Update an existing marketplace listing
  */
 export async function updateMarketplaceListing(
   id: string,
@@ -711,47 +717,7 @@ export async function updateMarketplaceListing(
 }
 
 /**
- * Delete a marketplace listing
- */
-export async function deleteListing(id: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Not authenticated" };
-  }
-
-  try {
-    // Verify ownership
-    const { data: existingListing } = await supabase
-      .from("marketplace_listings")
-      .select("seller_id")
-      .eq("id", id)
-      .single();
-
-    if (!existingListing || existingListing.seller_id !== user.id) {
-      return { error: "Listing not found or access denied" };
-    }
-
-    // Soft delete by setting is_active to false
-    const { error } = await supabase
-      .from("marketplace_listings")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("id", id);
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    revalidatePath("/connect");
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
-  }
-}
-
-/**
- * Delete a marketplace listing (alternative interface)
+ * Delete a marketplace listing (soft delete by setting is_active to false)
  */
 export async function deleteMarketplaceListing(
   id: string
@@ -794,61 +760,6 @@ export async function deleteMarketplaceListing(
 
 /**
  * Toggle favorite status for a listing
- */
-export async function toggleFavorite(listingId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Not authenticated" };
-  }
-
-  try {
-    // Check if already favorited
-    const { data: existingFavorite } = await supabase
-      .from("marketplace_favorites")
-      .select("id")
-      .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
-      .eq("listing_id", listingId)
-      .single();
-
-    if (existingFavorite) {
-      // Remove favorite
-      const { error } = await supabase
-        .from("marketplace_favorites")
-        .delete()
-        .eq("id", existingFavorite.id);
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      revalidatePath("/connect");
-      return { success: true, isFavorited: false };
-    } else {
-      // Add favorite
-      const { error } = await supabase
-        .from("marketplace_favorites")
-        .insert({
-          profile_id: user.id,
-          user_id: user.id,
-          listing_id: listingId,
-        });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      revalidatePath("/connect");
-      return { success: true, isFavorited: true };
-    }
-  } catch (error: any) {
-    return { error: error.message };
-  }
-}
-
-/**
- * Toggle favorite status for a listing (alternative interface)
  */
 export async function toggleMarketplaceFavorite(
   listingId: string
@@ -901,57 +812,6 @@ export async function toggleMarketplaceFavorite(
 /**
  * Get user's favorite listings
  */
-export async function getFavoriteListings(limit = 20) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
-  try {
-    const { data: favorites, error } = await supabase
-      .from("marketplace_favorites")
-      .select(`
-        listing:marketplace_listings (
-          *,
-          seller:profiles!marketplace_listings_seller_id_fkey (
-            id,
-            full_name,
-            avatar_url
-          ),
-          category:marketplace_categories (
-            id,
-            name,
-            slug,
-            is_active
-          ),
-          university:universities!university_id(id, name)
-        )
-      `)
-      .or(`profile_id.eq.${user.id},user_id.eq.${user.id}`)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      return [];
-    }
-
-    // Extract listings and mark as favorited
-    return (favorites || [])
-      .map((f) => f.listing)
-      .filter((l) => l !== null && l.is_active)
-      .map((l) => {
-        const transformed = transformListing(l);
-        return transformed ? { ...transformed, isLiked: true } : null;
-      })
-      .filter((l): l is AnyListing => l !== null);
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Get user's favorite listings (alternative interface)
- */
 export async function getUserFavoriteListings(): Promise<{
   data: AnyListing[] | null;
   error: string | null;
@@ -982,79 +842,27 @@ export async function getUserFavoriteListings(): Promise<{
 
     const { data: listings, error } = await supabase
       .from("marketplace_listings")
-      .select(
-        `
+      .select(`
         *,
         seller:profiles!seller_id(id, full_name, avatar_url),
-        category:marketplace_categories!category_id(id, name, slug),
+        category:marketplace_categories(id, name, slug),
         university:universities!university_id(id, name)
-      `
-      )
-      .in("id", listingIds);
+      `)
+      .in("id", listingIds)
+      .eq("is_active", true);
 
     if (error) throw error;
 
-    const transformed = (listings || [])
-      .map((l) => transformListing(l))
+    const transformedListings = (listings || [])
+      .map((listing) => transformListing(listing))
       .filter((l): l is AnyListing => l !== null)
-      .map((l) => ({ ...l, isLiked: true }));
+      .map((listing) => ({
+        ...listing,
+        isLiked: true,
+      }));
 
-    return { data: transformed, error: null };
+    return { data: transformedListings, error: null };
   } catch (error: any) {
     return { data: null, error: error.message };
-  }
-}
-
-/**
- * Get marketplace categories
- */
-export async function getMarketplaceCategories() {
-  const supabase = await createClient();
-
-  try {
-    const { data: categories, error } = await supabase
-      .from("marketplace_categories")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true });
-
-    if (error) {
-      return [];
-    }
-
-    return categories || [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Search marketplace listings with autocomplete
- * Returns limited results for search suggestions
- */
-export async function searchListings(query: string, limit = 5) {
-  if (!query || query.trim().length < 2) {
-    return [];
-  }
-
-  try {
-    const supabase = await createClient();
-    const searchTerm = `%${query.trim()}%`;
-
-    const { data: listings, error } = await supabase
-      .from("marketplace_listings")
-      .select("id, title, listing_type, price")
-      .eq("is_active", true)
-      .ilike("title", searchTerm)
-      .order("view_count", { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      return [];
-    }
-
-    return listings || [];
-  } catch {
-    return [];
   }
 }

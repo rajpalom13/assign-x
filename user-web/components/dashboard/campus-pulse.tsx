@@ -1,14 +1,32 @@
 "use client";
 
+/**
+ * @fileoverview Premium Campus Pulse Section
+ *
+ * Redesigned with glassmorphism cards and premium styling
+ * matching the SAAS dashboard design system.
+ */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, TrendingUp, Loader2, Package, Home, Briefcase, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  ChevronRight,
+  ArrowRight,
+  TrendingUp,
+  Loader2,
+  Package,
+  Home,
+  Briefcase,
+  Users,
+  Flame,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
-import { getMarketplaceListings, type ListingType } from "@/lib/actions/marketplace";
+import { getMarketplaceListings } from "@/lib/actions/marketplace";
+import type { AnyListing } from "@/types/marketplace";
 
 /**
  * Campus Pulse item interface
@@ -17,57 +35,78 @@ interface PulseItem {
   id: string;
   title: string;
   price?: number;
-  distance?: string;
   category: "product" | "housing" | "opportunity" | "community";
   imageUrl?: string;
   isHot?: boolean;
 }
 
 /**
- * Map database listing_type to display category
- */
-function mapListingTypeToCategory(listingType: ListingType): PulseItem["category"] {
-  switch (listingType) {
-    case "sell":
-    case "rent":
-    case "free":
-      return "product";
-    case "housing":
-      return "housing";
-    case "opportunity":
-      return "opportunity";
-    default:
-      return "community";
-  }
-}
-
-/**
- * Category colors and icons
+ * Category configuration with premium colors
  */
 const categoryConfig = {
-  product: { color: "bg-blue-100 text-blue-700", label: "For Sale" },
-  housing: { color: "bg-green-100 text-green-700", label: "Housing" },
-  opportunity: { color: "bg-purple-100 text-purple-700", label: "Opportunity" },
-  community: { color: "bg-orange-100 text-orange-700", label: "Community" },
+  product: {
+    color: "bg-primary/10 text-primary dark:bg-primary/20",
+    label: "For Sale",
+    icon: Package,
+    gradient: "from-primary/5 to-primary/15",
+  },
+  housing: {
+    color: "bg-emerald-600/10 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-400",
+    label: "Housing",
+    icon: Home,
+    gradient: "from-emerald-50 to-emerald-100 dark:from-emerald-950/50 dark:to-emerald-900/50",
+  },
+  opportunity: {
+    color: "bg-accent/15 text-amber-800 dark:bg-accent/20 dark:text-accent",
+    label: "Opportunity",
+    icon: Briefcase,
+    gradient: "from-accent/10 to-accent/20",
+  },
+  community: {
+    color: "bg-amber-700/10 text-amber-800 dark:bg-amber-700/20 dark:text-amber-400",
+    label: "Community",
+    icon: Users,
+    gradient: "from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/50",
+  },
+};
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: 20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  },
 };
 
 /**
  * Campus Pulse Section
- * Shows trending items at user's university with horizontal scroll
- * Implements U17 and U21 from feature spec
  */
 export function CampusPulse() {
   const { user } = useUserStore();
   const [items, setItems] = useState<PulseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const prefersReducedMotion = useReducedMotion();
 
-  // Get university name from user profile
   const universityName = user?.students?.university?.name || "Your Campus";
 
   useEffect(() => {
     const fetchPulseItems = async () => {
       try {
-        // Fetch trending listings from marketplace (most recent, limited to 6)
         const { listings, error } = await getMarketplaceListings({
           limit: 6,
           sortBy: "recent",
@@ -78,14 +117,13 @@ export function CampusPulse() {
           return;
         }
 
-        // Convert listings to PulseItem format
-        const pulseItems: PulseItem[] = listings.map((listing) => ({
+        const pulseItems: PulseItem[] = listings.map((listing: AnyListing) => ({
           id: listing.id,
           title: listing.title,
-          price: listing.price || undefined,
-          category: mapListingTypeToCategory(listing.listing_type as ListingType),
-          imageUrl: listing.images?.[0] || undefined,
-          isHot: listing.favorites_count > 5, // Mark as hot if has many favorites
+          price: "price" in listing ? listing.price : "monthlyRent" in listing ? listing.monthlyRent : undefined,
+          category: listing.type as PulseItem["category"],
+          imageUrl: listing.imageUrl || undefined,
+          isHot: listing.likes > 5,
         }));
 
         setItems(pulseItems);
@@ -99,17 +137,17 @@ export function CampusPulse() {
 
   if (isLoading) {
     return (
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="dashboard-activity-card">
+        <div className="dashboard-activity-header">
+          <div className="dashboard-activity-title">
             <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Campus Pulse</h2>
+            Campus Pulse
           </div>
         </div>
-        <div className="flex items-center justify-center py-8">
+        <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      </section>
+      </div>
     );
   }
 
@@ -118,60 +156,67 @@ export function CampusPulse() {
   }
 
   return (
-    <section className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="dashboard-activity-card">
+      <div className="dashboard-activity-header">
+        <div className="dashboard-activity-title">
           <TrendingUp className="h-5 w-5 text-primary" />
           <div>
-            <h2 className="text-lg font-semibold">Campus Pulse</h2>
-            <p className="text-xs text-muted-foreground">
+            <span>Campus Pulse</span>
+            <p className="text-xs font-normal text-muted-foreground mt-0.5">
               Trending at {universityName}
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/connect" className="flex items-center gap-1">
+        <Button variant="ghost" size="sm" asChild className="text-xs h-8">
+          <Link href="/connect" className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
             See all
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
       </div>
 
       {/* Horizontal scroll container */}
-      <div className="relative -mx-4 px-4">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="relative -mx-2">
+        <motion.div
+          variants={prefersReducedMotion ? {} : containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex gap-3 overflow-x-auto pb-2 px-2 scrollbar-hide"
+        >
           {items.map((item) => (
-            <PulseCard key={item.id} item={item} />
+            <motion.div
+              key={item.id}
+              variants={prefersReducedMotion ? {} : itemVariants}
+            >
+              <PulseCard item={item} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
-    </section>
+
+      <Link href="/connect" className="dashboard-view-all">
+        Explore marketplace
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </div>
   );
 }
 
 /**
- * Individual pulse item card
+ * Individual pulse item card with premium styling
  */
 function PulseCard({ item }: { item: PulseItem }) {
   const config = categoryConfig[item.category];
+  const Icon = config.icon;
 
   return (
     <Link href={`/connect?item=${item.id}`}>
-      <Card className="group relative min-w-[160px] max-w-[160px] cursor-pointer overflow-hidden transition-all hover:shadow-md">
-        {/* Image placeholder / gradient background */}
+      <div className="group relative min-w-[150px] max-w-[150px] cursor-pointer overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30">
+        {/* Image / gradient background */}
         <div
           className={cn(
-            "flex h-24 items-center justify-center",
-            item.imageUrl
-              ? "bg-muted"
-              : item.category === "product"
-              ? "bg-gradient-to-br from-blue-50 to-blue-100"
-              : item.category === "housing"
-              ? "bg-gradient-to-br from-green-50 to-green-100"
-              : item.category === "opportunity"
-              ? "bg-gradient-to-br from-purple-50 to-purple-100"
-              : "bg-gradient-to-br from-orange-50 to-orange-100"
+            "flex h-20 items-center justify-center bg-gradient-to-br",
+            config.gradient
           )}
         >
           {item.imageUrl ? (
@@ -182,55 +227,41 @@ function PulseCard({ item }: { item: PulseItem }) {
             />
           ) : (
             <div className="opacity-50">
-              {item.category === "product" ? (
-                <Package className="h-10 w-10 text-blue-500" />
-              ) : item.category === "housing" ? (
-                <Home className="h-10 w-10 text-green-500" />
-              ) : item.category === "opportunity" ? (
-                <Briefcase className="h-10 w-10 text-purple-500" />
-              ) : (
-                <Users className="h-10 w-10 text-orange-500" />
-              )}
+              <Icon className="h-8 w-8 text-primary" />
             </div>
           )}
         </div>
 
         {/* Hot badge */}
         {item.isHot && (
-          <Badge className="absolute right-2 top-2 bg-red-500 text-[10px] text-white">
+          <Badge className="absolute right-2 top-2 bg-gradient-to-r from-red-500 to-orange-500 text-[10px] text-white border-0 gap-1">
+            <Flame className="h-3 w-3" />
             Hot
           </Badge>
         )}
 
         {/* Content */}
-        <div className="p-3 space-y-1">
-          <p className="line-clamp-2 text-sm font-medium leading-tight">
+        <div className="p-3 space-y-2">
+          <p className="line-clamp-2 text-xs font-medium leading-tight group-hover:text-primary transition-colors">
             {item.title}
           </p>
 
           <div className="flex items-center justify-between">
             {item.price !== undefined && (
-              <span className="text-sm font-bold text-primary">
-                ₹{item.price}
-              </span>
-            )}
-
-            {item.distance && (
-              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                {item.distance}
+              <span className="text-sm font-semibold text-primary tabular-nums">
+                ₹{item.price.toLocaleString()}
               </span>
             )}
           </div>
 
           <Badge
             variant="secondary"
-            className={cn("text-[10px] px-1.5 py-0", config.color)}
+            className={cn("text-[9px] px-1.5 py-0 rounded-md font-medium", config.color)}
           >
             {config.label}
           </Badge>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }

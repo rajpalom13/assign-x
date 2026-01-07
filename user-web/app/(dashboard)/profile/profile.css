@@ -1,0 +1,763 @@
+/**
+ * Profile Page Premium Styles
+ * SAAS-style design with glassmorphism and gradient effects
+ */
+
+/* ========================================
+   Background & Layout
+   ======================================== */
+
+.profile-page {
+  --gradient-primary: oklch(0.6 0.2 280);
+  --gradient-secondary: oklch(0.7 0.18 320);
+  --gradient-accent: oklch(0.65 0.22 240);
+}
+
+.profile-bg-mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.profile-bg-mesh::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary), transparent 85%) 0%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+.profile-bg-mesh::after {
+  content: "";
+  position: absolute;
+  bottom: -15%;
+  left: -10%;
+  width: 45%;
+  height: 45%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--accent), transparent 88%) 0%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  animation: float-slow 25s ease-in-out infinite reverse;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* ========================================
+   Hero Section
+   ======================================== */
+
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary), transparent 92%) 0%,
+    color-mix(in oklch, var(--accent), transparent 95%) 50%,
+    color-mix(in oklch, var(--primary), transparent 95%) 100%
+  );
+  border: 1px solid color-mix(in oklch, var(--border), transparent 50%);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 10px 15px -3px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 0 color-mix(in oklch, white, transparent 80%);
+}
+
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(
+    circle at top right,
+    color-mix(in oklch, var(--accent), transparent 80%) 0%,
+    transparent 70%
+  );
+  border-bottom-left-radius: 100%;
+}
+
+.profile-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(
+    circle at bottom left,
+    color-mix(in oklch, var(--primary), transparent 85%) 0%,
+    transparent 70%
+  );
+  border-top-right-radius: 100%;
+}
+
+.profile-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .profile-hero-content {
+    padding: 2.5rem;
+  }
+}
+
+/* Avatar Styles */
+.profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-avatar {
+  width: 7rem;
+  height: 7rem;
+  border: 4px solid white;
+  box-shadow:
+    0 4px 14px -2px rgba(0, 0, 0, 0.1),
+    0 0 0 4px color-mix(in oklch, var(--primary), transparent 90%);
+}
+
+@media (min-width: 1024px) {
+  .profile-avatar {
+    width: 8rem;
+    height: 8rem;
+  }
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid white;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-avatar-edit:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.2);
+}
+
+.profile-avatar-edit:active {
+  transform: scale(0.95);
+}
+
+/* User Info */
+.profile-user-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+@media (min-width: 1024px) {
+  .profile-user-name {
+    font-size: 2rem;
+  }
+}
+
+.profile-user-email {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Verification Badge */
+.profile-badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, oklch(0.85 0.15 145), oklch(0.75 0.2 145));
+  color: white;
+  box-shadow: 0 2px 8px -2px oklch(0.6 0.2 145 / 0.4);
+}
+
+.profile-badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, oklch(0.75 0.18 50), oklch(0.65 0.2 30));
+  color: white;
+  box-shadow: 0 2px 8px -2px oklch(0.6 0.18 50 / 0.4);
+}
+
+.profile-badge-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: capitalize;
+}
+
+.profile-badge-tier.free {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.profile-badge-tier.pro {
+  background: linear-gradient(135deg, oklch(0.6 0.25 280), oklch(0.5 0.25 320));
+  color: white;
+  box-shadow: 0 2px 8px -2px oklch(0.5 0.25 280 / 0.4);
+}
+
+.profile-badge-tier.premium {
+  background: linear-gradient(135deg, oklch(0.75 0.18 50), oklch(0.65 0.2 30));
+  color: white;
+  box-shadow: 0 2px 8px -2px oklch(0.6 0.18 50 / 0.4);
+}
+
+/* ========================================
+   Stats Grid
+   ======================================== */
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .profile-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+.profile-stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: color-mix(in oklch, var(--card), transparent 20%);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklch, var(--border), transparent 60%);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 24px -8px rgba(0, 0, 0, 0.08),
+    0 0 0 1px color-mix(in oklch, var(--primary), transparent 80%);
+}
+
+.profile-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, white, transparent 95%) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+}
+
+.profile-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--muted) 0%,
+    color-mix(in oklch, var(--muted), transparent 50%) 100%
+  );
+  margin-bottom: 0.75rem;
+}
+
+.profile-stat-icon.wallet { color: oklch(0.6 0.2 145); }
+.profile-stat-icon.projects { color: oklch(0.55 0.2 240); }
+.profile-stat-icon.referrals { color: oklch(0.55 0.25 280); }
+.profile-stat-icon.earnings { color: oklch(0.65 0.2 50); }
+
+.profile-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.profile-stat-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+.profile-stat-trend {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+
+.profile-stat-trend.up {
+  color: oklch(0.6 0.2 145);
+}
+
+.profile-stat-trend.down {
+  color: oklch(0.6 0.2 25);
+}
+
+/* ========================================
+   Quick Actions
+   ======================================== */
+
+.profile-actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-action-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: color-mix(in oklch, var(--card), transparent 30%);
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in oklch, var(--border), transparent 70%);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-action-card:hover {
+  background: color-mix(in oklch, var(--card), transparent 10%);
+  border-color: color-mix(in oklch, var(--primary), transparent 70%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.06);
+}
+
+.profile-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary), transparent 90%) 0%,
+    color-mix(in oklch, var(--accent), transparent 85%) 100%
+  );
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.profile-action-card:hover .profile-action-icon {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--primary), transparent 80%) 0%,
+    color-mix(in oklch, var(--accent), transparent 75%) 100%
+  );
+}
+
+.profile-action-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-action-title {
+  font-weight: 600;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-action-description {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-action-arrow {
+  color: var(--muted-foreground);
+  transition: all 0.3s ease;
+}
+
+.profile-action-card:hover .profile-action-arrow {
+  color: var(--primary);
+  transform: translateX(2px);
+}
+
+/* ========================================
+   Wallet CTA Section
+   ======================================== */
+
+.profile-wallet-cta {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(
+    135deg,
+    oklch(0.55 0.2 160) 0%,
+    oklch(0.5 0.18 175) 100%
+  );
+  box-shadow: 0 8px 24px -8px oklch(0.45 0.2 160 / 0.3);
+}
+
+.profile-wallet-cta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 70%
+  );
+  border-bottom-left-radius: 100%;
+}
+
+.profile-wallet-cta-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-wallet-cta-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.profile-wallet-cta-text h3 {
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+}
+
+.profile-wallet-cta-text p {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================
+   Referral Section
+   ======================================== */
+
+.profile-referral {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    oklch(0.97 0.03 60) 0%,
+    oklch(0.95 0.04 50) 100%
+  );
+  border: 1px solid oklch(0.9 0.08 50 / 0.3);
+}
+
+.dark .profile-referral {
+  background: linear-gradient(
+    135deg,
+    oklch(0.25 0.04 50) 0%,
+    oklch(0.22 0.05 45) 100%
+  );
+  border-color: oklch(0.35 0.08 50 / 0.3);
+}
+
+.profile-referral::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(
+    circle at top right,
+    oklch(0.75 0.15 50 / 0.15) 0%,
+    transparent 70%
+  );
+  border-bottom-left-radius: 100%;
+}
+
+.profile-referral-content {
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .profile-referral-content {
+    padding: 1.5rem;
+  }
+}
+
+.profile-referral-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.profile-referral-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: oklch(0.92 0.08 50);
+  color: oklch(0.55 0.18 45);
+}
+
+.dark .profile-referral-icon {
+  background: oklch(0.35 0.1 50);
+  color: oklch(0.7 0.15 50);
+}
+
+.profile-referral-code-input {
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  background: white;
+  border-color: oklch(0.9 0.08 50);
+}
+
+.dark .profile-referral-code-input {
+  background: oklch(0.2 0.02 50);
+  border-color: oklch(0.35 0.08 50);
+}
+
+.profile-referral-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid oklch(0.9 0.08 50 / 0.5);
+}
+
+.dark .profile-referral-stats {
+  border-top-color: oklch(0.35 0.08 50 / 0.5);
+}
+
+.profile-referral-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, white, transparent 40%);
+}
+
+.dark .profile-referral-stat {
+  background: color-mix(in oklch, oklch(0.2 0.02 50), transparent 40%);
+}
+
+/* ========================================
+   Section Headers
+   ======================================== */
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.profile-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* ========================================
+   Footer
+   ======================================== */
+
+.profile-footer {
+  padding: 1rem 0 2rem;
+  text-align: center;
+}
+
+.profile-footer-version {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.25rem;
+}
+
+.profile-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: color-mix(in oklch, var(--muted-foreground), transparent 20%);
+}
+
+.profile-footer-links a {
+  transition: color 0.2s ease;
+}
+
+.profile-footer-links a:hover {
+  color: var(--primary);
+}
+
+/* ========================================
+   Decorative Elements
+   ======================================== */
+
+.profile-deco-blob {
+  position: absolute;
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  animation: blob-morph 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes blob-morph {
+  0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+  25% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
+  50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+  75% { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
+}
+
+/* ========================================
+   Plan Card Premium Styling
+   ======================================== */
+
+.profile-plan-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.profile-plan-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    var(--accent) 50%,
+    var(--primary) 100%
+  );
+}
+
+.profile-plan-card.premium::before {
+  background: linear-gradient(
+    90deg,
+    oklch(0.75 0.18 50) 0%,
+    oklch(0.65 0.2 30) 50%,
+    oklch(0.75 0.18 50) 100%
+  );
+}
+
+.profile-plan-features {
+  margin-top: 1rem;
+}
+
+.profile-plan-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.profile-plan-feature-icon {
+  color: oklch(0.6 0.2 145);
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+
+@media (max-width: 639px) {
+  .profile-hero-content {
+    padding: 1.5rem;
+  }
+
+  .profile-avatar {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .profile-user-name {
+    font-size: 1.5rem;
+  }
+
+  .profile-stat-value {
+    font-size: 1.25rem;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -137,7 +137,7 @@ export default function ConnectPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryTab>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
-  const [universityOnly, setUniversityOnly] = useState(true);
+  const [universityOnly, setUniversityOnly] = useState(true); // Default to showing university content
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -266,7 +266,7 @@ export default function ConnectPage() {
     setSearchQuery("");
     setSelectedCategory("all");
     setPriceRange([0, 50000]);
-    setUniversityOnly(true);
+    setUniversityOnly(true); // Reset to default (university content)
     setFilterSheetOpen(false);
   };
 
@@ -349,7 +349,7 @@ export default function ConnectPage() {
             <SheetContent>
               <SheetHeader>
                 <SheetTitle>Filters</SheetTitle>
-              </SheetHeader>
+</SheetHeader>
               <div className="mt-6 space-y-6">
                 {/* University Filter - U74 */}
                 <div className="flex items-center justify-between">
@@ -471,109 +471,90 @@ export default function ConnectPage() {
                 </button>
               </Badge>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-6"
-              onClick={clearFilters}
-            >
-              Clear all
-            </Button>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+          <Card className="border-destructive bg-destructive/5">
             <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="flex gap-3">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-red-900 dark:text-red-200">{error}</p>
+                  <p className="text-sm font-medium text-destructive">{error}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchListings(true)}
+                    className="mt-2 gap-2"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Try Again
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchListings(true)}
-                  className="ml-2"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Results Count */}
-        {!isLoading && !error && (
-          <p className="text-sm text-muted-foreground">
-            {total} {total === 1 ? "listing" : "listings"} found
-          </p>
-        )}
-
-        {/* Loading Skeleton */}
-        {isLoading && listings.length === 0 && <LoadingSkeleton />}
-
-        {/* Pinterest-style Masonry Grid - U73 */}
-        {(!isLoading || listings.length > 0) && !error && (
-          <MasonryGrid
-            listings={listings}
-            onFavorite={handleFavorite}
-            onLoadMore={handleLoadMore}
-            hasMore={hasMore}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Empty State */}
-        {!isLoading && listings.length === 0 && !error && (
-          <div className="relative overflow-hidden rounded-xl border border-dashed bg-gradient-to-br from-muted/30 to-muted/10 py-16 text-center">
-            {/* Decorative background */}
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-orange-500/5" />
-            <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-pink-500/5" />
-
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-pink-500/10">
-                <Package className="h-10 w-10 text-orange-500" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">
-                {hasActiveFilters ? "No listings found" : "Start the marketplace"}
-              </h3>
-              <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-                {hasActiveFilters
-                  ? "Try adjusting your filters or search terms"
-                  : "Be the first to post something! List items, housing, or opportunities."}
+        {/* Loading State */}
+        {isLoading && listings.length === 0 ? (
+          <LoadingSkeleton />
+        ) : (
+          <>
+            {/* Results Count */}
+            {total > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Showing {listings.length} of {total} listings
               </p>
+            )}
 
-              {/* Quick categories */}
-              {!hasActiveFilters && (
-                <div className="mb-6 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1">
-                    <Package className="h-3.5 w-3.5 text-blue-500" />
-                    <span>Products</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1">
-                    <Home className="h-3.5 w-3.5 text-green-500" />
-                    <span>Housing</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1">
-                    <Briefcase className="h-3.5 w-3.5 text-purple-500" />
-                    <span>Jobs</span>
-                  </div>
-                </div>
-              )}
+            {/* Listings Grid */}
+            {listings.length > 0 ? (
+              <>
+                <MasonryGrid
+                  listings={listings}
+                  onFavorite={handleFavorite}
+                  isLoading={isLoading}
+                />
 
-              {!hasActiveFilters && (
-                <Button asChild>
-                  <Link href="/connect/create">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Post Your First Listing
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={isLoading}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Load More
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2 opacity-50" />
+                    <h3 className="text-lg font-medium">No listings found</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Try adjusting your filters or search query
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="mt-4"
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
     </div>
