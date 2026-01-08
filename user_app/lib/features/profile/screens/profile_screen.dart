@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../providers/profile_provider.dart';
+import '../widgets/avatar_upload_dialog.dart';
 import '../widgets/profile_hero.dart';
 import '../widgets/settings_item.dart';
 import '../widgets/stats_card.dart';
@@ -34,7 +35,7 @@ class ProfileScreen extends ConsumerWidget {
               child: ProfileHero(
                 profile: profile,
                 onEditTap: () => context.push('/profile/edit'),
-                onAvatarTap: () => _showAvatarOptions(context),
+                onAvatarTap: () => _showAvatarOptions(context, ref),
               ),
             ),
 
@@ -212,54 +213,12 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showAvatarOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                // Open camera
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                // Open gallery
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete_outline, color: AppColors.error),
-              title: Text('Remove Photo', style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(context);
-                // Remove photo
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  void _showAvatarOptions(BuildContext context, WidgetRef ref) async {
+    final result = await showAvatarOptionsSheet(context);
+    if (result == true) {
+      // Refresh profile data after avatar update
+      ref.invalidate(userProfileProvider);
+    }
   }
 
   void _showTopUpSheet(BuildContext context, WidgetRef ref) {

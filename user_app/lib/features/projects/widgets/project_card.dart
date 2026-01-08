@@ -4,15 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_shadows.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
+import '../../../shared/animations/common_animations.dart';
+import '../../../shared/decorations/app_gradients.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import 'deadline_badge.dart';
 import 'progress_indicator.dart';
 import 'status_badge.dart';
 
 /// Full project card for list display.
-class ProjectCard extends StatelessWidget {
+///
+/// Uses the new UI polish system with:
+/// - AppShadows for elevation and hover effects (cardHover)
+/// - Earthy color palette from AppColors
+/// - TapScaleContainer for press animations
+/// - Staggered animations for list entrance
+class ProjectCard extends StatefulWidget {
   final Project project;
   final VoidCallback? onPayNow;
   final VoidCallback? onApprove;
@@ -27,48 +37,58 @@ class ProjectCard extends StatelessWidget {
   });
 
   @override
+  State<ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<ProjectCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Project: ${project.title}, Status: ${project.status.displayName}, '
-          'Type: ${project.serviceType.displayName}, Deadline: ${_getDeadlineDescription()}',
+      label: 'Project: ${widget.project.title}, Status: ${widget.project.status.displayName}, '
+          'Type: ${widget.project.serviceType.displayName}, Deadline: ${_getDeadlineDescription()}',
       hint: 'Double tap to view project details',
-      child: GestureDetector(
-        onTap: () => context.push('/projects/${project.id}'),
-        child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: AppSpacing.borderRadiusLg,
-          border: Border.all(
-            color: project.canApprove
-                ? project.status.color.withAlpha(100)
-                : AppColors.border,
-            width: project.canApprove ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: TapScaleContainer(
+        onTap: () => context.push('/projects/${widget.project.id}'),
+        pressedScale: 0.98,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: AppSpacing.borderRadiusLg,
+              border: Border.all(
+                color: widget.project.canApprove
+                    ? widget.project.status.color.withAlpha(100)
+                    : (_isHovered
+                        ? AppColors.primary.withAlpha(50)
+                        : AppColors.border),
+                width: widget.project.canApprove ? 2 : (_isHovered ? 1.5 : 1),
+              ),
+              boxShadow: _isHovered ? AppShadows.cardHover : AppShadows.md,
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context),
+
+                const Divider(height: 1, color: AppColors.divider),
+
+                // Body
+                _buildBody(context),
+
+                // Footer
+                _buildFooter(context),
+              ],
+            ),
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            _buildHeader(context),
-
-            const Divider(height: 1),
-
-            // Body
-            _buildBody(context),
-
-            // Footer
-            _buildFooter(context),
-          ],
-        ),
-      ),
       ),
     );
   }
@@ -76,8 +96,8 @@ class ProjectCard extends StatelessWidget {
   /// Get accessible deadline description.
   String _getDeadlineDescription() {
     final now = DateTime.now();
-    final difference = project.deadline.difference(now);
-    if (project.deadline.isBefore(now)) {
+    final difference = widget.project.deadline.difference(now);
+    if (widget.project.deadline.isBefore(now)) {
       return 'Deadline passed';
     } else if (difference.inHours < 24) {
       return '${difference.inHours} hours left';
@@ -91,16 +111,25 @@ class ProjectCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          // Service type icon
-          Container(
+          // Service type icon with earthy colors
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(25),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary.withAlpha(_isHovered ? 40 : 25),
+                  AppColors.accent.withAlpha(_isHovered ? 25 : 13),
+                ],
+              ),
               borderRadius: BorderRadius.circular(10),
+              boxShadow: _isHovered ? AppShadows.xs : null,
             ),
             child: Icon(
-              project.serviceType.icon,
+              widget.project.serviceType.icon,
               color: AppColors.primary,
               size: 20,
             ),
@@ -113,14 +142,16 @@ class ProjectCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  project.title,
-                  style: AppTextStyles.labelLarge,
+                  widget.project.title,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  project.serviceType.displayName,
+                  widget.project.serviceType.displayName,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -130,7 +161,7 @@ class ProjectCard extends StatelessWidget {
           ),
 
           // Status badge
-          StatusBadge(status: project.status, compact: true),
+          StatusBadge(status: widget.project.status, compact: true),
         ],
       ),
     );
@@ -155,7 +186,7 @@ class ProjectCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    project.displayId,
+                    widget.project.displayId,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                       fontFamily: 'monospace',
@@ -167,22 +198,22 @@ class ProjectCard extends StatelessWidget {
               const SizedBox(width: 16),
 
               // Deadline
-              DeadlineBadge(deadline: project.deadline, compact: true),
+              DeadlineBadge(deadline: widget.project.deadline, compact: true),
             ],
           ),
 
           // Progress bar (only for In Progress)
-          if (project.status == ProjectStatus.inProgress) ...[
+          if (widget.project.status == ProjectStatus.inProgress) ...[
             const SizedBox(height: 16),
             ProjectProgressIndicator(
-              percent: project.progressPercentage,
+              percent: widget.project.progressPercentage,
               showLabel: true,
             ),
           ],
 
           // Payment amount (for Payment Pending)
-          if (project.status == ProjectStatus.paymentPending &&
-              project.userQuote != null) ...[
+          if (widget.project.status == ProjectStatus.paymentPending &&
+              widget.project.userQuote != null) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -190,8 +221,16 @@ class ProjectCard extends StatelessWidget {
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: AppColors.warning.withAlpha(15),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.warning.withAlpha(20),
+                    AppColors.warning.withAlpha(10),
+                  ],
+                ),
                 borderRadius: AppSpacing.borderRadiusSm,
+                border: Border.all(
+                  color: AppColors.warning.withAlpha(40),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -202,9 +241,10 @@ class ProjectCard extends StatelessWidget {
                     color: AppColors.warning,
                   ),
                   Text(
-                    '${project.userQuote!.toStringAsFixed(0)} due',
+                    '${widget.project.userQuote!.toStringAsFixed(0)} due',
                     style: AppTextStyles.labelMedium.copyWith(
                       color: AppColors.warning,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -213,10 +253,10 @@ class ProjectCard extends StatelessWidget {
           ],
 
           // Auto-approval countdown (for Delivered)
-          if (project.status == ProjectStatus.delivered &&
-              project.autoApproveAt != null) ...[
+          if (widget.project.status == ProjectStatus.delivered &&
+              widget.project.autoApproveAt != null) ...[
             const SizedBox(height: 12),
-            _AutoApprovalCountdown(deadline: project.autoApproveAt!),
+            _AutoApprovalCountdown(deadline: widget.project.autoApproveAt!),
           ],
         ],
       ),
@@ -224,10 +264,13 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _buildFooter(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withAlpha(50),
+        color: _isHovered
+            ? AppColors.surfaceVariant.withAlpha(80)
+            : AppColors.surfaceVariant.withAlpha(50),
         borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(AppSpacing.radiusLg),
         ),
@@ -252,7 +295,7 @@ class ProjectCard extends StatelessWidget {
   }
 
   String _getStatusDescription() {
-    switch (project.status) {
+    switch (widget.project.status) {
       case ProjectStatus.draft:
         return 'Draft - continue editing';
       case ProjectStatus.submitted:
@@ -270,8 +313,8 @@ class ProjectCard extends StatelessWidget {
       case ProjectStatus.assigned:
         return 'Expert assigned';
       case ProjectStatus.inProgress:
-        return project.progressPercentage > 0
-            ? '${project.progressPercentage}% Completed'
+        return widget.project.progressPercentage > 0
+            ? '${widget.project.progressPercentage}% Completed'
             : 'Expert is working on it';
       case ProjectStatus.submittedForQc:
         return 'Submitted for quality check';
@@ -299,14 +342,15 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _buildActionButton(BuildContext context) {
-    switch (project.status) {
+    switch (widget.project.status) {
       case ProjectStatus.quoted:
       case ProjectStatus.paymentPending:
         return _ActionButton(
           label: 'Pay Now',
           icon: Icons.payment,
           color: AppColors.warning,
-          onTap: onPayNow ?? () => context.push('/projects/${project.id}/pay'),
+          gradient: AppGradients.warning,
+          onTap: widget.onPayNow ?? () => context.push('/projects/${widget.project.id}/pay'),
         );
 
       case ProjectStatus.delivered:
@@ -319,15 +363,16 @@ class ProjectCard extends StatelessWidget {
               color: AppColors.textSecondary,
               outlined: true,
               compact: true,
-              onTap: onRequestChanges,
+              onTap: widget.onRequestChanges,
             ),
             const SizedBox(width: 8),
             _ActionButton(
               label: 'Approve',
               icon: Icons.check,
               color: AppColors.success,
+              gradient: AppGradients.success,
               compact: true,
-              onTap: onApprove,
+              onTap: widget.onApprove,
             ),
           ],
         );
@@ -339,7 +384,7 @@ class ProjectCard extends StatelessWidget {
           icon: Icons.visibility,
           color: AppColors.primary,
           outlined: true,
-          onTap: () => context.push('/projects/${project.id}'),
+          onTap: () => context.push('/projects/${widget.project.id}'),
         );
 
       default:
@@ -348,16 +393,18 @@ class ProjectCard extends StatelessWidget {
           icon: Icons.arrow_forward,
           color: AppColors.primary,
           outlined: true,
-          onTap: () => context.push('/projects/${project.id}'),
+          onTap: () => context.push('/projects/${widget.project.id}'),
         );
     }
   }
 }
 
-class _ActionButton extends StatelessWidget {
+/// Action button with press animation and optional gradient.
+class _ActionButton extends StatefulWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final Gradient? gradient;
   final bool outlined;
   final bool compact;
   final VoidCallback? onTap;
@@ -366,44 +413,59 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.color,
+    this.gradient,
     this.outlined = false,
     this.compact = false,
     this.onTap,
   });
 
   @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: label,
-      hint: 'Double tap to $label',
+      label: widget.label,
+      hint: 'Double tap to ${widget.label}',
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 10 : 14,
-            vertical: compact ? 6 : 8,
+            horizontal: widget.compact ? 10 : 14,
+            vertical: widget.compact ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: outlined ? Colors.transparent : color,
+            color: widget.outlined ? Colors.transparent : null,
+            gradient: widget.outlined ? null : (widget.gradient ?? LinearGradient(colors: [widget.color, widget.color])),
             borderRadius: BorderRadius.circular(8),
-            border: outlined ? Border.all(color: color) : null,
+            border: widget.outlined ? Border.all(color: widget.color) : null,
+            boxShadow: widget.outlined ? null : AppShadows.xs,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                icon,
-                size: compact ? 14 : 16,
-                color: outlined ? color : Colors.white,
+                widget.icon,
+                size: widget.compact ? 14 : 16,
+                color: widget.outlined ? widget.color : Colors.white,
               ),
-              SizedBox(width: compact ? 4 : 6),
+              SizedBox(width: widget.compact ? 4 : 6),
               Text(
-                label,
+                widget.label,
                 style: TextStyle(
-                  fontSize: compact ? 11 : 12,
+                  fontSize: widget.compact ? 11 : 12,
                   fontWeight: FontWeight.w600,
-                  color: outlined ? color : Colors.white,
+                  color: widget.outlined ? widget.color : Colors.white,
                 ),
               ),
             ],
@@ -414,6 +476,7 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
+/// Auto-approval countdown with animated styling.
 class _AutoApprovalCountdown extends StatefulWidget {
   final DateTime deadline;
 
@@ -474,8 +537,17 @@ class _AutoApprovalCountdownState extends State<_AutoApprovalCountdown> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary.withAlpha(15),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withAlpha(20),
+            AppColors.accent.withAlpha(10),
+          ],
+        ),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.primary.withAlpha(30),
+        ),
+        boxShadow: AppShadows.xs,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -492,6 +564,81 @@ class _AutoApprovalCountdownState extends State<_AutoApprovalCountdown> {
               fontSize: 11,
               color: AppColors.primary,
               fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Skeleton loader for project cards.
+class ProjectCardSkeleton extends StatelessWidget {
+  const ProjectCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppSpacing.borderRadiusLg,
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        children: [
+          // Header skeleton
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const SkeletonLoader(width: 40, height: 40, borderRadius: 10),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      SkeletonLoader(height: 16, width: 150),
+                      SizedBox(height: 6),
+                      SkeletonLoader(height: 12, width: 100),
+                    ],
+                  ),
+                ),
+                const SkeletonLoader(width: 70, height: 24, borderRadius: 12),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Body skeleton
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: const [
+                    SkeletonLoader(width: 80, height: 14),
+                    SizedBox(width: 16),
+                    SkeletonLoader(width: 100, height: 14),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Footer skeleton
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant.withAlpha(50),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(AppSpacing.radiusLg),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                SkeletonLoader(width: 140, height: 14),
+                SkeletonLoader(width: 70, height: 32, borderRadius: 8),
+              ],
             ),
           ),
         ],

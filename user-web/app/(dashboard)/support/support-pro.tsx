@@ -1,18 +1,5 @@
 "use client";
 
-/**
- * @fileoverview Premium Help & Support Page with SAAS-style Design
- *
- * Features:
- * - Glassmorphism hero with gradient mesh background
- * - Quick action cards for instant help
- * - Expandable FAQ accordion with category filtering
- * - Premium contact form with validation
- * - Ticket history with status badges
- * - Support info card with response times
- */
-
-import "./support.css";
 import { useState, useEffect } from "react";
 import {
   HelpCircle,
@@ -26,20 +13,13 @@ import {
   Loader2,
   Send,
   BookOpen,
-  Headphones,
-  ChevronRight,
   ChevronDown,
   Search,
-  Zap,
-  Shield,
-  Users,
-  FileText,
-  Sparkles,
   Phone,
   ExternalLink,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,15 +79,15 @@ interface ContactFormData {
  * Contact categories
  */
 const contactCategories = [
-  { value: "general", label: "General Inquiry", icon: HelpCircle },
-  { value: "billing", label: "Billing & Payments", icon: FileText },
-  { value: "technical", label: "Technical Issue", icon: Zap },
-  { value: "project", label: "Project Related", icon: BookOpen },
-  { value: "account", label: "Account Issues", icon: Shield },
+  { value: "general", label: "General Inquiry" },
+  { value: "billing", label: "Billing & Payments" },
+  { value: "technical", label: "Technical Issue" },
+  { value: "project", label: "Project Related" },
+  { value: "account", label: "Account Issues" },
 ];
 
 /**
- * Quick help action card
+ * Quick help action card - Minimalist
  */
 function QuickHelpCard({
   icon: Icon,
@@ -127,36 +107,28 @@ function QuickHelpCard({
       onClick={onClick}
       className={cn(
         "flex flex-col items-start p-4 rounded-xl text-left w-full",
-        "bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm",
-        "border border-white/60 dark:border-gray-800/60",
-        "hover:shadow-md hover:border-primary/30 transition-all duration-300",
-        "group"
+        "bg-card border border-border",
+        "hover:border-foreground/20 transition-colors"
       )}
     >
       <div className="flex items-start justify-between w-full mb-3">
-        <div
-          className={cn(
-            "p-2.5 rounded-xl transition-colors",
-            "bg-gradient-to-br from-primary/10 to-primary/5",
-            "group-hover:from-primary/20 group-hover:to-primary/10"
-          )}
-        >
-          <Icon className="h-5 w-5 text-primary" />
+        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
+          <Icon className="h-4.5 w-4.5 text-muted-foreground" />
         </div>
         {badge && (
-          <Badge variant="secondary" className="text-xs">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
             {badge}
-          </Badge>
+          </span>
         )}
       </div>
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+      <h3 className="text-sm font-medium text-foreground mb-0.5">{title}</h3>
+      <p className="text-xs text-muted-foreground">{description}</p>
     </button>
   );
 }
 
 /**
- * Glassmorphism section card
+ * Section card component - Minimalist
  */
 function SectionCard({
   icon: Icon,
@@ -168,42 +140,32 @@ function SectionCard({
 }: {
   icon: React.ElementType;
   title: string;
-  description: string;
+  description?: string;
   children: React.ReactNode;
   className?: string;
   headerAction?: React.ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm",
-        "border border-white/60 dark:border-gray-800/60",
-        "shadow-sm hover:shadow-md transition-all duration-300",
-        "overflow-hidden",
-        className
-      )}
-    >
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5">
-              <Icon className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
-            </div>
+    <div className={cn("rounded-xl border border-border bg-card overflow-hidden", className)}>
+      <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <Icon className="h-4.5 w-4.5 text-muted-foreground" />
           </div>
-          {headerAction}
+          <div>
+            <h3 className="text-sm font-medium text-foreground">{title}</h3>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+          </div>
         </div>
+        {headerAction}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4">{children}</div>
     </div>
   );
 }
 
 /**
- * FAQ Accordion Item
+ * FAQ Accordion Item - Minimalist
  */
 function FAQItem({
   question,
@@ -219,31 +181,29 @@ function FAQItem({
   return (
     <div
       className={cn(
-        "rounded-xl border transition-all duration-200",
-        isOpen
-          ? "border-primary/30 bg-primary/5"
-          : "border-gray-200 dark:border-gray-800 hover:border-primary/20"
+        "rounded-xl border transition-colors",
+        isOpen ? "border-foreground/20 bg-muted/30" : "border-border hover:border-foreground/10"
       )}
     >
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full p-4 text-left"
+        className="flex items-center justify-between w-full p-3 text-left"
       >
-        <span className="font-medium text-gray-900 dark:text-white pr-4">{question}</span>
+        <span className="text-sm font-medium text-foreground pr-4">{question}</span>
         <ChevronDown
           className={cn(
-            "h-5 w-5 text-gray-400 transition-transform duration-200 flex-shrink-0",
-            isOpen && "rotate-180 text-primary"
+            "h-4 w-4 text-muted-foreground transition-transform shrink-0",
+            isOpen && "rotate-180"
           )}
         />
       </button>
       <div
         className={cn(
-          "overflow-hidden transition-all duration-200",
+          "overflow-hidden transition-all",
           isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="px-4 pb-4 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+        <div className="px-3 pb-3 text-sm text-muted-foreground leading-relaxed">
           {answer}
         </div>
       </div>
@@ -252,25 +212,7 @@ function FAQItem({
 }
 
 /**
- * Status icon component
- */
-function StatusIcon({ status }: { status: TicketStatus }) {
-  switch (status) {
-    case "open":
-      return <AlertCircle className="h-4 w-4 text-blue-500" />;
-    case "in_progress":
-      return <Clock className="h-4 w-4 text-amber-500" />;
-    case "resolved":
-      return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-    case "closed":
-      return <XCircle className="h-4 w-4 text-gray-400" />;
-    default:
-      return <AlertCircle className="h-4 w-4 text-blue-500" />;
-  }
-}
-
-/**
- * Status badge variant
+ * Status style helper
  */
 function getStatusStyle(status: TicketStatus) {
   switch (status) {
@@ -281,14 +223,33 @@ function getStatusStyle(status: TicketStatus) {
     case "resolved":
       return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
     case "closed":
-      return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+      return "bg-muted text-muted-foreground";
     default:
-      return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400";
+      return "bg-muted text-muted-foreground";
   }
 }
 
 /**
- * Premium Support Page Component
+ * Status icon helper
+ */
+function StatusIcon({ status }: { status: TicketStatus }) {
+  const iconClass = "h-4 w-4";
+  switch (status) {
+    case "open":
+      return <AlertCircle className={cn(iconClass, "text-blue-600")} />;
+    case "in_progress":
+      return <Clock className={cn(iconClass, "text-amber-600")} />;
+    case "resolved":
+      return <CheckCircle2 className={cn(iconClass, "text-emerald-600")} />;
+    case "closed":
+      return <XCircle className={cn(iconClass, "text-muted-foreground")} />;
+    default:
+      return <AlertCircle className={cn(iconClass, "text-blue-600")} />;
+  }
+}
+
+/**
+ * Minimalist Support Page Component
  */
 export function SupportPro() {
   // FAQ State
@@ -391,59 +352,29 @@ export function SupportPro() {
   };
 
   return (
-    <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
-      {/* Hero Header */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-accent p-6 lg:p-8">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-              backgroundSize: "32px 32px",
-            }}
-          />
+    <main className="flex-1 p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <section className="space-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Help & Support</h1>
+        <p className="text-sm text-muted-foreground">
+          Get help from our support team or browse FAQs
+        </p>
+      </section>
+
+      {/* Support Stats */}
+      <section className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-muted-foreground">&lt;2hr Response</span>
         </div>
-
-        {/* Gradient Orbs */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-accent/30 rounded-full blur-3xl" />
-
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-              <Headphones className="h-6 w-6 text-white" />
-            </div>
-            <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-              <Sparkles className="h-3 w-3 mr-1" />
-              24/7 Support
-            </Badge>
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Help & Support</h1>
-          <p className="text-white/80 max-w-lg">
-            Get instant help from our support team. Browse FAQs, submit tickets, or chat live with our experts.
-          </p>
-        </div>
-
-        {/* Support Stats */}
-        <div className="relative flex flex-wrap gap-4 mt-6 pt-6 border-t border-white/20">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">
-            <Clock className="h-4 w-4 text-white" />
-            <span className="text-sm text-white">&lt;2hr Response</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">
-            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-            <span className="text-sm text-white">98% Resolved</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">
-            <Users className="h-4 w-4 text-white" />
-            <span className="text-sm text-white">Expert Team</span>
-          </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+          <span className="text-muted-foreground">98% Resolved</span>
         </div>
       </section>
 
       {/* Quick Help Actions */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuickHelpCard
           icon={MessageCircle}
           title="Live Chat"
@@ -477,33 +408,30 @@ export function SupportPro() {
         <SectionCard
           icon={HelpCircle}
           title="Frequently Asked Questions"
-          description="Find quick answers to common questions"
+          description="Find quick answers"
           className="lg:row-span-2"
           headerAction={
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search FAQs..."
+                placeholder="Search..."
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
-                className="pl-9 h-9 w-40 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                className="pl-8 h-8 w-32 text-sm"
               />
             </div>
           }
         >
           {isFaqLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : faqs.length === 0 ? (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 w-fit mx-auto mb-4">
-                <HelpCircle className="h-8 w-8 text-gray-400" />
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mx-auto mb-3">
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-gray-500 dark:text-gray-400 mb-2">No FAQs available yet</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Check back soon or contact support directly
-              </p>
+              <p className="text-sm text-muted-foreground">No FAQs available yet</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -512,10 +440,10 @@ export function SupportPro() {
                 <button
                   onClick={() => setSelectedFaqCategory("all")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                    "px-2.5 py-1 rounded-lg text-xs font-medium transition-colors",
                     selectedFaqCategory === "all"
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                   )}
                 >
                   All
@@ -525,10 +453,10 @@ export function SupportPro() {
                     key={cat}
                     onClick={() => setSelectedFaqCategory(cat)}
                     className={cn(
-                      "px-3 py-1.5 rounded-full text-sm font-medium capitalize transition-colors",
+                      "px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-colors",
                       selectedFaqCategory === cat
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     )}
                   >
                     {cat}
@@ -537,9 +465,9 @@ export function SupportPro() {
               </div>
 
               {/* FAQ List */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredFAQs.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-center py-8 text-sm text-muted-foreground">
                     No FAQs match your search
                   </p>
                 ) : (
@@ -566,24 +494,19 @@ export function SupportPro() {
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Category Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Category
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Category</label>
               <Select
                 value={form.category}
                 onValueChange={(v) => setForm((p) => ({ ...p, category: v }))}
               >
-                <SelectTrigger className="bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700">
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {contactCategories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
-                      <div className="flex items-center gap-2">
-                        <cat.icon className="h-4 w-4 text-gray-500" />
-                        {cat.label}
-                      </div>
+                      {cat.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -591,21 +514,21 @@ export function SupportPro() {
             </div>
 
             {/* Subject */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
                 Subject <span className="text-red-500">*</span>
               </label>
               <Input
                 value={form.subject}
                 onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
                 placeholder="Brief summary of your issue"
-                className="bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                className="h-9"
               />
             </div>
 
             {/* Message */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
                 Message <span className="text-red-500">*</span>
               </label>
               <Textarea
@@ -613,21 +536,21 @@ export function SupportPro() {
                 onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
                 placeholder="Describe your issue in detail..."
                 rows={4}
-                className="resize-none bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                className="resize-none text-sm"
               />
             </div>
 
             {/* Submit */}
-            <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
+            <Button type="submit" disabled={isSubmitting} className="w-full h-9 gap-2">
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating Ticket...
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Creating...
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
-                  Create Support Ticket
+                  <Send className="h-3.5 w-3.5" />
+                  Create Ticket
                 </>
               )}
             </Button>
@@ -642,65 +565,60 @@ export function SupportPro() {
         >
           {isTicketsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : tickets.length === 0 ? (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 w-fit mx-auto mb-4">
-                <Ticket className="h-8 w-8 text-gray-400" />
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mx-auto mb-3">
+                <Ticket className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-gray-500 dark:text-gray-400 mb-2">No tickets yet</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                Create a ticket above to get help
-              </p>
+              <p className="text-sm text-muted-foreground">No tickets yet</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {tickets.slice(0, 5).map((ticket) => (
                 <div
                   key={ticket.id}
                   className={cn(
-                    "p-4 rounded-xl border transition-all duration-200",
-                    "border-gray-200 dark:border-gray-800",
-                    "hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-gray-800/50",
-                    "cursor-pointer group"
+                    "p-3 rounded-xl border border-border",
+                    "hover:border-foreground/20 transition-colors cursor-pointer group"
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         <StatusIcon status={ticket.status} />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {ticket.subject}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          #{ticket.ticket_number} • {ticket.category || "General"}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          #{ticket.ticket_number} · {ticket.category || "General"}
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          Updated {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={cn(
-                          "px-2 py-1 rounded-full text-xs font-medium capitalize",
+                          "px-2 py-0.5 rounded text-xs font-medium capitalize",
                           getStatusStyle(ticket.status)
                         )}
                       >
                         {ticket.status.replace("_", " ")}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 </div>
               ))}
 
               {tickets.length > 5 && (
-                <Button variant="outline" className="w-full gap-2">
-                  <ExternalLink className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="w-full gap-2 h-8">
+                  <ExternalLink className="h-3.5 w-3.5" />
                   View All {tickets.length} Tickets
                 </Button>
               )}

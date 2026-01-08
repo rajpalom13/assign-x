@@ -43,19 +43,20 @@ export function PersonalizedGreeting() {
 
   if (isLoading) {
     return (
-      <div>
-        <Skeleton className="mb-1 h-8 w-48" />
-        <Skeleton className="h-4 w-64" />
+      <div className="space-y-1.5">
+        <Skeleton className="h-7 w-44 rounded-lg" />
+        <Skeleton className="h-4 w-56 rounded-md" />
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">
-        {getGreeting()}, {firstName}!
+    <div className="space-y-0.5">
+      <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+        <span className="text-muted-foreground font-normal">{getGreeting()},</span>{" "}
+        <span className="text-gradient">{firstName}</span>
       </h1>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs sm:text-sm text-muted-foreground/80">
         What would you like to work on today?
       </p>
     </div>

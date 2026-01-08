@@ -126,11 +126,21 @@ export function rateLimit(config: RateLimitConfig) {
  * Pre-configured rate limiters for different use cases
  */
 
-// Strict rate limit for payment endpoints (5 requests per minute)
+// Rate limit for payment endpoints
+// More lenient in development (20 req/min), strict in production (10 req/min)
+const isDev = process.env.NODE_ENV === "development"
 export const paymentRateLimiter = rateLimit({
   interval: 60 * 1000, // 1 minute
   uniqueTokenPerInterval: 500,
 })
+
+// Override check limit based on environment
+const originalPaymentCheck = paymentRateLimiter.check
+paymentRateLimiter.check = async (limit: number, token: string) => {
+  // Use higher limit in development for easier testing
+  const effectiveLimit = isDev ? Math.max(limit, 20) : limit
+  return originalPaymentCheck(effectiveLimit, token)
+}
 
 // Standard rate limit for authenticated API endpoints (30 requests per minute)
 export const apiRateLimiter = rateLimit({

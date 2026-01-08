@@ -52,6 +52,7 @@ export const chatService = {
 
   /**
    * Gets or creates a chat room for a project.
+   * Uses unique constraint on project_id to handle race conditions.
    * @param projectId - The project UUID
    * @param userId - The user's profile ID
    * @returns The chat room
@@ -80,7 +81,39 @@ export const chatService = {
       .select()
       .single()
 
-    if (createError) throw createError
+    // Handle unique constraint violation (race condition)
+    // If another request created the room first, fetch it
+    if (createError) {
+      if (createError.code === '23505') {
+        // Unique violation - room was created by another request
+        const { data: roomAfterRace, error: refetchError } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('project_id', projectId)
+          .single()
+
+        if (refetchError || !roomAfterRace) throw refetchError || new Error('Failed to fetch chat room')
+
+        // Check if user is already a participant
+        const { data: existingParticipant } = await supabase
+          .from('chat_participants')
+          .select('id')
+          .eq('room_id', roomAfterRace.id)
+          .eq('profile_id', userId)
+          .single()
+
+        if (!existingParticipant) {
+          await supabase.from('chat_participants').insert({
+            room_id: roomAfterRace.id,
+            profile_id: userId,
+            role: 'user',
+          }).single()
+        }
+
+        return roomAfterRace
+      }
+      throw createError
+    }
 
     // Add user as participant
     await supabase.from('chat_participants').insert({

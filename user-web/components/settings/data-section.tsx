@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { exportUserData } from "@/lib/actions/data";
 
 /** Data management section with export and cache controls */
 export function DataSection() {
@@ -21,9 +22,12 @@ export function DataSection() {
   const handleExportData = async () => {
     setIsExporting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      const data = { exported: new Date().toISOString(), user: "mock_data" };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const result = await exportUserData();
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

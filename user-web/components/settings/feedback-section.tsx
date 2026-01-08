@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { submitFeedback } from "@/lib/actions/data";
 import type { FeedbackData } from "@/types/settings";
 
 /** Feedback submission section */
@@ -24,7 +25,17 @@ export function FeedbackSection() {
     }
     setIsSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
+      // Map feedback type to satisfaction score for the database
+      const satisfactionMap = { bug: 2, feature: 4, general: 3 };
+      const result = await submitFeedback({
+        overallSatisfaction: satisfactionMap[feedback.type as keyof typeof satisfactionMap] || 3,
+        feedbackText: feedback.message,
+        improvementSuggestions: feedback.type === "feature" ? feedback.message : undefined,
+      });
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Thank you for your feedback!");
       setFeedback({ type: "general", message: "" });
     } catch {

@@ -134,6 +134,12 @@ export const walletService = {
    * @returns Razorpay order details
    */
   async createTopUpOrder(profileId: string, amount: number): Promise<RazorpayOrder> {
+    // Generate short receipt (max 40 chars for Razorpay)
+    // Format: tu_<first 8 chars of UUID>_<timestamp last 10 digits>
+    const shortId = profileId.substring(0, 8)
+    const shortTime = Date.now().toString().slice(-10)
+    const receipt = `tu_${shortId}_${shortTime}`
+
     // Call server action/API route to create Razorpay order
     const response = await fetch('/api/payments/create-order', {
       method: 'POST',
@@ -141,7 +147,7 @@ export const walletService = {
       body: JSON.stringify({
         amount: amount * 100, // Convert to paise
         currency: 'INR',
-        receipt: `topup_${profileId}_${Date.now()}`,
+        receipt,
         notes: {
           type: 'wallet_topup',
           profile_id: profileId,
@@ -150,7 +156,8 @@ export const walletService = {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to create order')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to create order (${response.status})`)
     }
 
     return response.json()
@@ -182,7 +189,8 @@ export const walletService = {
     })
 
     if (!response.ok) {
-      throw new Error('Payment verification failed')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Payment verification failed (${response.status})`)
     }
 
     return response.json()
@@ -198,13 +206,19 @@ export const walletService = {
     projectId: string,
     amount: number
   ): Promise<RazorpayOrder> {
+    // Generate short receipt (max 40 chars for Razorpay)
+    // Format: pj_<first 8 chars of UUID>_<timestamp last 10 digits>
+    const shortId = projectId.substring(0, 8)
+    const shortTime = Date.now().toString().slice(-10)
+    const receipt = `pj_${shortId}_${shortTime}`
+
     const response = await fetch('/api/payments/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         amount: amount * 100,
         currency: 'INR',
-        receipt: `project_${projectId}_${Date.now()}`,
+        receipt,
         notes: {
           type: 'project_payment',
           project_id: projectId,
@@ -213,7 +227,8 @@ export const walletService = {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to create order')
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to create order (${response.status})`)
     }
 
     return response.json()
@@ -243,6 +258,80 @@ export const walletService = {
     if (!response.ok) {
       const error = await response.json()
       throw new Error(error.message || 'Payment failed')
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Creates a partial payment order (wallet + Razorpay).
+   * @param projectId - The project UUID
+   * @param razorpayAmount - Amount to charge via Razorpay in INR
+   * @returns Razorpay order details
+   */
+  async createPartialPaymentOrder(
+    projectId: string,
+    razorpayAmount: number
+  ): Promise<RazorpayOrder> {
+    const shortId = projectId.substring(0, 8)
+    const shortTime = Date.now().toString().slice(-10)
+    const receipt = `pp_${shortId}_${shortTime}` // pp = partial payment
+
+    const response = await fetch('/api/payments/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: razorpayAmount * 100, // Convert to paise
+        currency: 'INR',
+        receipt,
+        notes: {
+          type: 'partial_payment',
+          project_id: projectId,
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to create order (${response.status})`)
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Processes partial payment (wallet + Razorpay).
+   * @param profileId - The user's profile ID
+   * @param projectId - The project UUID
+   * @param paymentData - Razorpay payment verification data
+   * @param totalAmount - Total project amount
+   * @param walletAmount - Amount to deduct from wallet
+   * @param razorpayAmount - Amount charged via Razorpay
+   */
+  async processPartialPayment(
+    profileId: string,
+    projectId: string,
+    paymentData: PaymentVerification,
+    totalAmount: number,
+    walletAmount: number,
+    razorpayAmount: number
+  ): Promise<any> {
+    const response = await fetch('/api/payments/partial-pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...paymentData,
+        profile_id: profileId,
+        project_id: projectId,
+        total_amount: totalAmount,
+        wallet_amount: walletAmount,
+        razorpay_amount: razorpayAmount,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Partial payment failed (${response.status})`)
     }
 
     return response.json()

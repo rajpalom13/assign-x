@@ -3,15 +3,15 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
   Loader2,
-  Sparkles,
+  User,
+  Settings,
+  HelpCircle,
 } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import {
   Avatar,
   AvatarFallback,
@@ -81,11 +81,12 @@ export function NavUser({
     avatar: string
   }
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const clearUser = useUserStore((state) => state.clearUser)
   const clearAuth = useAuthStore((state) => state.clearAuth)
+  const isCollapsed = state === "collapsed"
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -114,15 +115,19 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="h-8 w-8 rounded-lg shrink-0">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name || "User"}</span>
-                <span className="truncate text-xs">{user.email}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              {!isCollapsed && (
+                <>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{user.name || "User"}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
+                </>
+              )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -139,30 +144,23 @@ export function NavUser({
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name || "User"}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => router.push("/profile")}>
-                <BadgeCheck />
-                Account
+                <User className="size-4" />
+                Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/payment-methods")}>
-                <CreditCard />
-                Billing
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                <Settings className="size-4" />
+                Settings
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
+              <DropdownMenuItem onClick={() => router.push("/support")}>
+                <HelpCircle className="size-4" />
+                Help & Support
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -172,9 +170,9 @@ export function NavUser({
               className="text-destructive focus:text-destructive"
             >
               {isLoggingOut ? (
-                <Loader2 className="animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                <LogOut />
+                <LogOut className="size-4" />
               )}
               {isLoggingOut ? "Logging out..." : "Log out"}
             </DropdownMenuItem>

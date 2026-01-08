@@ -23,7 +23,7 @@ interface StatusBannerProps {
  * Get icon for status
  */
 function getStatusIcon(status: ProjectStatus) {
-  const iconClass = "h-4 w-4";
+  const iconClass = "h-3 w-3";
 
   switch (status) {
     case "analyzing":
@@ -51,7 +51,7 @@ function getStatusIcon(status: ProjectStatus) {
 }
 
 /**
- * Thin colored status banner below header
+ * Compact status badge/chip
  */
 export function StatusBanner({ status, className }: StatusBannerProps) {
   const config = STATUS_CONFIG[status];
@@ -59,14 +59,14 @@ export function StatusBanner({ status, className }: StatusBannerProps) {
   return (
     <div
       className={cn(
-        "flex h-10 items-center justify-center gap-2 px-4",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
         config.bgClass,
         config.textClass,
         className
       )}
     >
       {getStatusIcon(status)}
-      <span className="text-sm font-medium">{config.label}</span>
+      <span>{config.label}</span>
     </div>
   );
 }

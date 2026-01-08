@@ -71,8 +71,15 @@ export function FileUploadZone({
 
   const validateFile = useCallback(
     (file: File): string | null => {
+      console.log("[FileUpload] Validating file:", {
+        fileName: file.name,
+        fileType: file.type,
+        acceptedTypes,
+        isTypeAccepted: acceptedTypes.includes(file.type)
+      });
+
       if (!acceptedTypes.includes(file.type)) {
-        return `File type not supported: ${file.name}`;
+        return `File type not supported: ${file.name} (type: ${file.type})`;
       }
       if (file.size > maxSizeMB * 1024 * 1024) {
         return `File too large: ${file.name} (max ${maxSizeMB}MB)`;
@@ -84,20 +91,39 @@ export function FileUploadZone({
 
   const processFiles = useCallback(
     (newFiles: FileList | null) => {
-      if (!newFiles) return;
+      console.log("[FileUpload] processFiles called", {
+        newFilesCount: newFiles?.length,
+        currentFilesCount: files.length,
+        maxFiles
+      });
+
+      if (!newFiles) {
+        console.log("[FileUpload] No files provided");
+        return;
+      }
 
       setError(null);
 
       if (files.length + newFiles.length > maxFiles) {
-        setError(`Maximum ${maxFiles} files allowed`);
+        const errorMsg = `Maximum ${maxFiles} files allowed`;
+        console.log("[FileUpload] Error:", errorMsg);
+        setError(errorMsg);
         return;
       }
 
       const filesToAdd: UploadedFile[] = [];
 
-      Array.from(newFiles).forEach((file) => {
+      Array.from(newFiles).forEach((file, index) => {
+        console.log(`[FileUpload] Processing file ${index + 1}:`, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          sizeMB: (file.size / (1024 * 1024)).toFixed(2) + "MB"
+        });
+
         const validationError = validateFile(file);
         if (validationError) {
+          console.log("[FileUpload] Validation error:", validationError);
           setError(validationError);
           return;
         }
@@ -113,11 +139,15 @@ export function FileUploadZone({
           status: "complete",
         };
 
+        console.log("[FileUpload] File validated successfully:", uploadedFile.id);
         filesToAdd.push(uploadedFile);
       });
 
       if (filesToAdd.length > 0) {
+        console.log("[FileUpload] Adding files to state:", filesToAdd.length);
         onFilesChange([...files, ...filesToAdd]);
+      } else {
+        console.log("[FileUpload] No valid files to add");
       }
     },
     [files, maxFiles, onFilesChange, validateFile]

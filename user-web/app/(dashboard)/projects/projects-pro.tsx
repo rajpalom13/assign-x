@@ -1,22 +1,17 @@
 "use client";
 
 /**
- * @fileoverview Premium Projects Page with Workspace Design System
+ * @fileoverview Projects Page - Minimalist Design
  *
- * Features:
- * - Gradient mesh hero background with ws-bg-mesh-hero styling
- * - Bento-style stat cards with animated counters
- * - Interactive project cards with hover lift effects
- * - Premium tab design with pill badges
- * - Smooth entrance animations with stagger delays
- * - Open Peeps illustrations for empty states
- * - Full Razorpay payment integration preserved
+ * Clean, Notion/Linear inspired design with:
+ * - Simple typography hierarchy
+ * - Subtle hover states
+ * - Clean project cards
  */
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import {
   Plus,
   FolderKanban,
@@ -35,98 +30,39 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useProjectStore, type Project } from "@/stores";
 import type { ProjectTab } from "@/types/project";
-import "./projects.css";
-import "@/styles/workspace.css";
+import { UploadSheet } from "@/components/dashboard/upload-sheet";
 
-// Dynamic import for Peep
-const Peep = dynamic(
-  () => import("react-peeps").then((mod) => {
-    const Component = mod.default || (mod as any).Peep;
-    if (!Component) {
-      return () => <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl" />;
-    }
-    return Component;
-  }),
-  {
-    ssr: false,
-    loading: () => <div className="w-full h-full bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl animate-pulse" />,
-  }
-);
-
-// ============================================================================
-// Tab Configuration
-// ============================================================================
-
+/**
+ * Tab configuration
+ */
 interface TabConfig {
   value: ProjectTab;
   label: string;
   icon: React.ElementType;
-  bgColor: string;
-  textColor: string;
-  description: string;
 }
 
 const tabs: TabConfig[] = [
-  {
-    value: "in_review",
-    label: "In Review",
-    icon: Eye,
-    bgColor: "bg-amber-100 dark:bg-amber-900/30",
-    textColor: "text-amber-600 dark:text-amber-400",
-    description: "Awaiting expert review",
-  },
-  {
-    value: "in_progress",
-    label: "In Progress",
-    icon: Zap,
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
-    textColor: "text-blue-600 dark:text-blue-400",
-    description: "Being worked on",
-  },
-  {
-    value: "for_review",
-    label: "For Review",
-    icon: CheckCircle2,
-    bgColor: "bg-purple-100 dark:bg-purple-900/30",
-    textColor: "text-purple-600 dark:text-purple-400",
-    description: "Ready for your review",
-  },
-  {
-    value: "history",
-    label: "History",
-    icon: Clock,
-    bgColor: "bg-gray-100 dark:bg-gray-800",
-    textColor: "text-gray-600 dark:text-gray-400",
-    description: "Completed projects",
-  },
+  { value: "in_review", label: "In Review", icon: Eye },
+  { value: "in_progress", label: "In Progress", icon: Zap },
+  { value: "for_review", label: "For Review", icon: CheckCircle2 },
+  { value: "history", label: "History", icon: Clock },
 ];
 
-// ============================================================================
-// Animated Counter
-// ============================================================================
-
-function AnimatedCounter({ value }: { value: number }) {
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (value === 0) { setDisplay(0); return; }
-    let start: number, frame: number;
-    const animate = (time: number) => {
-      if (!start) start = time;
-      const progress = Math.min((time - start) / 600, 1);
-      setDisplay(Math.round(value * (1 - Math.pow(1 - progress, 3))));
-      if (progress < 1) frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [value]);
-
-  return <span className="tabular-nums">{display}</span>;
-}
-
-// ============================================================================
-// Main Component
-// ============================================================================
+/**
+ * Status configuration
+ */
+const statusConfig: Record<string, { dot: string; label: string }> = {
+  submitted: { dot: "bg-amber-500", label: "Submitted" },
+  analyzing: { dot: "bg-amber-500", label: "Analyzing" },
+  quoted: { dot: "bg-orange-500", label: "Quoted" },
+  payment_pending: { dot: "bg-orange-500", label: "Payment Due" },
+  paid: { dot: "bg-blue-500", label: "Paid" },
+  assigned: { dot: "bg-blue-500", label: "Assigned" },
+  in_progress: { dot: "bg-blue-500", label: "In Progress" },
+  completed: { dot: "bg-emerald-500", label: "Completed" },
+  delivered: { dot: "bg-emerald-500", label: "Delivered" },
+  qc_approved: { dot: "bg-emerald-500", label: "Approved" },
+};
 
 interface ProjectsProProps {
   onPayNow?: (project: Project) => void;
@@ -145,6 +81,7 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
   } = useProjectStore();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadSheetOpen, setUploadSheetOpen] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -179,313 +116,139 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
   const pendingReviewCount = tabCounts.for_review;
 
   return (
-    <div className="flex-1 relative overflow-hidden min-h-screen">
-      {/* Background with gradient mesh */}
-      <div className="projects-page-bg" />
-
-      <div className="relative max-w-6xl mx-auto p-6 space-y-6">
-
-        {/* ============================================================
-            HERO SECTION WITH STATS
-            ============================================================ */}
-        <div className="projects-hero projects-animate-in">
-          <div className="projects-hero-content">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-
-              {/* Left: Icon Badge + Title */}
-              <div className="flex items-center gap-4 flex-1">
-                <div className="projects-hero-icon">
-                  <FolderKanban />
-                </div>
-                <div>
-                  <h1 className="projects-hero-title">My Projects</h1>
-                  <p className="projects-hero-subtitle">Track and manage your academic submissions</p>
-                </div>
-              </div>
-
-              {/* Right: New Project Button */}
-              <div className="flex-shrink-0">
-                <button
-                  onClick={() => router.push("/projects/new")}
-                  className="projects-hero-btn"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Project
-                </button>
-              </div>
-            </div>
-
-            {/* Stats Grid - Bento Style */}
-            <div className="projects-stats-grid">
-              <StatCard
-                icon={<FolderKanban className="w-5 h-5" />}
-                label="Total Projects"
-                value={totalProjects}
-                variant="primary"
-                delay={1}
-              />
-              <StatCard
-                icon={<Zap className="w-5 h-5" />}
-                label="In Progress"
-                value={inProgressCount}
-                variant="blue"
-                delay={2}
-              />
-              <StatCard
-                icon={<AlertCircle className="w-5 h-5" />}
-                label="Need Review"
-                value={pendingReviewCount}
-                variant="purple"
-                delay={3}
-              />
-              <StatCard
-                icon={<CheckCircle2 className="w-5 h-5" />}
-                label="Completed"
-                value={completedCount}
-                variant="green"
-                delay={4}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ============================================================
-            FILTER SECTION: TABS + SEARCH
-            ============================================================ */}
-        <div className="projects-filter-section projects-animate-in projects-stagger-2">
-          {/* Tab Pills */}
-          <div className="projects-tabs">
-            {tabs.map((tab) => {
-              const count = tabCounts[tab.value];
-              const isActive = activeTab === tab.value;
-              const Icon = tab.icon;
-
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={cn("projects-tab", isActive && "active")}
-                >
-                  <div className={cn("projects-tab-icon", tab.bgColor, tab.textColor)}>
-                    <Icon />
-                  </div>
-                  <span>{tab.label}</span>
-                  {count > 0 && (
-                    <span className="projects-tab-count">{count}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Search Input */}
-          <div className="projects-search">
-            <Search className="projects-search-icon" />
-            <input
-              type="text"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="projects-search-input"
-            />
-          </div>
-        </div>
-
-        {/* ============================================================
-            PROJECT LIST
-            ============================================================ */}
-        {isLoading ? (
-          <LoadingSkeleton />
-        ) : filteredProjects.length === 0 ? (
-          <EmptyState tab={activeTab} searchQuery={searchQuery} />
-        ) : (
-          <div className="space-y-4 projects-animate-in projects-stagger-3">
-            {/* Results count */}
-            <p className="projects-results-count">
-              Showing {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"}
-              {searchQuery && ` matching "${searchQuery}"`}
+    <>
+      <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Track and manage your academic submissions
             </p>
-
-            {/* Project Cards Grid */}
-            <div className="projects-grid">
-              {filteredProjects.map((project, index) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onPayNow={onPayNow}
-                  index={index}
-                />
-              ))}
-            </div>
           </div>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Sub Components
-// ============================================================================
-
-/**
- * Stat Card with animated counter and gradient icon
- */
-function StatCard({
-  icon,
-  label,
-  value,
-  variant,
-  delay,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  variant: "primary" | "blue" | "purple" | "green";
-  delay: number;
-}) {
-  return (
-    <div className={cn("projects-stat-card projects-animate-in", `projects-stagger-${delay}`)}>
-      <div className={cn("projects-stat-icon", variant)}>
-        {icon}
-      </div>
-      <div className="projects-stat-value">
-        <AnimatedCounter value={value} />
-      </div>
-      <div className="projects-stat-label">{label}</div>
-    </div>
-  );
-}
-
-/**
- * Loading skeleton with shimmer animation
- */
-function LoadingSkeleton() {
-  return (
-    <div className="projects-skeleton">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="projects-skeleton-card">
-          <div className="projects-skeleton-icon" />
-          <div className="projects-skeleton-content">
-            <div className="projects-skeleton-line title" />
-            <div className="projects-skeleton-line meta" />
-            <div className="projects-skeleton-line short" />
-          </div>
+          <Button
+            onClick={() => setUploadSheetOpen(true)}
+            size="sm"
+            className="h-8 rounded-lg"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            New Project
+          </Button>
         </div>
-      ))}
-    </div>
-  );
-}
 
-/**
- * Empty state with Peep illustration
- */
-function EmptyState({ tab, searchQuery }: { tab: ProjectTab; searchQuery: string }) {
-  const tabConfig = tabs.find((t) => t.value === tab);
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <StatCard label="Total" value={totalProjects} />
+        <StatCard label="In Progress" value={inProgressCount} />
+        <StatCard label="Need Review" value={pendingReviewCount} />
+        <StatCard label="Completed" value={completedCount} />
+      </div>
 
-  // Search results empty state
-  if (searchQuery) {
-    return (
-      <div className="projects-empty projects-animate-in projects-stagger-3">
-        <div className="projects-empty-content">
-          <div className="projects-empty-icon">
-            <Search />
-          </div>
-          <h3 className="projects-empty-title">No results found</h3>
-          <p className="projects-empty-description">
-            No projects match &quot;{searchQuery}&quot;. Try a different search term.
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        {/* Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
+          {tabs.map((tab) => {
+            const count = tabCounts[tab.value];
+            const isActive = activeTab === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors whitespace-nowrap",
+                  isActive
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full tabular-nums",
+                      isActive
+                        ? "bg-foreground/10"
+                        : "bg-muted"
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <div className="relative flex-1 md:max-w-[240px] md:ml-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      {isLoading ? (
+        <LoadingSkeleton />
+      ) : filteredProjects.length === 0 ? (
+        <EmptyState tab={activeTab} searchQuery={searchQuery} onNewProject={() => setUploadSheetOpen(true)} />
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground mb-3">
+            {filteredProjects.length} {filteredProjects.length === 1 ? "project" : "projects"}
+            {searchQuery && ` matching "${searchQuery}"`}
           </p>
-        </div>
-      </div>
-    );
-  }
 
-  // Different Peep poses for different tabs
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const peepConfigs: Record<ProjectTab, { body: any; face: any; hair: any }> = {
-    in_review: { body: "Coffee", face: "Calm", hair: "Bun" },
-    in_progress: { body: "Device", face: "Driven", hair: "MediumBangs" },
-    for_review: { body: "PointingUp", face: "Cute", hair: "ShortCurly" },
-    history: { body: "Shirt", face: "Smile", hair: "Afro" },
-  };
-
-  const peepConfig = peepConfigs[tab];
-
-  const emptyMessages: Record<ProjectTab, string> = {
-    in_review: "Projects you submit will appear here while experts review them.",
-    in_progress: "Projects being worked on by experts will show up here.",
-    for_review: "Completed work ready for your review will appear here.",
-    history: "Your completed and closed projects will be stored here.",
-  };
-
-  return (
-    <div className="projects-empty projects-animate-in projects-stagger-3">
-      <div className="projects-empty-content">
-        {/* Peep Illustration with 3D shadow effect */}
-        <div className="relative w-32 h-28 mx-auto mb-6">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-2.5 bg-black/[0.06] dark:bg-black/15 rounded-[100%] blur-sm" />
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-24 h-10 rounded-2xl bg-gradient-to-br from-[var(--ws-primary)]/12 via-[var(--ws-secondary)]/8 to-[var(--ws-primary)]/5" />
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[130px] h-[150px] drop-shadow-sm">
-            <Peep
-              style={{ width: "100%", height: "100%" }}
-              accessory="None"
-              body={peepConfig.body}
-              face={peepConfig.face}
-              hair={peepConfig.hair}
-              strokeColor="#A9714B"
-              viewBox={{ x: "0", y: "50", width: "900", height: "1000" }}
-            />
+          <div className="space-y-px rounded-xl border border-border overflow-hidden">
+            {filteredProjects.map((project, index) => (
+              <ProjectRow
+                key={project.id}
+                project={project}
+                onPayNow={onPayNow}
+                isLast={index === filteredProjects.length - 1}
+              />
+            ))}
           </div>
         </div>
-
-        <h3 className="projects-empty-title">
-          No {tabConfig?.label.toLowerCase()} projects
-        </h3>
-        <p className="projects-empty-description">
-          {emptyMessages[tab]}
-        </p>
-
-        <Button asChild className="projects-hero-btn">
-          <Link href="/projects/new">
-            <Plus className="w-4 h-4" />
-            Start New Project
-          </Link>
-        </Button>
+      )}
       </div>
+
+      {/* Upload Sheet - What would you like to do? */}
+      <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
+    </>
+  );
+}
+
+/**
+ * Stat Card
+ */
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="p-4 rounded-xl border border-border bg-card">
+      <p className="text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
 }
 
-// ============================================================================
-// Project Card
-// ============================================================================
-
-const statusConfig: Record<string, { statusClass: string; label: string; icon: React.ElementType }> = {
-  submitted: { statusClass: "amber", label: "Submitted", icon: FileText },
-  analyzing: { statusClass: "amber", label: "Analyzing", icon: Eye },
-  quoted: { statusClass: "orange", label: "Quoted", icon: AlertCircle },
-  payment_pending: { statusClass: "orange", label: "Payment Due", icon: AlertCircle },
-  paid: { statusClass: "blue", label: "Paid", icon: CheckCircle2 },
-  assigned: { statusClass: "blue", label: "Assigned", icon: Zap },
-  in_progress: { statusClass: "blue", label: "In Progress", icon: Zap },
-  completed: { statusClass: "green", label: "Completed", icon: CheckCircle2 },
-  delivered: { statusClass: "green", label: "Delivered", icon: CheckCircle2 },
-  qc_approved: { statusClass: "green", label: "Approved", icon: CheckCircle2 },
-};
-
 /**
- * Project Card with CSS-based styling and Razorpay payment integration
- * Uses workspace design system classes for consistent styling
+ * Project Row
  */
-function ProjectCard({
+function ProjectRow({
   project,
   onPayNow,
-  index,
+  isLast,
 }: {
   project: Project;
   onPayNow?: (project: Project) => void;
-  index: number;
+  isLast: boolean;
 }) {
   const router = useRouter();
   const projectNumber = project.projectNumber || project.project_number;
@@ -493,7 +256,6 @@ function ProjectCard({
   const progress = project.progress ?? project.progress_percentage ?? 0;
   const quoteAmount = project.quoteAmount || project.final_quote || project.user_quote;
   const status = statusConfig[project.status] || statusConfig.submitted;
-  const StatusIcon = status.icon;
 
   const isPaymentAction = project.status === "payment_pending" || project.status === "quoted";
 
@@ -514,8 +276,8 @@ function ProjectCard({
 
     if (diffDays < 0) return { text: "Overdue", urgent: true };
     if (diffDays === 0) return { text: "Due today", urgent: true };
-    if (diffDays === 1) return { text: "Due tomorrow", urgent: true };
-    if (diffDays <= 3) return { text: `${diffDays} days left`, urgent: true };
+    if (diffDays === 1) return { text: "Tomorrow", urgent: true };
+    if (diffDays <= 3) return { text: `${diffDays}d left`, urgent: true };
     return { text: date.toLocaleDateString("en-IN", { month: "short", day: "numeric" }), urgent: false };
   };
 
@@ -524,77 +286,144 @@ function ProjectCard({
   return (
     <div
       onClick={handleClick}
-      className={cn("project-card", isPaymentAction && "payment-pending")}
-      style={{ animationDelay: `${index * 50}ms` }}
+      className={cn(
+        "flex items-center gap-4 p-4 bg-card hover:bg-muted/50 cursor-pointer transition-colors",
+        !isLast && "border-b border-border"
+      )}
     >
-      <div className="project-card-inner">
-        {/* Left: Icon + Info */}
-        <div className="project-card-main">
-          <div className={cn("project-status-icon", status.statusClass)}>
-            <StatusIcon />
-          </div>
+      {/* Status dot */}
+      <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
 
-          <div className="project-card-info">
-            <div className="project-card-header">
-              <h3 className="project-card-title">
-                {project.title}
-              </h3>
-              <span className={cn("project-status-badge", status.statusClass)}>
-                {status.label}
-              </span>
-            </div>
-
-            <div className="project-card-meta">
-              {projectNumber && (
-                <span className="project-meta-number">{projectNumber}</span>
-              )}
-              {(project.subjectName || project.subject?.name) && (
-                <span className="project-meta-subject">{project.subjectName || project.subject?.name}</span>
-              )}
-              {deadlineInfo && (
-                <span className={cn("project-meta-deadline", deadlineInfo.urgent && "urgent")}>
-                  <Calendar />
-                  {deadlineInfo.text}
-                </span>
-              )}
-            </div>
-
-            {/* Progress bar for in_progress */}
-            {project.status === "in_progress" && progress > 0 && (
-              <div className="project-progress">
-                <div className="project-progress-bar">
-                  <div
-                    className="project-progress-fill"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <span className="project-progress-text">{progress}%</span>
-              </div>
-            )}
-          </div>
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium truncate">{project.title}</p>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+            {status.label}
+          </span>
         </div>
-
-        {/* Right: Price + Action */}
-        <div className="project-card-actions">
-          {quoteAmount && (
-            <div className="project-quote">
-              <span className="project-quote-label">Quote</span>
-              <span className="project-quote-amount">₹{quoteAmount.toLocaleString()}</span>
-            </div>
+        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+          {projectNumber && (
+            <span className="font-mono">{projectNumber}</span>
           )}
-
-          {isPaymentAction ? (
-            <button className="project-pay-btn">
-              Pay Now
-              <ArrowRight />
-            </button>
-          ) : (
-            <div className="project-card-arrow">
-              <ChevronRight />
-            </div>
+          {(project.subjectName || project.subject?.name) && (
+            <span>{project.subjectName || project.subject?.name}</span>
+          )}
+          {deadlineInfo && (
+            <span className={cn("flex items-center gap-1", deadlineInfo.urgent && "text-amber-600")}>
+              <Calendar className="h-3 w-3" />
+              {deadlineInfo.text}
+            </span>
           )}
         </div>
+
+        {/* Progress bar for in_progress */}
+        {project.status === "in_progress" && progress > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-1 bg-muted rounded-full max-w-[120px]">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground tabular-nums">{progress}%</span>
+          </div>
+        )}
       </div>
+
+      {/* Right side */}
+      <div className="flex items-center gap-3 shrink-0">
+        {quoteAmount && (
+          <div className="text-right">
+            <p className="text-sm font-medium tabular-nums">₹{quoteAmount.toLocaleString()}</p>
+          </div>
+        )}
+
+        {isPaymentAction ? (
+          <Button size="sm" className="h-7 text-xs rounded-md">
+            Pay Now
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        ) : (
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Loading Skeleton
+ */
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-px rounded-xl border border-border overflow-hidden">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4 p-4 bg-card">
+          <div className="h-2 w-2 rounded-full bg-muted animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-32 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Empty State
+ */
+function EmptyState({
+  tab,
+  searchQuery,
+  onNewProject
+}: {
+  tab: ProjectTab;
+  searchQuery: string;
+  onNewProject: () => void;
+}) {
+  const tabConfig = tabs.find((t) => t.value === tab);
+
+  if (searchQuery) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Search className="h-8 w-8 text-muted-foreground mb-4" />
+        <h3 className="text-sm font-medium mb-1">No results found</h3>
+        <p className="text-sm text-muted-foreground">
+          No projects match &quot;{searchQuery}&quot;
+        </p>
+      </div>
+    );
+  }
+
+  const emptyMessages: Record<ProjectTab, string> = {
+    in_review: "Projects you submit will appear here while experts review them.",
+    in_progress: "Projects being worked on by experts will show up here.",
+    for_review: "Completed work ready for your review will appear here.",
+    history: "Your completed and closed projects will be stored here.",
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-4">
+        <FolderKanban className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-sm font-medium mb-1">
+        No {tabConfig?.label.toLowerCase()} projects
+      </h3>
+      <p className="text-sm text-muted-foreground mb-4 max-w-xs">
+        {emptyMessages[tab]}
+      </p>
+      <Button
+        onClick={onNewProject}
+        size="sm"
+        className="h-8 rounded-lg"
+      >
+        <Plus className="h-3.5 w-3.5 mr-1.5" />
+        New Project
+      </Button>
     </div>
   );
 }

@@ -1,23 +1,28 @@
 "use client";
 
 /**
- * EmptyState - Beautiful empty state component with illustration and CTA
- * Supports custom OpenPeeps illustrations and Lottie animations
+ * EmptyState - Beautiful empty state component with icon illustrations
+ * Modern glassmorphism design with lucide icons
  */
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import {
+  FolderOpen,
+  MessageSquare,
+  Bell,
+  Search,
+  AlertTriangle,
+  Plus,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { staggerContainer, staggerItem, fadeInScale, springs } from "@/lib/animations/variants";
 import { AnimatedButton } from "./animated-button";
 
 export interface EmptyStateProps {
-  /** Illustration source - can be OpenPeeps SVG path or any image */
-  illustration?: string;
-  /** Lottie animation component (rendered if provided) */
-  lottieAnimation?: React.ReactNode;
+  /** Custom icon component */
+  icon?: React.ReactNode;
   /** Main headline */
   title: string;
   /** Supporting description */
@@ -37,44 +42,43 @@ export interface EmptyStateProps {
   className?: string;
   /** Size variant */
   size?: "sm" | "default" | "lg";
-  /** Icon to show above title if no illustration */
-  icon?: React.ReactNode;
+  /** Icon color class */
+  iconColor?: string;
 }
 
 const sizeConfig = {
   sm: {
     container: "py-8 px-4",
-    illustration: 120,
+    iconSize: "w-10 h-10",
+    iconWrapper: "p-3",
     title: "text-base",
     description: "text-sm",
-    iconSize: "size-10",
   },
   default: {
     container: "py-12 px-6",
-    illustration: 180,
+    iconSize: "w-12 h-12",
+    iconWrapper: "p-4",
     title: "text-lg",
     description: "text-sm",
-    iconSize: "size-14",
   },
   lg: {
     container: "py-16 px-8",
-    illustration: 240,
+    iconSize: "w-16 h-16",
+    iconWrapper: "p-5",
     title: "text-xl",
     description: "text-base",
-    iconSize: "size-20",
   },
 };
 
 export function EmptyState({
-  illustration,
-  lottieAnimation,
+  icon,
   title,
   description,
   primaryAction,
   secondaryAction,
   className,
   size = "default",
-  icon,
+  iconColor = "text-muted-foreground",
 }: EmptyStateProps) {
   const config = sizeConfig[size];
 
@@ -89,48 +93,29 @@ export function EmptyState({
       initial="hidden"
       animate="visible"
     >
-      {/* Illustration or Lottie or Icon */}
-      <motion.div
-        variants={fadeInScale}
-        className="mb-6"
-      >
-        {lottieAnimation ? (
-          <div
-            style={{
-              width: config.illustration,
-              height: config.illustration,
-            }}
-          >
-            {lottieAnimation}
-          </div>
-        ) : illustration ? (
-          <motion.div
-            whileHover={{ scale: 1.05, rotate: 2 }}
-            transition={springs.gentle}
-          >
-            <Image
-              src={illustration}
-              alt=""
-              width={config.illustration}
-              height={config.illustration}
-              className="object-contain"
-              priority
-            />
-          </motion.div>
-        ) : icon ? (
+      {/* Icon with glassmorphism effect */}
+      {icon && (
+        <motion.div
+          variants={fadeInScale}
+          className="mb-6 relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 rounded-3xl blur-xl scale-150" />
           <motion.div
             className={cn(
-              "flex items-center justify-center rounded-2xl bg-muted",
-              config.iconSize,
-              "text-muted-foreground"
+              "relative rounded-2xl bg-white/80 dark:bg-gray-800/80",
+              "border border-white/60 dark:border-gray-700/60",
+              "shadow-sm backdrop-blur-sm",
+              config.iconWrapper
             )}
-            whileHover={{ scale: 1.1 }}
-            transition={springs.bouncy}
+            whileHover={{ scale: 1.05 }}
+            transition={springs.gentle}
           >
-            {icon}
+            <div className={cn(config.iconSize, iconColor, "flex items-center justify-center")}>
+              {icon}
+            </div>
           </motion.div>
-        ) : null}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Title */}
       <motion.h3
@@ -193,12 +178,14 @@ export function EmptyState({
 export function NoProjectsEmpty({ onCreateNew }: { onCreateNew: () => void }) {
   return (
     <EmptyState
-      illustration="/illustrations/openpeeps/reading.svg"
+      icon={<FolderOpen className="w-full h-full" />}
+      iconColor="text-primary"
       title="No projects yet"
       description="Start your academic journey by creating your first project. We'll match you with expert tutors."
       primaryAction={{
         label: "Create Project",
         onClick: onCreateNew,
+        icon: <Plus className="w-4 h-4" />,
       }}
     />
   );
@@ -207,7 +194,8 @@ export function NoProjectsEmpty({ onCreateNew }: { onCreateNew: () => void }) {
 export function NoMessagesEmpty() {
   return (
     <EmptyState
-      illustration="/illustrations/openpeeps/coffee.svg"
+      icon={<MessageSquare className="w-full h-full" />}
+      iconColor="text-blue-500"
       title="No messages yet"
       description="Once you start a project, you'll be able to chat with your assigned expert here."
       size="sm"
@@ -218,7 +206,8 @@ export function NoMessagesEmpty() {
 export function NoNotificationsEmpty() {
   return (
     <EmptyState
-      illustration="/illustrations/openpeeps/sitting.svg"
+      icon={<Bell className="w-full h-full" />}
+      iconColor="text-amber-500"
       title="All caught up!"
       description="You have no new notifications. We'll let you know when something needs your attention."
       size="sm"
@@ -229,7 +218,8 @@ export function NoNotificationsEmpty() {
 export function SearchNoResultsEmpty({ query, onClear }: { query: string; onClear: () => void }) {
   return (
     <EmptyState
-      illustration="/illustrations/openpeeps/looking.svg"
+      icon={<Search className="w-full h-full" />}
+      iconColor="text-muted-foreground"
       title={`No results for "${query}"`}
       description="Try adjusting your search terms or filters to find what you're looking for."
       primaryAction={{
@@ -243,7 +233,8 @@ export function SearchNoResultsEmpty({ query, onClear }: { query: string; onClea
 export function ErrorEmpty({ onRetry }: { onRetry: () => void }) {
   return (
     <EmptyState
-      illustration="/illustrations/openpeeps/thinking.svg"
+      icon={<AlertTriangle className="w-full h-full" />}
+      iconColor="text-destructive"
       title="Something went wrong"
       description="We couldn't load the content. Please try again."
       primaryAction={{

@@ -14,13 +14,13 @@
 :root {
   /* === Color Palette === */
 
-  /* Background colors */
-  --ws-bg-page: #FAF9F7;
+  /* Background colors - Clean light gray like reference */
+  --ws-bg-page: #F5F5F7;
   --ws-bg-card: #FFFFFF;
   --ws-bg-card-elevated: #FFFFFF;
-  --ws-bg-muted: #F5F4F2;
-  --ws-bg-subtle: #FDFCFB;
-  --ws-bg-overlay: rgba(20, 18, 4, 0.5);
+  --ws-bg-muted: #F3F4F6;
+  --ws-bg-subtle: #FAFAFA;
+  --ws-bg-overlay: rgba(0, 0, 0, 0.5);
 
   /* Primary accent - Cinnamon Wood (AssignX brand) */
   --ws-primary: #A9714B;
@@ -85,18 +85,18 @@
   --ws-badge-neutral: #6B7280;
   --ws-badge-neutral-bg: #F3F4F6;
 
-  /* === Shadows === */
-  --ws-shadow-xs: 0 1px 2px rgba(20, 18, 4, 0.04);
-  --ws-shadow-sm: 0 1px 3px rgba(20, 18, 4, 0.06), 0 1px 2px rgba(20, 18, 4, 0.04);
-  --ws-shadow-md: 0 4px 6px -1px rgba(20, 18, 4, 0.08), 0 2px 4px -1px rgba(20, 18, 4, 0.04);
-  --ws-shadow-lg: 0 10px 15px -3px rgba(20, 18, 4, 0.08), 0 4px 6px -2px rgba(20, 18, 4, 0.04);
-  --ws-shadow-xl: 0 20px 25px -5px rgba(20, 18, 4, 0.1), 0 10px 10px -5px rgba(20, 18, 4, 0.04);
-  --ws-shadow-2xl: 0 25px 50px -12px rgba(20, 18, 4, 0.12);
-  --ws-shadow-inner: inset 0 2px 4px rgba(20, 18, 4, 0.04);
-  --ws-shadow-focus: 0 0 0 3px rgba(169, 113, 75, 0.2);
-  --ws-shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.2);
-  --ws-shadow-glow: 0 0 20px rgba(169, 113, 75, 0.15);
-  --ws-shadow-card-hover: 0 8px 30px rgba(169, 113, 75, 0.12);
+  /* === Shadows - Subtle and clean === */
+  --ws-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --ws-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ws-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --ws-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04);
+  --ws-shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.06);
+  --ws-shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.08);
+  --ws-shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ws-shadow-focus: 0 0 0 3px rgba(169, 113, 75, 0.15);
+  --ws-shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  --ws-shadow-glow: 0 0 20px rgba(169, 113, 75, 0.1);
+  --ws-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* === Border Radius === */
   --ws-radius-xs: 4px;
@@ -157,10 +157,10 @@
   --ws-z-toast: 600;
 
   /* === Glassmorphism === */
-  --ws-glass-bg: rgba(255, 255, 255, 0.72);
-  --ws-glass-border: rgba(255, 255, 255, 0.2);
-  --ws-glass-blur: 12px;
-  --ws-glass-saturate: 180%;
+  --ws-glass-bg: rgba(255, 255, 255, 0.9);
+  --ws-glass-border: rgba(0, 0, 0, 0.06);
+  --ws-glass-blur: 8px;
+  --ws-glass-saturate: 100%;
 }
 
 /* Dark mode overrides */
@@ -194,11 +194,7 @@
 
 .ws-bg-mesh {
   background-color: var(--ws-bg-page);
-  background-image:
-    radial-gradient(at 0% 0%, rgba(169, 113, 75, 0.08) 0%, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(232, 152, 94, 0.06) 0%, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(169, 113, 75, 0.04) 0%, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(232, 152, 94, 0.05) 0%, transparent 50%);
+  background-image: none;
 }
 
 .ws-bg-mesh-subtle {
@@ -834,30 +830,30 @@
   }
 }
 
-/* Animation classes */
+/* Animation classes - using 'both' fill mode for proper stagger support */
 .ws-animate-fade-in {
-  animation: ws-fade-in var(--ws-transition-slow) ease-out forwards;
+  animation: ws-fade-in var(--ws-transition-slow) ease-out both;
 }
 
 .ws-animate-slide-up {
-  animation: ws-slide-up var(--ws-transition-slow) ease-out forwards;
+  animation: ws-slide-up var(--ws-transition-slow) ease-out both;
 }
 
 .ws-animate-slide-down {
-  animation: ws-slide-down var(--ws-transition-slow) ease-out forwards;
+  animation: ws-slide-down var(--ws-transition-slow) ease-out both;
 }
 
 .ws-animate-scale-in {
-  animation: ws-scale-in var(--ws-transition-slow) ease-out forwards;
+  animation: ws-scale-in var(--ws-transition-slow) ease-out both;
 }
 
-/* Stagger delay classes */
-.ws-stagger-1 { animation-delay: 0.05s; opacity: 0; }
-.ws-stagger-2 { animation-delay: 0.1s; opacity: 0; }
-.ws-stagger-3 { animation-delay: 0.15s; opacity: 0; }
-.ws-stagger-4 { animation-delay: 0.2s; opacity: 0; }
-.ws-stagger-5 { animation-delay: 0.25s; opacity: 0; }
-.ws-stagger-6 { animation-delay: 0.3s; opacity: 0; }
+/* Stagger delay classes - animation handles opacity via fill-mode: backwards */
+.ws-stagger-1 { animation-delay: 0.05s; }
+.ws-stagger-2 { animation-delay: 0.1s; }
+.ws-stagger-3 { animation-delay: 0.15s; }
+.ws-stagger-4 { animation-delay: 0.2s; }
+.ws-stagger-5 { animation-delay: 0.25s; }
+.ws-stagger-6 { animation-delay: 0.3s; }
 
 /* Shimmer loading animation */
 @keyframes ws-shimmer {

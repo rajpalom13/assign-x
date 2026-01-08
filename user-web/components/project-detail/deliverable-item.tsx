@@ -46,15 +46,30 @@ export function DeliverableItem({
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
+    if (!deliverable.url) {
+      toast.error("File URL not available");
+      return;
+    }
+
     setIsDownloading(true);
 
-    // Simulate download delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Create download link and trigger download
+      const link = document.createElement("a");
+      link.href = deliverable.url;
+      link.download = deliverable.name;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-    // TODO: Trigger actual file download in production
-    toast.success(`Downloading: ${deliverable.name}`);
-
-    setIsDownloading(false);
+      toast.success(`Downloading: ${deliverable.name}`);
+    } catch {
+      toast.error("Failed to download file");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (

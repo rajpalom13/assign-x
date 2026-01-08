@@ -20,6 +20,7 @@ export interface Service {
 /**
  * Dashboard services configuration
  * Displayed in 2x2 grid on home page
+ * Uses earthy color palette: Cinnamon (#A9714B), Toasted Almond (#E8985E), Dark Brown (#54442B)
  */
 export const services: Service[] = [
   {
@@ -36,7 +37,7 @@ export const services: Service[] = [
     description: "Check originality & AI detection",
     icon: Search,
     href: "/services/report",
-    color: "bg-blue-500/10 text-blue-500",
+    color: "bg-accent/15 text-accent dark:text-accent",
   },
   {
     id: "consult-doctor",
@@ -44,7 +45,7 @@ export const services: Service[] = [
     description: "Medical consultation service",
     icon: Stethoscope,
     href: "/services/consult",
-    color: "bg-green-500/10 text-green-500",
+    color: "bg-emerald-600/10 text-emerald-700 dark:text-emerald-500",
     disabled: true,
     badge: "Coming Soon",
   },
@@ -54,7 +55,7 @@ export const services: Service[] = [
     description: "Generate citations for free",
     icon: BookOpen,
     href: "https://www.citethisforme.com/",
-    color: "bg-purple-500/10 text-purple-500",
+    color: "bg-amber-700/10 text-amber-800 dark:text-amber-500",
     badge: "Free",
   },
 ];

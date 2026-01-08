@@ -122,7 +122,8 @@ class _PulseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/marketplace/item/${item.id}'),
+      // Navigate to marketplace since these are mock items without real database IDs
+      onTap: () => context.push('/marketplace'),
       child: Container(
         width: 140,
         decoration: BoxDecoration(

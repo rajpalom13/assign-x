@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../data/models/faq_model.dart';
+import '../../../data/models/support_ticket_model.dart';
+import '../../../providers/profile_provider.dart';
+import '../widgets/ticket_history_section.dart';
 
 /// Help and support screen with FAQ, contact options, and ticket submission.
-class HelpSupportScreen extends StatefulWidget {
+class HelpSupportScreen extends ConsumerStatefulWidget {
   const HelpSupportScreen({super.key});
 
   @override
-  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+  ConsumerState<HelpSupportScreen> createState() => _HelpSupportScreenState();
 }
 
-class _HelpSupportScreenState extends State<HelpSupportScreen> {
+class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   final _issueController = TextEditingController();
+  final _subjectController = TextEditingController();
   String? _selectedCategory;
   bool _isSubmitting = false;
 
   @override
   void dispose() {
     _issueController.dispose();
+    _subjectController.dispose();
     super.dispose();
   }
 
@@ -40,33 +47,45 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           style: AppTextStyles.headingSmall,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Quick contact options
-            _QuickContactSection(
-              onWhatsAppTap: _openWhatsApp,
-              onEmailTap: _openEmail,
-              onCallTap: _openPhone,
-            ),
-            const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(supportTicketsProvider);
+          ref.invalidate(filteredFAQsProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quick contact options
+              _QuickContactSection(
+                onWhatsAppTap: _openWhatsApp,
+                onEmailTap: _openEmail,
+                onCallTap: _openPhone,
+              ),
+              const SizedBox(height: 24),
 
-            // Raise a ticket
-            _RaiseTicketSection(
-              issueController: _issueController,
-              selectedCategory: _selectedCategory,
-              isSubmitting: _isSubmitting,
-              onCategoryChanged: (value) => setState(() => _selectedCategory = value),
-              onSubmit: _submitTicket,
-            ),
-            const SizedBox(height: 24),
+              // Raise a ticket
+              _RaiseTicketSection(
+                subjectController: _subjectController,
+                issueController: _issueController,
+                selectedCategory: _selectedCategory,
+                isSubmitting: _isSubmitting,
+                onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                onSubmit: _submitTicket,
+              ),
+              const SizedBox(height: 24),
 
-            // FAQ Section
-            _FAQSection(),
-            const SizedBox(height: 40),
-          ],
+              // Ticket History Section
+              const TicketHistorySection(),
+              const SizedBox(height: 24),
+
+              // FAQ Section with Supabase integration
+              const _FAQSection(),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
@@ -111,7 +130,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }
 
   Future<void> _submitTicket() async {
-    if (_selectedCategory == null || _issueController.text.trim().isEmpty) {
+    final subject = _subjectController.text.trim();
+    final description = _issueController.text.trim();
+
+    if (_selectedCategory == null || subject.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -120,20 +142,71 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
     setState(() => _isSubmitting = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Convert category string to TicketCategory enum
+      final category = _getCategoryFromString(_selectedCategory!);
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      _issueController.clear();
-      setState(() => _selectedCategory = null);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ticket submitted successfully! We\'ll get back to you soon.'),
-          backgroundColor: Colors.green,
-        ),
+      // Create ticket via notifier
+      final notifier = ref.read(supportTicketNotifierProvider.notifier);
+      final ticket = await notifier.createTicket(
+        subject: subject,
+        description: description,
+        category: category,
       );
+
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+
+        if (ticket != null) {
+          _issueController.clear();
+          _subjectController.clear();
+          setState(() => _selectedCategory = null);
+
+          // Refresh tickets list
+          ref.invalidate(supportTicketsProvider);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ticket ${ticket.displayId} submitted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to submit ticket. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  TicketCategory _getCategoryFromString(String category) {
+    switch (category) {
+      case 'Payment Issue':
+        return TicketCategory.paymentIssue;
+      case 'Project Related':
+        return TicketCategory.projectRelated;
+      case 'Technical Problem':
+        return TicketCategory.technicalProblem;
+      case 'Account Issue':
+        return TicketCategory.accountIssue;
+      case 'Refund Request':
+        return TicketCategory.refundRequest;
+      default:
+        return TicketCategory.other;
     }
   }
 }
@@ -237,6 +310,7 @@ class _ContactOption extends StatelessWidget {
 
 /// Raise a ticket section.
 class _RaiseTicketSection extends StatelessWidget {
+  final TextEditingController subjectController;
   final TextEditingController issueController;
   final String? selectedCategory;
   final bool isSubmitting;
@@ -244,6 +318,7 @@ class _RaiseTicketSection extends StatelessWidget {
   final VoidCallback onSubmit;
 
   const _RaiseTicketSection({
+    required this.subjectController,
     required this.issueController,
     required this.selectedCategory,
     required this.isSubmitting,
@@ -292,7 +367,7 @@ class _RaiseTicketSection extends StatelessWidget {
 
           // Category dropdown
           DropdownButtonFormField<String>(
-            initialValue: selectedCategory,
+            value: selectedCategory,
             decoration: InputDecoration(
               labelText: 'Issue Category',
               prefixIcon: Icon(Icons.category_outlined, color: AppColors.textSecondary),
@@ -310,12 +385,33 @@ class _RaiseTicketSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // Subject field
+          TextFormField(
+            controller: subjectController,
+            maxLines: 1,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Subject',
+              hintText: 'Brief summary of your issue',
+              prefixIcon: Icon(Icons.subject, color: AppColors.textSecondary),
+              filled: true,
+              fillColor: AppColors.surfaceVariant,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Issue description
           TextFormField(
             controller: issueController,
             maxLines: 4,
+            textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               labelText: 'Describe your issue',
+              hintText: 'Provide as much detail as possible...',
               alignLabelWithHint: true,
               filled: true,
               fillColor: AppColors.surfaceVariant,
@@ -356,73 +452,300 @@ class _RaiseTicketSection extends StatelessWidget {
   }
 }
 
-/// FAQ Section.
-class _FAQSection extends StatelessWidget {
-  static const _faqs = [
-    {
-      'question': 'How does AssignX work?',
-      'answer': 'AssignX connects you with expert professionals who can help with your projects. Simply submit your requirements, receive a quote, and track progress in real-time.',
-    },
-    {
-      'question': 'How long does it take to get a quote?',
-      'answer': 'You\'ll typically receive a quote within 2-4 hours during business hours. For urgent requests, we prioritize faster responses.',
-    },
-    {
-      'question': 'Is my information secure?',
-      'answer': 'Yes, all your data is encrypted and stored securely. We never share your personal information with third parties.',
-    },
-    {
-      'question': 'What payment methods are accepted?',
-      'answer': 'We accept UPI, credit/debit cards, net banking, and wallet payments through Razorpay.',
-    },
-    {
-      'question': 'Can I request revisions?',
-      'answer': 'Yes, you can request changes during the review period. Our experts will work with you until you\'re satisfied.',
-    },
-    {
-      'question': 'How do I get a refund?',
-      'answer': 'If you\'re not satisfied with the work, you can request a refund within 7 days of delivery. Please contact support for assistance.',
-    },
-  ];
+/// FAQ Section with Supabase integration.
+class _FAQSection extends ConsumerStatefulWidget {
+  const _FAQSection();
+
+  @override
+  ConsumerState<_FAQSection> createState() => _FAQSectionState();
+}
+
+class _FAQSectionState extends ConsumerState<_FAQSection> {
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final filterState = ref.watch(faqFilterProvider);
+    final faqsAsync = ref.watch(filteredFAQsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Frequently Asked Questions',
-          style: AppTextStyles.labelLarge,
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Frequently Asked Questions',
+              style: AppTextStyles.labelLarge,
+            ),
+            if (filterState.selectedCategory != null || filterState.searchQuery.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  ref.read(faqFilterProvider.notifier).clearFilters();
+                  _searchController.clear();
+                },
+                child: Text(
+                  'Clear filters',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
-        ...List.generate(_faqs.length, (index) {
-          final faq = _faqs[index];
-          return _FAQItem(
-            question: faq['question']!,
-            answer: faq['answer']!,
-          );
-        }),
+
+        // Search bar
+        _FAQSearchBar(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onChanged: (query) {
+            ref.read(faqFilterProvider.notifier).setSearchQuery(query);
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Category filter chips
+        _FAQCategoryChips(
+          selectedCategory: filterState.selectedCategory,
+          onCategorySelected: (category) {
+            ref.read(faqFilterProvider.notifier).setCategory(category);
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // FAQ list with states
+        faqsAsync.when(
+          data: (faqs) {
+            if (faqs.isEmpty) {
+              return _FAQEmptyState(
+                hasFilters: filterState.selectedCategory != null ||
+                    filterState.searchQuery.isNotEmpty,
+                onClearFilters: () {
+                  ref.read(faqFilterProvider.notifier).clearFilters();
+                  _searchController.clear();
+                },
+              );
+            }
+            return _FAQList(faqs: faqs);
+          },
+          loading: () => const _FAQLoadingSkeleton(),
+          error: (error, _) => _FAQErrorState(
+            error: error.toString(),
+            onRetry: () {
+              ref.invalidate(filteredFAQsProvider);
+            },
+          ),
+        ),
       ],
     );
   }
 }
 
-/// FAQ Item with expandable answer.
-class _FAQItem extends StatefulWidget {
-  final String question;
-  final String answer;
+/// Search bar for FAQs.
+class _FAQSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueChanged<String> onChanged;
 
-  const _FAQItem({
-    required this.question,
-    required this.answer,
+  const _FAQSearchBar({
+    required this.controller,
+    required this.focusNode,
+    required this.onChanged,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      decoration: InputDecoration(
+        hintText: 'Search FAQs...',
+        hintStyle: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.textTertiary,
+        ),
+        prefixIcon: Icon(
+          Icons.search,
+          color: AppColors.textSecondary,
+          size: 20,
+        ),
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(
+                icon: Icon(
+                  Icons.clear,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+                onPressed: () {
+                  controller.clear();
+                  onChanged('');
+                  focusNode.unfocus();
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.surfaceVariant,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.primary, width: 1),
+        ),
+      ),
+      onChanged: onChanged,
+    );
+  }
+}
+
+/// Category filter chips for FAQs.
+class _FAQCategoryChips extends StatelessWidget {
+  final FAQCategory? selectedCategory;
+  final ValueChanged<FAQCategory?> onCategorySelected;
+
+  const _FAQCategoryChips({
+    required this.selectedCategory,
+    required this.onCategorySelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _CategoryChip(
+            label: 'All',
+            isSelected: selectedCategory == null,
+            onTap: () => onCategorySelected(null),
+          ),
+          const SizedBox(width: 8),
+          ...FAQCategory.values.map((category) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _CategoryChip(
+                  label: category.label,
+                  isSelected: selectedCategory == category,
+                  onTap: () => onCategorySelected(category),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual category chip.
+class _CategoryChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CategoryChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: isSelected ? AppColors.textOnPrimary : AppColors.textSecondary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// FAQ list widget.
+class _FAQList extends StatelessWidget {
+  final List<FAQ> faqs;
+
+  const _FAQList({required this.faqs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: faqs.map((faq) => _FAQItem(faq: faq)).toList(),
+    );
+  }
+}
+
+/// FAQ Item with expandable answer and animation.
+class _FAQItem extends StatefulWidget {
+  final FAQ faq;
+
+  const _FAQItem({required this.faq});
 
   @override
   State<_FAQItem> createState() => _FAQItemState();
 }
 
-class _FAQItemState extends State<_FAQItem> {
+class _FAQItemState extends State<_FAQItem> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _expandAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _expandAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -439,36 +762,236 @@ class _FAQItemState extends State<_FAQItem> {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          title: Text(
-            widget.question,
-            style: AppTextStyles.labelMedium,
+      child: Column(
+        children: [
+          // Question header
+          InkWell(
+            onTap: _toggleExpanded,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.faq.question,
+                          style: AppTextStyles.labelMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.faq.category.label,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 200),
+                    turns: _isExpanded ? 0.5 : 0,
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          trailing: AnimatedRotation(
-            duration: const Duration(milliseconds: 200),
-            turns: _isExpanded ? 0.5 : 0,
-            child: Icon(
-              Icons.keyboard_arrow_down,
+          // Animated answer
+          SizeTransition(
+            sizeFactor: _expandAnimation,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.faq.answer,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for FAQs.
+class _FAQLoadingSkeleton extends StatelessWidget {
+  const _FAQLoadingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(
+        4,
+        (index) => Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question skeleton
+              Container(
+                height: 16,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 16,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Category chip skeleton
+              Container(
+                height: 20,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty state for FAQs.
+class _FAQEmptyState extends StatelessWidget {
+  final bool hasFilters;
+  final VoidCallback onClearFilters;
+
+  const _FAQEmptyState({
+    required this.hasFilters,
+    required this.onClearFilters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.help_outline,
+            size: 48,
+            color: AppColors.textTertiary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            hasFilters ? 'No FAQs match your search' : 'No FAQs available',
+            style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
-          onExpansionChanged: (expanded) {
-            setState(() => _isExpanded = expanded);
-          },
-          children: [
-            Text(
-              widget.answer,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
+          if (hasFilters) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: onClearFilters,
+              child: Text(
+                'Clear filters',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Error state for FAQs.
+class _FAQErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _FAQErrorState({
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      width: double.infinity,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.error,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load FAQs',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: AppTextStyles.caption,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

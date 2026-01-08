@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { UserCircle, Loader2 } from "lucide-react";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import {
   ProfileHeader,
   PersonalInfoForm,
@@ -13,10 +12,8 @@ import {
   DangerZone,
   SettingsTabs,
   SettingsSection,
-  StatsCard,
-  ReferralSection,
-  AppInfoFooter,
 } from "@/components/profile";
+import { ProfilePro } from "./profile-pro";
 import { useUserStore, type User } from "@/stores/user-store";
 import {
   updateProfile,
@@ -26,6 +23,7 @@ import {
 } from "@/lib/actions/data";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type {
   ProfileTab,
   UserProfile,
@@ -138,11 +136,13 @@ const defaultSubscription: UserSubscription = {
 /**
  * Profile settings page
  * Complete user profile and settings management
+ * Header is now rendered by the dashboard layout
  */
 export default function ProfilePage() {
   const { user, isLoading, fetchUser } = useUserStore();
   const [activeTab, setActiveTab] = useState<ProfileTab>("personal");
   const [isSaving, setIsSaving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Transform user data to component format
   const profile = transformToUserProfile(user);
@@ -418,27 +418,25 @@ export default function ProfilePage() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <div className="flex-1 p-4 lg:p-6 flex flex-col items-center justify-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <div className="text-muted-foreground">Loading profile...</div>
-        </div>
-      </div>
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading profile...</p>
+      </main>
     );
   }
 
   // Show error if no profile
   if (!profile) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <div className="flex-1 p-4 lg:p-6 flex items-center justify-center">
-          <div className="text-muted-foreground">Failed to load profile</div>
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+          <UserCircle className="h-6 w-6 text-muted-foreground" />
         </div>
-      </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground">Failed to load profile</p>
+          <p className="text-xs text-muted-foreground">Please try refreshing the page</p>
+        </div>
+      </main>
     );
   }
 
@@ -499,76 +497,49 @@ export default function ProfilePage() {
     }
   };
 
+  // Handle settings navigation from ProfilePro
+  const handleSettingsClick = (tab: string) => {
+    setActiveTab(tab as ProfileTab);
+    setSettingsOpen(true);
+  };
+
+  // Get tab title for sheet header
+  const getTabTitle = (tab: ProfileTab) => {
+    switch (tab) {
+      case "personal": return "Personal Information";
+      case "academic": return "Academic Details";
+      case "preferences": return "Preferences";
+      case "security": return "Security & Privacy";
+      case "subscription": return "Subscription";
+      default: return "Settings";
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <DashboardHeader />
+    <>
+      {/* Premium Profile View */}
+      <ProfilePro
+        profile={profile}
+        subscription={subscription}
+        onAvatarChange={handleAvatarChange}
+        onSettingsClick={handleSettingsClick}
+      />
 
-      <div className="flex-1 p-4 lg:p-6 space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-            <UserCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+      {/* Settings Sheet */}
+      <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b border-border/40">
+            <SheetTitle className="text-base font-medium">{getTabTitle(activeTab)}</SheetTitle>
+          </SheetHeader>
+
+          {/* Settings Tabs Navigation */}
+          <div className="p-6">
+            <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab}>
+              {renderTabContent()}
+            </SettingsTabs>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">Profile Settings</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage your account settings and preferences
-            </p>
-          </div>
-        </div>
-
-        {/* Profile Header Card */}
-        <ProfileHeader
-          profile={profile}
-          subscription={subscription}
-          onAvatarChange={handleAvatarChange}
-        />
-
-        {/* Stats Card - U87: Wallet + Projects Completed */}
-        <StatsCard />
-
-        {/* Referral Section - U94: Share Code */}
-        <ReferralSection />
-
-        {/* Settings Tabs - Desktop view */}
-        <div className="hidden md:block">
-          <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab}>
-            {renderTabContent()}
-          </SettingsTabs>
-        </div>
-
-        {/* Settings Sections - Mobile view (accordion) */}
-        <div className="md:hidden space-y-4">
-          <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab}>
-            <PersonalInfoForm profile={profile} onSave={handleProfileSave} />
-            {academicInfo && (
-              <AcademicInfoSection academicInfo={academicInfo} onSave={handleAcademicSave} />
-            )}
-            <PreferencesSection preferences={preferences} onSave={handlePreferencesSave} />
-            <SettingsSection>
-              <SecuritySection
-                security={security}
-                onPasswordChange={handlePasswordChange}
-                onToggle2FA={handleToggle2FA}
-                onRevokeSession={handleRevokeSession}
-                onRevokeAllSessions={handleRevokeAllSessions}
-              />
-              <DangerZone
-                userEmail={profile.email}
-                onDeleteAccount={handleDeleteAccount}
-              />
-            </SettingsSection>
-            <SubscriptionCard
-              subscription={subscription}
-              onUpgrade={handleUpgrade}
-              onManageBilling={handleManageBilling}
-            />
-          </SettingsTabs>
-        </div>
-
-        {/* App Info Footer - U93: How It Works, U96: App Version */}
-        <AppInfoFooter />
-      </div>
-    </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

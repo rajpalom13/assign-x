@@ -1,18 +1,5 @@
 "use client";
 
-/**
- * @fileoverview Premium Settings Page with SAAS-style Design
- *
- * Features:
- * - Gradient mesh hero section with icon badge
- * - Organized settings sections (Notifications, Privacy, Appearance, etc.)
- * - Interactive toggle switches
- * - Theme selector with visual previews
- * - Danger zone with warning styling
- * - Feedback form with type selection
- * - Smooth entrance animations
- */
-
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
@@ -27,26 +14,22 @@ import {
   Bell,
   Moon,
   Sun,
-  Monitor,
-  Globe,
   Bug,
   Lightbulb,
   Send,
-  Sparkles,
   FileJson,
   AlertTriangle,
-  Check,
   Lock,
   FileText,
   Scale,
   Palette,
   UserX,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -64,40 +47,47 @@ import { appVersion } from "@/lib/data/settings";
 import { format } from "date-fns";
 import type { FeedbackData } from "@/types/settings";
 import { signOut } from "@/lib/actions/auth";
-import "./settings.css";
 
 /**
- * Settings section component with icon and title
+ * Settings section component
  */
 function SettingsSection({
   icon: Icon,
   title,
   description,
-  iconColor = "primary",
   variant,
   children,
-  className,
 }: {
   icon: React.ElementType;
   title: string;
   description?: string;
-  iconColor?: "primary" | "blue" | "purple" | "green" | "amber" | "destructive";
   variant?: "danger";
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={cn("settings-section", variant === "danger" && "danger", className)}>
-      <div className="settings-section-header">
-        <div className={cn("settings-section-icon", iconColor)}>
-          <Icon />
+    <div className={cn(
+      "rounded-xl border bg-card overflow-hidden",
+      variant === "danger" ? "border-red-200 dark:border-red-900/50" : "border-border"
+    )}>
+      <div className="flex items-center gap-3 p-4 border-b border-border">
+        <div className={cn(
+          "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+          variant === "danger" ? "bg-red-100 dark:bg-red-900/30" : "bg-muted"
+        )}>
+          <Icon className={cn(
+            "h-4.5 w-4.5",
+            variant === "danger" ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
+          )} />
         </div>
         <div>
-          <h3 className="settings-section-title">{title}</h3>
-          {description && <p className="settings-section-subtitle">{description}</p>}
+          <h3 className={cn(
+            "text-sm font-medium",
+            variant === "danger" ? "text-red-600 dark:text-red-400" : "text-foreground"
+          )}>{title}</h3>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
       </div>
-      <div className="settings-section-content">{children}</div>
+      <div className="p-4">{children}</div>
     </div>
   );
 }
@@ -117,14 +107,12 @@ function SettingToggle({
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="settings-row">
-      <div className="settings-row-info">
-        <p className="settings-row-label">{label}</p>
-        <p className="settings-row-description">{description}</p>
+    <div className="flex items-center justify-between py-3 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <div className="settings-row-action">
-        <Switch checked={checked} onCheckedChange={onCheckedChange} />
-      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} className="ml-4 shrink-0" />
     </div>
   );
 }
@@ -145,14 +133,20 @@ function ThemeOption({
   currentTheme: string;
   onClick: () => void;
 }) {
+  const isActive = currentTheme === value;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn("settings-theme-option", currentTheme === value && "active")}
+      className={cn(
+        "flex flex-col items-center gap-2 p-4 rounded-xl border transition-colors",
+        isActive
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-foreground/20"
+      )}
     >
-      <Icon />
-      <span className="settings-theme-label">{label}</span>
+      <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
+      <span className={cn("text-xs font-medium", isActive ? "text-primary" : "text-muted-foreground")}>{label}</span>
     </button>
   );
 }
@@ -175,10 +169,15 @@ function FeedbackTypeOption({
     <button
       type="button"
       onClick={onClick}
-      className={cn("settings-feedback-type", isSelected && "active")}
+      className={cn(
+        "flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors",
+        isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-foreground/20"
+      )}
     >
-      <Icon />
-      <span>{label}</span>
+      <Icon className={cn("h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
+      <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>{label}</span>
     </button>
   );
 }
@@ -202,26 +201,24 @@ function LegalLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="settings-legal-link"
+      className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors group"
     >
-      <div className="settings-legal-link-info">
-        <div className="settings-legal-link-icon">
-          <Icon />
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+          <Icon className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
-          <p className="settings-legal-link-label">{label}</p>
-          <p className="settings-legal-link-description">{description}</p>
+          <p className="text-sm font-medium text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="settings-legal-link-arrow">
-        <ExternalLink />
-      </div>
+      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
     </a>
   );
 }
 
 /**
- * Premium Settings Page Component
+ * Settings Page Component
  */
 export function SettingsPro() {
   const { theme, setTheme } = useTheme();
@@ -233,7 +230,6 @@ export function SettingsPro() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Notification settings state
   const [notifications, setNotifications] = useState({
     pushNotifications: true,
     emailNotifications: true,
@@ -242,13 +238,11 @@ export function SettingsPro() {
     weeklyDigest: true,
   });
 
-  // Privacy settings state
   const [privacy, setPrivacy] = useState({
     analyticsOptOut: false,
     showOnlineStatus: true,
   });
 
-  // Appearance settings state
   const [appearance, setAppearance] = useState({
     reducedMotion: false,
     compactMode: false,
@@ -258,11 +252,8 @@ export function SettingsPro() {
     setMounted(true);
   }, []);
 
-  const lastUpdated = format(new Date(appVersion.lastUpdated), "MMMM d, yyyy");
+  const lastUpdated = format(new Date(appVersion.lastUpdated), "MMM d, yyyy");
 
-  /**
-   * Exports user data as JSON
-   */
   const handleExportData = async () => {
     setIsExporting(true);
     try {
@@ -286,9 +277,6 @@ export function SettingsPro() {
     }
   };
 
-  /**
-   * Clears local cache and storage
-   */
   const handleClearCache = () => {
     localStorage.clear();
     sessionStorage.clear();
@@ -296,9 +284,6 @@ export function SettingsPro() {
     setClearDialogOpen(false);
   };
 
-  /**
-   * Handles logout
-   */
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -309,9 +294,6 @@ export function SettingsPro() {
     }
   };
 
-  /**
-   * Submits feedback to server
-   */
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedback.message.trim()) {
@@ -339,91 +321,34 @@ export function SettingsPro() {
     }
   };
 
-  /**
-   * Handles notification toggle
-   */
   const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    toast.success("Notification preference updated");
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+    toast.success("Preference updated");
   };
 
-  /**
-   * Handles privacy toggle
-   */
   const handlePrivacyToggle = (key: keyof typeof privacy) => {
-    setPrivacy((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    toast.success("Privacy setting updated");
+    setPrivacy((prev) => ({ ...prev, [key]: !prev[key] }));
+    toast.success("Setting updated");
   };
 
-  /**
-   * Handles appearance toggle
-   */
   const handleAppearanceToggle = (key: keyof typeof appearance) => {
-    setAppearance((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    toast.success("Appearance setting updated");
+    setAppearance((prev) => ({ ...prev, [key]: !prev[key] }));
+    toast.success("Setting updated");
   };
 
   return (
-    <main className="flex-1 p-4 lg:p-6 space-y-6 pb-24">
-      {/* Background */}
-      <div className="settings-page-bg" />
+    <main className="flex-1 p-6 md:p-8 max-w-3xl mx-auto space-y-6 pb-24">
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+        <p className="text-sm text-muted-foreground">Manage your preferences and account</p>
+      </div>
 
-      {/* Hero Section */}
-      <section className="settings-hero settings-animate-in">
-        <div className="settings-hero-content">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="settings-hero-icon">
-              <Settings />
-            </div>
-            <Badge className="bg-primary/10 text-primary border-primary/20">
-              <Sparkles className="h-3 w-3 mr-1" />
-              App Settings
-            </Badge>
-          </div>
-          <h1 className="settings-hero-title">Settings</h1>
-          <p className="settings-hero-subtitle">
-            Manage your app preferences, notifications, privacy, and data settings.
-          </p>
-
-          {/* Quick Stats */}
-          <div className="settings-hero-stats">
-            <div className="settings-hero-stat success">
-              <Check className="h-4 w-4" />
-              <span>Data Synced</span>
-            </div>
-            <div className="settings-hero-stat info">
-              <Shield className="h-4 w-4" />
-              <span>Account Secure</span>
-            </div>
-            <div className="settings-hero-stat purple">
-              <Globe className="h-4 w-4" />
-              <span>v{appVersion.version}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Settings Grid */}
-      <div className="settings-grid">
-        {/* Two Column Layout */}
-        <div className="settings-grid-2">
-          {/* Notifications Section */}
-          <SettingsSection
-            icon={Bell}
-            title="Notifications"
-            description="Manage how you receive updates"
-            iconColor="blue"
-            className="settings-animate-in settings-stagger-1"
-          >
+      {/* Two Column Grid */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Notifications */}
+        <SettingsSection icon={Bell} title="Notifications" description="Manage how you receive updates">
+          <div className="space-y-1">
             <SettingToggle
               label="Push Notifications"
               description="Get push notifications on your device"
@@ -438,370 +363,292 @@ export function SettingsPro() {
             />
             <SettingToggle
               label="Project Updates"
-              description="Get notified when your projects are updated"
+              description="Get notified when projects are updated"
               checked={notifications.projectUpdates}
               onCheckedChange={() => handleNotificationToggle("projectUpdates")}
             />
             <SettingToggle
               label="Marketing Emails"
-              description="Receive promotional offers and news"
+              description="Receive promotional offers"
               checked={notifications.marketingEmails}
               onCheckedChange={() => handleNotificationToggle("marketingEmails")}
             />
-            <SettingToggle
-              label="Weekly Digest"
-              description="Get a weekly summary of your activity"
-              checked={notifications.weeklyDigest}
-              onCheckedChange={() => handleNotificationToggle("weeklyDigest")}
-            />
-          </SettingsSection>
+          </div>
+        </SettingsSection>
 
-          {/* Appearance Section */}
-          <SettingsSection
-            icon={Palette}
-            title="Appearance"
-            description="Customize how AssignX looks"
-            iconColor="purple"
-            className="settings-animate-in settings-stagger-2"
-          >
-            {/* Theme Selector */}
-            <div className="mb-4">
-              <p className="settings-row-label mb-3">Theme</p>
+        {/* Appearance */}
+        <SettingsSection icon={Palette} title="Appearance" description="Customize how the app looks">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-foreground mb-3">Theme</p>
               {mounted && (
-                <div className="settings-theme-grid">
+                <div className="grid grid-cols-2 gap-3">
                   <ThemeOption
                     icon={Sun}
                     label="Light"
                     value="light"
-                    currentTheme={theme || "system"}
+                    currentTheme={theme || "light"}
                     onClick={() => setTheme("light")}
                   />
                   <ThemeOption
                     icon={Moon}
                     label="Dark"
                     value="dark"
-                    currentTheme={theme || "system"}
+                    currentTheme={theme || "light"}
                     onClick={() => setTheme("dark")}
                   />
-                  <ThemeOption
-                    icon={Monitor}
-                    label="System"
-                    value="system"
-                    currentTheme={theme || "system"}
-                    onClick={() => setTheme("system")}
-                  />
                 </div>
               )}
             </div>
-
-            <SettingToggle
-              label="Reduced Motion"
-              description="Minimize animations throughout the app"
-              checked={appearance.reducedMotion}
-              onCheckedChange={() => handleAppearanceToggle("reducedMotion")}
-            />
-            <SettingToggle
-              label="Compact Mode"
-              description="Use a more compact layout"
-              checked={appearance.compactMode}
-              onCheckedChange={() => handleAppearanceToggle("compactMode")}
-            />
-          </SettingsSection>
-        </div>
-
-        {/* Two Column Layout - Row 2 */}
-        <div className="settings-grid-2">
-          {/* Privacy & Data Section */}
-          <SettingsSection
-            icon={Lock}
-            title="Privacy & Data"
-            description="Control your data and privacy"
-            iconColor="green"
-            className="settings-animate-in settings-stagger-3"
-          >
-            <SettingToggle
-              label="Analytics Opt-out"
-              description="Disable anonymous usage analytics"
-              checked={privacy.analyticsOptOut}
-              onCheckedChange={() => handlePrivacyToggle("analyticsOptOut")}
-            />
-            <SettingToggle
-              label="Show Online Status"
-              description="Let others see when you are online"
-              checked={privacy.showOnlineStatus}
-              onCheckedChange={() => handlePrivacyToggle("showOnlineStatus")}
-            />
-
-            {/* Data Actions */}
-            <div className="settings-data-actions mt-4 pt-4 border-t border-[var(--ws-border-light)]">
-              <div className="settings-data-action">
-                <div className="settings-data-action-info">
-                  <div className="settings-data-action-icon blue">
-                    <FileJson />
-                  </div>
-                  <div>
-                    <p className="settings-data-action-label">Export Data</p>
-                    <p className="settings-data-action-description">Download all your data as JSON</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleExportData}
-                  disabled={isExporting}
-                  className="settings-data-action-btn"
-                >
-                  {isExporting ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <Download />
-                  )}
-                  Export
-                </button>
-              </div>
-
-              <div className="settings-data-action">
-                <div className="settings-data-action-info">
-                  <div className="settings-data-action-icon destructive">
-                    <Trash2 />
-                  </div>
-                  <div>
-                    <p className="settings-data-action-label">Clear Cache</p>
-                    <p className="settings-data-action-description">Clear local storage and cached data</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setClearDialogOpen(true)}
-                  className="settings-data-action-btn destructive"
-                >
-                  <Trash2 />
-                  Clear
-                </button>
-              </div>
-            </div>
-          </SettingsSection>
-
-          {/* About AssignX Section */}
-          <SettingsSection
-            icon={Info}
-            title="About AssignX"
-            description="App version and legal information"
-            iconColor="amber"
-            className="settings-animate-in settings-stagger-4"
-          >
-            {/* Version Info */}
-            <div className="settings-app-info">
-              <div className="settings-info-card">
-                <p className="settings-info-label">Version</p>
-                <p className="settings-info-value">{appVersion.version}</p>
-              </div>
-              <div className="settings-info-card">
-                <p className="settings-info-label">Build</p>
-                <p className="settings-info-value">{appVersion.buildNumber}</p>
-              </div>
-              <div className="settings-info-card">
-                <p className="settings-info-label">Status</p>
-                <Badge variant="secondary" className="text-xs">
-                  Beta
-                </Badge>
-              </div>
-            </div>
-
-            <p className="text-xs text-center text-muted-foreground mb-4">
-              Last updated: {lastUpdated}
-            </p>
-
-            {/* Legal Links */}
-            <div className="settings-legal-links">
-              <LegalLink
-                icon={FileText}
-                label="Terms of Service"
-                description="Read our terms and conditions"
-                href="#"
+            <div className="pt-2 border-t border-border space-y-1">
+              <SettingToggle
+                label="Reduced Motion"
+                description="Minimize animations"
+                checked={appearance.reducedMotion}
+                onCheckedChange={() => handleAppearanceToggle("reducedMotion")}
               />
-              <LegalLink
-                icon={Shield}
-                label="Privacy Policy"
-                description="How we handle your data"
-                href="#"
-              />
-              <LegalLink
-                icon={Scale}
-                label="Open Source Licenses"
-                description="Third-party attributions"
-                href="#"
+              <SettingToggle
+                label="Compact Mode"
+                description="Use a more compact layout"
+                checked={appearance.compactMode}
+                onCheckedChange={() => handleAppearanceToggle("compactMode")}
               />
             </div>
-          </SettingsSection>
-        </div>
-
-        {/* Feedback Section - Full Width */}
-        <SettingsSection
-          icon={MessageSquare}
-          title="Send Feedback"
-          description="Help us improve AssignX"
-          iconColor="primary"
-          className="settings-animate-in settings-stagger-5"
-        >
-          <form onSubmit={handleSubmitFeedback}>
-            {/* Feedback Type Selection */}
-            <div className="mb-4">
-              <p className="settings-row-label mb-3">Feedback Type</p>
-              <div className="settings-feedback-types">
-                <FeedbackTypeOption
-                  icon={Bug}
-                  label="Bug Report"
-                  isSelected={feedback.type === "bug"}
-                  onClick={() => setFeedback((p) => ({ ...p, type: "bug" }))}
-                />
-                <FeedbackTypeOption
-                  icon={Lightbulb}
-                  label="Feature Request"
-                  isSelected={feedback.type === "feature"}
-                  onClick={() => setFeedback((p) => ({ ...p, type: "feature" }))}
-                />
-                <FeedbackTypeOption
-                  icon={MessageSquare}
-                  label="General"
-                  isSelected={feedback.type === "general"}
-                  onClick={() => setFeedback((p) => ({ ...p, type: "general" }))}
-                />
-              </div>
-            </div>
-
-            {/* Message Input */}
-            <div className="mb-4">
-              <p className="settings-row-label mb-2">Your Feedback</p>
-              <Textarea
-                value={feedback.message}
-                onChange={(e) => setFeedback((p) => ({ ...p, message: e.target.value }))}
-                placeholder={
-                  feedback.type === "bug"
-                    ? "Describe the issue you encountered..."
-                    : feedback.type === "feature"
-                      ? "Tell us about the feature you would like to see..."
-                      : "Share your thoughts with us..."
-                }
-                rows={4}
-                className="settings-feedback-textarea"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Send Feedback
-                </>
-              )}
-            </Button>
-          </form>
+          </div>
         </SettingsSection>
 
-        {/* Danger Zone Section */}
-        <SettingsSection
-          icon={AlertTriangle}
-          title="Danger Zone"
-          description="Irreversible actions"
-          iconColor="destructive"
-          variant="danger"
-          className="settings-animate-in settings-stagger-6"
-        >
-          <div className="settings-danger-item">
-            <div className="settings-danger-info">
-              <p className="settings-danger-label">Log Out</p>
-              <p className="settings-danger-description">Sign out of your account on this device</p>
+        {/* Privacy & Data */}
+        <SettingsSection icon={Lock} title="Privacy & Data" description="Control your data">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <SettingToggle
+                label="Analytics Opt-out"
+                description="Disable anonymous usage analytics"
+                checked={privacy.analyticsOptOut}
+                onCheckedChange={() => handlePrivacyToggle("analyticsOptOut")}
+              />
+              <SettingToggle
+                label="Show Online Status"
+                description="Let others see when you are online"
+                checked={privacy.showOnlineStatus}
+                onCheckedChange={() => handlePrivacyToggle("showOnlineStatus")}
+              />
             </div>
-            <button onClick={handleLogout} disabled={isLoggingOut} className="settings-danger-btn">
-              {isLoggingOut ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <LogOut className="h-4 w-4 mr-2 inline" />
-                  Log Out
-                </>
-              )}
-            </button>
-          </div>
 
-          <div className="settings-danger-item">
-            <div className="settings-danger-info">
-              <p className="settings-danger-label">Deactivate Account</p>
-              <p className="settings-danger-description">Temporarily disable your account</p>
-            </div>
-            <button className="settings-danger-btn">
-              <UserX className="h-4 w-4 mr-2 inline" />
-              Deactivate
-            </button>
-          </div>
+            <div className="pt-3 border-t border-border space-y-2">
+              <button
+                onClick={handleExportData}
+                disabled={isExporting}
+                className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <FileJson className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Export Data</p>
+                    <p className="text-xs text-muted-foreground">Download your data as JSON</p>
+                  </div>
+                </div>
+                {isExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                ) : (
+                  <Download className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
 
-          <div className="settings-danger-item">
-            <div className="settings-danger-info">
-              <p className="settings-danger-label">Delete Account</p>
-              <p className="settings-danger-description">Permanently delete your account and all data</p>
+              <button
+                onClick={() => setClearDialogOpen(true)}
+                className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Clear Cache</p>
+                    <p className="text-xs text-muted-foreground">Clear local storage</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
-            <button
-              onClick={() => setDeleteAccountDialogOpen(true)}
-              className="settings-danger-btn"
-            >
-              <Trash2 className="h-4 w-4 mr-2 inline" />
-              Delete
-            </button>
+          </div>
+        </SettingsSection>
+
+        {/* About */}
+        <SettingsSection icon={Info} title="About AssignX" description="App information">
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-3 rounded-lg bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">Version</p>
+                <p className="text-sm font-mono font-medium text-foreground">{appVersion.version}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">Build</p>
+                <p className="text-sm font-mono font-medium text-foreground">{appVersion.buildNumber}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">Status</p>
+                <p className="text-sm font-medium text-foreground">Beta</p>
+              </div>
+            </div>
+            <p className="text-xs text-center text-muted-foreground">Updated: {lastUpdated}</p>
+
+            <div className="space-y-1">
+              <LegalLink icon={FileText} label="Terms of Service" description="Read our terms" href="#" />
+              <LegalLink icon={Shield} label="Privacy Policy" description="How we handle data" href="#" />
+              <LegalLink icon={Scale} label="Open Source" description="Third-party licenses" href="#" />
+            </div>
           </div>
         </SettingsSection>
       </div>
 
+      {/* Feedback - Full Width */}
+      <SettingsSection icon={MessageSquare} title="Send Feedback" description="Help us improve">
+        <form onSubmit={handleSubmitFeedback} className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">Feedback Type</p>
+            <div className="grid grid-cols-3 gap-3">
+              <FeedbackTypeOption
+                icon={Bug}
+                label="Bug"
+                isSelected={feedback.type === "bug"}
+                onClick={() => setFeedback((p) => ({ ...p, type: "bug" }))}
+              />
+              <FeedbackTypeOption
+                icon={Lightbulb}
+                label="Feature"
+                isSelected={feedback.type === "feature"}
+                onClick={() => setFeedback((p) => ({ ...p, type: "feature" }))}
+              />
+              <FeedbackTypeOption
+                icon={MessageSquare}
+                label="General"
+                isSelected={feedback.type === "general"}
+                onClick={() => setFeedback((p) => ({ ...p, type: "general" }))}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Your Feedback</p>
+            <Textarea
+              value={feedback.message}
+              onChange={(e) => setFeedback((p) => ({ ...p, message: e.target.value }))}
+              placeholder={
+                feedback.type === "bug"
+                  ? "Describe the issue..."
+                  : feedback.type === "feature"
+                    ? "Describe the feature..."
+                    : "Share your thoughts..."
+              }
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Send Feedback
+              </>
+            )}
+          </Button>
+        </form>
+      </SettingsSection>
+
+      {/* Danger Zone */}
+      <SettingsSection icon={AlertTriangle} title="Danger Zone" description="Irreversible actions" variant="danger">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+            <div>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Log Out</p>
+              <p className="text-xs text-muted-foreground">Sign out of your account</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
+            >
+              {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4 mr-1" />}
+              Log Out
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+            <div>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Deactivate Account</p>
+              <p className="text-xs text-muted-foreground">Temporarily disable your account</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
+            >
+              <UserX className="h-4 w-4 mr-1" />
+              Deactivate
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+            <div>
+              <p className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</p>
+              <p className="text-xs text-muted-foreground">Permanently delete all data</p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDeleteAccountDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </SettingsSection>
+
       {/* Clear Cache Dialog */}
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <div className="mx-auto mb-4 p-3 rounded-full bg-amber-100 dark:bg-amber-900/30 w-fit">
-              <Trash2 className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <AlertDialogTitle className="text-center">Clear cache?</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              This will clear all locally stored data including preferences and cached information.
-              You may need to log in again.
+            <AlertDialogTitle>Clear cache?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all locally stored data. You may need to log in again.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="flex-1">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearCache} className="flex-1 bg-amber-600 hover:bg-amber-700">
-              Clear Cache
-            </AlertDialogAction>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearCache}>Clear Cache</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Delete Account Dialog */}
       <AlertDialog open={deleteAccountDialogOpen} onOpenChange={setDeleteAccountDialogOpen}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <div className="mx-auto mb-4 p-3 rounded-full bg-red-100 dark:bg-red-900/30 w-fit">
-              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
-            </div>
-            <AlertDialogTitle className="text-center">Delete your account?</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              This action cannot be undone. This will permanently delete your account and remove all
-              your data from our servers. All projects, payments, and history will be lost.
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All your data will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel className="flex-1">Cancel</AlertDialogCancel>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 toast.error("Account deletion is not available in beta");
                 setDeleteAccountDialogOpen(false);
               }}
-              className="flex-1 bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700"
             >
               Delete Account
             </AlertDialogAction>

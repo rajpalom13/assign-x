@@ -57,3 +57,6 @@ credentials/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Auto Claude data directory
+.auto-claude/

@@ -1,559 +1,335 @@
 /**
- * @fileoverview TimelineShowcase - Vertical scroll timeline with tracking line
+ * @fileoverview Interactive Process Showcase - Unique micro-interactions
  *
- * Replaces horizontal scroll with elegant vertical timeline.
- * Progress line tracks scroll position through steps.
+ * Creative timeline with hover-activated animations and visual storytelling.
+ * Features card flips, particle effects, and dynamic content reveals.
  */
 
 "use client";
 
-import { useRef, useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useRef, useState } from "react";
+import { useReducedMotion, useInView, motion } from "framer-motion";
+import {
+  Upload,
+  Sparkles,
+  MessageSquare,
+  CheckCircle2,
+  ArrowRight,
+  Clock,
+  Users,
+  Zap,
+  Target
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { BookOpen } from "lucide-react";
 import "@/app/landing.css";
 
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
-
-interface TimelineStep {
+interface ProcessStep {
   id: string;
   number: string;
   title: string;
-  subtitle: string;
   description: string;
-  color: string;
-  stats?: { value: string; label: string }[];
+  icon: React.ElementType;
+  stats: { value: string; label: string }[];
+  features: string[];
 }
 
-const timelineSteps: TimelineStep[] = [
+const processSteps: ProcessStep[] = [
   {
     id: "submit",
     number: "01",
     title: "Submit Your Project",
-    subtitle: "It starts with a simple request",
-    description:
-      "Upload your assignment details, set your deadline, and share any specific requirements. Our platform handles every academic subject.",
-    color: "var(--landing-accent-primary)",
+    description: "Upload your requirements in under 2 minutes. Our AI analyzes and matches you with the perfect expert.",
+    icon: Upload,
     stats: [
-      { value: "2min", label: "Avg. submission" },
-      { value: "100+", label: "Subjects covered" },
+      { value: "2min", label: "Quick Setup" },
+      { value: "100+", label: "Subjects" },
+    ],
+    features: [
+      "Instant file upload",
+      "Smart requirement analysis",
+      "Flexible deadlines",
     ],
   },
   {
     id: "match",
     number: "02",
-    title: "Get Matched Instantly",
-    subtitle: "AI-powered expert matching",
-    description:
-      "Our intelligent system connects you with the perfect expert based on subject, complexity, and deadline. Quality guaranteed.",
-    color: "var(--landing-accent-secondary)",
+    title: "Expert Matching",
+    description: "AI-powered matching connects you with verified experts in your subject within seconds.",
+    icon: Sparkles,
     stats: [
-      { value: "15sec", label: "Match time" },
-      { value: "500+", label: "Verified experts" },
+      { value: "15sec", label: "Match Time" },
+      { value: "500+", label: "Experts" },
+    ],
+    features: [
+      "PhD-verified experts",
+      "Subject specialists",
+      "Real-time availability",
     ],
   },
   {
     id: "collaborate",
     number: "03",
-    title: "Collaborate & Review",
-    subtitle: "Stay connected throughout",
-    description:
-      "Chat directly with your expert, request revisions, and track progress in real-time. Full transparency at every step.",
-    color: "var(--landing-accent-tertiary)",
+    title: "Live Collaboration",
+    description: "Stay connected throughout. Chat, request revisions, and track progress in real-time.",
+    icon: MessageSquare,
     stats: [
       { value: "24/7", label: "Support" },
       { value: "∞", label: "Revisions" },
+    ],
+    features: [
+      "Live chat system",
+      "Progress tracking",
+      "Unlimited feedback",
     ],
   },
   {
     id: "deliver",
     number: "04",
-    title: "Receive Excellence",
-    subtitle: "Quality delivered on time",
-    description:
-      "Get your completed work before the deadline. Every delivery is plagiarism-checked and meets the highest academic standards.",
-    color: "var(--landing-text-primary)",
+    title: "Quality Delivery",
+    description: "Receive plagiarism-free, high-quality work before your deadline. Guaranteed.",
+    icon: CheckCircle2,
     stats: [
-      { value: "98%", label: "On-time delivery" },
-      { value: "4.9", label: "Avg. rating" },
+      { value: "98%", label: "On-Time" },
+      { value: "4.9★", label: "Rating" },
+    ],
+    features: [
+      "Plagiarism checked",
+      "Quality assured",
+      "On-time guarantee",
     ],
   },
 ];
 
-interface HorizontalShowcaseProps {
-  className?: string;
+interface StepCardProps {
+  step: ProcessStep;
+  index: number;
+  isActive: boolean;
+  onHover: (id: string | null) => void;
 }
 
-export function HorizontalShowcase({ className }: HorizontalShowcaseProps) {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const progressLineRef = useRef<HTMLDivElement>(null);
-  const progressDotRef = useRef<HTMLDivElement>(null);
-  const stepsRef = useRef<(HTMLDivElement | null)[]>([]);
+function StepCard({ step, index, isActive, onHover }: StepCardProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
   const prefersReducedMotion = useReducedMotion();
+  const Icon = step.icon;
 
-  useEffect(() => {
-    if (prefersReducedMotion) return;
+  return (
+    <motion.div
+      ref={ref}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 60, scale: 0.9 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{
+        delay: index * 0.15,
+        duration: 0.7,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      onMouseEnter={() => onHover(step.id)}
+      onMouseLeave={() => onHover(null)}
+      className={cn(
+        "landing-card group relative overflow-hidden transition-all duration-500 landing-spotlight",
+        isActive && "scale-[1.02] shadow-2xl border-[var(--landing-accent-primary)]"
+      )}
+    >
+      {/* Gradient overlay on hover */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isActive ? 1 : 0 }}
+        className="absolute inset-0 bg-gradient-to-br from-[var(--landing-accent-primary)]/5 to-transparent pointer-events-none"
+      />
 
-    const section = sectionRef.current;
-    const timeline = timelineRef.current;
-    const progressLine = progressLineRef.current;
-    const progressDot = progressDotRef.current;
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header with number and icon */}
+        <div className="flex items-start justify-between mb-6">
+          <motion.div
+            animate={isActive && !prefersReducedMotion ? { rotate: [0, -10, 10, 0] } : {}}
+            transition={{ duration: 0.5 }}
+            className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
+              isActive
+                ? "bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)] shadow-lg"
+                : "bg-[var(--landing-accent-lighter)]"
+            )}
+          >
+            <Icon className={cn("w-8 h-8 transition-colors duration-500", isActive ? "text-white" : "text-[var(--landing-accent-primary)]")} />
+          </motion.div>
 
-    if (!section || !timeline || !progressLine || !progressDot) return;
+          <span className={cn(
+            "text-5xl font-black tabular-nums transition-all duration-500",
+            isActive ? "text-[var(--landing-accent-primary)]" : "text-[var(--landing-accent-light)]"
+          )}>
+            {step.number}
+          </span>
+        </div>
 
-    const ctx = gsap.context(() => {
-      // Animate the progress line height based on scroll
-      gsap.to(progressLine, {
-        height: "100%",
-        ease: "none",
-        scrollTrigger: {
-          trigger: timeline,
-          start: "top 60%",
-          end: "bottom 40%",
-          scrub: 1,
-        },
-      });
+        {/* Title and description */}
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold text-[var(--landing-text-primary)] mb-3 landing-heading">
+            {step.title}
+          </h3>
+          <p className="text-[var(--landing-text-secondary)] leading-relaxed">
+            {step.description}
+          </p>
+        </div>
 
-      // Move the progress dot along with scroll
-      gsap.to(progressDot, {
-        top: "100%",
-        ease: "none",
-        scrollTrigger: {
-          trigger: timeline,
-          start: "top 60%",
-          end: "bottom 40%",
-          scrub: 0.5,
-        },
-      });
-
-      // Animate each step
-      stepsRef.current.forEach((step, i) => {
-        if (!step) return;
-
-        const stepNumber = step.querySelector(".step-number");
-        const stepContent = step.querySelector(".step-content");
-        const stepIcon = step.querySelector(".step-icon");
-        const stepStats = step.querySelectorAll(".step-stat");
-        const stepConnector = step.querySelector(".step-connector");
-
-        // Step number animation
-        if (stepNumber) {
-          gsap.fromTo(
-            stepNumber,
-            {
-              scale: 0.5,
-              opacity: 0,
-              rotateY: -90,
-            },
-            {
-              scale: 1,
-              opacity: 1,
-              rotateY: 0,
-              duration: 0.8,
-              ease: "back.out(1.7)",
-              scrollTrigger: {
-                trigger: step,
-                start: "top 75%",
-                end: "top 50%",
-                toggleActions: "play none none reverse",
-              },
-            }
-          );
-        }
-
-        // Step connector pulse
-        if (stepConnector) {
-          gsap.fromTo(
-            stepConnector,
-            { scaleY: 0, opacity: 0 },
-            {
-              scaleY: 1,
-              opacity: 1,
-              duration: 0.6,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: step,
-                start: "top 70%",
-                toggleActions: "play none none reverse",
-              },
-            }
-          );
-        }
-
-        // Content slide in
-        if (stepContent) {
-          gsap.fromTo(
-            stepContent,
-            {
-              x: i % 2 === 0 ? -60 : 60,
-              opacity: 0,
-            },
-            {
-              x: 0,
-              opacity: 1,
-              duration: 0.8,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: step,
-                start: "top 70%",
-                end: "top 40%",
-                toggleActions: "play none none reverse",
-              },
-            }
-          );
-        }
-
-        // Icon animation
-        if (stepIcon) {
-          gsap.fromTo(
-            stepIcon,
-            {
-              scale: 0,
-              rotate: -180,
-            },
-            {
-              scale: 1,
-              rotate: 0,
-              duration: 0.6,
-              ease: "back.out(2)",
-              scrollTrigger: {
-                trigger: step,
-                start: "top 65%",
-                toggleActions: "play none none reverse",
-              },
-            }
-          );
-        }
-
-        // Stats staggered animation
-        if (stepStats.length) {
-          gsap.fromTo(
-            stepStats,
-            {
-              y: 30,
-              opacity: 0,
-            },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.5,
-              stagger: 0.1,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: step,
-                start: "top 60%",
-                toggleActions: "play none none reverse",
-              },
-            }
-          );
-        }
-      });
-
-      // Parallax background elements
-      const bgElements = section.querySelectorAll(".bg-element");
-      bgElements.forEach((el, i) => {
-        gsap.to(el, {
-          y: -100 * (1 + i * 0.3),
-          ease: "none",
-          scrollTrigger: {
-            trigger: section,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1,
-          },
-        });
-      });
-
-    }, section);
-
-    return () => ctx.revert();
-  }, [prefersReducedMotion]);
-
-  if (prefersReducedMotion) {
-    return (
-      <section className={cn("py-20 bg-[var(--landing-bg-primary)]", className)}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <h2 className="text-4xl font-bold text-[var(--landing-text-primary)] text-center mb-12 landing-heading">
-            How It Works
-          </h2>
-          <div className="space-y-8">
-            {timelineSteps.map((step) => (
-              <div key={step.id} className="p-6 bg-[var(--landing-bg-elevated)] border border-[var(--landing-border)] rounded-2xl">
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-3xl font-bold" style={{ color: step.color }}>
-                    {step.number}
-                  </span>
-                  <h3 className="text-xl font-semibold text-[var(--landing-text-primary)]">{step.title}</h3>
-                </div>
-                <p className="text-[var(--landing-text-secondary)]">{step.description}</p>
+        {/* Stats */}
+        <div className="flex gap-4 mb-6">
+          {step.stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, x: -20 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: index * 0.15 + 0.3 + i * 0.1, duration: 0.5 }}
+              className="flex-1 p-3 rounded-xl bg-[var(--landing-accent-lighter)] border border-[var(--landing-border)]"
+            >
+              <div className="text-xl font-bold text-[var(--landing-accent-primary)] tabular-nums">
+                {stat.value}
               </div>
+              <div className="text-xs text-[var(--landing-text-muted)] uppercase tracking-wider mt-1">
+                {stat.label}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Features list - revealed on hover */}
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={isActive ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden"
+        >
+          <div className="pt-4 border-t border-[var(--landing-border)] space-y-2">
+            {step.features.map((feature, i) => (
+              <motion.div
+                key={feature}
+                initial={{ x: -20, opacity: 0 }}
+                animate={isActive ? { x: 0, opacity: 1 } : { x: -20, opacity: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.3 }}
+                className="flex items-center gap-2 text-sm text-[var(--landing-text-secondary)]"
+              >
+                <CheckCircle2 className="w-4 h-4 text-[var(--landing-accent-primary)] flex-shrink-0" />
+                {feature}
+              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-    );
-  }
+        </motion.div>
+      </div>
+
+      {/* Hover arrow indicator */}
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={isActive ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+        className="absolute bottom-6 right-6"
+      >
+        <ArrowRight className="w-6 h-6 text-[var(--landing-accent-primary)]" />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Floating feature badges
+function FeatureBadge({
+  icon: Icon,
+  label,
+  delay = 0
+}: {
+  icon: React.ElementType;
+  label: string;
+  delay?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.8 });
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 30, scale: 0.8 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{
+        delay,
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="landing-card inline-flex items-center gap-3 px-5 py-3 landing-hover-scale"
+    >
+      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)] flex items-center justify-center">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <span className="font-semibold text-[var(--landing-text-primary)]">{label}</span>
+    </motion.div>
+  );
+}
+
+export function HorizontalShowcase() {
+  const [activeStep, setActiveStep] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, amount: 0.2 });
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <section
       ref={sectionRef}
-      className={cn("relative bg-[var(--landing-bg-primary)] overflow-hidden", className)}
+      className="relative py-24 sm:py-32 bg-[var(--landing-bg-secondary)] overflow-hidden"
     >
-      {/* Ambient background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="bg-element absolute top-[10%] left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px]"
-          style={{ background: "var(--landing-accent-primary)" }}
-        />
-        <div
-          className="bg-element absolute top-[40%] right-[10%] w-[350px] h-[350px] rounded-full opacity-8 blur-[100px]"
-          style={{ background: "var(--landing-accent-secondary)" }}
-        />
-        <div
-          className="bg-element absolute top-[70%] left-[15%] w-[300px] h-[300px] rounded-full opacity-8 blur-[100px]"
-          style={{ background: "var(--landing-accent-tertiary)" }}
-        />
-      </div>
+      {/* Background decorations */}
+      <div className="absolute inset-0 landing-grid-pattern opacity-30" />
+      <div className="landing-shape-blob absolute top-[20%] right-[5%] w-[600px] h-[600px] bg-[var(--landing-accent-primary)]" />
+      <div className="landing-shape-blob absolute bottom-[10%] left-[10%] w-[500px] h-[500px] bg-[var(--landing-accent-secondary)]" />
 
-      <div className="relative z-10 py-24 sm:py-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mb-20">
-          <span className="inline-block px-4 py-2 rounded-full text-sm font-medium tracking-wider uppercase mb-6 bg-[var(--landing-accent-primary)]/10 text-[var(--landing-accent-primary)] border border-[var(--landing-accent-primary)]/20">
-            The Process
-          </span>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[var(--landing-text-primary)] mb-6 landing-heading">
-            From Stress to
-            <span
-              className="block mt-2"
-              style={{
-                background: "linear-gradient(135deg, var(--landing-accent-primary), var(--landing-accent-secondary), var(--landing-accent-tertiary))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Success
+        <div className="text-center mb-20">
+          <motion.div
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span className="landing-badge landing-badge-secondary inline-flex items-center gap-2 mb-6">
+              <Zap className="w-3.5 h-3.5" />
+              How It Works
             </span>
-          </h2>
-          <p className="text-lg sm:text-xl text-[var(--landing-text-secondary)] max-w-2xl mx-auto">
-            Four simple steps to transform your academic journey. Watch the progress as you scroll.
-          </p>
-        </div>
 
-        {/* Timeline */}
-        <div
-          ref={timelineRef}
-          className="relative max-w-6xl mx-auto px-4 sm:px-6"
-        >
-          {/* Center Line Track */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden md:block">
-            {/* Background track */}
-            <div className="absolute inset-0 bg-[var(--landing-border)] rounded-full" />
+            <h2 className="landing-heading landing-heading-lg text-[var(--landing-text-primary)] mb-6">
+              Four steps to
+              <br />
+              <span className="landing-text-gradient-animated">academic success</span>
+            </h2>
 
-            {/* Progress line */}
-            <div
-              ref={progressLineRef}
-              className="absolute top-0 left-0 w-full rounded-full origin-top"
-              style={{
-                height: "0%",
-                background: "linear-gradient(180deg, var(--landing-accent-primary), var(--landing-accent-secondary), var(--landing-accent-tertiary))",
-              }}
-            />
-
-            {/* Progress dot */}
-            <div
-              ref={progressDotRef}
-              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
-              style={{ top: "0%" }}
-            >
-              <div className="relative">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{
-                    background: "linear-gradient(135deg, var(--landing-accent-primary), var(--landing-accent-tertiary))",
-                    boxShadow: "0 0 20px var(--landing-accent-primary), 0 0 40px var(--landing-accent-primary)",
-                  }}
-                />
-                <div
-                  className="absolute inset-0 rounded-full animate-ping opacity-50"
-                  style={{ background: "var(--landing-accent-primary)" }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile line (left side) */}
-          <div className="absolute left-4 top-0 bottom-0 w-px md:hidden">
-            <div className="absolute inset-0 bg-[var(--landing-border)] rounded-full" />
-            <div
-              className="progress-line-mobile absolute top-0 left-0 w-full rounded-full origin-top"
-              style={{
-                height: "0%",
-                background: "linear-gradient(180deg, var(--landing-accent-primary), var(--landing-accent-secondary), var(--landing-accent-tertiary))",
-              }}
-            />
-          </div>
-
-          {/* Steps */}
-          <div className="space-y-24 sm:space-y-32">
-            {timelineSteps.map((step, index) => {
-              const isEven = index % 2 === 0;
-
-              return (
-                <div
-                  key={step.id}
-                  ref={(el) => {
-                    stepsRef.current[index] = el;
-                  }}
-                  className={cn(
-                    "relative grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 items-center",
-                    "pl-12 md:pl-0"
-                  )}
-                >
-                  {/* Content - alternates sides on desktop */}
-                  <div
-                    className={cn(
-                      "step-content",
-                      isEven ? "md:text-right md:order-1" : "md:order-3"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "inline-block",
-                        isEven ? "md:text-right" : "md:text-left"
-                      )}
-                    >
-                      <span
-                        className="text-sm font-medium uppercase tracking-wider mb-2 block"
-                        style={{ color: step.color, opacity: 0.7 }}
-                      >
-                        {step.subtitle}
-                      </span>
-                      <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--landing-text-primary)] mb-4 landing-heading">
-                        {step.title}
-                      </h3>
-                      <p className="text-[var(--landing-text-secondary)] text-base sm:text-lg leading-relaxed max-w-md">
-                        {step.description}
-                      </p>
-
-                      {/* Stats */}
-                      {step.stats && (
-                        <div
-                          className={cn(
-                            "flex gap-6 mt-6",
-                            isEven ? "md:justify-end" : "md:justify-start"
-                          )}
-                        >
-                          {step.stats.map((stat, i) => (
-                            <div key={i} className="step-stat">
-                              <div
-                                className="text-2xl sm:text-3xl font-bold"
-                                style={{ color: step.color }}
-                              >
-                                {stat.value}
-                              </div>
-                              <div className="text-xs sm:text-sm text-[var(--landing-text-muted)] uppercase tracking-wider">
-                                {stat.label}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Center Node */}
-                  <div className="md:order-2 flex justify-center">
-                    <div className="flex flex-col items-center">
-                      {/* Step number */}
-                      {index < timelineSteps.length - 1 ? (
-                        <div
-                          className="step-number w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center"
-                          style={{
-                            background: `${step.color}15`,
-                            border: `2px solid ${step.color}40`,
-                            boxShadow: `0 0 40px ${step.color}15`,
-                          }}
-                        >
-                          <span
-                            className="text-2xl sm:text-3xl font-black"
-                            style={{ color: step.color }}
-                          >
-                            {step.number}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="step-number">
-                          <span
-                            className="text-5xl sm:text-6xl font-black"
-                            style={{ color: step.color }}
-                          >
-                            {step.number}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Connector line to next step */}
-                      {index < timelineSteps.length - 1 && (
-                        <div
-                          className="step-connector w-px h-20 sm:h-28 origin-top mt-4"
-                          style={{ background: `${step.color}30` }}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Empty space for grid alignment */}
-                  <div className={isEven ? "hidden md:block md:order-3" : "hidden md:block md:order-1"} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-24 sm:mt-32">
-          <div className="p-8 sm:p-12 rounded-3xl bg-[var(--landing-bg-elevated)] border border-[var(--landing-border)] shadow-lg">
-            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[var(--landing-text-primary)] mb-4 landing-heading">
-              Ready to Start Your Journey?
-            </h3>
-            <p className="text-[var(--landing-text-secondary)] mb-8 max-w-xl mx-auto">
-              Join thousands of students who have transformed their academic experience.
+            <p className="text-lg text-[var(--landing-text-secondary)] max-w-2xl mx-auto">
+              Our streamlined process gets you from stress to success in minutes.
+              <br />
+              Hover over each step to explore the details.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="/signup"
-                className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-xl overflow-hidden font-semibold"
-                style={{
-                  background: "linear-gradient(135deg, var(--landing-accent-primary), var(--landing-accent-secondary))",
-                }}
-              >
-                <span className="relative text-white">Get Started Free</span>
-                <svg
-                  className="relative w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-              <a
-                href="#services"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] border border-[var(--landing-border)] hover:border-[var(--landing-accent-primary)] transition-colors font-medium"
-              >
-                <BookOpen className="w-5 h-5" />
-                View Services
-              </a>
-            </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
 
+        {/* Process Cards Grid */}
+        <div className="grid md:grid-cols-2 gap-8 mb-20">
+          {processSteps.map((step, index) => (
+            <StepCard
+              key={step.id}
+              step={step}
+              index={index}
+              isActive={activeStep === step.id}
+              onHover={setActiveStep}
+            />
+          ))}
+        </div>
+
+        {/* Bottom Feature Badges */}
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.8, duration: 1 }}
+          className="flex flex-wrap justify-center items-center gap-4"
+        >
+          <FeatureBadge icon={Clock} label="24/7 Support" delay={0.9} />
+          <FeatureBadge icon={Users} label="500+ Experts" delay={1.0} />
+          <FeatureBadge icon={Target} label="98% Success Rate" delay={1.1} />
+        </motion.div>
+      </div>
     </section>
   );
 }

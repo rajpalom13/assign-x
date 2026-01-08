@@ -3,15 +3,11 @@
 import { memo } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, MapPin, Package, Home, Briefcase, Users, ShoppingBag } from "lucide-react"
+import { motion } from "framer-motion"
+import { Heart, MapPin, Package, Home, Briefcase, Users, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import type { ListingDisplay } from "./masonry-grid"
 
-/**
- * Props for ItemCard component
- */
 interface ItemCardProps {
   listing: ListingDisplay
   onFavorite?: (listingId: string) => void
@@ -19,125 +15,150 @@ interface ItemCardProps {
 }
 
 /**
- * ItemCard component for marketplace listings
- * Displays product image, price, distance, and seller info
- * Pinterest-style variable aspect ratio card
- * Memoized for list rendering performance
+ * Get listing type config for icon and badge
  */
-export const ItemCard = memo(function ItemCard({ listing, onFavorite, className }: ItemCardProps) {
+function getListingConfig(type: string) {
+  switch (type) {
+    case "sell":
+      return { icon: Package, badge: "Product", color: "text-blue-600 dark:text-blue-400" }
+    case "housing":
+      return { icon: Home, badge: "Housing", color: "text-emerald-600 dark:text-emerald-400" }
+    case "opportunity":
+      return { icon: Briefcase, badge: "Opportunity", color: "text-purple-600 dark:text-purple-400" }
+    default:
+      return { icon: Users, badge: "Community", color: "text-amber-600 dark:text-amber-400" }
+  }
+}
+
+/**
+ * ItemCard - Minimalist marketplace card
+ */
+export const ItemCard = memo(function ItemCard({
+  listing,
+  onFavorite,
+  className
+}: ItemCardProps) {
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     onFavorite?.(listing.id)
   }
 
-  // Generate random aspect ratio for Pinterest-style layout
-  const aspectRatios = ["aspect-square", "aspect-[4/5]", "aspect-[3/4]", "aspect-[4/3]"]
-  const aspectRatio = aspectRatios[Math.floor(listing.title.length % aspectRatios.length)]
+  const config = getListingConfig(listing.listing_type)
+  const Icon = config.icon
+
+  const priceDisplay = listing.price === 0
+    ? "Free"
+    : listing.price
+      ? `₹${listing.price.toLocaleString()}`
+      : null
 
   return (
-    <Link href={`/marketplace/${listing.id}`}>
-      <div
+    <Link href={`/marketplace/${listing.id}`} className="block group">
+      <motion.article
+        whileHover={{ y: -2, scale: 1.01 }}
+        transition={{ duration: 0.2 }}
         className={cn(
-          "group relative overflow-hidden rounded-xl bg-card transition-all hover:shadow-lg",
+          "rounded-xl overflow-hidden border border-border bg-card",
+          "hover:border-foreground/20 transition-colors",
           className
         )}
       >
         {/* Image Container */}
-        <div className={cn("relative w-full overflow-hidden", aspectRatio)}>
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {listing.image_url ? (
-            <Image
-              src={listing.image_url}
-              alt={listing.title}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            />
-          ) : (
-            <div
-              className={cn(
-                "flex h-full w-full items-center justify-center",
-                listing.listing_type === "sell"
-                  ? "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/30"
-                  : listing.listing_type === "housing"
-                  ? "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/30"
-                  : listing.listing_type === "opportunity"
-                  ? "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30"
-                  : "bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/30"
-              )}
+            <motion.div
+              className="relative w-full h-full"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
             >
-              {listing.listing_type === "sell" ? (
-                <ShoppingBag className="h-12 w-12 text-blue-400 dark:text-blue-500" />
-              ) : listing.listing_type === "housing" ? (
-                <Home className="h-12 w-12 text-green-400 dark:text-green-500" />
-              ) : listing.listing_type === "opportunity" ? (
-                <Briefcase className="h-12 w-12 text-purple-400 dark:text-purple-500" />
-              ) : (
-                <Users className="h-12 w-12 text-orange-400 dark:text-orange-500" />
-              )}
+              <Image
+                src={listing.image_url}
+                alt={listing.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+            </motion.div>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <Icon className="h-10 w-10 text-muted-foreground/50" strokeWidth={1.5} />
             </div>
           )}
 
           {/* Favorite Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
+          <motion.button
             onClick={handleFavorite}
+            whileTap={{ scale: 0.9 }}
+            className={cn(
+              "absolute right-2 top-2 p-2 rounded-lg",
+              "bg-background/90 border border-border",
+              "opacity-0 group-hover:opacity-100 transition-opacity",
+              listing.is_favorited && "opacity-100"
+            )}
           >
-            <Heart
-              className={cn(
-                "h-4 w-4 transition-colors",
-                listing.is_favorited
-                  ? "fill-red-500 text-red-500"
-                  : "text-gray-600"
-              )}
-            />
-          </Button>
-
-          {/* Price Badge */}
-          {listing.price && listing.price > 0 && (
-            <Badge
-              className="absolute bottom-2 left-2 bg-white/90 text-foreground backdrop-blur-sm"
-              variant="secondary"
+            <motion.div
+              animate={listing.is_favorited ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.3 }}
             >
-              ₹{listing.price.toLocaleString()}
-            </Badge>
-          )}
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5",
+                  listing.is_favorited
+                    ? "fill-red-500 text-red-500"
+                    : "text-muted-foreground"
+                )}
+              />
+            </motion.div>
+          </motion.button>
 
-          {/* Free Badge */}
-          {listing.price === 0 && (
-            <Badge
-              className="absolute bottom-2 left-2 bg-green-500 text-white"
-            >
-              FREE
-            </Badge>
+          {/* Price Tag */}
+          {priceDisplay && (
+            <div className={cn(
+              "absolute bottom-2 left-2",
+              "px-2 py-1 rounded-lg",
+              "bg-background/90 border border-border",
+              "text-xs font-semibold",
+              listing.price === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+            )}>
+              {priceDisplay}
+            </div>
           )}
         </div>
 
         {/* Content */}
         <div className="p-3">
           {/* Title */}
-          <h3 className="line-clamp-2 text-sm font-medium leading-tight">
+          <h3 className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
             {listing.title}
           </h3>
 
-          {/* Location/Distance */}
-          {listing.city && (
-            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              <span>{listing.city}</span>
-            </div>
-          )}
+          {/* Meta row */}
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {listing.city ? (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{listing.city}</span>
+              </p>
+            ) : listing.view_count ? (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Eye className="h-3 w-3 shrink-0" />
+                <span>{listing.view_count}</span>
+              </p>
+            ) : (
+              <div />
+            )}
 
-          {/* Category Tag */}
-          {listing.category && (
-            <Badge variant="outline" className="mt-2 text-xs">
-              {listing.category.name}
-            </Badge>
-          )}
+            {/* Category badge */}
+            <span className={cn(
+              "px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted",
+              config.color
+            )}>
+              {config.badge}
+            </span>
+          </div>
         </div>
-      </div>
+      </motion.article>
     </Link>
   )
 })

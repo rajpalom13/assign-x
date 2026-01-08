@@ -24,32 +24,40 @@ export const ServiceCard = memo(function ServiceCard({ service }: ServiceCardPro
     <CardWrapper
       href={service.disabled ? undefined! : service.href}
       className={cn(
-        "block",
-        service.disabled && "cursor-not-allowed opacity-60"
+        "block group/card",
+        service.disabled && "cursor-not-allowed opacity-50"
       )}
     >
       <Card
         className={cn(
-          "group h-full transition-all",
-          !service.disabled &&
-            "hover:border-primary hover:shadow-md hover:-translate-y-0.5"
+          "relative h-full overflow-hidden transition-all duration-300",
+          !service.disabled && "card-hover hover:border-primary/40"
         )}
       >
-        <CardHeader className="space-y-3">
+        {/* Subtle gradient overlay on hover */}
+        {!service.disabled && (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02] opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+        )}
+
+        <CardHeader className="relative space-y-4 p-5">
           {/* Icon & Badge row */}
           <div className="flex items-start justify-between">
             <div
               className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-lg",
-                service.color
+                "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                service.color,
+                !service.disabled && "group-hover/card:scale-105 group-hover/card:shadow-md"
               )}
             >
-              <service.icon className="h-6 w-6" />
+              <service.icon className="h-5 w-5" />
             </div>
             {service.badge && (
               <Badge
                 variant={service.disabled ? "outline" : "secondary"}
-                className="text-xs"
+                className={cn(
+                  "text-[10px] font-medium px-2 py-0.5",
+                  !service.disabled && "bg-primary/10 text-primary border-0"
+                )}
               >
                 {service.badge}
               </Badge>
@@ -57,17 +65,22 @@ export const ServiceCard = memo(function ServiceCard({ service }: ServiceCardPro
           </div>
 
           {/* Title & Description */}
-          <div>
-            <CardTitle className="text-lg">{service.title}</CardTitle>
-            <CardDescription className="text-sm">
+          <div className="space-y-1.5">
+            <CardTitle className="text-base font-semibold leading-tight">
+              {service.title}
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed line-clamp-2">
               {service.description}
             </CardDescription>
           </div>
 
           {/* Arrow indicator */}
           {!service.disabled && (
-            <div className="flex justify-end">
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+            <div className="flex items-center justify-end pt-1">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover/card:text-primary transition-colors">
+                <span className="opacity-0 group-hover/card:opacity-100 transition-opacity">Get started</span>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/card:translate-x-0.5" />
+              </div>
             </div>
           )}
         </CardHeader>

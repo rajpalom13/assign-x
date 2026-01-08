@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
-import { createClient } from "@/lib/supabase/server"
+import { createClientFromRequest } from "@/lib/supabase/server"
 import {
   paymentRateLimiter,
   getClientIdentifier,
@@ -41,7 +41,7 @@ function secureCompare(a: string, b: string): boolean {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClientFromRequest(request)
 
     // Verify user is authenticated
     const {
@@ -50,8 +50,9 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.error("[Verify Payment] Auth error:", authError?.message || "No user")
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - please login again" },
         { status: 401 }
       )
     }
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
     // CSRF protection: Validate request origin
     const originCheck = validateOriginOnly(request)
     if (!originCheck.valid) {
-      console.warn(`CSRF attempt detected from user ${user.id}`)
+      const origin = request.headers.get("origin") || "none"
+      const referer = request.headers.get("referer") || "none"
+      console.warn(`[Verify Payment] CSRF rejected - user: ${user.id}, origin: ${origin}, referer: ${referer}`)
       return csrfError(originCheck.error)
     }
 
@@ -123,6 +126,7 @@ export async function POST(request: NextRequest) {
 
     if (isProjectPayment) {
       // Process project payment atomically
+      // Note: Razorpay payments don't create wallet transactions (money goes directly to Razorpay)
       const { data, error } = await supabase.rpc("process_razorpay_project_payment", {
         p_profile_id: body.profile_id,
         p_project_id: body.project_id,
@@ -141,8 +145,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        transaction_id: data.transaction_id,
         project_id: data.project_id,
+        amount: data.amount,
+        payment_method: data.payment_method,
         message: "Project payment successful",
       })
     } else {
@@ -169,10 +174,11 @@ export async function POST(request: NextRequest) {
         message: "Wallet topped up successfully",
       })
     }
-  } catch (error) {
-    console.error("Verify payment error:", error)
+  } catch (error: any) {
+    console.error("[Verify Payment] Error:", error?.message || error)
+    console.error("[Verify Payment] Stack:", error?.stack)
     return NextResponse.json(
-      { error: "Failed to verify payment" },
+      { error: error?.message || "Failed to verify payment. Please contact support." },
       { status: 500 }
     )
   }

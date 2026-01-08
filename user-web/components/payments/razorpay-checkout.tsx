@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback } from "react"
-import { Loader2, CreditCard, Wallet } from "lucide-react"
+import { useCallback, useMemo, useState } from "react"
+import { Loader2, CreditCard, Wallet, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { walletService } from "@/services"
+import { cn } from "@/lib/utils"
 
 /**
  * Razorpay checkout options
@@ -77,8 +80,8 @@ interface RazorpayCheckoutProps {
 }
 
 /**
- * RazorpayCheckout component
- * Handles payment via Razorpay or Wallet
+ * RazorpayCheckout component - Redesigned minimal UI with partial payment support
+ * Now allows using wallet balance even if insufficient, with remainder charged via Razorpay
  */
 export function RazorpayCheckout({
   open,
@@ -94,7 +97,27 @@ export function RazorpayCheckout({
   onSuccess,
   onError,
 }: RazorpayCheckoutProps) {
-  const canPayFromWallet = type === "project_payment" && walletBalance >= amount
+  // State for checkbox
+  const [useWallet, setUseWallet] = useState(walletBalance > 0)
+
+  // Calculate payment amounts based on checkbox state
+  const paymentCalculation = useMemo(() => {
+    const hasWalletBalance = walletBalance > 0
+    const canPayFull = walletBalance >= amount
+
+    // Only use wallet if checkbox is enabled
+    const walletAmount = useWallet ? (canPayFull ? amount : walletBalance) : 0
+    const razorpayAmount = amount - walletAmount
+
+    return {
+      hasWalletBalance,
+      canPayFull,
+      walletAmount,
+      razorpayAmount,
+      isPartialPayment: useWallet && hasWalletBalance && !canPayFull,
+      isFullWalletPayment: useWallet && canPayFull,
+    }
+  }, [amount, walletBalance, useWallet])
 
   /**
    * Load Razorpay script
@@ -115,10 +138,36 @@ export function RazorpayCheckout({
   }, [])
 
   /**
-   * Handle Razorpay payment
+   * Handle full wallet payment (wallet balance >= amount)
    */
-  const handleRazorpayPayment = useCallback(async () => {
+  const handleFullWalletPayment = useCallback(async () => {
+    if (!projectId) return
+
     try {
+      await walletService.payFromWallet(userId, projectId, amount)
+      toast.success("Payment successful!")
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error: any) {
+      console.error("Wallet payment error:", error)
+      toast.error(error.message || "Failed to process payment")
+      onError?.(error.message || "Failed to process payment")
+    }
+  }, [amount, onError, onOpenChange, onSuccess, projectId, userId])
+
+  /**
+   * Handle partial payment (wallet + Razorpay)
+   */
+  const handlePartialPayment = useCallback(async () => {
+    if (!projectId) return
+
+    try {
+      console.log("🟣 [Partial Payment] Starting flow...", {
+        total: amount,
+        wallet: paymentCalculation.walletAmount,
+        razorpay: paymentCalculation.razorpayAmount,
+      })
+
       // Load Razorpay script
       const loaded = await loadRazorpayScript()
       if (!loaded) {
@@ -127,14 +176,114 @@ export function RazorpayCheckout({
         return
       }
 
-      // Create order
+      // Create order for the Razorpay portion
+      console.log("🟣 [Partial Payment] Creating Razorpay order for remaining amount...")
+      const order = await walletService.createPartialPaymentOrder(
+        projectId,
+        paymentCalculation.razorpayAmount
+      )
+      console.log("✅ [Partial Payment] Order created:", order)
+
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+      if (!razorpayKey) {
+        toast.error("Payment gateway not configured")
+        return
+      }
+
+      // Open Razorpay checkout for remaining amount
+      const options: RazorpayOptions = {
+        key: razorpayKey,
+        amount: order.amount,
+        currency: order.currency,
+        name: "AssignX",
+        description: "Project Payment",
+        order_id: order.id,
+        prefill: {
+          name: userName,
+          email: userEmail,
+          contact: userPhone,
+        },
+        theme: {
+          color: "#2563EB",
+        },
+        handler: async (response: RazorpayResponse) => {
+          try {
+            console.log("✅ [Partial Payment] Razorpay success, processing both payments...")
+
+            // Process partial payment (wallet + razorpay) atomically
+            await walletService.processPartialPayment(
+              userId,
+              projectId,
+              response,
+              amount,
+              paymentCalculation.walletAmount,
+              paymentCalculation.razorpayAmount
+            )
+
+            toast.success("Payment successful!")
+            onOpenChange(false)
+            onSuccess?.()
+          } catch (error: any) {
+            console.error("❌ [Partial Payment] Processing error:", error)
+            toast.error(error?.message || "Payment processing failed")
+            onError?.(error?.message || "Payment processing failed")
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            console.log("⚠️ [Partial Payment] User cancelled")
+            toast.info("Payment cancelled")
+          },
+        },
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
+    } catch (error: any) {
+      console.error("❌ [Partial Payment] Error:", error)
+      toast.error(error.message || "Failed to initiate payment")
+      onError?.(error.message || "Failed to initiate payment")
+    }
+  }, [
+    amount,
+    loadRazorpayScript,
+    onError,
+    onOpenChange,
+    onSuccess,
+    paymentCalculation,
+    projectId,
+    userEmail,
+    userName,
+    userPhone,
+    userId,
+  ])
+
+  /**
+   * Handle full Razorpay payment (no wallet balance)
+   */
+  const handleRazorpayPayment = useCallback(async () => {
+    try {
+      console.log("🔵 [Razorpay] Starting payment flow...")
+
+      const loaded = await loadRazorpayScript()
+      if (!loaded) {
+        toast.error("Failed to load payment gateway")
+        onError?.("Failed to load payment gateway")
+        return
+      }
+
       const order = type === "wallet_topup"
         ? await walletService.createTopUpOrder(userId, amount)
         : await walletService.createProjectPaymentOrder(projectId!, amount)
 
-      // Open Razorpay checkout
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+      if (!razorpayKey) {
+        toast.error("Payment gateway not configured")
+        return
+      }
+
       const options: RazorpayOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        key: razorpayKey,
         amount: order.amount,
         currency: order.currency,
         name: "AssignX",
@@ -153,7 +302,8 @@ export function RazorpayCheckout({
             await walletService.verifyAndCreditWallet(
               userId,
               response,
-              amount
+              amount,
+              type === "project_payment" ? projectId : undefined
             )
             toast.success(
               type === "wallet_topup"
@@ -162,10 +312,9 @@ export function RazorpayCheckout({
             )
             onOpenChange(false)
             onSuccess?.()
-          } catch (error) {
-            console.error("Verification error:", error)
-            toast.error("Payment verification failed. Please contact support.")
-            onError?.("Payment verification failed")
+          } catch (error: any) {
+            toast.error(error?.message || "Payment verification failed")
+            onError?.(error?.message || "Payment verification failed")
           }
         },
         modal: {
@@ -177,10 +326,10 @@ export function RazorpayCheckout({
 
       const razorpay = new window.Razorpay(options)
       razorpay.open()
-    } catch (error) {
-      console.error("Payment error:", error)
-      toast.error("Failed to initiate payment")
-      onError?.("Failed to initiate payment")
+    } catch (error: any) {
+      console.error("❌ [Razorpay] Error:", error)
+      toast.error(error.message || "Failed to initiate payment")
+      onError?.(error.message || "Failed to initiate payment")
     }
   }, [
     amount,
@@ -196,83 +345,114 @@ export function RazorpayCheckout({
     userId,
   ])
 
-  /**
-   * Handle wallet payment
-   */
-  const handleWalletPayment = useCallback(async () => {
-    if (!projectId) return
-
-    try {
-      await walletService.payFromWallet(userId, projectId, amount)
-      toast.success("Payment successful!")
-      onOpenChange(false)
-      onSuccess?.()
-    } catch (error: any) {
-      console.error("Wallet payment error:", error)
-      toast.error(error.message || "Failed to process payment")
-      onError?.(error.message || "Failed to process payment")
+  // Determine which handler to use
+  const handlePayment = useCallback(async () => {
+    if (paymentCalculation.isFullWalletPayment) {
+      await handleFullWalletPayment()
+    } else if (paymentCalculation.isPartialPayment) {
+      await handlePartialPayment()
+    } else {
+      await handleRazorpayPayment()
     }
-  }, [amount, onError, onOpenChange, onSuccess, projectId, userId])
+  }, [paymentCalculation, handleFullWalletPayment, handlePartialPayment, handleRazorpayPayment])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-base font-medium">
             {type === "wallet_topup" ? "Top Up Wallet" : "Complete Payment"}
           </DialogTitle>
-          <DialogDescription>
-            Choose your preferred payment method
+          <DialogDescription className="text-xs text-muted-foreground">
+            {type === "wallet_topup"
+              ? "Add funds to your wallet"
+              : "Choose your payment method"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-3">
           {/* Amount Display */}
-          <div className="rounded-lg bg-muted p-4 text-center">
-            <p className="text-sm text-muted-foreground">Amount to pay</p>
-            <p className="text-3xl font-bold">₹{amount.toLocaleString()}</p>
+          <div className="p-4 rounded-lg border border-border bg-muted/30">
+            <p className="text-xs text-muted-foreground mb-1">Total amount</p>
+            <p className="text-2xl font-semibold tabular-nums">₹{amount.toLocaleString()}</p>
           </div>
 
-          {/* Payment Options */}
-          <div className="space-y-3">
-            {/* Wallet Payment (for project payments only) */}
-            {type === "project_payment" && (
-              <Button
-                variant={canPayFromWallet ? "default" : "outline"}
-                className="w-full justify-start gap-3 h-14"
-                onClick={handleWalletPayment}
-                disabled={!canPayFromWallet}
-              >
-                <Wallet className="h-5 w-5" />
-                <div className="flex-1 text-left">
-                  <p className="font-medium">Pay from Wallet</p>
-                  <p className="text-xs text-muted-foreground">
-                    Balance: ₹{walletBalance.toLocaleString()}
-                    {!canPayFromWallet && " (Insufficient)"}
+          {/* Wallet Checkbox (only for project payments with balance) */}
+          {type === "project_payment" && paymentCalculation.hasWalletBalance && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 p-3 rounded-lg border border-border bg-card">
+                <Checkbox
+                  id="use-wallet"
+                  checked={useWallet}
+                  onCheckedChange={(checked) => setUseWallet(checked === true)}
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="use-wallet"
+                    className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    Use wallet balance
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Available: ₹{walletBalance.toLocaleString()}
                   </p>
                 </div>
-              </Button>
-            )}
-
-            {/* Razorpay Payment */}
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-14"
-              onClick={handleRazorpayPayment}
-            >
-              <CreditCard className="h-5 w-5" />
-              <div className="flex-1 text-left">
-                <p className="font-medium">Pay with Card/UPI</p>
-                <p className="text-xs text-muted-foreground">
-                  Credit/Debit Card, UPI, Net Banking
-                </p>
               </div>
-            </Button>
+
+              {/* Payment Breakdown (if wallet is enabled) */}
+              {useWallet && (
+                <div className="p-3 rounded-lg border border-border bg-muted/20 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Wallet</span>
+                    <span className="font-medium">-₹{paymentCalculation.walletAmount.toLocaleString()}</span>
+                  </div>
+                  {paymentCalculation.razorpayAmount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Card/UPI</span>
+                      <span className="font-medium">₹{paymentCalculation.razorpayAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-border flex items-center justify-between font-medium">
+                    <span>You pay</span>
+                    <span>₹{paymentCalculation.razorpayAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pay Button */}
+          <Button
+            onClick={handlePayment}
+            className="w-full h-10"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            {paymentCalculation.isFullWalletPayment
+              ? "Pay from Wallet"
+              : paymentCalculation.isPartialPayment
+              ? `Pay ₹${paymentCalculation.razorpayAmount.toLocaleString()}`
+              : "Pay Now"}
+          </Button>
+
+          {/* Payment Method Info */}
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            {paymentCalculation.isFullWalletPayment ? (
+              <>
+                <Wallet className="h-3 w-3" />
+                <span>Full payment from wallet</span>
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-3 w-3" />
+                <span>Credit/Debit Card, UPI, Net Banking</span>
+              </>
+            )}
           </div>
 
           {/* Security Note */}
-          <p className="text-center text-xs text-muted-foreground">
-            Secured by Razorpay. Your payment information is encrypted.
+          <p className="text-center text-xs text-muted-foreground pt-2 border-t">
+            Secured by Razorpay • Your payment is encrypted
           </p>
         </div>
       </DialogContent>

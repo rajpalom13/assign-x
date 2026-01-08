@@ -55,7 +55,7 @@ interface MasonryGridProps {
  */
 const breakpointColumns = {
   default: 4,
-  1280: 3,
+  1280: 4,
   1024: 3,
   768: 2,
   640: 2,
@@ -150,11 +150,11 @@ export function MasonryGrid({
     <div className={cn("w-full", className)}>
       <Masonry
         breakpointCols={breakpointColumns}
-        className="flex w-auto -ml-4"
-        columnClassName="pl-4 bg-clip-padding"
+        className="flex w-auto -ml-3"
+        columnClassName="pl-3 bg-clip-padding"
       >
         {listings.map((listing) => (
-          <div key={listing.id} className="mb-4">
+          <div key={listing.id} className="mb-3">
             {renderCard(listing)}
           </div>
         ))}

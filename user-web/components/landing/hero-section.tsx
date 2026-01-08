@@ -1,13 +1,13 @@
 /**
- * @fileoverview Hero - Landing page hero section
+ * @fileoverview Hero - Notion/Linear inspired landing hero
  *
- * Full-viewport hero with centered layout, email capture form,
- * and floating stat cards. Uses unique warm/cool color palette.
+ * Modern minimal hero with smooth micro-animations.
+ * Features clean typography, subtle animations, and glassmorphism.
  */
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -15,141 +15,201 @@ import {
   useScroll,
   useTransform,
   useSpring,
+  useInView,
 } from "framer-motion";
-import { Star, Award, FileText, BookOpen, GraduationCap, Clock, CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Sparkles, Zap, Shield } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { ASSIGNX_EASE, DURATIONS, HERO_DELAYS, SPRING_CONFIG } from "@/lib/animations/constants";
+import { ASSIGNX_EASE, DURATIONS } from "@/lib/animations/constants";
 import "@/app/landing.css";
 
-// Stat card component - different from efficly's floating cards
-function StatCard({
+// Stat badge component with micro-animation
+function StatBadge({
   icon: Icon,
-  iconBg,
   value,
   label,
-  className,
-  delay,
+  delay = 0,
 }: {
   icon: React.ElementType;
-  iconBg: string;
   value: string;
   label: string;
-  className: string;
-  delay: number;
+  delay?: number;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.8 });
   const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div
-      initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, duration: 0.5, ease: ASSIGNX_EASE }}
-      className={cn(
-        "bg-white/90 backdrop-blur-sm border border-[var(--landing-border)] rounded-2xl p-4 shadow-lg",
-        "hover:shadow-xl hover:scale-105 transition-all duration-300",
-        className
-      )}
+      ref={ref}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.9 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{
+        delay,
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="landing-card landing-hover-lift inline-flex items-center gap-3 px-4 py-3"
     >
-      <div className="flex items-center gap-3">
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", iconBg)}>
-          <Icon className="w-6 h-6 text-white" />
+      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)]">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <div className="text-xl font-bold text-[var(--landing-text-primary)] tabular-nums">
+          {value}
         </div>
-        <div>
-          <div className="text-2xl font-bold text-[var(--landing-text-primary)] landing-heading">{value}</div>
-          <div className="text-xs text-[var(--landing-text-muted)]">{label}</div>
-        </div>
+        <div className="text-xs text-[var(--landing-text-muted)]">{label}</div>
       </div>
     </motion.div>
   );
 }
 
-// Project preview component - totally different from efficly
-function ProjectPreview({ className }: { className?: string }) {
+// Dashboard preview with micro-animations
+function DashboardPreview({ className }: { className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const prefersReducedMotion = useReducedMotion();
+
   const projects = [
-    { name: "Market Analysis Report", subject: "Business", progress: 85, color: "primary" },
-    { name: "Literature Review", subject: "English", progress: 100, color: "secondary" },
-    { name: "Statistical Study", subject: "Mathematics", progress: 60, color: "tertiary" },
+    { name: "Market Analysis", progress: 85, status: "In Progress" },
+    { name: "Literature Review", progress: 100, status: "Completed" },
+    { name: "Statistical Study", progress: 60, status: "Active" },
   ];
 
   return (
-    <div className={cn("landing-browser-frame bg-white", className)}>
+    <motion.div
+      ref={ref}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 40, scale: 0.95 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className={cn("landing-browser-frame bg-white relative group", className)}
+    >
+      {/* Browser chrome */}
       <div className="landing-browser-chrome">
         <div className="flex gap-2">
-          <div className="landing-browser-dot landing-browser-dot-red" />
-          <div className="landing-browser-dot landing-browser-dot-yellow" />
-          <div className="landing-browser-dot landing-browser-dot-green" />
+          <div className="landing-browser-dot" />
+          <div className="landing-browser-dot" />
+          <div className="landing-browser-dot" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="px-4 py-1.5 bg-white/50 rounded-lg text-xs text-[var(--landing-text-muted)]">
+          <div className="px-3 py-1 bg-[var(--landing-bg-elevated)]/50 backdrop-blur-sm rounded-lg text-xs text-[var(--landing-text-muted)]">
             assignx.com/dashboard
           </div>
         </div>
       </div>
-      <div className="p-5 bg-gradient-to-br from-[var(--landing-bg-primary)] to-white space-y-4">
+
+      {/* Dashboard content */}
+      <div className="p-6 bg-gradient-to-br from-[var(--landing-bg-primary)] via-white to-[var(--landing-bg-secondary)]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[var(--landing-border)]">
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-[var(--landing-border)]">
           <div>
-            <h4 className="font-semibold text-[var(--landing-text-primary)]">Active Projects</h4>
-            <p className="text-xs text-[var(--landing-text-muted)]">Track your progress</p>
+            <h4 className="font-semibold text-[var(--landing-text-primary)]">
+              Active Projects
+            </h4>
+            <p className="text-xs text-[var(--landing-text-muted)] mt-0.5">
+              Track your assignments in real-time
+            </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--landing-accent-primary)]/10 rounded-full">
+          <motion.div
+            animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[var(--landing-accent-primary)]/10 rounded-full"
+          >
             <div className="w-2 h-2 rounded-full bg-[var(--landing-accent-primary)] animate-pulse" />
-            <span className="text-xs font-medium text-[var(--landing-accent-primary)]">3 Active</span>
-          </div>
+            <span className="text-xs font-medium text-[var(--landing-accent-primary)]">
+              {projects.length} Active
+            </span>
+          </motion.div>
         </div>
 
         {/* Project cards */}
         <div className="space-y-3">
           {projects.map((project, i) => (
-            <div
+            <motion.div
               key={project.name}
-              className="p-4 rounded-xl bg-white border border-[var(--landing-border)] hover:shadow-md transition-shadow"
+              initial={prefersReducedMotion ? false : { opacity: 0, x: -20 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{
+                delay: 0.2 + i * 0.1,
+                duration: 0.5,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-[var(--landing-border)] hover:border-[var(--landing-accent-light)] hover:shadow-md transition-all duration-300 landing-spotlight"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-medium text-[var(--landing-text-primary)]">{project.name}</p>
-                  <p className="text-xs text-[var(--landing-text-muted)]">{project.subject}</p>
+                  <p className="font-medium text-[var(--landing-text-primary)]">
+                    {project.name}
+                  </p>
+                  <p className="text-xs text-[var(--landing-text-muted)] mt-0.5">
+                    {project.status}
+                  </p>
                 </div>
-                <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center",
-                  project.color === "primary" && "bg-[var(--landing-accent-primary)]",
-                  project.color === "secondary" && "bg-[var(--landing-accent-secondary)]",
-                  project.color === "tertiary" && "bg-[var(--landing-accent-tertiary)]"
-                )}>
-                  {i === 0 && <FileText className="w-4 h-4 text-white" />}
-                  {i === 1 && <BookOpen className="w-4 h-4 text-white" />}
-                  {i === 2 && <Award className="w-4 h-4 text-white" />}
-                </div>
+                {project.progress === 100 && (
+                  <CheckCircle className="w-5 h-5 text-[var(--landing-accent-primary)]" />
+                )}
               </div>
               {/* Progress bar */}
-              <div className="h-2 bg-[var(--landing-bg-secondary)]/50 rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    project.color === "primary" && "bg-[var(--landing-accent-primary)]",
-                    project.color === "secondary" && "bg-[var(--landing-accent-secondary)]",
-                    project.color === "tertiary" && "bg-[var(--landing-accent-tertiary)]"
-                  )}
-                  style={{ width: `${project.progress}%` }}
+              <div className="h-2 bg-[var(--landing-bg-secondary)] rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={isInView ? { width: `${project.progress}%` } : {}}
+                  transition={{
+                    delay: 0.4 + i * 0.1,
+                    duration: 1,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="h-full bg-gradient-to-r from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)] rounded-full"
                 />
               </div>
-              <div className="flex justify-between mt-2 text-xs text-[var(--landing-text-muted)]">
-                <span>{project.progress === 100 ? "Completed" : "In Progress"}</span>
-                <span>{project.progress}%</span>
+              <div className="flex justify-between mt-2 text-xs">
+                <span className="text-[var(--landing-text-muted)]">
+                  {project.progress === 100 ? "Completed" : "In Progress"}
+                </span>
+                <span className="font-medium text-[var(--landing-text-primary)] tabular-nums">
+                  {project.progress}%
+                </span>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
-    </div>
+
+      {/* Floating notification card */}
+      <motion.div
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.9 }}
+        animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+        transition={{
+          delay: 0.8,
+          duration: 0.6,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="absolute -bottom-4 -right-4 landing-card px-4 py-3 shadow-lg landing-hover-scale"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)] flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-[var(--landing-text-primary)]">
+              Expert matched!
+            </p>
+            <p className="text-xs text-[var(--landing-text-muted)]">
+              Work starts in 2 hours
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export function HeroSection() {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const [email, setEmail] = useState("");
 
   // Parallax scroll effect
   const { scrollYProgress } = useScroll({
@@ -157,183 +217,160 @@ export function HeroSection() {
     offset: ["start start", "end start"],
   });
 
-  const springScroll = useSpring(scrollYProgress, SPRING_CONFIG);
-
-  // Parallax values for floating cards
-  const y1 = useTransform(springScroll, [0, 1], [0, -50]);
-  const y2 = useTransform(springScroll, [0, 1], [0, -80]);
-
-  // Animation variants
-  const createVariant = (delay: number, yOffset: number = 20) => ({
-    hidden: { opacity: 0, y: yOffset },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: DURATIONS.entrance,
-        ease: ASSIGNX_EASE,
-        delay,
-      },
-    },
+  const springScroll = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
   });
+
+  const y = useTransform(springScroll, [0, 1], [0, -50]);
+  const opacity = useTransform(springScroll, [0, 0.5], [1, 0]);
 
   return (
     <section
       ref={ref}
       id="hero"
       className={cn(
-        "min-h-screen flex items-center",
-        "pt-20 pb-12 sm:pt-24 sm:pb-16 md:pt-28 md:pb-20",
+        "relative min-h-screen flex items-center overflow-hidden",
+        "pt-20 pb-16 sm:pt-24 sm:pb-20 md:pt-28 md:pb-24",
         "bg-[var(--landing-bg-primary)]"
       )}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-        <div className="grid lg:grid-cols-[55%_45%] gap-8 lg:gap-12 items-center">
+      {/* Animated mesh gradient background */}
+      <div className="landing-mesh-gradient-animated" />
+
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 landing-grid-pattern opacity-50" />
+
+      {/* Decorative blobs */}
+      <div className="landing-shape-blob absolute top-[10%] left-[5%] w-[500px] h-[500px] bg-[var(--landing-accent-primary)]" />
+      <div className="landing-shape-blob absolute top-[40%] right-[10%] w-[400px] h-[400px] bg-[var(--landing-accent-secondary)]" />
+
+      <motion.div
+        style={prefersReducedMotion ? {} : { y, opacity }}
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full"
+      >
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column - Content */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="space-y-6 sm:space-y-8"
-          >
+          <div className="space-y-8 sm:space-y-10">
             {/* Badge */}
             <motion.div
-              variants={
-                prefersReducedMotion
-                  ? {}
-                  : createVariant(HERO_DELAYS.badge, -10)
-              }
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.6,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
-              <span className="landing-badge landing-badge-primary">
-                <GraduationCap className="w-3.5 h-3.5 mr-1.5" />
-                Academic Excellence Starts Here
+              <span className="landing-badge landing-badge-primary inline-flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                Academic Excellence Made Simple
               </span>
             </motion.div>
 
-            {/* Headline - Unique multi-line layout */}
-            <div className="space-y-2">
+            {/* Headline - Big and bold */}
+            <div className="space-y-4">
               <motion.h1
-                variants={
-                  prefersReducedMotion
-                    ? {}
-                    : createVariant(HERO_DELAYS.headline1)
-                }
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: 0.1,
+                  duration: 0.8,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
                 className="landing-heading landing-heading-xl text-[var(--landing-text-primary)]"
               >
-                Ace your
+                Assignment help
+                <br />
+                that just{" "}
+                <span className="landing-text-gradient-animated">works</span>
               </motion.h1>
-              <motion.h1
-                variants={
-                  prefersReducedMotion
-                    ? {}
-                    : createVariant(HERO_DELAYS.headline2)
-                }
-                className="landing-heading landing-heading-xl"
+
+              <motion.p
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: 0.2,
+                  duration: 0.8,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="text-lg sm:text-xl text-[var(--landing-text-secondary)] max-w-xl leading-relaxed"
               >
-                <span className="landing-text-gradient">assignments</span>
-              </motion.h1>
-              <motion.h1
-                variants={
-                  prefersReducedMotion
-                    ? {}
-                    : createVariant(HERO_DELAYS.headline3)
-                }
-                className="landing-heading landing-heading-xl text-[var(--landing-text-primary)]"
-              >
-                with experts.
-              </motion.h1>
+                Connect with expert tutors for reports, research papers, and
+                academic projects. Quality work delivered on time, every time.
+              </motion.p>
             </div>
 
-            {/* Subheadline */}
-            <motion.p
-              variants={
-                prefersReducedMotion
-                  ? {}
-                  : createVariant(HERO_DELAYS.subheadline)
-              }
-              className="text-lg sm:text-xl text-[var(--landing-text-secondary)] max-w-lg leading-relaxed"
-            >
-              Get matched with subject experts for reports, research papers,
-              tutoring sessions, and academic guidance. Excellence guaranteed.
-            </motion.p>
-
-            {/* CTA Buttons - Different from efficly */}
+            {/* CTA Buttons */}
             <motion.div
-              variants={
-                prefersReducedMotion ? {} : createVariant(HERO_DELAYS.emailForm)
-              }
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.3,
+                duration: 0.8,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               className="flex flex-col sm:flex-row gap-4"
             >
               <Link
                 href="/signup"
-                className="landing-btn-primary inline-flex items-center gap-2"
+                className="landing-btn-primary inline-flex items-center gap-2 group"
               >
                 Start Your Project
-                <ArrowRight className="w-4 h-4" />
+                <motion.div
+                  animate={prefersReducedMotion ? {} : { x: [0, 4, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </motion.div>
               </Link>
               <Link
                 href="#how-it-works"
-                className="landing-btn-secondary"
+                className="landing-btn-secondary inline-flex items-center gap-2"
               >
+                <Zap className="w-4 h-4" />
                 See How It Works
               </Link>
             </motion.div>
 
-            {/* Trust indicators - Horizontal stat cards */}
+            {/* Trust indicators */}
             <motion.div
-              variants={
-                prefersReducedMotion ? {} : createVariant(0.6)
-              }
-              className="flex flex-wrap items-center gap-4 pt-6"
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                delay: 0.4,
+                duration: 1,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="flex flex-wrap items-center gap-4 pt-4"
             >
-              <StatCard
+              <StatBadge
                 icon={CheckCircle}
-                iconBg="bg-[var(--landing-accent-primary)]"
                 value="98%"
                 label="Success Rate"
-                className="w-auto"
-                delay={0.7}
+                delay={0.5}
               />
-              <StatCard
-                icon={Clock}
-                iconBg="bg-[var(--landing-accent-secondary)]"
+              <StatBadge
+                icon={Zap}
                 value="24h"
                 label="Avg. Delivery"
-                className="w-auto"
-                delay={0.8}
+                delay={0.6}
               />
-              <StatCard
-                icon={Star}
-                iconBg="bg-[var(--landing-accent-tertiary)]"
-                value="4.9"
-                label="Student Rating"
-                className="w-auto"
-                delay={0.9}
+              <StatBadge
+                icon={Shield}
+                value="500+"
+                label="Experts"
+                delay={0.7}
               />
             </motion.div>
-          </motion.div>
+          </div>
 
-          {/* Right Column - Visuals */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: DURATIONS.dashboard,
-              ease: ASSIGNX_EASE,
-              delay: HERO_DELAYS.dashboard,
-            }}
-            className="relative"
-          >
-            {/* Decorative blobs - unique to AssignX */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--landing-accent-primary)]/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-[var(--landing-accent-tertiary)]/10 rounded-full blur-3xl" />
-
-            {/* Project Preview */}
-            <div className="relative z-10">
-              <ProjectPreview className="w-full max-w-xl mx-auto lg:max-w-none" />
-            </div>
-          </motion.div>
+          {/* Right Column - Dashboard Preview */}
+          <div className="relative lg:pl-8">
+            <DashboardPreview className="w-full max-w-2xl mx-auto lg:max-w-none" />
+          </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

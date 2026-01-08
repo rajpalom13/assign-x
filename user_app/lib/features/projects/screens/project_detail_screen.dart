@@ -234,7 +234,7 @@ class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent> {
         _downloadInvoice();
         break;
       case 'support':
-        context.push('/support');
+        context.push('/profile/help');
         break;
       case 'cancel':
         _showCancelDialog();

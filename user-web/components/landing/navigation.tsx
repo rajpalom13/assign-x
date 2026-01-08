@@ -1,8 +1,8 @@
 /**
- * @fileoverview Navigation - Landing page navigation bar
+ * @fileoverview Navigation - Modern minimal navigation
  *
- * Modern navbar with unique styling. Transforms on scroll.
- * Uses unique warm/cool color palette.
+ * Notion/Linear inspired navbar with smooth transitions.
+ * Transforms into floating pill on scroll.
  */
 
 "use client";
@@ -12,6 +12,7 @@ import { Menu, X, GraduationCap } from "lucide-react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import "@/app/landing.css";
 
 export function Navigation() {
@@ -22,7 +23,7 @@ export function Navigation() {
   // Track scroll position
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 100);
+      setScrolled(window.scrollY > 80);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -31,66 +32,86 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
   return (
     <>
-      {/* Spacer for absolute positioning */}
+      {/* Spacer */}
       <div className="h-16" />
 
       <motion.nav
         initial={prefersReducedMotion ? {} : { y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        transition={{
+          type: "spring",
+          stiffness: 100,
+          damping: 20,
+          delay: 0.1,
+        }}
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out",
+          "fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
           scrolled
-            ? "top-4 w-auto bg-[var(--landing-bg-dark)]/90 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/20 rounded-full"
-            : "top-4 w-full max-w-7xl bg-transparent border border-transparent"
+            ? "top-4 landing-glass shadow-xl shadow-black/5 rounded-full"
+            : "top-3 w-full max-w-7xl bg-transparent"
         )}
       >
-        <div className={cn(
-          "flex items-center justify-between transition-all duration-500",
-          scrolled ? "h-14 px-4 pl-5 gap-4" : "h-16 px-4 sm:px-6"
-        )}>
-          {/* Left: Logo */}
-          <Link href="/">
+        <div
+          className={cn(
+            "flex items-center transition-all duration-500",
+            scrolled ? "h-14 px-6 gap-6" : "h-14 px-4 sm:px-6 justify-between"
+          )}
+        >
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0">
             <motion.div
               className="flex items-center gap-2"
               whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
             >
-              <div className={cn(
-                "h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-300",
-                scrolled
-                  ? "bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)]"
-                  : "bg-[var(--landing-accent-primary)]"
-              )}>
-                <GraduationCap className="h-5 w-5 text-white" />
+              <div
+                className={cn(
+                  "rounded-lg flex items-center justify-center transition-all duration-300",
+                  scrolled
+                    ? "h-9 w-9 bg-gradient-to-br from-[var(--landing-accent-primary)] to-[var(--landing-accent-secondary)]"
+                    : "h-9 w-9 bg-[var(--landing-accent-primary)]"
+                )}
+              >
+                <GraduationCap className="text-white h-5 w-5" />
               </div>
-              <span className={cn(
-                "font-bold text-xl tracking-tight transition-colors duration-300",
-                scrolled ? "text-white" : "text-[var(--landing-text-primary)]"
-              )}>
-                Assign<span className="text-[var(--landing-accent-tertiary)]">X</span>
+              <span
+                className={cn(
+                  "font-bold tracking-tight transition-all duration-300 text-xl text-[var(--landing-text-primary)]"
+                )}
+              >
+                Assign<span className="text-[var(--landing-accent-primary)]">X</span>
               </span>
             </motion.div>
           </Link>
 
-          {/* Center: Navigation Links (Desktop) - Only visible when scrolled */}
+          {/* Center Links (Desktop) - Always visible in capsule when scrolled */}
           <AnimatePresence>
             {scrolled && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="hidden md:flex items-center gap-1"
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="hidden lg:flex items-center gap-1"
               >
-                {["Services", "How it works", "Pricing"].map((item) => (
+                {[
+                  { label: "Services", href: "#services" },
+                  { label: "How it works", href: "#how-it-works" },
+                  { label: "Pricing", href: "#pricing" },
+                ].map((item) => (
                   <a
-                    key={item}
-                    href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                    className="px-3 py-1.5 text-sm text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
+                    key={item.label}
+                    href={item.href}
+                    className="px-4 py-2 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-full hover:bg-[var(--landing-accent-lighter)] relative group"
                   >
-                    {item}
+                    {item.label}
                   </a>
                 ))}
               </motion.div>
@@ -98,30 +119,37 @@ export function Navigation() {
           </AnimatePresence>
 
           {/* Right: CTA Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <motion.div
               initial={prefersReducedMotion ? {} : { opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex items-center gap-3"
+              transition={{ delay: 0.2, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center gap-2"
             >
+              {/* Theme Toggler */}
+              <AnimatedThemeToggler />
+
+              {/* Sign In - Hidden on mobile */}
               <Link
                 href="/login"
                 className={cn(
-                  "hidden sm:inline-flex px-4 py-2 text-sm font-medium transition-colors rounded-full",
-                  scrolled
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)]"
+                  "hidden sm:inline-flex px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full",
+                  "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)]",
+                  "hover:bg-[var(--landing-accent-lighter)]"
                 )}
               >
                 Sign In
               </Link>
+
+              {/* Get Started */}
               <Link
                 href="/signup"
                 className={cn(
                   "inline-flex items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
-                  "h-10 px-5 bg-[var(--landing-accent-tertiary)] text-white hover:bg-[var(--landing-accent-tertiary-hover)]",
-                  !scrolled && "hover:shadow-md hover:shadow-[var(--landing-accent-tertiary)]/25"
+                  "px-5 py-2 bg-[var(--landing-accent-primary)] text-white",
+                  "hover:bg-[var(--landing-accent-primary-hover)]",
+                  "hover:shadow-lg hover:shadow-[var(--landing-accent-primary)]/20",
+                  "hover:scale-[1.02] active:scale-[0.98]"
                 )}
               >
                 Get Started
@@ -131,17 +159,35 @@ export function Navigation() {
             {/* Mobile Menu Button */}
             <button
               className={cn(
-                "p-2 md:hidden rounded-full transition-colors",
-                scrolled ? "hover:bg-white/10" : "hover:bg-black/5"
+                "p-2 md:hidden rounded-lg transition-colors",
+                "hover:bg-[var(--landing-accent-lighter)]"
               )}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? (
-                <X className={cn("h-5 w-5", scrolled ? "text-white" : "text-[var(--landing-text-primary)]")} />
-              ) : (
-                <Menu className={cn("h-5 w-5", scrolled ? "text-white" : "text-[var(--landing-text-primary)]")} />
-              )}
+              <AnimatePresence mode="wait">
+                {mobileMenuOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="h-5 w-5 text-[var(--landing-text-primary)]" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Menu className="h-5 w-5 text-[var(--landing-text-primary)]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </button>
           </div>
         </div>
@@ -150,41 +196,82 @@ export function Navigation() {
       {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-4 right-4 z-40 bg-white/95 backdrop-blur-xl rounded-2xl border border-[var(--landing-border)] shadow-lg p-4 md:hidden"
-          >
-            <div className="flex flex-col gap-2">
-              {["Services", "How it works", "Pricing"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="px-4 py-3 text-sm text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-black/5"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              ))}
-              <div className="border-t border-[var(--landing-border)] mt-2 pt-2">
-                <Link
-                  href="/login"
-                  className="block px-4 py-3 text-sm text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-black/5"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  className="block mt-2 px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-tertiary)] rounded-xl text-center hover:bg-[var(--landing-accent-tertiary-hover)] transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Get Started
-                </Link>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Menu Panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed top-20 left-4 right-4 z-50 landing-card shadow-2xl md:hidden overflow-hidden"
+            >
+              <div className="p-2">
+                {/* Navigation Links */}
+                <div className="space-y-1 mb-2">
+                  {[
+                    { label: "Services", href: "#services" },
+                    { label: "How it works", href: "#how-it-works" },
+                    { label: "Pricing", href: "#pricing" },
+                  ].map((item, i) => (
+                    <motion.a
+                      key={item.label}
+                      href={item.href}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                      className="block px-4 py-3 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-[var(--landing-accent-lighter)] landing-spotlight"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </motion.a>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-[var(--landing-border)] my-2" />
+
+                {/* Auth Links */}
+                <div className="space-y-2">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15, duration: 0.3 }}
+                  >
+                    <Link
+                      href="/login"
+                      className="block px-4 py-3 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-[var(--landing-accent-lighter)]"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                  >
+                    <Link
+                      href="/signup"
+                      className="block px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-primary)] rounded-lg text-center hover:bg-[var(--landing-accent-primary-hover)] transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </motion.div>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

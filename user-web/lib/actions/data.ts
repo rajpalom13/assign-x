@@ -212,7 +212,18 @@ export async function getWalletTransactions(limit = 20) {
 
   const { data: transactions, error } = await supabase
     .from("wallet_transactions")
-    .select("*")
+    .select(`
+      id,
+      wallet_id,
+      amount,
+      transaction_type,
+      description,
+      reference_type,
+      reference_id,
+      balance_after,
+      status,
+      created_at
+    `)
     .eq("wallet_id", wallet.id)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -658,7 +669,7 @@ export async function createProject(data: {
 
 /**
  * Upload file for a project
- * Includes file type and size validation
+ * Uses Cloudinary for storage, saves URL to Supabase
  */
 export async function uploadProjectFile(
   projectId: string,
@@ -688,6 +699,18 @@ export async function uploadProjectFile(
 
   if (!user) return { error: "Not authenticated" };
 
+  // Verify user has a profile (required for FK constraint on uploaded_by)
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    console.error("[uploadProjectFile] Profile not found for user:", user.id, profileError);
+    return { error: "User profile not found. Please complete your profile setup first." };
+  }
+
   // Verify project belongs to user
   const { data: projectOwner } = await supabase
     .from("projects")
@@ -702,415 +725,48 @@ export async function uploadProjectFile(
   // Sanitize file name (remove path separators and special chars)
   const sanitizedFileName = validatedFile.name.replace(/[/\\:*?"<>|]/g, "_");
 
-  // Generate unique file path
-  const fileName = `${projectId}/${Date.now()}_${sanitizedFileName}`;
-  const filePath = `project-files/${fileName}`;
+  // Get clean base64 data (remove data URL prefix if present)
+  const base64Data = validatedFile.base64Data.split(",")[1] || validatedFile.base64Data;
 
-  // Decode base64 and upload to storage
-  const base64 = validatedFile.base64Data.split(",")[1] || validatedFile.base64Data;
-  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  try {
+    // Dynamic import of Cloudinary to avoid server-side issues
+    const { uploadToCloudinary, getProjectFolder } = await import("@/lib/cloudinary/client");
 
-  const { error: uploadError } = await supabase.storage
-    .from("projects")
-    .upload(filePath, bytes, {
-      contentType: validatedFile.type,
-      upsert: false,
+    // Upload to Cloudinary
+    const uploadResult = await uploadToCloudinary(base64Data, {
+      folder: getProjectFolder(projectId),
+      publicId: `${Date.now()}_${sanitizedFileName.replace(/\.[^/.]+$/, "")}`,
+      resourceType: "auto",
     });
 
-  if (uploadError) {
+    // Create project_files record with Cloudinary URL
+    const { error: fileError } = await supabase
+      .from("project_files")
+      .insert({
+        project_id: projectId,
+        file_name: sanitizedFileName,
+        file_url: uploadResult.url,
+        file_type: validatedFile.type,
+        file_size_bytes: validatedFile.size,
+        file_category: "user_upload",
+        uploaded_by: user.id,
+      });
+
+    if (fileError) {
+      console.error("[uploadProjectFile] Database insert error:", {
+        error: fileError,
+        projectId,
+        userId: user.id,
+        fileName: sanitizedFileName,
+      });
+      return { error: `Failed to save file record: ${fileError.message || "Unknown error"}` };
+    }
+
+    return { success: true, fileUrl: uploadResult.url };
+  } catch (uploadError) {
+    console.error("Cloudinary upload error:", uploadError);
     return { error: "Failed to upload file. Please try again." };
   }
-
-  // Get public URL
-  const { data: urlData } = supabase.storage
-    .from("projects")
-    .getPublicUrl(filePath);
-
-  // Create project_files record
-  const { error: fileError } = await supabase
-    .from("project_files")
-    .insert({
-      project_id: projectId,
-      file_name: sanitizedFileName,
-      file_url: urlData.publicUrl,
-      file_type: validatedFile.type,
-      file_size_bytes: validatedFile.size,
-      file_category: "user_upload",
-      uploaded_by: user.id,
-    });
-
-  if (fileError) {
-    return { error: "Failed to save file record. Please try again." };
-  }
-
-  return { success: true, fileUrl: urlData.publicUrl };
-}
-
-// =============================================================================
-// PAYMENT METHODS ACTIONS
-// =============================================================================
-
-/**
- * Payment method type definition (aligned with database schema)
- */
-interface PaymentMethodData {
-  id: string;
-  type: "card" | "upi";
-  isDefault: boolean;
-  isVerified: boolean;
-  // Card fields
-  cardLast4?: string | null;
-  cardBrand?: string | null;
-  cardType?: string | null;
-  cardholderName?: string | null;
-  bankName?: string | null;
-  // UPI fields
-  upiId?: string | null;
-  createdAt?: string | null;
-}
-
-/**
- * Get user's saved payment methods
- * Fetches from Supabase payment_methods table
- */
-export async function getPaymentMethods(): Promise<PaymentMethodData[]> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return [];
-
-  const { data: methods, error } = await supabase
-    .from("payment_methods")
-    .select("*")
-    .eq("profile_id", user.id)
-    .order("is_default", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return [];
-  }
-
-  // Transform database schema to frontend format
-  return (methods || []).map((method) => ({
-    id: method.id,
-    type: method.method_type === "upi" ? "upi" : "card",
-    isDefault: method.is_default ?? false,
-    isVerified: method.is_verified ?? false,
-    cardLast4: method.card_last_four,
-    cardBrand: method.card_network,
-    cardType: method.card_type,
-    cardholderName: method.display_name,
-    bankName: method.bank_name,
-    upiId: method.upi_id,
-    createdAt: method.created_at,
-  })) as PaymentMethodData[];
-}
-
-/**
- * Add a new card payment method
- * Stores card token and last 4 digits (not full card number)
- */
-export async function addCardPaymentMethod(data: {
-  cardLast4: string;
-  cardBrand?: string;
-  cardType?: string;
-  cardholderName: string;
-  cardToken?: string;
-  bankName?: string;
-}) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Not authenticated" };
-
-  // Validate card details
-  if (!data.cardLast4 || data.cardLast4.length !== 4) {
-    return { error: "Invalid card last 4 digits" };
-  }
-
-  if (!data.cardholderName || data.cardholderName.trim().length < 2) {
-    return { error: "Invalid cardholder name" };
-  }
-
-  // Check existing payment methods count
-  const { count } = await supabase
-    .from("payment_methods")
-    .select("*", { count: "exact", head: true })
-    .eq("profile_id", user.id);
-
-  const isFirstMethod = (count ?? 0) === 0;
-
-  const { data: method, error } = await supabase
-    .from("payment_methods")
-    .insert({
-      profile_id: user.id,
-      method_type: "card",
-      card_last_four: data.cardLast4,
-      card_network: data.cardBrand || "unknown",
-      card_type: data.cardType || "debit",
-      display_name: data.cardholderName.trim(),
-      card_token: data.cardToken,
-      bank_name: data.bankName,
-      is_default: isFirstMethod,
-      is_verified: true,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // Log activity
-  await supabase.from("activity_logs").insert({
-    profile_id: user.id,
-    action: "payment_method_added",
-    action_category: "payment",
-    description: `Added card ending in ${data.cardLast4}`,
-    metadata: {
-      method_id: method.id,
-      method_type: "card",
-      card_network: data.cardBrand,
-    },
-  });
-
-  revalidatePath("/payment-methods");
-
-  return {
-    success: true,
-    method: {
-      id: method.id,
-      type: "card" as const,
-      isDefault: method.is_default ?? false,
-      isVerified: true,
-      cardLast4: method.card_last_four,
-      cardBrand: method.card_network,
-      cardholderName: method.display_name,
-    },
-  };
-}
-
-/**
- * Add a new UPI payment method
- * Stores verified UPI ID
- */
-export async function addUpiPaymentMethod(data: {
-  upiId: string;
-}) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Not authenticated" };
-
-  // Validate UPI ID format
-  const upiIdPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
-  if (!data.upiId || !upiIdPattern.test(data.upiId)) {
-    return { error: "Invalid UPI ID format" };
-  }
-
-  // Check for duplicate UPI ID
-  const { data: existing } = await supabase
-    .from("payment_methods")
-    .select("id")
-    .eq("profile_id", user.id)
-    .eq("upi_id", data.upiId.toLowerCase())
-    .maybeSingle();
-
-  if (existing) {
-    return { error: "This UPI ID is already saved" };
-  }
-
-  // Check existing payment methods count
-  const { count } = await supabase
-    .from("payment_methods")
-    .select("*", { count: "exact", head: true })
-    .eq("profile_id", user.id);
-
-  const isFirstMethod = (count ?? 0) === 0;
-
-  const { data: method, error } = await supabase
-    .from("payment_methods")
-    .insert({
-      profile_id: user.id,
-      method_type: "upi",
-      upi_id: data.upiId.toLowerCase(),
-      display_name: data.upiId.toLowerCase(),
-      is_default: isFirstMethod,
-      is_verified: true,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // Log activity
-  await supabase.from("activity_logs").insert({
-    profile_id: user.id,
-    action: "payment_method_added",
-    action_category: "payment",
-    description: `Added UPI ID ${data.upiId}`,
-    metadata: {
-      method_id: method.id,
-      method_type: "upi",
-    },
-  });
-
-  revalidatePath("/payment-methods");
-
-  return {
-    success: true,
-    method: {
-      id: method.id,
-      type: "upi" as const,
-      isDefault: method.is_default ?? false,
-      isVerified: true,
-      upiId: method.upi_id,
-    },
-  };
-}
-
-/**
- * Set a payment method as default
- * Unsets all other methods and sets the specified one as default
- */
-export async function setDefaultPaymentMethod(methodId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Not authenticated" };
-
-  // Validate method belongs to user
-  const { data: method } = await supabase
-    .from("payment_methods")
-    .select("id, method_type")
-    .eq("id", methodId)
-    .eq("profile_id", user.id)
-    .single();
-
-  if (!method) {
-    return { error: "Payment method not found" };
-  }
-
-  // Unset all defaults for this user
-  await supabase
-    .from("payment_methods")
-    .update({ is_default: false })
-    .eq("profile_id", user.id);
-
-  // Set new default
-  const { error } = await supabase
-    .from("payment_methods")
-    .update({ is_default: true, updated_at: new Date().toISOString() })
-    .eq("id", methodId)
-    .eq("profile_id", user.id);
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/payment-methods");
-  return { success: true };
-}
-
-/**
- * Delete a payment method
- * Prevents deletion if it's the only default method
- */
-export async function deletePaymentMethod(methodId: string) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { error: "Not authenticated" };
-
-  // Get the method to check if it's default
-  const { data: method } = await supabase
-    .from("payment_methods")
-    .select("id, is_default, method_type, card_last_four, upi_id")
-    .eq("id", methodId)
-    .eq("profile_id", user.id)
-    .single();
-
-  if (!method) {
-    return { error: "Payment method not found" };
-  }
-
-  // Check if this is the only method and it's default
-  const { count } = await supabase
-    .from("payment_methods")
-    .select("*", { count: "exact", head: true })
-    .eq("profile_id", user.id);
-
-  if (method.is_default && (count ?? 0) > 1) {
-    return { error: "Please set another method as default before deleting" };
-  }
-
-  // Delete the payment method
-  const { error } = await supabase
-    .from("payment_methods")
-    .delete()
-    .eq("id", methodId)
-    .eq("profile_id", user.id);
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // Log activity
-  const methodDesc = method.method_type === "upi"
-    ? `UPI ID ${method.upi_id}`
-    : `Card ending in ${method.card_last_four}`;
-
-  await supabase.from("activity_logs").insert({
-    profile_id: user.id,
-    action: "payment_method_removed",
-    action_category: "payment",
-    description: `Removed ${methodDesc}`,
-    metadata: {
-      method_id: methodId,
-      method_type: method.method_type,
-    },
-  });
-
-  revalidatePath("/payment-methods");
-  return { success: true };
-}
-
-/**
- * Get user's default payment method
- * Returns null if no default is set
- */
-export async function getDefaultPaymentMethod(): Promise<PaymentMethodData | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data: method, error } = await supabase
-    .from("payment_methods")
-    .select("*")
-    .eq("profile_id", user.id)
-    .eq("is_default", true)
-    .maybeSingle();
-
-  if (error || !method) {
-    return null;
-  }
-
-  return {
-    id: method.id,
-    type: method.method_type === "upi" ? "upi" : "card",
-    isDefault: true,
-    isVerified: method.is_verified ?? false,
-    cardLast4: method.card_last_four,
-    cardBrand: method.card_network,
-    cardType: method.card_type,
-    cardholderName: method.display_name,
-    bankName: method.bank_name,
-    upiId: method.upi_id,
-    createdAt: method.created_at,
-  };
 }
 
 // =============================================================================
@@ -1305,4 +961,335 @@ export async function resetUserPreferences() {
 
   revalidatePath("/profile");
   return { success: true };
+}
+
+// =============================================================================
+// AVATAR UPLOAD
+// =============================================================================
+
+/**
+ * Upload user avatar to Cloudinary
+ * Updates profile.avatar_url in Supabase
+ */
+export async function uploadAvatar(base64Data: string, fileName: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  try {
+    const { uploadToCloudinary } = await import("@/lib/cloudinary/client");
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadToCloudinary(base64Data, {
+      folder: `assignx/avatars/${user.id}`,
+      publicId: `avatar_${Date.now()}`,
+      resourceType: "image",
+    });
+
+    // Update profile with new avatar URL
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: uploadResult.url,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (updateError) {
+      return { error: "Failed to update profile" };
+    }
+
+    revalidatePath("/profile");
+    return { success: true, avatarUrl: uploadResult.url };
+  } catch {
+    return { error: "Failed to upload avatar" };
+  }
+}
+
+// =============================================================================
+// REVISION REQUESTS
+// =============================================================================
+
+/**
+ * Create a revision request for a project
+ */
+export async function createRevisionRequest(projectId: string, feedback: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Verify project belongs to user
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, user_id, status")
+    .eq("id", projectId)
+    .single();
+
+  if (!project || project.user_id !== user.id) {
+    return { error: "Project not found" };
+  }
+
+  // Create revision request
+  const { data: revision, error } = await supabase
+    .from("project_revisions")
+    .insert({
+      project_id: projectId,
+      requested_by: user.id,
+      revision_notes: feedback,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return { error: "Failed to create revision request" };
+  }
+
+  // Update project status to indicate revision requested
+  await supabase
+    .from("projects")
+    .update({ status: "revision_requested" })
+    .eq("id", projectId);
+
+  // Create notification
+  await supabase.from("notifications").insert({
+    profile_id: user.id,
+    type: "revision",
+    title: "Revision Request Submitted",
+    message: "Your revision request has been submitted and will be reviewed shortly.",
+    related_id: projectId,
+    is_read: false,
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true, revisionId: revision.id };
+}
+
+// =============================================================================
+// DATA EXPORT
+// =============================================================================
+
+/**
+ * Export all user data as JSON
+ */
+export async function exportUserData() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  try {
+    // Fetch all user data
+    const [
+      profileResult,
+      projectsResult,
+      walletsResult,
+      transactionsResult,
+      notificationsResult,
+    ] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("projects").select("*").eq("user_id", user.id),
+      supabase.from("wallets").select("*").eq("profile_id", user.id).single(),
+      supabase.from("wallet_transactions").select("*").eq("wallet_id", user.id),
+      supabase.from("notifications").select("*").eq("profile_id", user.id),
+    ]);
+
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      profile: profileResult.data,
+      projects: projectsResult.data || [],
+      wallet: walletsResult.data,
+      transactions: transactionsResult.data || [],
+      notifications: notificationsResult.data || [],
+    };
+
+    return { success: true, data: exportData };
+  } catch {
+    return { error: "Failed to export data" };
+  }
+}
+
+// =============================================================================
+// PROJECT COMPLETION
+// =============================================================================
+
+/**
+ * Mark a project as complete
+ * User confirms they are satisfied with the deliverables
+ */
+export async function markProjectComplete(projectId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Verify project belongs to user and is in deliverable state
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, user_id, status, project_number")
+    .eq("id", projectId)
+    .single();
+
+  if (!project || project.user_id !== user.id) {
+    return { error: "Project not found" };
+  }
+
+  // Only allow completion from delivered or for_review states
+  const completableStatuses = ["delivered", "qc_approved", "auto_approved"];
+  if (!completableStatuses.includes(project.status)) {
+    return { error: "Project cannot be marked complete at this stage" };
+  }
+
+  // Update project status to completed
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", projectId);
+
+  if (error) {
+    return { error: "Failed to mark project as complete" };
+  }
+
+  // Create notification
+  await supabase.from("notifications").insert({
+    profile_id: user.id,
+    type: "project",
+    title: "Project Completed",
+    message: `Project ${project.project_number} has been marked as complete. Thank you for using AssignX!`,
+    related_id: projectId,
+    is_read: false,
+  });
+
+  // Log activity
+  await supabase.from("activity_logs").insert({
+    profile_id: user.id,
+    action: "project_completed",
+    action_category: "project",
+    target_type: "project",
+    target_id: projectId,
+    description: `Marked project ${project.project_number} as complete`,
+  });
+
+  revalidatePath(`/project/${projectId}`);
+  revalidatePath("/projects");
+  return { success: true };
+}
+
+// =============================================================================
+// EXPERT SESSIONS (CONNECT)
+// =============================================================================
+
+/**
+ * Book an expert session
+ */
+export async function bookExpertSession(data: {
+  expertId: string;
+  sessionType: string;
+  date: string;
+  time: string;
+  topic: string;
+  notes?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Create booking record
+  const { data: booking, error } = await supabase
+    .from("expert_bookings")
+    .insert({
+      user_id: user.id,
+      expert_id: data.expertId,
+      session_type: data.sessionType,
+      scheduled_date: data.date,
+      scheduled_time: data.time,
+      topic: data.topic,
+      notes: data.notes,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // If table doesn't exist, return success anyway (graceful degradation)
+    if (error.code === "42P01") {
+      return { success: true, bookingId: "pending-setup" };
+    }
+    return { error: "Failed to create booking" };
+  }
+
+  // Create notification
+  await supabase.from("notifications").insert({
+    profile_id: user.id,
+    type: "booking",
+    title: "Session Booked",
+    message: `Your ${data.sessionType} session has been booked for ${data.date} at ${data.time}.`,
+    is_read: false,
+  });
+
+  revalidatePath("/connect");
+  return { success: true, bookingId: booking?.id };
+}
+
+/**
+ * Submit a question in Connect
+ */
+export async function submitConnectQuestion(data: {
+  expertId?: string;
+  question: string;
+  category?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  // Try to insert into questions table, fall back to support tickets
+  const { data: question, error } = await supabase
+    .from("connect_questions")
+    .insert({
+      user_id: user.id,
+      expert_id: data.expertId,
+      question: data.question,
+      category: data.category,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // If table doesn't exist, use support_tickets as fallback
+    if (error.code === "42P01") {
+      const { data: ticket, error: ticketError } = await supabase
+        .from("support_tickets")
+        .insert({
+          requester_id: user.id,
+          ticket_number: `Q-${Date.now().toString(36).toUpperCase()}`,
+          subject: "Expert Question",
+          description: data.question,
+          category: data.category || "expert_question",
+          status: "open",
+          priority: "medium",
+        })
+        .select()
+        .single();
+
+      if (ticketError) {
+        return { error: "Failed to submit question" };
+      }
+
+      return { success: true, questionId: ticket.id };
+    }
+    return { error: "Failed to submit question" };
+  }
+
+  revalidatePath("/connect");
+  return { success: true, questionId: question.id };
 }

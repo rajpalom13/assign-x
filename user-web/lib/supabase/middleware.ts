@@ -78,16 +78,17 @@ export async function updateSession(request: NextRequest) {
   const isLoginPage = pathname === "/login";
 
   if (user && (isLoginPage || isOnboardingRoute)) {
-    // Check if user has completed their profile
+    // Check if user has FULLY completed their profile (onboarding_completed = true)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_type")
+      .select("user_type, onboarding_completed")
       .eq("id", user.id)
       .single();
 
-    const hasCompletedProfile = profile?.user_type !== null && profile?.user_type !== undefined;
+    // Only redirect to dashboard if onboarding is fully completed
+    const hasCompletedOnboarding = profile?.onboarding_completed === true;
 
-    if (hasCompletedProfile) {
+    if (hasCompletedOnboarding) {
       // User has completed onboarding, redirect to dashboard
       if (isLoginPage || isOnboardingRoute) {
         const url = request.nextUrl.clone();
@@ -95,14 +96,15 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     } else {
-      // User needs onboarding
+      // User needs onboarding - allow access to signup forms
       if (isLoginPage) {
         // Redirect from login to onboarding
         const url = request.nextUrl.clone();
         url.pathname = "/onboarding";
         return NextResponse.redirect(url);
       }
-      // Allow access to onboarding routes for users without complete profile
+      // Allow access to onboarding routes (signup/student, signup/professional)
+      // for users who haven't completed onboarding yet
     }
   }
 
@@ -115,16 +117,16 @@ export async function updateSession(request: NextRequest) {
 
   // Root page - redirect authenticated users to dashboard or onboarding
   if (pathname === "/" && user) {
-    // Check if user has completed their profile
+    // Check if user has fully completed onboarding
     const { data: profile } = await supabase
       .from("profiles")
-      .select("user_type")
+      .select("onboarding_completed")
       .eq("id", user.id)
       .single();
 
-    const hasCompletedProfile = profile?.user_type !== null && profile?.user_type !== undefined;
+    const hasCompletedOnboarding = profile?.onboarding_completed === true;
     const url = request.nextUrl.clone();
-    url.pathname = hasCompletedProfile ? "/home" : "/onboarding";
+    url.pathname = hasCompletedOnboarding ? "/home" : "/onboarding";
     return NextResponse.redirect(url);
   }
 

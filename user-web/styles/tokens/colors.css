@@ -1,101 +1,107 @@
 /* AssignX Design System - Color Tokens */
-/* Notion-inspired warm neutrals + vibrant pops */
+/* Premium Earthy Palette: Pitch Black to Toasted Almond */
+/* #141204 | #262A10 | #54442B | #A9714B | #E8985E */
 
 :root {
   /* Background colors */
-  --background: 30 50% 99%;           /* #FFFCF9 warm cream */
-  --background-rgb: 255, 252, 249;
+  --background: 40 30% 97%;           /* Warm cream */
+  --background-rgb: 249, 247, 244;
 
-  --surface: 0 0% 100%;               /* #FFFFFF */
-  --surface-rgb: 255, 255, 255;
+  --surface: 40 25% 99%;              /* Near white */
+  --surface-rgb: 254, 253, 252;
 
-  --surface-muted: 30 15% 96%;        /* #F7F5F2 warm gray */
-  --surface-muted-rgb: 247, 245, 242;
+  --surface-muted: 37 15% 93%;        /* Warm gray */
+  --surface-muted-rgb: 241, 238, 234;
 
   /* Text colors */
-  --foreground: 0 0% 10%;             /* #1A1A1A */
-  --foreground-rgb: 26, 26, 26;
+  --foreground: 50 63% 5%;            /* #141204 Pitch Black */
+  --foreground-rgb: 20, 18, 4;
 
-  --muted: 0 0% 42%;                  /* #6B6B6B */
-  --muted-rgb: 107, 107, 107;
+  --muted: 37 20% 40%;                /* Warm brown-gray */
+  --muted-rgb: 122, 110, 82;
 
-  --muted-foreground: 0 0% 61%;       /* #9B9B9B */
-  --muted-foreground-rgb: 155, 155, 155;
+  --muted-foreground: 37 15% 55%;     /* Lighter brown-gray */
+  --muted-foreground-rgb: 155, 145, 127;
 
-  /* Primary - Coral Orange */
-  --primary: 14 100% 60%;             /* #FF5C35 */
-  --primary-rgb: 255, 92, 53;
-  --primary-foreground: 0 0% 100%;
+  /* Primary - Cinnamon Wood */
+  --primary: 24 39% 48%;              /* #A9714B */
+  --primary-rgb: 169, 113, 75;
+  --primary-foreground: 40 30% 97%;
 
   /* Secondary */
-  --secondary: 30 15% 96%;
-  --secondary-foreground: 0 0% 10%;
+  --secondary: 37 20% 92%;
+  --secondary-foreground: 50 63% 12%;
 
-  /* Accent colors */
-  --success: 160 100% 39%;            /* #00C48C mint */
-  --success-rgb: 0, 196, 140;
+  /* Accent - Toasted Almond */
+  --accent: 25 74% 64%;               /* #E8985E */
+  --accent-rgb: 232, 152, 94;
+  --accent-foreground: 50 63% 5%;
+
+  /* Status colors */
+  --success: 142 76% 36%;             /* Green */
+  --success-rgb: 22, 163, 74;
   --success-foreground: 0 0% 100%;
 
-  --warning: 43 100% 50%;             /* #FFB800 gold */
-  --warning-rgb: 255, 184, 0;
+  --warning: 38 92% 50%;              /* Gold */
+  --warning-rgb: 245, 158, 11;
   --warning-foreground: 0 0% 10%;
 
-  --info: 220 80% 65%;                /* #5B8DEF blue */
-  --info-rgb: 91, 141, 239;
+  --info: 199 70% 48%;                /* Blue */
+  --info-rgb: 37, 150, 190;
   --info-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;           /* #E53935 */
-  --destructive-rgb: 229, 57, 53;
+  --destructive: 0 72% 51%;           /* Red */
+  --destructive-rgb: 220, 38, 38;
   --destructive-foreground: 0 0% 100%;
 
-  --accent-purple: 282 39% 53%;       /* #9B59B6 */
-  --accent-purple-rgb: 155, 89, 182;
+  --accent-purple: 37 33% 25%;        /* #54442B Dark Brown (replacing purple) */
+  --accent-purple-rgb: 84, 68, 43;
 
   /* Border & Ring */
-  --border: 30 15% 90%;
-  --ring: 14 100% 60%;
+  --border: 37 18% 85%;
+  --ring: 24 39% 48%;
 
   /* Card */
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
+  --card: 40 25% 99%;
+  --card-foreground: 50 63% 5%;
 
   /* Popover */
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
+  --popover: 40 25% 99%;
+  --popover-foreground: 50 63% 5%;
 
   /* Input */
-  --input: 30 15% 90%;
+  --input: 37 18% 88%;
 
-  /* Chart colors */
-  --chart-1: 14 100% 60%;
-  --chart-2: 160 100% 39%;
-  --chart-3: 220 80% 65%;
-  --chart-4: 43 100% 50%;
-  --chart-5: 282 39% 53%;
+  /* Chart colors - Earthy palette */
+  --chart-1: 24 39% 48%;              /* Cinnamon */
+  --chart-2: 25 74% 64%;              /* Toasted Almond */
+  --chart-3: 37 33% 25%;              /* Dark Brown */
+  --chart-4: 69 45% 30%;              /* Dark Khaki */
+  --chart-5: 50 50% 30%;              /* Olive */
 }
 
 .dark {
-  --background: 0 0% 7%;              /* #121212 */
-  --background-rgb: 18, 18, 18;
+  --background: 50 63% 5%;            /* #141204 Pitch Black */
+  --background-rgb: 20, 18, 4;
 
-  --surface: 0 0% 11%;                /* #1C1C1C */
-  --surface-rgb: 28, 28, 28;
+  --surface: 69 45% 8%;               /* Dark olive-black */
+  --surface-rgb: 30, 29, 11;
 
-  --surface-muted: 0 0% 15%;          /* #262626 */
-  --surface-muted-rgb: 38, 38, 38;
+  --surface-muted: 37 33% 15%;        /* Dark brown */
+  --surface-muted-rgb: 51, 43, 26;
 
-  --foreground: 0 0% 95%;             /* #F2F2F2 */
-  --foreground-rgb: 242, 242, 242;
+  --foreground: 37 20% 92%;           /* Light warm */
+  --foreground-rgb: 240, 236, 228;
 
-  --muted: 0 0% 60%;
-  --muted-foreground: 0 0% 45%;
+  --muted: 37 15% 55%;
+  --muted-foreground: 37 15% 45%;
 
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
+  --border: 37 25% 20%;
+  --input: 37 25% 20%;
 
-  --card: 0 0% 11%;
-  --card-foreground: 0 0% 95%;
+  --card: 69 45% 8%;
+  --card-foreground: 37 20% 92%;
 
-  --popover: 0 0% 11%;
-  --popover-foreground: 0 0% 95%;
+  --popover: 69 45% 8%;
+  --popover-foreground: 37 20% 92%;
 }

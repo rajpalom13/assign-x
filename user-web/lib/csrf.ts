@@ -36,10 +36,12 @@ const CSRF_TOKEN_LENGTH = 32
 const ALLOWED_ORIGINS = [
   env.NEXT_PUBLIC_APP_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-  // Development origins (only active when NODE_ENV is development)
-  ...(env.NODE_ENV === "development" ? [
+  // Development origins - always allow localhost in dev
+  ...(process.env.NODE_ENV === "development" ? [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
   ] : []),
 ].filter(Boolean) as string[]
 

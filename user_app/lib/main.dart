@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
 import 'app.dart';
+import 'core/config/api_config.dart';
+import 'core/config/razorpay_config.dart';
 import 'core/config/supabase_config.dart';
 import 'core/services/notification_service.dart';
 
@@ -86,6 +88,26 @@ void main() async {
         _logger.w('Supabase initialization failed: $e');
         _logger.w('App will run in demo mode without backend connectivity');
         // App can run in demo mode without Supabase
+      }
+
+      // Validate API configuration (required for payments)
+      try {
+        ApiConfig.validateConfiguration();
+        _logger.i('API configuration validated: ${ApiConfig.baseUrl}');
+      } catch (e) {
+        _logger.w('API configuration missing: $e');
+        _logger.w('Payment features will be unavailable');
+        // App can run without payments in limited mode
+      }
+
+      // Validate Razorpay configuration (required for payments)
+      try {
+        RazorpayConfig.validateConfiguration();
+        _logger.i('Razorpay configured (test mode: ${RazorpayConfig.isTestMode})');
+      } catch (e) {
+        _logger.w('Razorpay configuration missing: $e');
+        _logger.w('Payment features will be unavailable');
+        // App can run without payments in limited mode
       }
 
       // Initialize notification service (requires Firebase)

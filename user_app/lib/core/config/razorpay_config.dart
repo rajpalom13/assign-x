@@ -1,46 +1,76 @@
 /// Razorpay configuration for payment processing.
 ///
-/// Contains API keys for test and production environments.
-/// IMPORTANT: In production, these should come from --dart-define or secure storage.
+/// Contains API keys and checkout configuration.
+/// SECURITY: API keys MUST be provided via --dart-define at build time.
+/// NEVER hardcode credentials in source code.
+///
+/// ## Build Configuration
+///
+/// Required settings must be provided at build time:
+/// ```bash
+/// flutter build apk \
+///   --dart-define=RAZORPAY_KEY_ID=rzp_live_xxxxx \
+///   --dart-define=RAZORPAY_TEST_MODE=false
+/// ```
+///
+/// For development with test mode:
+/// ```bash
+/// flutter run \
+///   --dart-define=RAZORPAY_KEY_ID=rzp_test_xxxxx \
+///   --dart-define=RAZORPAY_TEST_MODE=true
+/// ```
 class RazorpayConfig {
   RazorpayConfig._();
 
-  /// Test API Key
-  /// For development and testing purposes only.
-  static const String testApiKey = String.fromEnvironment(
+  /// Razorpay API Key ID.
+  ///
+  /// SECURITY: Must be provided via --dart-define=RAZORPAY_KEY_ID=...
+  /// This is the publishable key (safe for client-side).
+  /// The secret key should NEVER be in the mobile app.
+  static const String apiKey = String.fromEnvironment(
     'RAZORPAY_KEY_ID',
-    defaultValue: 'rzp_test_Rv45IObrwfKRyf',
+    defaultValue: '', // No default - must be configured
   );
 
-  /// Test API Secret
-  /// For development and testing purposes only.
-  static const String testKeySecret = String.fromEnvironment(
-    'RAZORPAY_KEY_SECRET',
-    defaultValue: 'p2ZIwNBpnf1Gh7icvCm6oicD',
-  );
-
-  /// Whether to use test mode
+  /// Whether to use test mode.
+  ///
+  /// When true, uses Razorpay test environment.
+  /// IMPORTANT: Set to false for production builds.
   static const bool isTestMode = bool.fromEnvironment(
     'RAZORPAY_TEST_MODE',
-    defaultValue: true,
+    defaultValue: true, // Default to test mode for safety
   );
 
-  /// Get the active API key
-  static String get apiKey => testApiKey;
+  /// Validates that required environment variables are configured.
+  ///
+  /// Call this during app initialization to get clear error messages.
+  static void validateConfiguration() {
+    if (apiKey.isEmpty) {
+      throw StateError(
+        'RAZORPAY_KEY_ID not configured. '
+        'Build with: --dart-define=RAZORPAY_KEY_ID=rzp_xxxxx',
+      );
+    }
+  }
 
-  /// Razorpay company name displayed during checkout
+  /// Razorpay company name displayed during checkout.
   static const String companyName = 'AssignX';
 
-  /// Razorpay company description
+  /// Razorpay company description.
   static const String description = 'Academic Support Platform';
 
-  /// Company logo URL for checkout
+  /// Company logo URL for checkout.
   static const String logoUrl = 'https://assignx.in/logo.png';
 
-  /// Theme color for Razorpay checkout (hex without #)
+  /// Theme color for Razorpay checkout (hex without #).
   static const String themeColor = '6366F1';
 
-  /// Prefill customer details
+  /// Prefill customer details for checkout.
+  ///
+  /// @param name Customer's full name.
+  /// @param email Customer's email address.
+  /// @param phone Customer's phone number.
+  /// @returns Map of prefill data for Razorpay checkout.
   static Map<String, String> getPrefillData({
     String? name,
     String? email,
@@ -53,7 +83,15 @@ class RazorpayConfig {
     };
   }
 
-  /// Create checkout options
+  /// Create checkout options for Razorpay.
+  ///
+  /// @param amountInPaise Payment amount in paise (1 INR = 100 paise).
+  /// @param orderId Server-generated Razorpay order ID.
+  /// @param name Customer's full name.
+  /// @param email Customer's email address.
+  /// @param phone Customer's phone number.
+  /// @param description Payment description shown to user.
+  /// @returns Map of options for Razorpay checkout.
   static Map<String, dynamic> createCheckoutOptions({
     required int amountInPaise,
     required String orderId,

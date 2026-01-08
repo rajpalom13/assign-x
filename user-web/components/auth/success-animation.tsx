@@ -27,7 +27,7 @@ export function SuccessAnimation({ onComplete }: SuccessAnimationProps) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {/* Confetti particles */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 50 }).map((_, i) => (
           <motion.div
             key={i}

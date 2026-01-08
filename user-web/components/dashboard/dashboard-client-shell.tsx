@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { MobileNav } from "./mobile-nav";
-import { CentralFAB } from "./central-fab";
 import { UploadSheet } from "./upload-sheet";
 
 /**
  * Client-side wrapper for dashboard interactive elements
- * Handles FAB click, upload sheet state, and mobile navigation
+ * Handles upload sheet state and mobile navigation
  * Used within SidebarInset to add floating elements
  */
 export function DashboardClientShell({ children }: { children: React.ReactNode }) {
@@ -22,9 +21,6 @@ export function DashboardClientShell({ children }: { children: React.ReactNode }
 
       {/* Mobile Bottom Navigation */}
       <MobileNav onFabClick={() => setUploadSheetOpen(true)} />
-
-      {/* Desktop FAB */}
-      <CentralFAB onClick={() => setUploadSheetOpen(true)} />
 
       {/* Upload Sheet */}
       <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />

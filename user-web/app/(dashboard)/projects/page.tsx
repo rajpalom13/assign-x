@@ -1,67 +1,87 @@
 "use client";
 
-import Link from "next/link";
-import { FolderKanban, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Button } from "@/components/ui/button";
-import {
-  ProjectTabs,
-  ProjectList,
-  PaymentPromptModal,
-} from "@/components/projects";
+import { useState, useEffect } from "react";
+import { PaymentPromptModal } from "@/components/projects";
+import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
+import { createClient } from "@/lib/supabase/client";
+import { walletService } from "@/services";
 import type { Project } from "@/stores";
+import { ProjectsPro } from "./projects-pro";
 
 /**
  * My Projects page
- * Displays user's projects with tab filtering
- * Fetches data from Supabase
+ * Premium SAAS-style design with glassmorphism
+ * Header is now rendered by the dashboard layout
  */
 export default function ProjectsPage() {
-  const handlePayNow = (project: Project) => {
-    // Get quote amount with fallback support
-    const quoteAmount = project.quoteAmount || project.final_quote || project.user_quote;
-    const projectNumber = project.projectNumber || project.project_number;
+  const [showPayment, setShowPayment] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [userId, setUserId] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string | undefined>();
+  const [userName, setUserName] = useState<string | undefined>();
+  const [walletBalance, setWalletBalance] = useState(0);
 
-    // TODO: In production, this would open a payment gateway
-    toast.info(`Opening payment for ${projectNumber} - ₹${quoteAmount}`);
+  // Get user data and wallet balance on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id);
+        setUserEmail(data.user.email);
+        setUserName(data.user.user_metadata?.full_name);
+
+        // Get wallet balance
+        try {
+          const balance = await walletService.getBalance(data.user.id);
+          setWalletBalance(balance);
+        } catch (error) {
+          console.error("Failed to get wallet balance:", error);
+        }
+      }
+    });
+  }, []);
+
+  const handlePayNow = (project: Project) => {
+    setSelectedProject(project);
+    setShowPayment(true);
   };
 
+  const handlePaymentSuccess = () => {
+    setShowPayment(false);
+    setSelectedProject(null);
+    window.location.reload();
+  };
+
+  const paymentAmount = selectedProject
+    ? (selectedProject.quoteAmount || selectedProject.final_quote || selectedProject.user_quote || 0)
+    : 0;
+
   return (
-    <div className="flex flex-col">
-      <DashboardHeader />
+    <>
+      {/* Premium Projects View */}
+      <ProjectsPro onPayNow={handlePayNow} />
 
-      <div className="flex-1 p-4 lg:p-6">
-        {/* Page Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <FolderKanban className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">My Projects</h1>
-              <p className="text-sm text-muted-foreground">
-                Track and manage all your submissions
-              </p>
-            </div>
-          </div>
-          <Button asChild size="sm" className="w-full sm:w-auto">
-            <Link href="/projects/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Link>
-          </Button>
-        </div>
-
-        {/* Tabs */}
-        <ProjectTabs className="mb-6" />
-
-        {/* Project List */}
-        <ProjectList onPayNow={handlePayNow} />
-      </div>
-
-      {/* Payment Prompt Modal (Auto-popup) */}
+      {/* Payment Prompt Modal */}
       <PaymentPromptModal onPay={handlePayNow} />
-    </div>
+
+      {/* Razorpay Checkout */}
+      {selectedProject && (
+        <RazorpayCheckout
+          open={showPayment}
+          onOpenChange={setShowPayment}
+          amount={paymentAmount}
+          type="project_payment"
+          projectId={selectedProject.id}
+          userId={userId}
+          userEmail={userEmail}
+          userName={userName}
+          walletBalance={walletBalance}
+          onSuccess={handlePaymentSuccess}
+          onError={(error) => {
+            console.error("Project payment error:", error);
+          }}
+        />
+      )}
+    </>
   );
 }

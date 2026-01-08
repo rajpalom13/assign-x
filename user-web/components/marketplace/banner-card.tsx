@@ -1,16 +1,13 @@
 "use client"
 
+import { memo } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, Heart, MapPin, ArrowRight, Briefcase, CalendarDays } from "lucide-react"
+import { motion } from "framer-motion"
+import { Calendar, Heart, MapPin, Briefcase, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import type { ListingDisplay } from "./masonry-grid"
 
-/**
- * Props for BannerCard component
- */
 interface BannerCardProps {
   listing: ListingDisplay
   onFavorite?: (listingId: string) => void
@@ -18,10 +15,13 @@ interface BannerCardProps {
 }
 
 /**
- * BannerCard component for events and job posts
- * Full-width card with image, title, date, and CTA
+ * BannerCard - Minimalist card for opportunities and featured items
  */
-export function BannerCard({ listing, onFavorite, className }: BannerCardProps) {
+export const BannerCard = memo(function BannerCard({
+  listing,
+  onFavorite,
+  className
+}: BannerCardProps) {
   const isOpportunity = listing.listing_type === "opportunity"
 
   const handleFavorite = (e: React.MouseEvent) => {
@@ -30,115 +30,124 @@ export function BannerCard({ listing, onFavorite, className }: BannerCardProps) 
     onFavorite?.(listing.id)
   }
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+  }
+
   return (
-    <Link href={`/marketplace/${listing.id}`}>
-      <div
+    <Link href={`/marketplace/${listing.id}`} className="block group">
+      <motion.article
+        whileHover={{ y: -2, scale: 1.01 }}
+        transition={{ duration: 0.2 }}
         className={cn(
-          "group relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 to-primary/5",
-          "transition-all hover:shadow-lg",
+          "rounded-xl overflow-hidden border border-border bg-card",
+          "hover:border-foreground/20 transition-colors",
           className
         )}
       >
-        {/* Favorite Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-2 z-10 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white"
-          onClick={handleFavorite}
-        >
-          <Heart
-            className={cn(
-              "h-4 w-4 transition-colors",
-              listing.is_favorited
-                ? "fill-red-500 text-red-500"
-                : "text-gray-600"
-            )}
-          />
-        </Button>
-
-        <div className="flex flex-col sm:flex-row">
-          {/* Image */}
-          <div className="relative h-40 w-full sm:h-auto sm:w-48 flex-shrink-0">
-            {listing.image_url ? (
+        {/* Image Section */}
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+          {listing.image_url ? (
+            <motion.div
+              className="relative w-full h-full"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+            >
               <Image
                 src={listing.image_url}
                 alt={listing.title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 100vw, 200px"
+                sizes="(max-width: 640px) 100vw, 50vw"
               />
-            ) : (
-              <div
-                className={cn(
-                  "flex h-full w-full items-center justify-center",
-                  isOpportunity
-                    ? "bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-950/50 dark:to-purple-900/30"
-                    : "bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-950/50 dark:to-blue-900/30"
-                )}
-              >
-                {isOpportunity ? (
-                  <Briefcase className="h-16 w-16 text-purple-400 dark:text-purple-500" />
-                ) : (
-                  <CalendarDays className="h-16 w-16 text-blue-400 dark:text-blue-500" />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex flex-1 flex-col justify-between p-4">
-            {/* Top Section */}
-            <div>
-              {/* Badge */}
-              <Badge
-                variant={isOpportunity ? "default" : "secondary"}
-                className="mb-2"
-              >
-                {isOpportunity ? "Opportunity" : "Event"}
-              </Badge>
-
-              {/* Title */}
-              <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">
-                {listing.title}
-              </h3>
-
-              {/* Description */}
-              {listing.description && (
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                  {listing.description}
-                </p>
+            </motion.div>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              {isOpportunity ? (
+                <Briefcase className="h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
+              ) : (
+                <CalendarDays className="h-12 w-12 text-muted-foreground/50" strokeWidth={1.5} />
               )}
             </div>
+          )}
 
-            {/* Bottom Section */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                {listing.city && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {listing.city}
-                  </span>
+          {/* Favorite Button */}
+          <motion.button
+            onClick={handleFavorite}
+            whileTap={{ scale: 0.9 }}
+            className={cn(
+              "absolute top-2 right-2 p-2 rounded-lg",
+              "bg-background/90 border border-border",
+              "opacity-0 group-hover:opacity-100 transition-opacity",
+              listing.is_favorited && "opacity-100"
+            )}
+          >
+            <motion.div
+              animate={listing.is_favorited ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.3 }}
+            >
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5",
+                  listing.is_favorited
+                    ? "fill-red-500 text-red-500"
+                    : "text-muted-foreground"
                 )}
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(listing.created_at || "").toLocaleDateString()}
-                </span>
-              </div>
+              />
+            </motion.div>
+          </motion.button>
 
-              {/* CTA */}
-              <Button
-                size="sm"
-                variant="outline"
-                className="group/btn flex items-center gap-1"
-              >
-                {isOpportunity ? "Apply Now" : "Learn More"}
-                <ArrowRight className="h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
-              </Button>
+          {/* Category badge - bottom right */}
+          <span className={cn(
+            "absolute bottom-2 right-2 px-2 py-1 rounded-lg text-xs font-medium",
+            "bg-background/90 border border-border",
+            isOpportunity
+              ? "text-purple-600 dark:text-purple-400"
+              : "text-primary"
+          )}>
+            {isOpportunity ? "Opportunity" : "Featured"}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="p-3 space-y-2">
+          {/* Title */}
+          <h3 className="text-sm font-medium text-foreground line-clamp-2">
+            {listing.title}
+          </h3>
+
+          {/* Description */}
+          {listing.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {listing.description}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {listing.city && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate max-w-[80px]">{listing.city}</span>
+                </span>
+              )}
+              {listing.created_at && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 shrink-0" />
+                  {formatDate(listing.created_at)}
+                </span>
+              )}
             </div>
+            {listing.price !== undefined && listing.price > 0 && (
+              <span className="text-xs font-semibold text-foreground">
+                ₹{listing.price.toLocaleString()}
+              </span>
+            )}
           </div>
         </div>
-      </div>
+      </motion.article>
     </Link>
   )
-}
+})

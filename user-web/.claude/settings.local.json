@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npm install:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "mcp__supabase__list_tables",
+      "Bash(npm run dev:*)"
     ]
   }
 }

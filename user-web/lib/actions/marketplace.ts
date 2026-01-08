@@ -11,7 +11,11 @@ import type {
   HousingListing,
   OpportunityListing,
   CommunityPost,
+  DBMarketplaceCategory,
 } from "@/types/marketplace";
+
+// Re-export ListingType for convenience
+export type { ListingType } from "@/types/marketplace";
 
 /**
  * Database listing type mapping
@@ -203,6 +207,12 @@ export async function getMarketplaceListings(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  console.log("🔧 [getMarketplaceListings] Starting fetch", {
+    options,
+    userId: user?.id,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     // Build base query with seller relation
     let query = supabase
@@ -222,7 +232,9 @@ export async function getMarketplaceListings(
         ),
         university:universities!university_id(id, name)
       `)
-      .eq("is_active", true);
+      .eq("status", "active"); // Filter by status column, not is_active
+
+    console.log("📝 [getMarketplaceListings] Base query built (filtering by status=active)");
 
     // Handle both GetListingsOptions and MarketplaceFilters
     const opts = options as any;
@@ -267,15 +279,26 @@ export async function getMarketplaceListings(
 
     // University-only filter (requires user to be authenticated)
     if (opts.universityOnly && user) {
+      console.log("🎓 [getMarketplaceListings] Applying university filter");
+
       // Get user's university from their student profile
-      const { data: studentProfile } = await supabase
+      const { data: studentProfile, error: studentError } = await supabase
         .from("students")
         .select("university_id")
         .eq("profile_id", user.id)
         .single();
 
+      console.log("👤 [getMarketplaceListings] Student profile:", {
+        found: !!studentProfile,
+        universityId: studentProfile?.university_id,
+        error: studentError?.message,
+      });
+
       if (studentProfile?.university_id) {
         query = query.eq("university_id", studentProfile.university_id);
+        console.log("✅ [getMarketplaceListings] University filter applied:", studentProfile.university_id);
+      } else {
+        console.log("⚠️ [getMarketplaceListings] No university_id found, skipping filter");
       }
     }
 
@@ -303,9 +326,25 @@ export async function getMarketplaceListings(
       query = query.range(opts.offset, opts.offset + (opts.limit || 20) - 1);
     }
 
+    console.log("🚀 [getMarketplaceListings] Executing query...");
+
     const { data: listings, error, count } = await query;
 
+    console.log("📊 [getMarketplaceListings] Query result:", {
+      success: !error,
+      listingsCount: listings?.length,
+      count,
+      error: error?.message,
+      errorDetails: error,
+    });
+
     if (error) {
+      console.error("❌ [getMarketplaceListings] Database error:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
       return { listings: [], data: [], total: 0, error: error.message };
     }
 
@@ -339,6 +378,11 @@ export async function getMarketplaceListings(
       }));
     }
 
+    console.log("✅ [getMarketplaceListings] Success:", {
+      transformedCount: transformedListings.length,
+      total: count || transformedListings.length || 0,
+    });
+
     return {
       listings: transformedListings,
       data: transformedListings,
@@ -346,6 +390,10 @@ export async function getMarketplaceListings(
       error: null,
     };
   } catch (error: any) {
+    console.error("💥 [getMarketplaceListings] Unexpected error:", {
+      message: error.message,
+      stack: error.stack,
+    });
     return { listings: [], data: [], total: 0, error: error.message };
   }
 }
@@ -382,7 +430,7 @@ export async function getListingById(id: string) {
         university:universities!university_id(id, name)
       `)
       .eq("id", id)
-      .eq("is_active", true)
+      .eq("status", "active")
       .single();
 
     if (error) {
@@ -497,11 +545,11 @@ export async function getUserListings(status?: "active" | "inactive" | "all") {
       .order("created_at", { ascending: false });
 
     if (status === "active") {
-      query = query.eq("is_active", true);
+      query = query.eq("status", "active");
     } else if (status === "inactive") {
-      query = query.eq("is_active", false);
+      query = query.in("status", ["sold", "rented", "expired", "removed"]);
     }
-    // "all" doesn't filter by is_active
+    // "all" doesn't filter by status
 
     const { data: listings, error } = await query;
 
@@ -590,8 +638,7 @@ export async function createListing(data: CreateListingData) {
 
         // Metadata and status
         metadata: data.metadata || {},
-        status: "active",
-        is_active: true,
+        status: "active", // Set status to active (no is_active column)
         view_count: 0,
       })
       .select()
@@ -645,7 +692,7 @@ export async function createMarketplaceListing(
         location: input.location,
         university_id: student?.university_id,
         image_urls: input.imageUrls || [],
-        is_active: true,
+        status: "active", // Use status instead of is_active
         view_count: 0,
         metadata: input.metadata || {},
       })
@@ -699,7 +746,7 @@ export async function updateMarketplaceListing(
     if (input.categoryId !== undefined) updateData.category_id = input.categoryId;
     if (input.location !== undefined) updateData.location = input.location;
     if (input.imageUrls !== undefined) updateData.image_urls = input.imageUrls;
-    if (input.isActive !== undefined) updateData.is_active = input.isActive;
+    if (input.isActive !== undefined) updateData.status = input.isActive ? "active" : "removed";
     if (input.metadata !== undefined) updateData.metadata = input.metadata;
 
     const { error } = await supabase
@@ -743,10 +790,10 @@ export async function deleteMarketplaceListing(
       return { success: false, error: "Listing not found or access denied" };
     }
 
-    // Soft delete
+    // Soft delete - change status to removed
     const { error } = await supabase
       .from("marketplace_listings")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ status: "removed", updated_at: new Date().toISOString() })
       .eq("id", id);
 
     if (error) throw error;
@@ -849,7 +896,7 @@ export async function getUserFavoriteListings(): Promise<{
         university:universities!university_id(id, name)
       `)
       .in("id", listingIds)
-      .eq("is_active", true);
+      .eq("status", "active"); // Use status column
 
     if (error) throw error;
 
@@ -864,5 +911,92 @@ export async function getUserFavoriteListings(): Promise<{
     return { data: transformedListings, error: null };
   } catch (error: any) {
     return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Get marketplace categories
+ */
+export async function getMarketplaceCategories(): Promise<{
+  data: DBMarketplaceCategory[] | null;
+  error: string | null;
+}> {
+  const supabase = await createClient();
+
+  try {
+    const { data: categories, error } = await supabase
+      .from("marketplace_categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+
+    if (error) throw error;
+
+    return { data: categories || [], error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+/**
+ * Upload image to Cloudinary for marketplace listing
+ */
+export async function uploadMarketplaceImage(file: {
+  name: string;
+  type: string;
+  size: number;
+  base64Data: string;
+}): Promise<{ data: { url: string; publicId: string } | null; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: null, error: "Not authenticated" };
+  }
+
+  // Validate file
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+  if (file.size > MAX_SIZE) {
+    return { data: null, error: "File size must be less than 5MB" };
+  }
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return { data: null, error: "Only JPEG, PNG, WebP, and GIF images are allowed" };
+  }
+
+  try {
+    // Dynamic import for cloudinary (server-side only)
+    const { v2: cloudinary } = await import("cloudinary");
+
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+
+    const folder = `assignx/marketplace/${user.id}`;
+    const result = await cloudinary.uploader.upload(
+      `data:${file.type};base64,${file.base64Data}`,
+      {
+        folder,
+        resource_type: "image",
+        use_filename: true,
+        unique_filename: true,
+      }
+    );
+
+    return {
+      data: {
+        url: result.secure_url,
+        publicId: result.public_id,
+      },
+      error: null,
+    };
+  } catch (error: any) {
+    console.error("Cloudinary upload error:", error);
+    return { data: null, error: error.message || "Failed to upload image" };
   }
 }

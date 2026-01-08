@@ -4,13 +4,18 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
+import '../../../data/models/tutor_model.dart';
 import '../../../providers/marketplace_provider.dart';
 import '../widgets/banner_card.dart';
+import '../widgets/book_session_sheet.dart';
 import '../widgets/item_card.dart';
 import '../widgets/marketplace_filters.dart';
 import '../widgets/text_card.dart';
+import '../widgets/tutor_card.dart';
+import '../widgets/tutor_profile_sheet.dart';
 
 /// Main marketplace/connect screen with Pinterest-style staggered grid.
 class MarketplaceScreen extends ConsumerWidget {
@@ -76,6 +81,11 @@ class MarketplaceScreen extends ConsumerWidget {
               // Filters
               const SliverToBoxAdapter(
                 child: MarketplaceFilters(),
+              ),
+
+              // Featured Tutors Section
+              SliverToBoxAdapter(
+                child: _FeaturedTutorsSection(),
               ),
 
               // Active filters display
@@ -405,6 +415,257 @@ class CategoryHeader extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Featured tutors section widget.
+class _FeaturedTutorsSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tutorsAsync = ref.watch(featuredTutorsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withAlpha(50),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.school,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expert Tutors',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Book 1-on-1 sessions',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () {
+                  // Navigate to all tutors screen
+                  // context.push('/marketplace/tutors');
+                },
+                child: Text(
+                  'See all',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Tutors horizontal list
+        SizedBox(
+          height: 180,
+          child: tutorsAsync.when(
+            data: (tutors) {
+              if (tutors.isEmpty) {
+                return Center(
+                  child: Text(
+                    'No tutors available',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: tutors.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final tutor = tutors[index];
+                  return SizedBox(
+                    width: 200,
+                    child: TutorCard(
+                      tutor: tutor,
+                      onTap: () => _showTutorProfile(context, tutor),
+                      onBook: () => _showBookSession(context, tutor),
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: 3,
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
+              itemBuilder: (context, index) => _TutorCardSkeleton(),
+            ),
+            error: (error, stack) => Center(
+              child: Text(
+                'Failed to load tutors',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  /// Show tutor profile sheet.
+  void _showTutorProfile(BuildContext context, Tutor tutor) {
+    TutorProfileSheet.show(
+      context: context,
+      tutor: tutor,
+      onBookSession: () {
+        Navigator.of(context).pop();
+        _showBookSession(context, tutor);
+      },
+      onAskQuestion: () {
+        Navigator.of(context).pop();
+        // TODO: Navigate to ask question sheet
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ask question feature coming soon!'),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Show book session sheet.
+  void _showBookSession(BuildContext context, Tutor tutor) {
+    BookSessionSheet.show(
+      context: context,
+      tutor: tutor,
+      onBookingComplete: (session) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Session booked with ${tutor.name}!',
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Loading skeleton for tutor card.
+class _TutorCardSkeleton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar and info row skeleton
+          Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.shimmerBase,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 10,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.shimmerBase,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          // Bottom row skeleton
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                height: 16,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Container(
+                height: 32,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.shimmerBase,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

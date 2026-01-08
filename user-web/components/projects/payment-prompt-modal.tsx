@@ -1,24 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, X } from "lucide-react";
+import { CreditCard, CheckCircle2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useProjectStore, type Project } from "@/stores/project-store";
+import { cn } from "@/lib/utils";
 
 interface PaymentPromptModalProps {
   onPay?: (project: Project) => void;
 }
 
 /**
- * Auto-popup payment prompt modal (Paytm style)
+ * Minimal payment prompt modal
  * Shows when user has unpaid quotes
  */
 export function PaymentPromptModal({ onPay }: PaymentPromptModalProps) {
@@ -53,51 +53,67 @@ export function PaymentPromptModal({ onPay }: PaymentPromptModalProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent side="bottom" className="rounded-t-2xl">
-        <SheetHeader className="text-left">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <CreditCard className="h-6 w-6 text-primary" />
-          </div>
-          <SheetTitle>Your Project is Ready!</SheetTitle>
-          <SheetDescription>
-            Complete the payment to start work on your project.
+      <SheetContent side="bottom" className="h-auto max-h-[90vh] p-6">
+        <SheetHeader className="text-left space-y-1">
+          <SheetTitle className="text-base font-medium">Quote Ready</SheetTitle>
+          <SheetDescription className="text-xs text-muted-foreground">
+            Your project has been reviewed and quoted
           </SheetDescription>
         </SheetHeader>
 
-        <div className="my-6 space-y-4">
-          {/* Project Info */}
-          <div className="rounded-lg border bg-muted/50 p-4">
-            <p className="mb-1 text-sm text-muted-foreground">
+        <div className="space-y-4 pt-4 pb-2">
+          {/* Project Info - Minimal */}
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">
               {unpaidProject.projectNumber}
             </p>
-            <p className="font-medium">{unpaidProject.title}</p>
-            <p className="text-sm text-muted-foreground">
-              {unpaidProject.subjectName}
-            </p>
+            <p className="text-sm font-medium">{unpaidProject.title}</p>
+            {unpaidProject.subjectName && (
+              <p className="text-xs text-muted-foreground">
+                {unpaidProject.subjectName}
+              </p>
+            )}
           </div>
 
-          {/* Amount */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <span className="text-muted-foreground">Amount to Pay</span>
-            <span className="text-2xl font-bold text-primary">
-              ₹{unpaidProject.quoteAmount || 0}
-            </span>
+          {/* Amount - Clean display */}
+          <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Quote Amount</span>
+              <span className="font-medium">₹{unpaidProject.quoteAmount?.toLocaleString("en-IN") || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Validity</span>
+              <span className="text-green-600 font-medium">24 hours</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2 pt-2">
+            <Button
+              onClick={handlePay}
+              className="w-full h-9 text-sm"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Proceed to Pay
+            </Button>
+            <button
+              onClick={handleClose}
+              className={cn(
+                "w-full text-xs text-muted-foreground",
+                "hover:text-foreground transition-colors",
+                "py-2"
+              )}
+            >
+              I'll pay later
+            </button>
+          </div>
+
+          {/* Trust indicator */}
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Work begins after payment</span>
           </div>
         </div>
-
-        <SheetFooter className="flex-col gap-2 sm:flex-col">
-          <Button onClick={handlePay} className="w-full" size="lg">
-            <CreditCard className="mr-2 h-4 w-4" />
-            Pay Now
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={handleClose}
-            className="w-full text-muted-foreground"
-          >
-            Remind Me Later
-          </Button>
-        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

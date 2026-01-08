@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/services/payment_service.dart';
 import '../../../data/models/wallet_model.dart';
 import '../../../providers/profile_provider.dart';
 
@@ -148,6 +150,7 @@ class WalletScreen extends ConsumerWidget {
   void _showTopUpSheet(BuildContext context, WidgetRef ref) {
     final amounts = [100, 500, 1000, 2000, 5000];
     int? selectedAmount;
+    final logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
     showModalBottomSheet(
       context: context,
@@ -221,8 +224,11 @@ class WalletScreen extends ConsumerWidget {
                   onPressed: selectedAmount != null
                       ? () {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Opening payment...')),
+                          _initiatePayment(
+                            context: context,
+                            ref: ref,
+                            amount: selectedAmount!,
+                            logger: logger,
                           );
                         }
                       : null,
@@ -234,6 +240,135 @@ class WalletScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Initiates the payment flow with proper loading and error handling.
+  void _initiatePayment({
+    required BuildContext context,
+    required WidgetRef ref,
+    required int amount,
+    required Logger logger,
+  }) {
+    logger.i('[Wallet] Initiating payment for INR $amount');
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text('Creating order...'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Initialize payment service
+    final paymentService = PaymentService();
+
+    // Open Razorpay checkout
+    paymentService.topUpWallet(
+      amountInRupees: amount,
+      onSuccess: (result) {
+        logger.i('[Wallet] Payment verified: ${result.paymentId}');
+
+        // Close loading dialog if still showing
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        // Show success message with new balance if available
+        String successMessage = 'Payment successful! Wallet updated.';
+        if (result.newBalance != null) {
+          successMessage = 'Payment successful! New balance: \u20B9${result.newBalance!.toStringAsFixed(2)}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMessage),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Refresh wallet data to show updated balance immediately
+        // refresh() invalidates and immediately re-fetches the data
+        ref.refresh(walletProvider);
+        ref.refresh(walletTransactionsProvider);
+
+        // Dispose payment service
+        paymentService.dispose();
+      },
+      onError: (result) {
+        logger.e('[Wallet] Payment failed: ${result.errorMessage}');
+
+        // Close loading dialog if still showing
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        // Determine user-friendly error message
+        String errorMessage = result.errorMessage ?? 'Payment failed';
+        if (result.errorCode == 'VERIFICATION_ERROR') {
+          // Payment was made but verification failed - this is serious
+          errorMessage = result.errorMessage ??
+            'Payment may have been processed. Please contact support.';
+        } else if (result.errorCode == 'INIT_ERROR') {
+          errorMessage = 'Could not initiate payment. Please try again.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: result.errorCode == 'VERIFICATION_ERROR'
+              ? SnackBarAction(
+                  label: 'Contact Support',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    // TODO: Open support chat or email
+                  },
+                )
+              : null,
+          ),
+        );
+
+        // Dispose payment service
+        paymentService.dispose();
+      },
+      onExternalWallet: () {
+        logger.i('[Wallet] External wallet selected');
+
+        // Close loading dialog if still showing
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        // Dispose payment service
+        paymentService.dispose();
+      },
+    );
+
+    // Close the loading dialog after checkout opens (with slight delay)
+    // Capture navigator before async gap to avoid context issues
+    final navigator = Navigator.of(context);
+    Future.delayed(const Duration(seconds: 2), () {
+      try {
+        if (navigator.canPop()) {
+          navigator.pop();
+        }
+      } catch (e) {
+        // Navigator no longer valid, dialog already closed - ignore
+        logger.d('[Wallet] Dialog already closed');
+      }
+    });
   }
 }
 
@@ -396,7 +531,7 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${transaction.dateString} • ${transaction.timeString}',
+                  '${transaction.dateString} \u2022 ${transaction.timeString}',
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textSecondary,
                   ),

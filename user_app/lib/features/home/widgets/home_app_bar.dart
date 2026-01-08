@@ -50,7 +50,7 @@ class HomeAppBar extends ConsumerWidget {
           wallet.when(
             data: (w) => _WalletPill(
               balance: w.formattedBalance,
-              onTap: () => context.push('/profile/wallet'),
+              onTap: () => context.push('/wallet'),
             ),
             loading: () => _WalletPill(
               balance: '...',
@@ -58,7 +58,7 @@ class HomeAppBar extends ConsumerWidget {
             ),
             error: (_, _) => _WalletPill(
               balance: '\u20B90',
-              onTap: () => context.push('/profile/wallet'),
+              onTap: () => context.push('/wallet'),
             ),
           ),
 

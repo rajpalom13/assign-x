@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Razorpay from "razorpay"
-import { createClient } from "@/lib/supabase/server"
+import { createClientFromRequest } from "@/lib/supabase/server"
 import {
   paymentRateLimiter,
   getClientIdentifier,
@@ -45,7 +45,7 @@ interface CreateOrderRequest {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClientFromRequest(request)
 
     // Verify user is authenticated
     const {
@@ -54,8 +54,9 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.error("[Create Order] Auth error:", authError?.message || "No user")
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Unauthorized - please login again" },
         { status: 401 }
       )
     }
@@ -63,7 +64,9 @@ export async function POST(request: NextRequest) {
     // CSRF protection: Validate request origin
     const originCheck = validateOriginOnly(request)
     if (!originCheck.valid) {
-      console.warn(`CSRF attempt detected from user ${user.id}`)
+      const origin = request.headers.get("origin") || "none"
+      const referer = request.headers.get("referer") || "none"
+      console.warn(`[Create Order] CSRF rejected - user: ${user.id}, origin: ${origin}, referer: ${referer}`)
       return csrfError(originCheck.error)
     }
 
@@ -91,14 +94,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Ensure amount is an integer (Razorpay requirement)
+    const amountInPaise = Math.round(body.amount)
+
+    // Convert notes to string values (Razorpay requirement)
+    const notes: Record<string, string> = {}
+    if (body.notes) {
+      if (body.notes.type) notes.type = String(body.notes.type)
+      if (body.notes.profile_id) notes.profile_id = String(body.notes.profile_id)
+      if (body.notes.project_id) notes.project_id = String(body.notes.project_id)
+    }
+
+    // Build order payload
+    const orderPayload = {
+      amount: amountInPaise,
+      currency: body.currency || "INR",
+      receipt: body.receipt || `order_${Date.now()}`,
+      notes: Object.keys(notes).length > 0 ? notes : undefined,
+    }
+
+    console.log("[Create Order] Creating Razorpay order with payload:", JSON.stringify(orderPayload))
+    console.log("[Create Order] Using key_id:", env.RAZORPAY_KEY_ID?.substring(0, 15) + "...")
+
     // Create Razorpay order
     const razorpay = getRazorpay()
-    const order = await razorpay.orders.create({
-      amount: body.amount,
-      currency: body.currency || "INR",
-      receipt: body.receipt,
-      notes: body.notes,
-    })
+    const order = await razorpay.orders.create(orderPayload)
 
     // Log order creation
     await supabase.from("activity_logs").insert({
@@ -119,10 +139,27 @@ export async function POST(request: NextRequest) {
       currency: order.currency,
       receipt: order.receipt,
     })
-  } catch (error) {
-    console.error("Create order error:", error)
+  } catch (error: any) {
+    // Log full error details for debugging
+    console.error("[Create Order] Error:", JSON.stringify(error, null, 2))
+    console.error("[Create Order] Error message:", error?.message)
+    console.error("[Create Order] Error description:", error?.error?.description)
+    console.error("[Create Order] Stack:", error?.stack)
+
+    // Extract Razorpay-specific error message
+    const razorpayError = error?.error?.description || error?.description
+    const errorMessage = razorpayError || error?.message || "Failed to create order"
+
+    // Check for common Razorpay errors
+    if (error?.statusCode === 400 || error?.error?.code) {
+      return NextResponse.json(
+        { error: `Razorpay error: ${errorMessage}` },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Failed to create order" },
+      { error: errorMessage },
       { status: 500 }
     )
   }

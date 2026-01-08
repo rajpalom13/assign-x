@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Send, Clock } from "lucide-react";
+import { Loader2, Send, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,20 +23,20 @@ import {
   type ProofreadingFormSchema,
 } from "@/lib/validations/project";
 import { documentTypes, turnaroundTimes } from "@/lib/data/subjects";
-import { createProject } from "@/lib/actions/data";
+import { createProject, uploadProjectFile } from "@/lib/actions/data";
 import type { UploadedFile } from "@/types/add-project";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ProofreadingFormProps {
   onSuccess: (projectId: string, projectNumber: string) => void;
+  onStepChange?: (step: number) => void;
 }
 
 /**
  * Proofreading service form
  */
-export function ProofreadingForm({ onSuccess }: ProofreadingFormProps) {
-  const router = useRouter();
+export function ProofreadingForm({ onSuccess, onStepChange }: ProofreadingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<UploadedFile[]>([]);
 
@@ -90,6 +88,40 @@ export function ProofreadingForm({ onSuccess }: ProofreadingFormProps) {
         return;
       }
 
+      // Upload files to Cloudinary
+      if (files.length > 0 && result.projectId) {
+        for (const uploadedFile of files) {
+          try {
+            // Convert File to base64
+            const fileData = uploadedFile.file;
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const readerResult = reader.result as string;
+                const base64Data = readerResult.split(",")[1];
+                resolve(base64Data);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(fileData);
+            });
+
+            // Upload file
+            const uploadResult = await uploadProjectFile(result.projectId, {
+              name: uploadedFile.name,
+              type: uploadedFile.type,
+              size: uploadedFile.size,
+              base64Data: base64,
+            });
+
+            if (uploadResult.error) {
+              toast.error(`Failed to upload ${uploadedFile.name}: ${uploadResult.error}`);
+            }
+          } catch {
+            toast.error(`Failed to upload ${uploadedFile.name}`);
+          }
+        }
+      }
+
       onSuccess(result.projectId!, result.projectNumber!);
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -98,26 +130,7 @@ export function ProofreadingForm({ onSuccess }: ProofreadingFormProps) {
   });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col"
-    >
-      {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => router.back()}
-          className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
-        <h1 className="text-2xl font-bold">Quick Proofread</h1>
-        <p className="text-muted-foreground">
-          Get your document reviewed and polished
-        </p>
-      </div>
-
+    <div className="flex flex-col">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Document Type */}
         <div className="space-y-2">
@@ -262,6 +275,6 @@ export function ProofreadingForm({ onSuccess }: ProofreadingFormProps) {
           )}
         </Button>
       </form>
-    </motion.div>
+    </div>
   );
 }

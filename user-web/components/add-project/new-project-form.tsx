@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { FormSteps } from "./form-steps";
 import { StepSubject, StepRequirements, StepDeadline, StepDetails } from "./steps";
 import {
   projectStep1Schema,
@@ -24,20 +21,29 @@ import { createProject, uploadProjectFile } from "@/lib/actions/data";
 import type { UploadedFile } from "@/types/add-project";
 import { toast } from "sonner";
 
-const STEPS = ["Subject", "Requirements", "Deadline", "Details"];
-
 /** Props for NewProjectForm component */
 interface NewProjectFormProps {
   onSuccess: (projectId: string, projectNumber: string) => void;
+  onStepChange?: (step: number) => void;
+  /** Controlled step from parent (optional - uses internal state if not provided) */
+  currentStep?: number;
 }
 
 /**
  * Multi-step new project submission form
  * Guides users through 4 steps to submit a project
  */
-export function NewProjectForm({ onSuccess }: NewProjectFormProps) {
-  const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
+export function NewProjectForm({ onSuccess, onStepChange, currentStep: controlledStep }: NewProjectFormProps) {
+  const [internalStep, setInternalStep] = useState(0);
+
+  // Use controlled step if provided, otherwise use internal state
+  const currentStep = controlledStep ?? internalStep;
+
+  // Notify parent of step changes
+  const updateStep = (step: number) => {
+    setInternalStep(step);
+    onStepChange?.(step);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [formData, setFormData] = useState<Partial<ProjectFormSchema>>({
@@ -73,19 +79,19 @@ export function NewProjectForm({ onSuccess }: NewProjectFormProps) {
   /** Handles step 1 submission */
   const handleStep1Submit = step1Form.handleSubmit((data) => {
     setFormData((prev) => ({ ...prev, ...data }));
-    setCurrentStep(1);
+    updateStep(1);
   });
 
   /** Handles step 2 submission */
   const handleStep2Submit = step2Form.handleSubmit((data) => {
     setFormData((prev) => ({ ...prev, ...data }));
-    setCurrentStep(2);
+    updateStep(2);
   });
 
   /** Handles step 3 submission */
   const handleStep3Submit = step3Form.handleSubmit((data) => {
     setFormData((prev) => ({ ...prev, ...data }));
-    setCurrentStep(3);
+    updateStep(3);
   });
 
   /** Handles final form submission */
@@ -121,11 +127,36 @@ export function NewProjectForm({ onSuccess }: NewProjectFormProps) {
 
       // Upload files if any
       if (files.length > 0 && result.projectId) {
-        for (const file of files) {
-          // Convert file to base64 for upload
-          // Note: In a real implementation, you'd use FormData
-          // This is a simplified version
-          toast.info(`Uploading ${file.name}...`);
+        for (const uploadedFile of files) {
+          try {
+            // Convert File to base64
+            const fileData = uploadedFile.file;
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                // Remove data URL prefix to get just the base64 data
+                const base64Data = result.split(",")[1];
+                resolve(base64Data);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(fileData);
+            });
+
+            // Upload file to storage
+            const uploadResult = await uploadProjectFile(result.projectId, {
+              name: uploadedFile.name,
+              type: uploadedFile.type,
+              size: uploadedFile.size,
+              base64Data: base64,
+            });
+
+            if (uploadResult.error) {
+              toast.error(`Failed to upload ${uploadedFile.name}: ${uploadResult.error}`);
+            }
+          } catch {
+            toast.error(`Failed to upload ${uploadedFile.name}`);
+          }
         }
       }
 
@@ -137,45 +168,27 @@ export function NewProjectForm({ onSuccess }: NewProjectFormProps) {
     }
   });
 
-  /** Handles back navigation */
-  const handleBack = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
-    else router.back();
-  };
-
   const selectedUrgency = urgencyLevels.find((u) => u.value === step3Form.watch("urgency"));
   const urgencyMultiplier = selectedUrgency?.multiplier || 1;
 
   return (
     <div className="flex flex-col">
-      <div className="mb-6">
-        <button onClick={handleBack} className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />Back
-        </button>
-        <h1 className="text-2xl font-bold">New Project</h1>
-        <p className="text-muted-foreground">Fill in the details to get started</p>
-      </div>
-      <div className="mb-8">
-        <FormSteps steps={STEPS} currentStep={currentStep} />
-      </div>
-      <div className="flex-1">
-        <AnimatePresence mode="wait">
-          {currentStep === 0 && <StepSubject form={step1Form} onSubmit={handleStep1Submit} />}
-          {currentStep === 1 && <StepRequirements form={step2Form} onSubmit={handleStep2Submit} />}
-          {currentStep === 2 && <StepDeadline form={step3Form} wordCount={step2Form.getValues("wordCount") || 0} onSubmit={handleStep3Submit} />}
-          {currentStep === 3 && (
-            <StepDetails
-              form={step4Form}
-              files={files}
-              onFilesChange={setFiles}
-              wordCount={step2Form.getValues("wordCount") || 0}
-              urgencyMultiplier={urgencyMultiplier}
-              isSubmitting={isSubmitting}
-              onSubmit={handleFinalSubmit}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait">
+        {currentStep === 0 && <StepSubject form={step1Form} onSubmit={handleStep1Submit} />}
+        {currentStep === 1 && <StepRequirements form={step2Form} onSubmit={handleStep2Submit} />}
+        {currentStep === 2 && <StepDeadline form={step3Form} wordCount={step2Form.getValues("wordCount") || 0} onSubmit={handleStep3Submit} />}
+        {currentStep === 3 && (
+          <StepDetails
+            form={step4Form}
+            files={files}
+            onFilesChange={setFiles}
+            wordCount={step2Form.getValues("wordCount") || 0}
+            urgencyMultiplier={urgencyMultiplier}
+            isSubmitting={isSubmitting}
+            onSubmit={handleFinalSubmit}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

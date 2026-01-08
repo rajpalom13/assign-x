@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { MessageSquare, Send, CheckCircle } from "lucide-react";
+import { createRevisionRequest } from "@/lib/actions/data";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -64,22 +66,32 @@ export function RevisionRequestForm({
   const handleSubmit = async (data: RevisionFormData) => {
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const result = await createRevisionRequest(project.id, data.feedback);
 
-    if (onSubmit) {
-      onSubmit(data.feedback);
+      if (result.error) {
+        toast.error(result.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (onSubmit) {
+        onSubmit(data.feedback);
+      }
+
+      setIsSubmitting(false);
+      setIsSuccess(true);
+
+      // Auto close after success
+      setTimeout(() => {
+        setIsSuccess(false);
+        form.reset();
+        onOpenChange(false);
+      }, 2000);
+    } catch {
+      toast.error("Failed to submit revision request");
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    setIsSuccess(true);
-
-    // Auto close after success
-    setTimeout(() => {
-      setIsSuccess(false);
-      form.reset();
-      onOpenChange(false);
-    }, 2000);
   };
 
   // Success state

@@ -43,38 +43,47 @@ class ItemDetailScreen extends ConsumerWidget {
 
   Widget _buildNotFound(BuildContext context) {
     return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 80,
-            color: AppColors.textTertiary,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: AppColors.textTertiary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Listing not found',
+                style: AppTextStyles.headingMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This listing may have been removed',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: 140,
+                child: ElevatedButton(
+                  onPressed: () => context.pop(),
+                  child: const Text('Go Back'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Listing not found',
-            style: AppTextStyles.headingMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'This listing may have been removed',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.pop(),
-            child: const Text('Go Back'),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Main content for listing detail.
+/// Main content for listing detail using NestedScrollView.
 class _ListingDetailContent extends StatelessWidget {
   final MarketplaceListing listing;
 
@@ -82,335 +91,229 @@ class _ListingDetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        // Image gallery app bar
-        _ImageGalleryAppBar(listing: listing),
+    final hasImages = listing.hasImages;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-        // Content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Type badge and time
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            expandedHeight: hasImages ? 300 : 100,
+            pinned: true,
+            backgroundColor: AppColors.background,
+            leading: _buildBackButton(context),
+            actions: [
+              _buildShareButton(context),
+              _buildMoreButton(context),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: hasImages
+                  ? _ImageGallery(listing: listing)
+                  : _PlaceholderImage(type: listing.type),
+            ),
+          ),
+        ];
+      },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: screenWidth - 32, // Account for padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Type badge and time
+              Row(
+                children: [
+                  _TypeBadge(listing: listing),
+                  const Spacer(),
+                  Text(
+                    listing.timeAgo,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                listing.title,
+                style: AppTextStyles.headingMedium,
+              ),
+              const SizedBox(height: 8),
+
+              // Price (if applicable)
+              if (listing.price != null) ...[
                 Row(
                   children: [
-                    _TypeBadge(listing: listing),
-                    const Spacer(),
                     Text(
-                      listing.timeAgo,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textTertiary,
+                      listing.priceString,
+                      style: AppTextStyles.headingLarge.copyWith(
+                        color: AppColors.primary,
                       ),
                     ),
+                    if (listing.isNegotiable) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.successLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Negotiable',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 12),
-
-                // Title
-                Text(
-                  listing.title,
-                  style: AppTextStyles.headingMedium,
-                ),
-                const SizedBox(height: 8),
-
-                // Price (if applicable)
-                if (listing.price != null) ...[
-                  Row(
-                    children: [
-                      Text(
-                        listing.priceString,
-                        style: AppTextStyles.headingLarge.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      if (listing.isNegotiable) ...[
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.successLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Negotiable',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.success,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Seller info
-                _SellerInfo(listing: listing),
-                const SizedBox(height: 20),
-
-                // Description
-                if (listing.description != null) ...[
-                  Text(
-                    'Description',
-                    style: AppTextStyles.labelLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    listing.description!,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
-                // Location
-                if (listing.location != null) ...[
-                  _InfoRow(
-                    icon: Icons.location_on_outlined,
-                    label: 'Location',
-                    value: listing.location!,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Distance
-                if (listing.distanceKm != null) ...[
-                  _InfoRow(
-                    icon: Icons.near_me_outlined,
-                    label: 'Distance',
-                    value: listing.distanceString ?? '',
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Event date
-                if (listing.metadata?['eventDate'] != null) ...[
-                  _InfoRow(
-                    icon: Icons.event_outlined,
-                    label: 'Event Date',
-                    value: _formatDate(listing.metadata!['eventDate']),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Salary
-                if (listing.metadata?['salary'] != null) ...[
-                  _InfoRow(
-                    icon: Icons.payments_outlined,
-                    label: 'Compensation',
-                    value: listing.metadata!['salary'],
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // Stats
-                const SizedBox(height: 8),
-                _StatsRow(listing: listing),
-
-                // Poll options (if poll)
-                if (listing.type == ListingType.poll &&
-                    listing.metadata?['pollOptions'] != null) ...[
-                  const SizedBox(height: 24),
-                  _PollSection(listing: listing),
-                ],
-
-                // Expiry warning
-                if (listing.expiresAt != null) ...[
-                  const SizedBox(height: 20),
-                  _ExpiryWarning(expiresAt: listing.expiresAt!),
-                ],
-
-                // Bottom padding for action buttons
-                const SizedBox(height: 100),
+                const SizedBox(height: 16),
               ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  String _formatDate(String isoDate) {
-    final date = DateTime.tryParse(isoDate);
-    if (date == null) return isoDate;
-    return DateFormat('EEEE, MMM d, yyyy • h:mm a').format(date);
-  }
-}
+              // Seller info
+              _SellerInfoCard(listing: listing),
+              const SizedBox(height: 20),
 
-/// Image gallery with sliver app bar.
-class _ImageGalleryAppBar extends StatefulWidget {
-  final MarketplaceListing listing;
-
-  const _ImageGalleryAppBar({required this.listing});
-
-  @override
-  State<_ImageGalleryAppBar> createState() => _ImageGalleryAppBarState();
-}
-
-class _ImageGalleryAppBarState extends State<_ImageGalleryAppBar> {
-  int _currentIndex = 0;
-  final _pageController = PageController();
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImages = widget.listing.hasImages;
-
-    return SliverAppBar(
-      expandedHeight: hasImages ? 300 : 100,
-      pinned: true,
-      backgroundColor: AppColors.background,
-      leading: IconButton(
-        onPressed: () => context.pop(),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withAlpha(100),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            Share.share(
-              'Check out this on AssignX: ${widget.listing.title}',
-              subject: widget.listing.title,
-            );
-          },
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(100),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.share_outlined,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () => _showMoreOptions(context),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(100),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: hasImages
-            ? Stack(
-                children: [
-                  // Image carousel
-                  PageView.builder(
-                    controller: _pageController,
-                    itemCount: widget.listing.images.length,
-                    onPageChanged: (index) {
-                      setState(() => _currentIndex = index);
-                    },
-                    itemBuilder: (context, index) {
-                      return CachedNetworkImage(
-                        imageUrl: widget.listing.images[index],
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.shimmerBase,
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.surfaceVariant,
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 48,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // Page indicator
-                  if (widget.listing.images.length > 1)
-                    Positioned(
-                      bottom: 16,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          widget.listing.images.length,
-                          (index) => Container(
-                            width: _currentIndex == index ? 20 : 8,
-                            height: 8,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: _currentIndex == index
-                                  ? Colors.white
-                                  : Colors.white.withAlpha(100),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              )
-            : Container(
-                color: AppColors.surfaceVariant,
-                child: Center(
-                  child: Icon(
-                    _getTypeIcon(widget.listing.type),
-                    size: 48,
-                    color: AppColors.textTertiary,
+              // Description
+              if (listing.description != null) ...[
+                Text(
+                  'Description',
+                  style: AppTextStyles.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  listing.description!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.6,
                   ),
                 ),
-              ),
+                const SizedBox(height: 20),
+              ],
+
+              // Location
+              if (listing.location != null)
+                _InfoRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Location',
+                  value: listing.location!,
+                ),
+
+              // Distance
+              if (listing.distanceKm != null)
+                _InfoRow(
+                  icon: Icons.near_me_outlined,
+                  label: 'Distance',
+                  value: listing.distanceString ?? '',
+                ),
+
+              // Event date
+              if (listing.metadata?['eventDate'] != null)
+                _InfoRow(
+                  icon: Icons.event_outlined,
+                  label: 'Event Date',
+                  value: _formatDate(listing.metadata!['eventDate']),
+                ),
+
+              // Salary
+              if (listing.metadata?['salary'] != null)
+                _InfoRow(
+                  icon: Icons.payments_outlined,
+                  label: 'Compensation',
+                  value: listing.metadata!['salary'],
+                ),
+
+              // Stats
+              const SizedBox(height: 16),
+              _StatsRow(listing: listing),
+
+              // Poll options (if poll)
+              if (listing.type == ListingType.poll &&
+                  listing.metadata?['pollOptions'] != null) ...[
+                const SizedBox(height: 24),
+                _PollSection(listing: listing),
+              ],
+
+              // Expiry warning
+              if (listing.expiresAt != null) ...[
+                const SizedBox(height: 20),
+                _ExpiryWarning(expiresAt: listing.expiresAt!),
+              ],
+
+              // Bottom padding
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  IconData _getTypeIcon(ListingType type) {
-    switch (type) {
-      case ListingType.product:
-        return Icons.shopping_bag_outlined;
-      case ListingType.housing:
-        return Icons.home_outlined;
-      case ListingType.event:
-        return Icons.event_outlined;
-      case ListingType.opportunity:
-        return Icons.work_outline;
-      case ListingType.communityPost:
-        return Icons.chat_bubble_outline;
-      case ListingType.poll:
-        return Icons.poll_outlined;
-    }
+  Widget _buildBackButton(BuildContext context) {
+    return IconButton(
+      onPressed: () => context.pop(),
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(100),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.arrow_back,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareButton(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        Share.share(
+          'Check out this on AssignX: ${listing.title}',
+          subject: listing.title,
+        );
+      },
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(100),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.share_outlined,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreButton(BuildContext context) {
+    return IconButton(
+      onPressed: () => _showMoreOptions(context),
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(100),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.more_vert,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
   }
 
   void _showMoreOptions(BuildContext context) {
@@ -491,6 +394,128 @@ class _ImageGalleryAppBarState extends State<_ImageGalleryAppBar> {
       ),
     );
   }
+
+  String _formatDate(String isoDate) {
+    final date = DateTime.tryParse(isoDate);
+    if (date == null) return isoDate;
+    return DateFormat('EEEE, MMM d, yyyy • h:mm a').format(date);
+  }
+}
+
+/// Image gallery widget.
+class _ImageGallery extends StatefulWidget {
+  final MarketplaceListing listing;
+
+  const _ImageGallery({required this.listing});
+
+  @override
+  State<_ImageGallery> createState() => _ImageGalleryState();
+}
+
+class _ImageGalleryState extends State<_ImageGallery> {
+  int _currentIndex = 0;
+  final _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: widget.listing.images.length,
+          onPageChanged: (index) {
+            setState(() => _currentIndex = index);
+          },
+          itemBuilder: (context, index) {
+            return CachedNetworkImage(
+              imageUrl: widget.listing.images[index],
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: AppColors.shimmerBase,
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: AppColors.surfaceVariant,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  size: 48,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Page indicator
+        if (widget.listing.images.length > 1)
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                widget.listing.images.length,
+                (index) => Container(
+                  width: _currentIndex == index ? 20 : 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    color: _currentIndex == index
+                        ? Colors.white
+                        : Colors.white.withAlpha(100),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Placeholder image when no images available.
+class _PlaceholderImage extends StatelessWidget {
+  final ListingType type;
+
+  const _PlaceholderImage({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surfaceVariant,
+      child: Center(
+        child: Icon(
+          _getTypeIcon(type),
+          size: 48,
+          color: AppColors.textTertiary,
+        ),
+      ),
+    );
+  }
+
+  IconData _getTypeIcon(ListingType type) {
+    switch (type) {
+      case ListingType.product:
+        return Icons.shopping_bag_outlined;
+      case ListingType.housing:
+        return Icons.home_outlined;
+      case ListingType.event:
+        return Icons.event_outlined;
+      case ListingType.opportunity:
+        return Icons.work_outline;
+      case ListingType.communityPost:
+        return Icons.chat_bubble_outline;
+      case ListingType.poll:
+        return Icons.poll_outlined;
+    }
+  }
 }
 
 /// Type badge widget.
@@ -545,10 +570,10 @@ class _TypeBadge extends StatelessWidget {
 }
 
 /// Seller information card.
-class _SellerInfo extends StatelessWidget {
+class _SellerInfoCard extends StatelessWidget {
   final MarketplaceListing listing;
 
-  const _SellerInfo({required this.listing});
+  const _SellerInfoCard({required this.listing});
 
   @override
   Widget build(BuildContext context) {
@@ -591,14 +616,17 @@ class _SellerInfo extends StatelessWidget {
               ],
             ),
           ),
-          OutlinedButton(
-            onPressed: () {
-              // Contact seller
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          SizedBox(
+            width: 100,
+            child: OutlinedButton(
+              onPressed: () {
+                // Contact seller
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: const Text('Contact'),
             ),
-            child: const Text('Contact'),
           ),
         ],
       ),
@@ -620,30 +648,36 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppColors.textSecondary,
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textTertiary,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: AppTextStyles.bodyMedium,
+                ),
+              ],
             ),
-            Text(
-              value,
-              style: AppTextStyles.bodyMedium,
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -656,27 +690,26 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 24,
+      runSpacing: 8,
       children: [
         _StatItem(
           icon: Icons.remove_red_eye_outlined,
           value: listing.viewCount,
           label: 'views',
         ),
-        const SizedBox(width: 24),
         _StatItem(
           icon: Icons.favorite_border,
           value: listing.likeCount,
           label: 'likes',
         ),
-        if (listing.commentCount > 0) ...[
-          const SizedBox(width: 24),
+        if (listing.commentCount > 0)
           _StatItem(
             icon: Icons.chat_bubble_outline,
             value: listing.commentCount,
             label: 'comments',
           ),
-        ],
       ],
     );
   }
@@ -697,6 +730,7 @@ class _StatItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
@@ -771,7 +805,6 @@ class _PollOptionTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
@@ -898,7 +931,7 @@ class _ErrorState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.error_outline,
@@ -919,9 +952,12 @@ class _ErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
+            SizedBox(
+              width: 120,
+              child: ElevatedButton(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
             ),
           ],
         ),

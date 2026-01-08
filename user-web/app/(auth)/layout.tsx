@@ -1,4 +1,4 @@
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 /**
  * Auth layout - shared layout for authentication pages
@@ -13,7 +13,7 @@ export default function AuthLayout({
     <div className="min-h-screen bg-background">
       {/* Minimal header */}
       <header className="fixed right-4 top-4 z-50">
-        <ThemeToggle />
+        <AnimatedThemeToggler />
       </header>
 
       {/* Main content */}

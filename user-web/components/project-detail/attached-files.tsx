@@ -39,7 +39,21 @@ export function AttachedFiles({ files, className }: AttachedFilesProps) {
   }
 
   const handleDownload = (file: AttachedFile) => {
-    // TODO: In production would trigger actual download
+    if (!file.url) {
+      toast.error("File URL not available");
+      return;
+    }
+
+    // Create download link and trigger download
+    const link = document.createElement("a");
+    link.href = file.url;
+    link.download = file.name;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
     toast.success(`Downloading: ${file.name}`);
   };
 

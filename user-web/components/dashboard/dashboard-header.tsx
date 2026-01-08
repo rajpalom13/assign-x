@@ -1,26 +1,35 @@
 "use client";
 
-import { PersonalizedGreeting } from "./personalized-greeting";
+import Link from "next/link";
 import { WalletPill } from "./wallet-pill";
 import { NotificationBell } from "./notification-bell";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 /**
  * Dashboard header component
- * Contains greeting, wallet pill, notifications, and theme toggle
+ * Premium SAAS-style header with glass effect
  */
 export function DashboardHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        {/* Left: Greeting */}
-        <PersonalizedGreeting />
+    <header className="dashboard-header">
+      <div className="dashboard-header-inner">
+        {/* Left: Logo/Brand */}
+        <Link href="/home" className="dashboard-header-brand">
+          <div className="dashboard-header-logo">
+            <span className="logo-letter">A</span>
+          </div>
+          <div className="dashboard-header-brand-text">
+            <span className="brand-name">AssignX</span>
+            <span className="brand-tag">Dashboard</span>
+          </div>
+        </Link>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="dashboard-header-actions">
           <WalletPill />
+          <div className="header-divider" />
           <NotificationBell />
-          <ThemeToggle />
+          <AnimatedThemeToggler />
         </div>
       </div>
     </header>

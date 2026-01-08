@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Send, MessageSquare, Sparkles } from "lucide-react";
+import { Loader2, Send, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { SubjectSelector } from "./subject-selector";
 import { DeadlinePicker } from "./deadline-picker";
@@ -23,13 +20,13 @@ import { toast } from "sonner";
 
 interface ConsultationFormProps {
   onSuccess: (projectId: string, projectNumber: string) => void;
+  onStepChange?: (step: number) => void;
 }
 
 /**
  * Expert consultation/opinion form
  */
-export function ConsultationForm({ onSuccess }: ConsultationFormProps) {
-  const router = useRouter();
+export function ConsultationForm({ onSuccess, onStepChange }: ConsultationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ConsultationFormSchema>({
@@ -82,32 +79,7 @@ export function ConsultationForm({ onSuccess }: ConsultationFormProps) {
   });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col"
-    >
-      {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => router.back()}
-          className="mb-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Expert Opinion</h1>
-          <Badge variant="secondary" className="gap-1">
-            <Sparkles className="h-3 w-3" />
-            Free
-          </Badge>
-        </div>
-        <p className="text-muted-foreground">
-          Get guidance from a subject matter expert
-        </p>
-      </div>
-
+    <div className="flex flex-col">
       {/* Free Service Info */}
       <Card className="mb-6 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
         <CardContent className="flex items-center gap-3 p-4">
@@ -211,6 +183,6 @@ export function ConsultationForm({ onSuccess }: ConsultationFormProps) {
           )}
         </Button>
       </form>
-    </motion.div>
+    </div>
   );
 }

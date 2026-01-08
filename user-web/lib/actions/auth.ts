@@ -173,13 +173,14 @@ export async function createStudentProfile(data: {
     return { error: "Not authenticated" };
   }
 
-  // Create base profile
+  // Create base profile with onboarding_completed = true
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: user.id,
     email: user.email!,
     full_name: validatedData.fullName,
     phone: validatedData.phone,
     user_type: "student",
+    onboarding_completed: true,
     updated_at: new Date().toISOString(),
   });
 
@@ -232,13 +233,14 @@ export async function createProfessionalProfile(data: {
     return { error: "Not authenticated" };
   }
 
-  // Create base profile
+  // Create base profile with onboarding_completed = true
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: user.id,
     email: user.email!,
     full_name: validatedData.fullName,
     phone: validatedData.phone,
     user_type: "professional",
+    onboarding_completed: true,
     updated_at: new Date().toISOString(),
   });
 

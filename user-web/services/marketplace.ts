@@ -321,13 +321,10 @@ export const marketplaceService = {
    */
   async fetchMyListings(): Promise<ServiceResult<AnyListing[]>> {
     try {
-      const result = await getUserListings();
+      // getUserListings returns AnyListing[] directly, not { data, error }
+      const listings = await getUserListings();
 
-      if (result.error) {
-        return { data: null, error: result.error, success: false };
-      }
-
-      return { data: result.data || [], error: null, success: true };
+      return { data: listings || [], error: null, success: true };
     } catch (error) {
       return {
         data: null,
@@ -349,7 +346,16 @@ export const marketplaceService = {
         return { data: null, error: result.error, success: false };
       }
 
-      return { data: result.data || [], error: null, success: true };
+      // Transform DB categories to CategoryWithCount (handle null vs undefined)
+      const categories: CategoryWithCount[] = (result.data || []).map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        icon: cat.icon ?? undefined,
+        count: undefined,
+      }));
+
+      return { data: categories, error: null, success: true };
     } catch (error) {
       return {
         data: null,

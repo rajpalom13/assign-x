@@ -26,14 +26,34 @@ export function InvoiceDownload({
   const handleDownload = async () => {
     setIsDownloading(true);
 
-    // Simulate download delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Fetch invoice from API
+      const response = await fetch(`/api/invoices/${projectId}`);
 
-    // TODO: In production, this would trigger actual file download
-    const fileName = `Invoice_${projectNumber.replace("#", "")}.pdf`;
-    toast.success(`Invoice download started: ${fileName}`);
+      if (!response.ok) {
+        throw new Error("Failed to generate invoice");
+      }
 
-    setIsDownloading(false);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const fileName = `Invoice_${projectNumber.replace("#", "")}.pdf`;
+
+      // Trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      toast.success(`Invoice downloaded: ${fileName}`);
+    } catch {
+      toast.error("Failed to download invoice. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (

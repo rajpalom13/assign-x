@@ -2,6 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Upload, X, ImageIcon, Loader2 } from "lucide-react";
+import { uploadAvatar } from "@/lib/actions/data";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -102,8 +104,27 @@ export function AvatarUploadDialog({
 
     setIsUploading(true);
     try {
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(",")[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+
+      // Upload to Cloudinary via server action
+      const result = await uploadAvatar(base64, selectedFile.name);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      toast.success("Avatar updated successfully!");
       onUpload(selectedFile);
       handleClose();
     } catch {

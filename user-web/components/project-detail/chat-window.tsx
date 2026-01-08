@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react"
-import { X, Send, Paperclip, Loader2, ChevronUp, User } from "lucide-react"
+import { X, Send, Paperclip, Loader2, ChevronUp, User, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -10,10 +10,20 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/hooks/useChat"
+import { validateChatContent, getValidationErrorMessage } from "@/lib/validations/chat-content"
+import { flagUserForViolation, type FlagReason } from "@/lib/actions/user-flagging"
 import type { MessageWithSender } from "@/services"
 
 /**
@@ -165,6 +175,8 @@ export function ChatWindow({
   projectNumber,
 }: ChatWindowProps) {
   const [inputValue, setInputValue] = useState("")
+  const [showViolationAlert, setShowViolationAlert] = useState(false)
+  const [violationMessage, setViolationMessage] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -203,16 +215,57 @@ export function ChatWindow({
   }, [isOpen])
 
   /**
-   * Handle send message
+   * Handle content violation - flag user and close chat
+   */
+  const handleViolation = useCallback(
+    async (reason: FlagReason, message: string) => {
+      // Flag user in database
+      if (userId) {
+        await flagUserForViolation(userId, reason)
+      }
+
+      // Show violation alert
+      setViolationMessage(message)
+      setShowViolationAlert(true)
+      setInputValue("")
+    },
+    [userId]
+  )
+
+  /**
+   * Close chat after violation acknowledged
+   */
+  const handleViolationClose = useCallback(() => {
+    setShowViolationAlert(false)
+    setViolationMessage("")
+    onClose()
+  }, [onClose])
+
+  /**
+   * Handle send message with content validation
    */
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || isSending) return
+
+    // Validate content before sending
+    const validation = validateChatContent(inputValue)
+    if (!validation.isValid) {
+      const reasonMap: Record<string, FlagReason> = {
+        phone: "phone_sharing",
+        email: "email_sharing",
+        link: "link_sharing",
+        address: "address_sharing",
+      }
+      const flagReason = reasonMap[validation.reason || ""] || "link_sharing"
+      await handleViolation(flagReason, getValidationErrorMessage(validation))
+      return
+    }
 
     const success = await sendMessage(inputValue)
     if (success) {
       setInputValue("")
     }
-  }, [inputValue, isSending, sendMessage])
+  }, [inputValue, isSending, sendMessage, handleViolation])
 
   /**
    * Handle keyboard shortcuts
@@ -390,6 +443,26 @@ export function ChatWindow({
           </div>
         </div>
       </SheetContent>
+
+      {/* Policy Violation Alert */}
+      <AlertDialog open={showViolationAlert} onOpenChange={setShowViolationAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Policy Violation Detected
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {violationMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button onClick={handleViolationClose} variant="destructive">
+              I Understand
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   )
 }

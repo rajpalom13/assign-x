@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { MobileNav } from "./mobile-nav";
-import { CentralFAB } from "./central-fab";
 import { UploadSheet } from "./upload-sheet";
 import { SupportButton } from "@/components/shared/support-button";
 
@@ -10,6 +9,8 @@ import { SupportButton } from "@/components/shared/support-button";
  * Client-side wrapper for dashboard interactive elements
  * Handles upload sheet state and mobile navigation
  * Extracted to allow dashboard layout to be a server component
+ *
+ * Note: Desktop FAB removed - using contextual buttons instead
  */
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [uploadSheetOpen, setUploadSheetOpen] = useState(false);
@@ -24,10 +25,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Navigation */}
       <MobileNav onFabClick={() => setUploadSheetOpen(true)} />
 
-      {/* Desktop FAB */}
-      <CentralFAB onClick={() => setUploadSheetOpen(true)} />
-
-      {/* Upload Sheet */}
+      {/* Upload Sheet - Opened by mobile nav or page-specific buttons */}
       <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
 
       {/* Support Button */}

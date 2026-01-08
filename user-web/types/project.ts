@@ -303,6 +303,7 @@ export interface AttachedFile {
   size: string;
   type: "pdf" | "doc" | "docx" | "image";
   uploadedAt: string;
+  url?: string;
 }
 
 /**
@@ -315,6 +316,7 @@ export interface Deliverable {
   version: number;
   uploadedAt: string;
   isFinal: boolean;
+  url?: string;
 }
 
 /**
@@ -351,4 +353,6 @@ export interface ProjectDetail extends Project {
   liveDocUrl?: string;
   supervisorName?: string;
   unreadMessages?: number;
+  paidAt?: string;
+  paid_at?: string | null;
 }

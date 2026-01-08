@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetBody,
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { subjectFilters } from "@/lib/data/connect";
@@ -94,8 +94,8 @@ export function FilterSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] rounded-t-xl p-0">
-        <SheetHeader className="p-6 pb-4">
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-xl flex flex-col">
+        <SheetHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-5 w-5" />
@@ -116,15 +116,17 @@ export function FilterSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-6">
+        <SheetBody className="space-y-6">
           {/* Subjects */}
-          <div className="space-y-3 pb-4">
+          <div className="space-y-3">
             <Label className="text-base font-semibold">Subjects</Label>
             <div className="flex flex-wrap gap-2">
               {subjectFilters.slice(1).map((subject) => (
-                <button
+                <motion.button
                   key={subject}
                   type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => toggleSubject(subject)}
                   className={`rounded-full px-3 py-1.5 text-sm transition-all ${
                     filters.subjects.includes(subject)
@@ -133,15 +135,15 @@ export function FilterSheet({
                   }`}
                 >
                   {subject}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
 
           {/* Rating */}
-          <div className="space-y-4 pb-4">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">Minimum Rating</Label>
               <span className="text-sm text-muted-foreground">
@@ -163,10 +165,10 @@ export function FilterSheet({
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
 
           {/* Hourly Rate */}
-          <div className="space-y-4 pb-4">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">Max Hourly Rate</Label>
               <span className="text-sm text-muted-foreground">
@@ -190,10 +192,10 @@ export function FilterSheet({
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
 
           {/* Expertise Level */}
-          <div className="space-y-3 pb-4">
+          <div className="space-y-3">
             <Label className="text-base font-semibold">Expertise Level</Label>
             <div className="space-y-2">
               {expertiseLevels.map((level) => (
@@ -214,10 +216,10 @@ export function FilterSheet({
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
 
           {/* Availability */}
-          <div className="space-y-3 pb-20">
+          <div className="space-y-3">
             <Label className="text-base font-semibold">Availability</Label>
             <div className="space-y-2">
               {availabilityOptions.map((option) => (
@@ -237,14 +239,15 @@ export function FilterSheet({
               ))}
             </div>
           </div>
-        </ScrollArea>
+        </SheetBody>
 
-        {/* Fixed Footer */}
-        <SheetFooter className="absolute bottom-0 left-0 right-0 border-t bg-background p-4">
-          <Button className="w-full" size="lg" onClick={onApply}>
-            Apply Filters
-            {activeFilterCount > 0 && ` (${activeFilterCount})`}
-          </Button>
+        <SheetFooter>
+          <motion.div whileTap={{ scale: 0.98 }} className="w-full">
+            <Button className="w-full" size="lg" onClick={onApply}>
+              Apply Filters
+              {activeFilterCount > 0 && ` (${activeFilterCount})`}
+            </Button>
+          </motion.div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

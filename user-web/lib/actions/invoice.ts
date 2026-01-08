@@ -53,9 +53,13 @@ export async function getInvoiceData(projectId: string): Promise<InvoiceData | n
 
   if (error || !project) return null;
 
-  // Only generate invoice for completed/delivered projects
-  const invoiceableStatuses = ["completed", "delivered", "qc_approved"];
+  // Generate invoice for paid and completed projects
+  // Invoice is available once payment is confirmed
+  const invoiceableStatuses = ["paid", "assigning", "assigned", "in_progress", "submitted_for_qc", "qc_in_progress", "qc_approved", "qc_rejected", "delivered", "revision_requested", "in_revision", "completed", "auto_approved"];
   if (!invoiceableStatuses.includes(project.status)) return null;
+
+  // Also check if project is actually paid
+  if (!project.is_paid) return null;
 
   // Get user profile
   const { data: profile } = await supabase
@@ -72,8 +76,8 @@ export async function getInvoiceData(projectId: string): Promise<InvoiceData | n
   // Get the accepted quote
   const acceptedQuote = project.quotes?.find((q: { status: string }) => q.status === "accepted");
 
-  // Calculate amounts
-  const baseAmount = acceptedQuote?.amount || project.quoted_price || 0;
+  // Calculate amounts - check multiple possible price fields
+  const baseAmount = acceptedQuote?.amount || project.user_quote || project.quoted_price || project.final_quote || 0;
   const taxRate = 0.18; // 18% GST
   const taxAmount = Math.round(baseAmount * taxRate);
   const totalAmount = baseAmount + taxAmount;

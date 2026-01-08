@@ -8,7 +8,18 @@
       "Bash(flutter clean:*)",
       "Bash(flutter pub get:*)",
       "Bash(claude mcp add context7 -s user -- npx -y @upstash/context7-mcp)",
-      "Bash(claude mcp add:*)"
+      "Bash(claude mcp add:*)",
+      "Bash(bash:*)",
+      "Bash(timeout 5 cat:*)",
+      "Bash(flutter emulators:*)",
+      "Bash(cat:*)",
+      "Bash(flutter run:*)",
+      "Bash(timeout 3 cat:*)",
+      "Bash(taskkill:*)",
+      "Bash(keytool:*)",
+      "Bash(flutter devices:*)",
+      "Bash(adb logcat:*)",
+      "Bash(adb shell am start:*)"
     ]
   }
 }

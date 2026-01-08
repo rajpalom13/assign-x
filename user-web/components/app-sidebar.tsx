@@ -7,9 +7,8 @@ import {
   Home,
   FolderKanban,
   Users,
-  User,
-  Settings,
-  HelpCircle,
+  Wallet,
+  Sparkles,
 } from "lucide-react"
 
 import { NavUser } from "@/components/nav-user"
@@ -25,7 +24,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-
 } from "@/components/ui/sidebar"
 
 /**
@@ -33,46 +31,37 @@ import {
  */
 const mainNavItems = [
   {
-    title: "Home",
+    title: "Dashboard",
     url: "/home",
     icon: Home,
   },
   {
-    title: "My Projects",
+    title: "Projects",
     url: "/projects",
     icon: FolderKanban,
   },
   {
-    title: "Connect",
+    title: "Campus Connect",
     url: "/connect",
     icon: Users,
-  },
-  {
-    title: "Profile",
-    url: "/profile",
-    icon: User,
   },
 ]
 
 /**
- * Navigation items for the bottom section of the sidebar
+ * Finance navigation items
  */
-const bottomNavItems = [
+const financeNavItems = [
   {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  },
-  {
-    title: "Help & Support",
-    url: "/support",
-    icon: HelpCircle,
+    title: "Wallet",
+    url: "/wallet",
+    icon: Wallet,
   },
 ]
 
 /**
  * AppSidebar component for user-web dashboard
  * Uses shadcn sidebar-07 pattern with AssignX branding
+ * Follows Notion/Linear style minimalist design
  * Fetches actual user data from the user store
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -87,14 +76,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" className="border-r border-border/40" {...props}>
+      <SidebarHeader className="h-14 flex items-center justify-center border-b border-border/40">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="hover:bg-accent/50">
               <Link href="/home">
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg font-bold">
-                  A
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Sparkles className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">AssignX</span>
@@ -105,7 +94,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+
+      <SidebarContent className="px-2 py-3 group-data-[collapsible=icon]:px-0">
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupContent>
@@ -118,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     tooltip={item.title}
                   >
                     <Link href={item.url}>
-                      <item.icon />
+                      <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -128,11 +118,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Bottom Navigation */}
+        {/* Finance Navigation */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {bottomNavItems.map((item) => (
+              {financeNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -140,7 +130,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     tooltip={item.title}
                   >
                     <Link href={item.url}>
-                      <item.icon />
+                      <item.icon className="size-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -150,7 +140,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+
+      <SidebarFooter className="border-t border-border/40 group-data-[collapsible=icon]:border-0">
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
