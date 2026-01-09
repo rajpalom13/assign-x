@@ -2,9 +2,10 @@ import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
- * Middleware that runs on every request to update auth sessions
+ * Proxy that runs on every request to update auth sessions
+ * (Renamed from middleware.ts for Next.js 16 compatibility)
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
 
