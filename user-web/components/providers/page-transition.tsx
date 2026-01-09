@@ -39,9 +39,9 @@ const pageVariants = {
  */
 const pageTransition = {
   type: "tween",
-  ease: [0.16, 1, 0.3, 1], // Custom easing - smooth and natural
+  ease: [0.16, 1, 0.3, 1] as [number, number, number, number], // Custom bezier easing
   duration: 0.35,
-};
+} as const;
 
 /**
  * PageTransition - Wraps page content with smooth animations
