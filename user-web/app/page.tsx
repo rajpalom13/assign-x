@@ -10,7 +10,7 @@ import { LenisProvider } from "@/components/providers/lenis-provider";
 import {
   Navigation,
   HeroSection,
-  HorizontalShowcase,
+  HorizontalScroll,
   CTASection,
   Footer,
 } from "@/components/landing";
@@ -27,8 +27,8 @@ export default function Home() {
           {/* Hero Section - Light background, 55/45 split */}
           <HeroSection />
 
-          {/* Horizontal Showcase - Text-based horizontal scroll */}
-          <HorizontalShowcase />
+          {/* Horizontal Scroll - GSAP text-based horizontal scroll experience */}
+          <HorizontalScroll />
 
           {/* CTA Section - Final call to action */}
           <CTASection />

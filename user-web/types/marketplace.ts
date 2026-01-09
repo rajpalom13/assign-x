@@ -19,7 +19,10 @@ export type DBListingType =
   | "rent" // Items/housing for rent
   | "free" // Free items/giveaways
   | "opportunity" // Jobs, internships, events
-  | "housing"; // Housing listings
+  | "housing" // Housing listings
+  | "community_post" // Community posts
+  | "poll" // Polls
+  | "event"; // Events
 
 /**
  * Database listing_status enum - matches Supabase enum exactly
@@ -338,13 +341,13 @@ export function mapCategoryToDBTypes(
     case "all":
       return null; // No filter
     case "products":
-      return ["sell", "rent", "free"];
+      return ["sell"];
     case "housing":
       return ["housing"];
     case "opportunities":
       return ["opportunity"];
     case "community":
-      return ["free"]; // Community posts are typically 'free' type
+      return ["community_post"];
     default:
       return null;
   }

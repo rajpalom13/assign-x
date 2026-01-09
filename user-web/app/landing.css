@@ -6,67 +6,68 @@
  * Inspired by Notion and Linear's minimal aesthetic.
  */
 
-/* Landing Page Color Tokens - Monochromatic oklch */
+/* Landing Page Color Tokens - ASSIGN X Brand Colors */
+/* Pitch Black #14110F | Graphite #34312D | Coffee Bean #765341 | Vanilla Cream #E4E1C7 */
 :root {
-  /* Backgrounds */
+  /* Backgrounds - Keep white */
   --landing-bg-primary: oklch(1 0 0);
-  --landing-bg-secondary: oklch(0.985 0 0);
+  --landing-bg-secondary: oklch(0.985 0.005 80);
   --landing-bg-elevated: oklch(1 0 0);
-  --landing-bg-dark: oklch(0.145 0 0);
+  --landing-bg-dark: #14110F;                        /* Pitch Black */
   --landing-bg-glass: oklch(1 0 0 / 60%);
 
-  /* Text */
-  --landing-text-primary: oklch(0.145 0 0);
-  --landing-text-secondary: oklch(0.556 0 0);
-  --landing-text-muted: oklch(0.708 0 0);
-  --landing-text-inverse: oklch(0.985 0 0);
+  /* Text - Pitch Black & Graphite */
+  --landing-text-primary: #14110F;                   /* Pitch Black */
+  --landing-text-secondary: #34312D;                 /* Graphite */
+  --landing-text-muted: #5C5650;                     /* Light Graphite */
+  --landing-text-inverse: #FAFAF8;
 
-  /* Accents - Minimal monochrome */
-  --landing-accent-primary: oklch(0.205 0 0);
-  --landing-accent-primary-hover: oklch(0.145 0 0);
-  --landing-accent-secondary: oklch(0.556 0 0);
-  --landing-accent-secondary-hover: oklch(0.44 0 0);
-  --landing-accent-light: oklch(0.922 0 0);
-  --landing-accent-lighter: oklch(0.97 0 0);
+  /* Accents - Coffee Bean */
+  --landing-accent-primary: #765341;                 /* Coffee Bean */
+  --landing-accent-primary-hover: #5C4233;           /* Darker Coffee */
+  --landing-accent-secondary: #34312D;               /* Graphite */
+  --landing-accent-secondary-hover: #14110F;         /* Pitch Black */
+  --landing-accent-light: #E4E1C7;                   /* Vanilla Cream */
+  --landing-accent-lighter: #F5F4ED;                 /* Lighter Cream */
 
   /* Borders */
-  --landing-border: oklch(0.922 0 0);
-  --landing-border-light: oklch(0.97 0 0);
-  --landing-border-dark: oklch(0.145 0 0 / 10%);
+  --landing-border: #E5E2D9;
+  --landing-border-light: #F0EEE6;
+  --landing-border-dark: rgba(20, 17, 15, 0.1);      /* Pitch Black 10% */
 
-  /* Gradients - Subtle monochrome */
-  --landing-gradient-start: oklch(0.205 0 0);
-  --landing-gradient-mid: oklch(0.556 0 0);
-  --landing-gradient-end: oklch(0.708 0 0);
+  /* Gradients - Coffee Bean palette */
+  --landing-gradient-start: #765341;                 /* Coffee Bean */
+  --landing-gradient-mid: #34312D;                   /* Graphite */
+  --landing-gradient-end: #14110F;                   /* Pitch Black */
 }
 
-/* Dark mode support */
+/* Dark mode support - ASSIGN X Brand */
 .dark {
-  --landing-bg-primary: oklch(0.145 0 0);
-  --landing-bg-secondary: oklch(0.205 0 0);
-  --landing-bg-elevated: oklch(0.269 0 0);
-  --landing-bg-dark: oklch(0.145 0 0);
-  --landing-bg-glass: oklch(0.145 0 0 / 60%);
+  --landing-bg-primary: #14110F;                     /* Pitch Black */
+  --landing-bg-secondary: #1C1916;
+  --landing-bg-elevated: #252220;
+  --landing-bg-dark: #14110F;
+  --landing-bg-glass: rgba(20, 17, 15, 0.6);
 
-  --landing-text-primary: oklch(0.985 0 0);
-  --landing-text-secondary: oklch(0.708 0 0);
-  --landing-text-muted: oklch(0.556 0 0);
-  --landing-text-inverse: oklch(0.145 0 0);
+  --landing-text-primary: #F5F4ED;
+  --landing-text-secondary: #C5C0B5;
+  --landing-text-muted: #8A857D;
+  --landing-text-inverse: #14110F;
 
-  --landing-accent-primary: oklch(0.922 0 0);
-  --landing-accent-primary-hover: oklch(0.985 0 0);
-  --landing-accent-secondary: oklch(0.708 0 0);
-  --landing-accent-secondary-hover: oklch(0.8 0 0);
-  --landing-accent-light: oklch(0.269 0 0);
-  --landing-accent-lighter: oklch(0.205 0 0);
+  --landing-accent-primary: #A07A65;                 /* Lighter Coffee for dark mode */
+  --landing-accent-primary-hover: #B89680;
+  --landing-accent-secondary: #C5C0B5;
+  --landing-accent-secondary-hover: #E4E1C7;         /* Vanilla Cream */
+  --landing-accent-light: #34312D;                   /* Graphite */
+  --landing-accent-lighter: #252220;
 
-  --landing-border: oklch(1 0 0 / 10%);
-  --landing-border-light: oklch(1 0 0 / 5%);
-  --landing-border-dark: oklch(1 0 0 / 15%);
+  --landing-border: rgba(255, 255, 255, 0.1);
+  --landing-border-light: rgba(255, 255, 255, 0.05);
+  --landing-border-dark: rgba(255, 255, 255, 0.15);
 
-  --landing-gradient-start: oklch(0.922 0 0);
-  --landing-gradient-mid: oklch(0.708 0 0);
-  --landing-gradient-end: oklch(0.556 0 0);
+  --landing-gradient-start: #E4E1C7;                 /* Vanilla Cream */
+  --landing-gradient-mid: #A07A65;                   /* Light Coffee */
+  --landing-gradient-end: #765341;                   /* Coffee Bean */
 }
 
 /* Hide scrollbar but keep functionality */
@@ -92,7 +93,7 @@ body:has(.landing-page)::-webkit-scrollbar {
 
 /* Landing Typography - Clean and modern */
 @layer components {
-  /* Inter for headings (like Notion/Linear) */
+  /* Sora for headings - AssignX brand font */
   .landing-heading {
     font-family: var(--font-inter), system-ui, sans-serif;
     font-weight: 700;
@@ -191,7 +192,7 @@ body:has(.landing-page)::-webkit-scrollbar {
     background-color: var(--landing-accent-primary-hover);
     border-color: var(--landing-accent-primary-hover);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px oklch(0.145 0 0 / 15%);
+    box-shadow: 0 8px 24px rgba(118, 83, 65, 0.25);  /* Coffee Bean shadow */
   }
 
   .landing-btn-primary:active {
@@ -245,7 +246,7 @@ body:has(.landing-page)::-webkit-scrollbar {
   .landing-input:focus {
     outline: none;
     border-color: var(--landing-accent-primary);
-    box-shadow: 0 0 0 3px oklch(0.145 0 0 / 8%);
+    box-shadow: 0 0 0 3px rgba(118, 83, 65, 0.15);   /* Coffee Bean focus ring */
   }
 
   /* Card styling - Glassmorphism */

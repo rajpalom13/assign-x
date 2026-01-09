@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
 import "../onboarding/onboarding.css";
@@ -488,14 +487,7 @@ function SignupContent() {
                         className="onboarding-role-card"
                       >
                         <div className="onboarding-role-card-content">
-                          <div
-                            className={cn(
-                              "onboarding-role-card-icon",
-                              role.color === "primary" && "bg-primary/10 text-primary",
-                              role.color === "accent" && "bg-accent/10 text-accent",
-                              role.color === "secondary" && "bg-secondary/50 text-foreground"
-                            )}
-                          >
+                          <div className="onboarding-role-card-icon bg-muted/50 text-muted-foreground border border-border">
                             <role.icon className="h-6 w-6" />
                           </div>
                           <div className="onboarding-role-card-text">
@@ -541,14 +533,7 @@ function SignupContent() {
                 </button>
 
                 <div className="onboarding-form-header">
-                  <div
-                    className={cn(
-                      "mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl",
-                      selectedRoleData.color === "primary" && "bg-primary/10 text-primary",
-                      selectedRoleData.color === "accent" && "bg-accent/10 text-accent",
-                      selectedRoleData.color === "secondary" && "bg-secondary/50 text-foreground"
-                    )}
-                  >
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
                     <selectedRoleData.icon className="h-8 w-8" />
                   </div>
                   <h2 className="onboarding-form-title">
@@ -561,9 +546,9 @@ function SignupContent() {
 
                 {/* Student email hint */}
                 {selectedRole === "student" && (
-                  <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-700 dark:text-blue-300">
+                  <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
+                    <AlertCircle className="h-4 w-4 text-[#765341]" />
+                    <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
                       <strong>Student accounts require a valid college email</strong>
                       <br />
                       Please sign in with your institutional email (e.g.,

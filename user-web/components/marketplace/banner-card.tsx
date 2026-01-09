@@ -98,16 +98,6 @@ export const BannerCard = memo(function BannerCard({
             </motion.div>
           </motion.button>
 
-          {/* Category badge - bottom right */}
-          <span className={cn(
-            "absolute bottom-2 right-2 px-2 py-1 rounded-lg text-xs font-medium",
-            "bg-background/90 border border-border",
-            isOpportunity
-              ? "text-purple-600 dark:text-purple-400"
-              : "text-primary"
-          )}>
-            {isOpportunity ? "Opportunity" : "Featured"}
-          </span>
         </div>
 
         {/* Content */}
@@ -140,11 +130,16 @@ export const BannerCard = memo(function BannerCard({
                 </span>
               )}
             </div>
-            {listing.price !== undefined && listing.price > 0 && (
-              <span className="text-xs font-semibold text-foreground">
-                ₹{listing.price.toLocaleString()}
-              </span>
-            )}
+
+            {/* Category badge */}
+            <span className={cn(
+              "px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted",
+              isOpportunity
+                ? "text-purple-600 dark:text-purple-400"
+                : "text-primary"
+            )}>
+              {isOpportunity ? "Opportunity" : "Featured"}
+            </span>
           </div>
         </div>
       </motion.article>

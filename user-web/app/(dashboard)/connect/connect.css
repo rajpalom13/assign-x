@@ -27,8 +27,8 @@
   height: 400px;
   background: radial-gradient(
     circle,
-    rgba(169, 113, 75, 0.15) 0%,
-    rgba(232, 152, 94, 0.08) 40%,
+    rgba(118, 83, 65, 0.15) 0%,
+    rgba(160, 122, 101, 0.08) 40%,
     transparent 70%
   );
   border-radius: 50%;
@@ -45,8 +45,8 @@
   height: 300px;
   background: radial-gradient(
     circle,
-    rgba(232, 152, 94, 0.12) 0%,
-    rgba(169, 113, 75, 0.06) 40%,
+    rgba(160, 122, 101, 0.12) 0%,
+    rgba(118, 83, 65, 0.06) 40%,
     transparent 70%
   );
   border-radius: 50%;
@@ -73,7 +73,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(169, 113, 75, 0.3);
+  box-shadow: 0 8px 24px rgba(118, 83, 65, 0.3);
   flex-shrink: 0;
 }
 
@@ -111,7 +111,7 @@
 }
 
 .connect-stat-card:hover {
-  border-color: rgba(169, 113, 75, 0.3);
+  border-color: rgba(118, 83, 65, 0.3);
   box-shadow: var(--ws-shadow-card-hover);
   transform: translateY(-2px);
 }
@@ -145,13 +145,13 @@
 .connect-stat-icon.primary {
   background: linear-gradient(135deg, var(--ws-primary), var(--ws-primary-hover));
   color: white;
-  box-shadow: 0 4px 12px rgba(169, 113, 75, 0.25);
+  box-shadow: 0 4px 12px rgba(118, 83, 65, 0.25);
 }
 
 .connect-stat-icon.secondary {
   background: linear-gradient(135deg, var(--ws-secondary), var(--ws-secondary-hover));
   color: white;
-  box-shadow: 0 4px 12px rgba(232, 152, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(160, 122, 101, 0.25);
 }
 
 .connect-stat-icon.info {
@@ -495,7 +495,7 @@
 }
 
 .connect-tutor-card:hover {
-  border-color: rgba(169, 113, 75, 0.3);
+  border-color: rgba(118, 83, 65, 0.3);
   box-shadow: var(--ws-shadow-card-hover);
 }
 

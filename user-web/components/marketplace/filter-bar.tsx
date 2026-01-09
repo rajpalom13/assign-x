@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Filter, X, Search, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { FilterBarSkeleton } from "@/components/ui/filter-skeleton"
 import {
   Sheet,
   SheetContent,
@@ -31,6 +33,7 @@ interface FilterBarProps {
   categories: MarketplaceCategory[]
   onFiltersChange: (filters: ListingFilters) => void
   className?: string
+  isLoading?: boolean
 }
 
 /**
@@ -46,18 +49,26 @@ const listingTypes: { value: ListingType; label: string }[] = [
 /**
  * FilterBar component for marketplace filtering
  * Includes category chips, search, and advanced filters
+ * Now with smooth animations and loading skeleton
  */
 export function FilterBar({
   filters,
   categories,
   onFiltersChange,
   className,
+  isLoading,
 }: FilterBarProps) {
   const [searchTerm, setSearchTerm] = useState(filters.searchTerm || "")
   const [priceRange, setPriceRange] = useState<[number, number]>([
     filters.minPrice || 0,
     filters.maxPrice || 10000,
   ])
+  const prefersReducedMotion = useReducedMotion()
+
+  // Show skeleton during loading
+  if (isLoading) {
+    return <FilterBarSkeleton tabCount={5} className={className} />
+  }
 
   const handleTypeChange = (type: ListingType | "all") => {
     onFiltersChange({
@@ -208,39 +219,76 @@ export function FilterBar({
         </Sheet>
       </div>
 
-      {/* Quick Filter Chips */}
+      {/* Quick Filter Chips with animations */}
       <div className="flex flex-wrap gap-2">
         {/* Type Chips */}
-        <Badge
-          variant={!filters.type ? "default" : "outline"}
-          className="cursor-pointer"
-          onClick={() => handleTypeChange("all")}
-        >
-          All
-        </Badge>
-        {listingTypes.map((type) => (
-          <Badge
-            key={type.value}
-            variant={filters.type === type.value ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => handleTypeChange(type.value)}
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key="all"
+            layout
+            initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
           >
-            {type.label}
-          </Badge>
-        ))}
+            <Badge
+              variant={!filters.type ? "default" : "outline"}
+              className="cursor-pointer transition-colors"
+              onClick={() => handleTypeChange("all")}
+            >
+              All
+            </Badge>
+          </motion.div>
+          {listingTypes.map((type, index) => (
+            <motion.div
+              key={type.value}
+              layout
+              initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{
+                duration: 0.2,
+                delay: (index + 1) * 0.05,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+              whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+            >
+              <Badge
+                variant={filters.type === type.value ? "default" : "outline"}
+                className="cursor-pointer transition-colors"
+                onClick={() => handleTypeChange(type.value)}
+              >
+                {type.label}
+              </Badge>
+            </motion.div>
+          ))}
 
-        {/* Active Filters Display */}
-        {hasActiveFilters && (
-          <Badge
-            variant="secondary"
-            className="cursor-pointer gap-1"
-            onClick={clearFilters}
-          >
-            <Filter className="h-3 w-3" />
-            Clear
-            <X className="h-3 w-3" />
-          </Badge>
-        )}
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <motion.div
+              key="clear-filters"
+              initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+              whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+            >
+              <Badge
+                variant="secondary"
+                className="cursor-pointer gap-1 transition-colors"
+                onClick={clearFilters}
+              >
+                <Filter className="h-3 w-3" />
+                Clear
+                <X className="h-3 w-3" />
+              </Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

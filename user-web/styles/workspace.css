@@ -22,19 +22,19 @@
   --ws-bg-subtle: #FAFAFA;
   --ws-bg-overlay: rgba(0, 0, 0, 0.5);
 
-  /* Primary accent - Cinnamon Wood (AssignX brand) */
-  --ws-primary: #A9714B;
-  --ws-primary-hover: #8B5D3D;
-  --ws-primary-active: #744D33;
-  --ws-primary-light: #F8F3EF;
-  --ws-primary-muted: rgba(169, 113, 75, 0.12);
+  /* Primary accent - Coffee Bean (AssignX brand) */
+  --ws-primary: #765341;
+  --ws-primary-hover: #5C4233;
+  --ws-primary-active: #4A3628;
+  --ws-primary-light: #F5F0EB;
+  --ws-primary-muted: rgba(118, 83, 65, 0.12);
 
-  /* Secondary accent - Toasted Almond */
-  --ws-secondary: #E8985E;
-  --ws-secondary-hover: #D4864E;
-  --ws-secondary-active: #C0743E;
-  --ws-secondary-light: #FDF6F0;
-  --ws-secondary-muted: rgba(232, 152, 94, 0.12);
+  /* Secondary accent - Coffee Light */
+  --ws-secondary: #A07A65;
+  --ws-secondary-hover: #8B6B58;
+  --ws-secondary-active: #765C4C;
+  --ws-secondary-light: #FAF6F3;
+  --ws-secondary-muted: rgba(160, 122, 101, 0.12);
 
   /* Text hierarchy */
   --ws-text-primary: #141204;
@@ -70,8 +70,8 @@
   --ws-status-failed-bg: #FEE2E2;
   --ws-status-paused: #F59E0B;
   --ws-status-paused-bg: #FEF3C7;
-  --ws-status-pending: #A9714B;
-  --ws-status-pending-bg: #F8F3EF;
+  --ws-status-pending: #765341;
+  --ws-status-pending-bg: #F5F0EB;
 
   /* === Badge Colors === */
   --ws-badge-success: #16A34A;
@@ -93,9 +93,9 @@
   --ws-shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.06);
   --ws-shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.08);
   --ws-shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-  --ws-shadow-focus: 0 0 0 3px rgba(169, 113, 75, 0.15);
+  --ws-shadow-focus: 0 0 0 3px rgba(118, 83, 65, 0.15);
   --ws-shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.15);
-  --ws-shadow-glow: 0 0 20px rgba(169, 113, 75, 0.1);
+  --ws-shadow-glow: 0 0 20px rgba(118, 83, 65, 0.1);
   --ws-shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* === Border Radius === */
@@ -200,16 +200,16 @@
 .ws-bg-mesh-subtle {
   background-color: var(--ws-bg-page);
   background-image:
-    radial-gradient(at 20% 30%, rgba(169, 113, 75, 0.04) 0%, transparent 40%),
-    radial-gradient(at 80% 70%, rgba(232, 152, 94, 0.03) 0%, transparent 40%);
+    radial-gradient(at 20% 30%, rgba(118, 83, 65, 0.04) 0%, transparent 40%),
+    radial-gradient(at 80% 70%, rgba(160, 122, 101, 0.03) 0%, transparent 40%);
 }
 
 .ws-bg-mesh-hero {
   background-color: var(--ws-bg-page);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(169, 113, 75, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(232, 152, 94, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(169, 113, 75, 0.06) 0%, transparent 40%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(118, 83, 65, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(160, 122, 101, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 0% 80%, rgba(118, 83, 65, 0.06) 0%, transparent 40%);
 }
 
 .ws-bg-gradient-primary {
@@ -307,7 +307,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 20px rgba(169, 113, 75, 0.25);
+  box-shadow: 0 8px 20px rgba(118, 83, 65, 0.25);
 }
 
 .ws-hero-icon svg {
@@ -363,7 +363,7 @@
 }
 
 .ws-stat-card:hover {
-  border-color: rgba(169, 113, 75, 0.3);
+  border-color: rgba(118, 83, 65, 0.3);
   box-shadow: var(--ws-shadow-card-hover);
   transform: translateY(-2px);
 }
@@ -488,23 +488,23 @@
   pointer-events: none;
 }
 
-/* Primary button - Cinnamon */
+/* Primary button - Coffee Bean */
 .ws-btn-primary {
   background: linear-gradient(135deg, var(--ws-primary), var(--ws-primary-hover));
   color: var(--ws-text-inverse);
   border-color: var(--ws-primary);
-  box-shadow: 0 4px 12px rgba(169, 113, 75, 0.25);
+  box-shadow: 0 4px 12px rgba(118, 83, 65, 0.25);
 }
 
 .ws-btn-primary:hover {
   background: linear-gradient(135deg, var(--ws-primary-hover), var(--ws-primary-active));
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(169, 113, 75, 0.35);
+  box-shadow: 0 6px 20px rgba(118, 83, 65, 0.35);
 }
 
 .ws-btn-primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(169, 113, 75, 0.2);
+  box-shadow: 0 2px 8px rgba(118, 83, 65, 0.2);
 }
 
 /* Secondary button - Outlined */
@@ -531,17 +531,17 @@
   color: var(--ws-text-primary);
 }
 
-/* Accent button - Toasted Almond */
+/* Accent button - Coffee Light */
 .ws-btn-accent {
   background: linear-gradient(135deg, var(--ws-secondary), var(--ws-secondary-hover));
   color: var(--ws-text-inverse);
-  box-shadow: 0 4px 12px rgba(232, 152, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(160, 122, 101, 0.25);
 }
 
 .ws-btn-accent:hover {
   background: linear-gradient(135deg, var(--ws-secondary-hover), var(--ws-secondary-active));
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(232, 152, 94, 0.35);
+  box-shadow: 0 6px 20px rgba(160, 122, 101, 0.35);
 }
 
 /* Button sizes */

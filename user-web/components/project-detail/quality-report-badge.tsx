@@ -51,7 +51,7 @@ function SingleBadge({ report }: SingleBadgeProps) {
   // Passed state
   if (report.status === "passed") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-green-200 bg-green-50 p-4 text-center dark:border-green-800 dark:bg-green-900/20">
+      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-green-500 dark:border-green-600 p-4 text-center">
         <div className="relative mb-2">
           {isAI ? (
             <Bot className="h-8 w-8 text-green-500" />
@@ -60,7 +60,7 @@ function SingleBadge({ report }: SingleBadgeProps) {
           )}
           <CheckCircle className="absolute -bottom-1 -right-1 h-4 w-4 text-green-500" />
         </div>
-        <p className="text-xs font-medium text-green-700 dark:text-green-400">
+        <p className="text-xs font-medium text-green-600 dark:text-green-400">
           {isAI ? "Human Written" : `${report.score}% Unique`}
         </p>
         <p className="mt-1 text-[10px] text-green-600/70 dark:text-green-400/70">

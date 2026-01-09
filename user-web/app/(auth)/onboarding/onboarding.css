@@ -6,19 +6,20 @@
  */
 
 .onboarding-page {
-  /* Color tokens - Monochromatic oklch palette */
-  --onboarding-bg: oklch(1 0 0);
-  --onboarding-bg-dark: oklch(0.145 0 0);
-  --onboarding-bg-elevated: oklch(0.985 0 0);
-  --onboarding-accent: oklch(0.205 0 0);
-  --onboarding-accent-hover: oklch(0.145 0 0);
-  --onboarding-accent-light: oklch(0.922 0 0);
-  --onboarding-secondary: oklch(0.556 0 0);
-  --onboarding-text: oklch(0.145 0 0);
-  --onboarding-text-secondary: oklch(0.556 0 0);
-  --onboarding-text-muted: oklch(0.708 0 0);
-  --onboarding-border: oklch(0.922 0 0);
+  /* Color tokens - Coffee Bean Brand Palette */
+  --onboarding-bg: #FFFFFF;
+  --onboarding-bg-dark: #14110F;                 /* Pitch Black */
+  --onboarding-bg-elevated: #F8F6F4;
+  --onboarding-accent: #765341;                  /* Coffee Bean - Primary */
+  --onboarding-accent-hover: #5C4233;            /* Coffee Bean darker */
+  --onboarding-accent-light: #A07A65;            /* Coffee Bean lighter */
+  --onboarding-secondary: #34312D;               /* Graphite */
+  --onboarding-text: #14110F;                    /* Pitch Black */
+  --onboarding-text-secondary: #54442B;
+  --onboarding-text-muted: #8A846E;
+  --onboarding-border: #E8E6E1;
   --onboarding-white: #FFFFFF;
+  --onboarding-cream: #E4E1C7;                   /* Vanilla Cream */
 
   min-height: 100vh;
   display: flex;
@@ -26,18 +27,19 @@
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
-/* Dark mode */
+/* Dark mode - Coffee Bean Brand */
 .dark .onboarding-page {
-  --onboarding-bg: oklch(0.145 0 0);
-  --onboarding-bg-dark: oklch(0.145 0 0);
-  --onboarding-bg-elevated: oklch(0.269 0 0);
-  --onboarding-text: oklch(0.985 0 0);
-  --onboarding-text-secondary: oklch(0.708 0 0);
-  --onboarding-text-muted: oklch(0.556 0 0);
-  --onboarding-border: oklch(1 0 0 / 10%);
-  --onboarding-white: oklch(0.269 0 0);
-  --onboarding-accent: oklch(0.922 0 0);
-  --onboarding-accent-hover: oklch(0.985 0 0);
+  --onboarding-bg: #14110F;                      /* Pitch Black */
+  --onboarding-bg-dark: #14110F;
+  --onboarding-bg-elevated: #1E1A17;             /* Slightly lighter */
+  --onboarding-text: #F5F3F0;                    /* Off-white */
+  --onboarding-text-secondary: #C4B8A8;          /* Muted cream */
+  --onboarding-text-muted: #8A7E6D;              /* Muted brown */
+  --onboarding-border: rgba(118, 83, 65, 0.2);   /* Coffee Bean border */
+  --onboarding-white: #1E1A17;
+  --onboarding-accent: #A07A65;                  /* Coffee Bean lighter for dark mode */
+  --onboarding-accent-hover: #C49A80;            /* Even lighter on hover */
+  --onboarding-cream: #E4E1C7;                   /* Vanilla Cream */
 }
 
 /* ===== LEFT PANEL - Visual Side ===== */
@@ -59,15 +61,15 @@
   }
 }
 
-/* Subtle gradient animation */
+/* Subtle gradient animation - Coffee Bean mesh */
 .onboarding-visual::before {
   content: "";
   position: absolute;
   inset: -50%;
   background:
-    radial-gradient(circle at 20% 20%, oklch(0.205 0 0 / 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 80% 20%, oklch(0.556 0 0 / 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 40% 80%, oklch(0.205 0 0 / 0.05) 0%, transparent 40%);
+    radial-gradient(circle at 20% 20%, rgba(118, 83, 65, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(52, 49, 45, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(160, 122, 101, 0.10) 0%, transparent 40%);
   animation: onboarding-gradient 30s linear infinite;
   z-index: 0;
 }
@@ -192,6 +194,19 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
+}
+
+/* Coffee Bean floating card icon variants */
+.onboarding-float-card-icon.bg-primary {
+  background: rgba(118, 83, 65, 0.3);            /* Coffee Bean */
+}
+
+.onboarding-float-card-icon.bg-accent {
+  background: rgba(160, 122, 101, 0.25);         /* Coffee Bean lighter */
+}
+
+.onboarding-float-card-icon.bg-success {
+  background: rgba(228, 225, 199, 0.2);          /* Vanilla Cream */
 }
 
 .onboarding-float-card-title {
@@ -373,9 +388,16 @@
 }
 
 .onboarding-role-card:hover {
-  border-color: var(--onboarding-text-muted);
-  background: var(--onboarding-bg-elevated);
-  transform: translateY(-1px);
+  border-color: rgba(118, 83, 65, 0.5); /* Coffee Bean #765341 at 50% */
+  background: linear-gradient(to right, rgba(118, 83, 65, 0.1), rgba(160, 122, 101, 0.1)); /* from-coffee/10 to-coffee-light/10 */
+  box-shadow: 0 10px 15px -3px rgba(20, 17, 15, 0.1), 0 4px 6px -4px rgba(20, 17, 15, 0.1);
+  transform: translateY(-2px);
+}
+
+.dark .onboarding-role-card:hover {
+  border-color: rgba(118, 83, 65, 0.5); /* Coffee Bean #765341 at 50% */
+  background: linear-gradient(to right, rgba(118, 83, 65, 0.15), rgba(160, 122, 101, 0.15));
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
 }
 
 .onboarding-role-card:active {
@@ -396,6 +418,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.onboarding-role-card:hover .onboarding-role-card-icon {
+  background: #765341 !important; /* Coffee Bean */
+  color: #ffffff !important; /* white */
+  border-color: #765341 !important; /* Coffee Bean */
+}
+
+.dark .onboarding-role-card:hover .onboarding-role-card-icon {
+  background: #765341 !important; /* Coffee Bean */
+  color: #ffffff !important; /* white */
+  border-color: #765341 !important; /* Coffee Bean */
 }
 
 .onboarding-role-card-text {
@@ -419,11 +454,12 @@
 .onboarding-role-card-arrow {
   flex-shrink: 0;
   color: var(--onboarding-text-muted);
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .onboarding-role-card:hover .onboarding-role-card-arrow {
   transform: translateX(2px);
+  color: #765341; /* Coffee Bean */
 }
 
 /* Google button */

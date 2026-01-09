@@ -389,6 +389,98 @@ export const projectService = {
     if (error) throw error
     return data
   },
+
+  /**
+   * Gets project quotes.
+   * @param projectId - The project UUID
+   * @returns Array of quote records
+   */
+  async getProjectQuotes(projectId: string): Promise<ProjectQuote[]> {
+    const { data, error } = await supabase
+      .from('project_quotes')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  },
+
+  /**
+   * Gets combined timeline with status changes and quotes.
+   * @param projectId - The project UUID
+   * @returns Combined timeline events sorted by date
+   */
+  async getChatTimeline(projectId: string): Promise<TimelineEvent[]> {
+    const [statusHistory, quotes] = await Promise.all([
+      this.getProjectTimeline(projectId),
+      this.getProjectQuotes(projectId),
+    ])
+
+    const events: TimelineEvent[] = []
+
+    // Add status change events
+    statusHistory.forEach((status) => {
+      events.push({
+        id: status.id,
+        type: 'status_change',
+        timestamp: status.created_at || new Date().toISOString(),
+        data: {
+          from_status: status.from_status,
+          to_status: status.to_status,
+          notes: status.notes,
+        },
+      })
+    })
+
+    // Add quote events
+    quotes.forEach((quote) => {
+      events.push({
+        id: quote.id,
+        type: 'quote',
+        timestamp: quote.created_at || new Date().toISOString(),
+        data: {
+          amount: quote.user_amount,
+          status: quote.status,
+          valid_until: quote.valid_until,
+        },
+      })
+    })
+
+    // Sort by timestamp
+    return events.sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    )
+  },
+}
+
+/**
+ * Project quote type
+ */
+interface ProjectQuote {
+  id: string
+  project_id: string
+  user_amount: number | null
+  status: string | null
+  valid_until: string | null
+  created_at: string | null
+}
+
+/**
+ * Timeline event type for chat display
+ */
+interface TimelineEvent {
+  id: string
+  type: 'status_change' | 'quote'
+  timestamp: string
+  data: {
+    from_status?: string | null
+    to_status?: string | null
+    notes?: string | null
+    amount?: number | null
+    status?: string | null
+    valid_until?: string | null
+  }
 }
 
 // Re-export types
@@ -399,8 +491,11 @@ export type {
   ProjectFile,
   ProjectDeliverable,
   ProjectRevision,
+  ProjectStatusHistory,
   ProjectWithDetails,
   ProjectFilters,
   ProjectStatus,
   ServiceType,
+  ProjectQuote,
+  TimelineEvent,
 }

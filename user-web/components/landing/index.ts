@@ -5,6 +5,7 @@
 
 export * from "./hero-section";
 export * from "./horizontal-showcase";
+export * from "./horizontal-scroll";
 export * from "./cta-section";
 export * from "./footer";
 export * from "./navigation";

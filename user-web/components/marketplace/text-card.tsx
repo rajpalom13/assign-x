@@ -81,10 +81,6 @@ export const TextCard = memo(function TextCard({
             </motion.div>
           </motion.button>
 
-          {/* Community badge - bottom right */}
-          <span className="absolute bottom-2 right-2 px-2 py-1 rounded-lg text-xs font-medium bg-background/90 border border-border text-amber-600 dark:text-amber-400">
-            Community
-          </span>
         </div>
 
         {/* Content */}
@@ -116,14 +112,10 @@ export const TextCard = memo(function TextCard({
               </span>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-2 shrink-0">
-              {listing.created_at && (
-                <span className="text-xs text-muted-foreground">
-                  {getTimeAgo(listing.created_at)}
-                </span>
-              )}
-            </div>
+            {/* Category badge */}
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-amber-600 dark:text-amber-400">
+              Community
+            </span>
           </div>
         </div>
       </motion.article>

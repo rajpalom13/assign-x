@@ -62,6 +62,7 @@ import { validateChatContent, getValidationErrorMessage } from "@/lib/validation
 import { flagUserForViolation, type FlagReason } from "@/lib/actions/user-flagging";
 import type { ProjectDetail, ProjectStatus } from "@/types/project";
 import { STATUS_CONFIG } from "@/types/project";
+import { projectService, type TimelineEvent } from "@/services";
 
 interface ProjectDetailClientProps {
   project: ProjectDetail;
@@ -128,6 +129,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   const showInvoice = stepIndex >= 3;
   const isQuoted = project.status === "quoted" || project.status === "payment_pending";
   const isDelivered = stepIndex >= 7;
+  const isCompleted = project.status === "completed" || project.status === "auto_approved";
 
   const paymentAmount = project.budget ? parseInt(project.budget.replace(/[^0-9]/g, "")) : 0;
 
@@ -449,25 +451,28 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               <DeliverablesSection status={project.status} deliverables={project.deliverables} />
               <QualityReportBadge reports={project.qualityReports} />
 
-              <div className="space-y-3">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</p>
-                <div className="flex gap-3">
-                  <Button variant="outline" size="sm" onClick={() => setIsRevisionDialogOpen(true)} className="flex-1">
-                    Request Revision
-                  </Button>
-                  <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)} className="flex-1">
-                    <Check className="h-4 w-4 mr-1" />
-                    Complete
-                  </Button>
+              {/* Only show action buttons if project is not completed */}
+              {!isCompleted && (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" size="sm" onClick={() => setIsRevisionDialogOpen(true)} className="flex-1">
+                      Request Revision
+                    </Button>
+                    <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)} className="flex-1">
+                      <Check className="h-4 w-4 mr-1" />
+                      Complete
+                    </Button>
+                  </div>
                 </div>
-                <button
-                  onClick={handleDownloadInvoice}
-                  className="flex items-center justify-center gap-2 w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Download Invoice
-                </button>
-              </div>
+              )}
+              <button
+                onClick={handleDownloadInvoice}
+                className="flex items-center justify-center gap-2 w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download Invoice
+              </button>
             </>
           )}
         </div>
@@ -644,10 +649,24 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState("");
   const [showViolationAlert, setShowViolationAlert] = useState(false);
   const [violationMessage, setViolationMessage] = useState("");
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { messages, isLoading, isSending, hasMore, sendMessage, sendMessageWithAttachment, loadMore } = useChat(projectId, userId);
+
+  // Fetch timeline events (quotes and status changes)
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      try {
+        const events = await projectService.getChatTimeline(projectId);
+        setTimelineEvents(events);
+      } catch (error) {
+        console.error("Failed to fetch timeline:", error);
+      }
+    };
+    fetchTimeline();
+  }, [projectId]);
 
   useEffect(() => {
     if (scrollRef.current && messages.length > 0) {
@@ -726,7 +745,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
           </div>
         )}
 
-        {!isLoading && messages.length === 0 && (
+        {!isLoading && messages.length === 0 && timelineEvents.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
               <Send className="h-5 w-5 text-muted-foreground" />
@@ -736,37 +755,68 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
           </div>
         )}
 
-        {messages.map((msg) => {
-          const isUser = msg.sender_id === userId;
-          const senderName = msg.sender?.full_name || supervisor;
+        {/* Timeline Events & Messages Combined */}
+        {(() => {
+          // Combine messages and timeline events
+          const combined: Array<{ type: 'message' | 'event'; timestamp: string; data: any }> = [];
 
-          return (
-            <div key={msg.id} className={cn("flex gap-2 mb-3", isUser && "flex-row-reverse")}>
-              <div className={cn(
-                "h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0",
-                isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-border"
-              )}>
-                {isUser ? <User className="h-4 w-4" /> : senderName.charAt(0)}
-              </div>
-              <div className={cn("max-w-[75%]", isUser && "items-end")}>
+          messages.forEach((msg) => {
+            combined.push({
+              type: 'message',
+              timestamp: msg.created_at || new Date().toISOString(),
+              data: msg,
+            });
+          });
+
+          timelineEvents.forEach((event) => {
+            combined.push({
+              type: 'event',
+              timestamp: event.timestamp,
+              data: event,
+            });
+          });
+
+          // Sort by timestamp
+          combined.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+          return combined.map((item, index) => {
+            if (item.type === 'event') {
+              const event = item.data as TimelineEvent;
+              return <TimelineEventCard key={`event-${event.id}`} event={event} supervisorName={supervisor} />;
+            }
+
+            const msg = item.data;
+            const isUser = msg.sender_id === userId;
+            const senderName = msg.sender?.full_name || supervisor;
+
+            return (
+              <div key={msg.id} className={cn("flex gap-2 mb-3", isUser && "flex-row-reverse")}>
                 <div className={cn(
-                  "px-3 py-2 rounded-xl text-sm",
-                  isUser ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border border-border rounded-bl-sm"
+                  "h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0",
+                  isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-border"
                 )}>
-                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  {msg.file_url && (
-                    <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 mt-1 text-xs underline opacity-80">
-                      <Paperclip className="h-3 w-3" /> Attachment
-                    </a>
-                  )}
+                  {isUser ? <User className="h-4 w-4" /> : senderName.charAt(0)}
                 </div>
-                <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                  {msg.created_at && formatTime(msg.created_at)}
-                </span>
+                <div className={cn("max-w-[75%]", isUser && "items-end")}>
+                  <div className={cn(
+                    "px-3 py-2 rounded-xl text-sm",
+                    isUser ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border border-border rounded-bl-sm"
+                  )}>
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    {msg.file_url && (
+                      <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 mt-1 text-xs underline opacity-80">
+                        <Paperclip className="h-3 w-3" /> Attachment
+                      </a>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                    {msg.created_at && formatTime(msg.created_at)}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
       </div>
 
       {/* Input */}
@@ -813,5 +863,151 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+/**
+ * Timeline Event Card - Message-style cards for quotes and status updates
+ * Quotes appear from supervisor (left), payments appear from user (right)
+ */
+function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; supervisorName?: string }) {
+  const supervisor = supervisorName || "Supervisor";
+
+  // User-initiated actions (show on right side like user messages)
+  const userActions = ["paid", "completed", "revision_requested", "submitted"];
+  // Supervisor/system actions (show on left side like supervisor messages)
+  const isUserAction = event.type === "status_change" && userActions.includes(event.data.to_status || "");
+
+  const statusConfig: Record<string, { label: string; description: string; icon: React.ReactNode }> = {
+    submitted: { label: "Project Submitted", description: "Your project has been submitted for review", icon: <FileText className="h-4 w-4" /> },
+    analyzing: { label: "Under Review", description: "Our team is reviewing your requirements", icon: <Clock className="h-4 w-4" /> },
+    quoted: { label: "Quote Prepared", description: "Your quote is ready for review", icon: <CreditCard className="h-4 w-4" /> },
+    payment_pending: { label: "Awaiting Payment", description: "Please complete the payment to proceed", icon: <CreditCard className="h-4 w-4" /> },
+    paid: { label: "Payment Successful", description: "Your payment has been received", icon: <CheckCircle2 className="h-4 w-4" /> },
+    assigned: { label: "Expert Assigned", description: "An expert has been assigned to your project", icon: <User className="h-4 w-4" /> },
+    in_progress: { label: "Work Started", description: "Your expert has started working", icon: <Zap className="h-4 w-4" /> },
+    qc: { label: "Quality Check", description: "Your work is being reviewed for quality", icon: <ShieldCheck className="h-4 w-4" /> },
+    delivered: { label: "Delivered", description: "Your project has been delivered", icon: <Package className="h-4 w-4" /> },
+    completed: { label: "Marked Complete", description: "You marked this project as complete", icon: <CheckCircle2 className="h-4 w-4" /> },
+    revision_requested: { label: "Revision Requested", description: "You requested changes to the delivery", icon: <ArrowLeft className="h-4 w-4" /> },
+    in_revision: { label: "In Revision", description: "Your expert is making the requested changes", icon: <Clock className="h-4 w-4" /> },
+  };
+
+  // Quote card - appears from supervisor side
+  if (event.type === "quote") {
+    return (
+      <div className="flex gap-2 mb-4">
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground border border-border">
+          {supervisor.charAt(0)}
+        </div>
+        <div className="max-w-[80%]">
+          <div className="rounded-2xl rounded-tl-sm overflow-hidden border border-border bg-card">
+            {/* Quote Header */}
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Quote Ready</p>
+                <p className="text-[10px] text-muted-foreground">Project quotation</p>
+              </div>
+            </div>
+            {/* Quote Amount */}
+            <div className="p-4 text-center">
+              <p className="text-3xl font-bold tracking-tight">
+                ₹{(event.data.amount || 0).toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Total Amount</p>
+              {event.data.valid_until && (
+                <p className="text-[10px] text-muted-foreground mt-2 flex items-center justify-center gap-1">
+                  <Timer className="h-3 w-3" />
+                  Valid until {new Date(event.data.valid_until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </p>
+              )}
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground mt-1 px-1">
+            {formatTime(event.timestamp)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Status change events
+  const status = event.data.to_status || "";
+  const config = statusConfig[status] || { label: status, description: "Status updated", icon: <ChevronRight className="h-4 w-4" /> };
+
+  // Payment successful - special card from user side (like Google Pay success)
+  if (status === "paid") {
+    return (
+      <div className="flex gap-2 mb-4 flex-row-reverse">
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-primary text-primary-foreground">
+          <User className="h-4 w-4" />
+        </div>
+        <div className="max-w-[80%]">
+          <div className="rounded-2xl rounded-tr-sm overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30">
+            <div className="p-4 text-center">
+              <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Payment Successful</p>
+              <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-1">Your payment has been received</p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <span className="text-[10px] text-muted-foreground mt-1 px-1">
+              {formatTime(event.timestamp)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // User-initiated status changes (right side)
+  if (isUserAction) {
+    return (
+      <div className="flex gap-2 mb-3 flex-row-reverse">
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-primary text-primary-foreground">
+          <User className="h-4 w-4" />
+        </div>
+        <div className="max-w-[75%]">
+          <div className="px-4 py-3 rounded-2xl rounded-tr-sm bg-primary text-primary-foreground">
+            <div className="flex items-center gap-2 mb-1">
+              {config.icon}
+              <span className="text-sm font-medium">{config.label}</span>
+            </div>
+            <p className="text-xs opacity-80">{config.description}</p>
+          </div>
+          <div className="flex justify-end">
+            <span className="text-[10px] text-muted-foreground mt-1 px-1">
+              {formatTime(event.timestamp)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // System/supervisor status changes (left side)
+  return (
+    <div className="flex gap-2 mb-3">
+      <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground border border-border">
+        {supervisor.charAt(0)}
+      </div>
+      <div className="max-w-[75%]">
+        <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-card border border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-muted-foreground">{config.icon}</span>
+            <span className="text-sm font-medium">{config.label}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">{config.description}</p>
+        </div>
+        <span className="text-[10px] text-muted-foreground mt-1 px-1">
+          {formatTime(event.timestamp)}
+        </span>
+      </div>
+    </div>
   );
 }

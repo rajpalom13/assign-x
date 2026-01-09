@@ -567,7 +567,7 @@ export function SettingsPro() {
       {/* Danger Zone */}
       <SettingsSection icon={AlertTriangle} title="Danger Zone" description="Irreversible actions" variant="danger">
         <div className="space-y-2">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800">
             <div>
               <p className="text-sm font-medium text-red-600 dark:text-red-400">Log Out</p>
               <p className="text-xs text-muted-foreground">Sign out of your account</p>
@@ -577,14 +577,14 @@ export function SettingsPro() {
               size="sm"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
+              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
             >
               {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4 mr-1" />}
               Log Out
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800">
             <div>
               <p className="text-sm font-medium text-red-600 dark:text-red-400">Deactivate Account</p>
               <p className="text-xs text-muted-foreground">Temporarily disable your account</p>
@@ -592,14 +592,14 @@ export function SettingsPro() {
             <Button
               variant="outline"
               size="sm"
-              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-900/20"
+              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
             >
               <UserX className="h-4 w-4 mr-1" />
               Deactivate
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800">
             <div>
               <p className="text-sm font-medium text-red-600 dark:text-red-400">Delete Account</p>
               <p className="text-xs text-muted-foreground">Permanently delete all data</p>

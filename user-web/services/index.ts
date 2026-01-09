@@ -14,10 +14,13 @@ export type {
   ProjectFile,
   ProjectDeliverable,
   ProjectRevision,
+  ProjectStatusHistory,
   ProjectWithDetails,
   ProjectFilters,
   ProjectStatus,
   ServiceType,
+  ProjectQuote,
+  TimelineEvent,
 } from './project.service'
 
 export { walletService } from './wallet.service'

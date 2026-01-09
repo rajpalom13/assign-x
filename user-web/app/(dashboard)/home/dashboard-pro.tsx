@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Dashboard - Minimalist Design with Charts
- * Inspired by Notion and Linear
+ * Dashboard Pro - Minimal Design
+ * Clean, Notion/Linear inspired design matching projects page
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,13 +15,8 @@ import {
   ChevronRight,
   Search,
   BookOpen,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
   CheckCircle2,
-  Circle,
-  Wallet,
-  TrendingUp,
+  ArrowRight,
 } from "lucide-react";
 import {
   AreaChart,
@@ -30,6 +25,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,31 +33,22 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
 import { useProjectStore, type Project } from "@/stores";
 import { motion } from "framer-motion";
-import { AnimatedCounter } from "@/components/ui/animated-counter";
-import {
-  AnimatedList,
-  AnimatedListItem,
-  FadeIn,
-  cardHover,
-  staggerContainer,
-  staggerItem,
-} from "@/components/ui/motion";
 
 /**
- * Status configuration
+ * Status configuration with consistent neutral theme
  */
-const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
-  submitted: { label: "Submitted", color: "text-amber-600 bg-amber-500/10", dot: "bg-amber-500" },
-  analyzing: { label: "Reviewing", color: "text-amber-600 bg-amber-500/10", dot: "bg-amber-500" },
-  quoted: { label: "Quote Ready", color: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
-  payment_pending: { label: "Payment Due", color: "text-orange-600 bg-orange-500/10", dot: "bg-orange-500" },
-  paid: { label: "Paid", color: "text-emerald-600 bg-emerald-500/10", dot: "bg-emerald-500" },
-  assigned: { label: "Assigned", color: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
-  in_progress: { label: "In Progress", color: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
-  qc: { label: "Quality Check", color: "text-purple-600 bg-purple-500/10", dot: "bg-purple-500" },
-  delivered: { label: "Delivered", color: "text-emerald-600 bg-emerald-500/10", dot: "bg-emerald-500" },
-  completed: { label: "Completed", color: "text-emerald-600 bg-emerald-500/10", dot: "bg-emerald-500" },
-  revision: { label: "Revision", color: "text-orange-600 bg-orange-500/10", dot: "bg-orange-500" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string; bg: string }> = {
+  submitted: { label: "Submitted", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
+  analyzing: { label: "Reviewing", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
+  quoted: { label: "Quote Ready", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
+  payment_pending: { label: "Payment Due", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
+  paid: { label: "Paid", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
+  assigned: { label: "Assigned", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
+  in_progress: { label: "In Progress", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
+  qc: { label: "Quality Check", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
+  delivered: { label: "Delivered", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
+  completed: { label: "Completed", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
+  revision: { label: "Revision", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
 };
 
 /**
@@ -78,23 +65,44 @@ function generateChartData(projects: Project[]) {
       return date.getMonth() === monthIndex;
     }).length;
 
+    const completedInMonth = projects.filter((p) => {
+      const date = new Date(p.updated_at || p.created_at || Date.now());
+      return date.getMonth() === monthIndex && ["completed", "delivered"].includes(p.status);
+    }).length;
+
     return {
       name: month,
       projects: projectsInMonth,
+      completed: completedInMonth,
     };
   });
 }
 
 /**
- * Custom Tooltip for Chart
+ * Enhanced Custom Tooltip for Chart
  */
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-sm font-semibold">{payload[0].value} projects</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl px-4 py-3 shadow-xl"
+      >
+        <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-foreground" />
+            {payload[0]?.value || 0} created
+          </p>
+          {payload[1] && (
+            <p className="text-sm font-semibold flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+              {payload[1]?.value || 0} completed
+            </p>
+          )}
+        </div>
+      </motion.div>
     );
   }
   return null;
@@ -107,6 +115,7 @@ export function DashboardPro() {
   const router = useRouter();
   const { user, isLoading: userLoading, fetchUser } = useUserStore();
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectStore();
+  const [chartPeriod, setChartPeriod] = useState<"6m" | "3m" | "1m">("6m");
 
   useEffect(() => {
     fetchUser();
@@ -132,228 +141,268 @@ export function DashboardPro() {
   // Completion rate
   const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
 
-  // Recent activity (last 3 project updates)
-  const recentActivity = useMemo(() => {
+  // Needs attention - projects requiring user action
+  const ATTENTION_STATUSES = ["quoted", "payment_pending", "delivered", "revision"];
+  const needsAttention = useMemo(() => {
     return projects
-      .slice(0, 3)
-      .map((p) => ({
-        id: p.id,
-        title: p.title,
-        status: p.status,
-        time: formatRelativeTime(p.updated_at || p.created_at),
-      }));
+      .filter((p) => ATTENTION_STATUSES.includes(p.status))
+      .slice(0, 4);
   }, [projects]);
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-6 md:p-8 max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-14 w-72" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Skeleton className="h-[88px]" />
-          <Skeleton className="h-[88px]" />
-          <Skeleton className="h-[88px]" />
-          <Skeleton className="h-[88px]" />
+      <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-8 w-28" />
         </div>
-        <Skeleton className="h-[200px]" />
-        <Skeleton className="h-[300px]" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-[88px] rounded-xl" />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-4">
+          <Skeleton className="lg:col-span-2 h-[260px] rounded-xl" />
+          <Skeleton className="h-[260px] rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 md:p-8 max-w-4xl mx-auto">
-      <div className="space-y-6">
+    <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               Good {getGreeting()}, {firstName}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Here's what's happening with your projects
+            <p className="text-sm text-muted-foreground mt-1">
+              Here's what's happening with your projects today
             </p>
           </div>
           <Button
             size="sm"
-            className="h-9 rounded-lg"
+            className="h-8 rounded-lg"
             onClick={() => router.push("/projects/new")}
           >
-            <Plus className="h-4 w-4 mr-1.5" />
-            New project
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            New Project
           </Button>
         </div>
 
         {/* Stats Grid */}
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-3"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          <StatCard
-            label="Active"
-            value={activeProjects}
-            icon={<Clock className="h-4 w-4" />}
-            trend={activeProjects > 0 ? "up" : undefined}
-            onClick={() => router.push("/projects")}
-            index={0}
-          />
-          <StatCard
-            label="Completed"
-            value={completedProjects}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            trend={completedProjects > 0 ? "up" : undefined}
-            onClick={() => router.push("/projects")}
-            index={1}
-          />
-          <StatCard
-            label="Success rate"
-            value={completionRate}
-            suffix="%"
-            icon={<TrendingUp className="h-4 w-4" />}
-            onClick={() => router.push("/projects")}
-            index={2}
-          />
-          <StatCard
-            label="Balance"
-            value={walletBalance}
-            prefix="₹"
-            icon={<Wallet className="h-4 w-4" />}
-            onClick={() => router.push("/wallet")}
-            index={3}
-          />
-        </motion.div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="Active" value={activeProjects} />
+          <StatCard label="Completed" value={completedProjects} />
+          <StatCard label="Success Rate" value={`${completionRate}%`} />
+          <StatCard label="Wallet" value={`₹${walletBalance.toLocaleString()}`} />
+        </div>
 
-        {/* Chart Section */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-medium">Project activity</h2>
-              <p className="text-xs text-muted-foreground">Last 6 months</p>
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Chart Section - Takes 2 columns */}
+          <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-semibold">Project Activity</h2>
+                <p className="text-sm text-muted-foreground">Track your project trends</p>
+              </div>
+              <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
+                {(["6m", "3m", "1m"] as const).map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setChartPeriod(period)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                      chartPeriod === period
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {period === "6m" ? "6 months" : period === "3m" ? "3 months" : "1 month"}
+                  </button>
+                ))}
+              </div>
             </div>
-            <span className="text-xs text-muted-foreground">
-              {totalProjects} total
-            </span>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorProjects" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    width={35}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="projects"
+                    stroke="hsl(var(--foreground))"
+                    strokeWidth={2}
+                    fill="url(#colorProjects)"
+                    dot={false}
+                    activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="completed"
+                    stroke="hsl(var(--muted-foreground))"
+                    strokeWidth={2}
+                    fill="url(#colorCompleted)"
+                    dot={false}
+                    activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-foreground" />
+                <span className="text-xs text-muted-foreground">Created</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Completed</span>
+              </div>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {totalProjects} total
+              </span>
+            </div>
           </div>
-          <div className="h-[160px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorProjects" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  dy={8}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                  width={30}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="projects"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  fill="url(#colorProjects)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+
+          {/* Needs Attention Widget */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold">Needs Attention</h2>
+                <p className="text-xs text-muted-foreground">
+                  {needsAttention.length} item{needsAttention.length !== 1 ? "s" : ""} require action
+                </p>
+              </div>
+            </div>
+
+            {needsAttention.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mb-3">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">All caught up</p>
+                <p className="text-xs text-muted-foreground mt-1">No pending actions</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {needsAttention.map((project) => {
+                  const status = STATUS_CONFIG[project.status] || {
+                    label: project.status,
+                    dot: "bg-muted-foreground",
+                  };
+                  return (
+                    <button
+                      key={project.id}
+                      onClick={() => router.push(`/project/${project.id}`)}
+                      className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+                    >
+                      <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{project.title}</p>
+                        <p className="text-xs text-muted-foreground">{status.label}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Two Column Layout */}
+        {/* Bottom Section */}
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Quick Actions (Left Column) */}
-          <div className="rounded-xl border border-border bg-card p-4">
-            <h2 className="text-sm font-medium mb-3">Quick actions</h2>
+          {/* Quick Actions */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="text-base font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-2">
               <QuickAction
                 icon={<FileText className="h-4 w-4" />}
-                label="Report"
-                href="/projects/new?type=report"
+                label="New Project"
+                description="Submit a new project"
+                href="/projects/new"
               />
               <QuickAction
                 icon={<Search className="h-4 w-4" />}
                 label="AI Check"
+                description="Verify content originality"
                 href="/projects/new?type=plagiarism"
               />
               <QuickAction
                 icon={<BookOpen className="h-4 w-4" />}
                 label="Proofread"
+                description="Review and polish documents"
                 href="/projects/new?type=proofreading"
               />
               <QuickAction
                 icon={<FolderKanban className="h-4 w-4" />}
-                label="Projects"
+                label="All Projects"
+                description="View project history"
                 href="/projects"
               />
             </div>
           </div>
 
-          {/* Recent Projects & Activity (Right Column) */}
-          <div className="space-y-4">
-            {/* Recent Projects */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium">Recent projects</h2>
-                {recentProjects.length > 0 && (
-                  <button
-                    onClick={() => router.push("/projects")}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    View all
-                  </button>
-                )}
+          {/* Recent Projects */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold">Recent Projects</h2>
+              {recentProjects.length > 0 && (
+                <button
+                  onClick={() => router.push("/projects")}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  View all
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            {recentProjects.length === 0 ? (
+              <EmptyState
+                title="No projects yet"
+                description="Create your first project to get started"
+                action={{
+                  label: "New project",
+                  onClick: () => router.push("/projects/new"),
+                }}
+              />
+            ) : (
+              <div className="space-y-1">
+                {recentProjects.map((project) => (
+                  <ProjectRow key={project.id} project={project} />
+                ))}
               </div>
-
-              {recentProjects.length === 0 ? (
-                <EmptyState
-                  title="No projects yet"
-                  description="Create your first project"
-                  action={{
-                    label: "New project",
-                    onClick: () => router.push("/projects/new"),
-                  }}
-                />
-              ) : (
-                <div className="space-y-1">
-                  {recentProjects.map((project) => (
-                    <ProjectRow key={project.id} project={project} />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Recent Activity */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h2 className="text-sm font-medium mb-3">Recent activity</h2>
-              {recentActivity.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  No recent activity
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {recentActivity.map((activity, index) => (
-                    <ActivityItem
-                      key={activity.id}
-                      title={activity.title}
-                      status={activity.status}
-                      time={activity.time}
-                      isLast={index === recentActivity.length - 1}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -362,108 +411,41 @@ export function DashboardPro() {
 }
 
 /**
- * Stat Card Component with animations
+ * Stat Card Component - Minimal design matching projects page
  */
-function StatCard({
-  label,
-  value,
-  icon,
-  trend,
-  onClick,
-  prefix = "",
-  suffix = "",
-  index = 0,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  trend?: "up" | "down";
-  onClick?: () => void;
-  prefix?: string;
-  suffix?: string;
-  index?: number;
-}) {
-  const isNumeric = typeof value === "number";
-
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
-    <motion.button
-      onClick={onClick}
-      className="p-4 rounded-xl border border-border bg-card text-left group"
-      variants={staggerItem}
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <motion.span
-          className="text-muted-foreground"
-          whileHover={{ scale: 1.1 }}
-          transition={{ duration: 0.2 }}
-        >
-          {icon}
-        </motion.span>
-        {trend && (
-          <motion.span
-            className={cn(
-              "flex items-center text-[10px] font-medium",
-              trend === "up" ? "text-emerald-600" : "text-red-600"
-            )}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-          >
-            {trend === "up" ? (
-              <ArrowUpRight className="h-3 w-3" />
-            ) : (
-              <ArrowDownRight className="h-3 w-3" />
-            )}
-          </motion.span>
-        )}
-      </div>
-      <p className="text-xl font-semibold tabular-nums">
-        {isNumeric ? (
-          <AnimatedCounter value={value} prefix={prefix} suffix={suffix} duration={1} />
-        ) : (
-          value
-        )}
-      </p>
+    <div className="p-4 rounded-xl border border-border bg-card">
+      <p className="text-2xl font-semibold tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-    </motion.button>
+    </div>
   );
 }
 
 /**
- * Project Row Component with hover animation
+ * Project Row Component - Minimal design matching projects page
  */
 function ProjectRow({ project }: { project: Project }) {
   const router = useRouter();
   const status = STATUS_CONFIG[project.status] || {
     label: project.status,
-    color: "text-muted-foreground bg-muted",
     dot: "bg-muted-foreground",
   };
 
   return (
-    <motion.button
+    <button
       onClick={() => router.push(`/project/${project.id}`)}
-      className="w-full flex items-center gap-3 p-2.5 -mx-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-      whileHover={{ x: 4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.15 }}
+      className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
     >
-      <motion.div
-        className={cn("h-2 w-2 rounded-full shrink-0", status.dot)}
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-      />
+      <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{project.title}</p>
       </div>
-      <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded", status.color)}>
+      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
         {status.label}
       </span>
-      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-    </motion.button>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    </button>
   );
 }
 
@@ -500,40 +482,33 @@ function ActivityItem({
 }
 
 /**
- * Quick Action Component with hover animation
+ * Quick Action Component - Enhanced design
  */
 function QuickAction({
   icon,
   label,
+  description,
   href,
 }: {
   icon: React.ReactNode;
   label: string;
+  description: string;
   href: string;
 }) {
   return (
-    <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
-      <Link
-        href={href}
-        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group border border-transparent hover:border-border"
-      >
-        <motion.span
-          className="text-muted-foreground group-hover:text-foreground transition-colors"
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ duration: 0.2 }}
-        >
-          {icon}
-        </motion.span>
-        <span className="text-sm font-medium">{label}</span>
-        <motion.div
-          className="ml-auto"
-          initial={{ opacity: 0, x: -5 }}
-          whileHover={{ opacity: 1, x: 0 }}
-        >
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </motion.div>
-      </Link>
-    </motion.div>
+    <Link
+      href={href}
+      className="flex items-center gap-3 p-4 rounded-lg border-2 border-border bg-card hover:border-[#765341]/50 hover:bg-gradient-to-r hover:from-[#765341]/10 hover:to-[#A07A65]/10 hover:shadow-md hover:-translate-y-0.5 transition-all group"
+    >
+      <div className="h-10 w-10 rounded-lg border border-border bg-muted/30 flex items-center justify-center text-muted-foreground group-hover:bg-[#765341] group-hover:text-white group-hover:border-[#765341] transition-all">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground truncate">{description}</p>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-[#765341] transition-all" />
+    </Link>
   );
 }
 

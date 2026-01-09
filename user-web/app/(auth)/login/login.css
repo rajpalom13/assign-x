@@ -7,37 +7,40 @@
  */
 
 .login-page {
-  /* Color tokens - Matching internal design system */
+  /* Color tokens - Coffee Bean Brand Palette */
   --login-bg: #FFFFFF;
-  --login-bg-dark: oklch(0.145 0 0);
-  --login-bg-muted: oklch(0.97 0 0);
-  --login-accent: oklch(0.205 0 0);
-  --login-accent-hover: oklch(0.145 0 0);
-  --login-secondary: oklch(0.556 0 0);
-  --login-text: oklch(0.145 0 0);
-  --login-text-secondary: oklch(0.556 0 0);
-  --login-text-muted: oklch(0.708 0 0);
-  --login-border: oklch(0.922 0 0);
+  --login-bg-dark: #14110F;                    /* Pitch Black */
+  --login-bg-muted: #F8F6F4;
+  --login-accent: #765341;                     /* Coffee Bean - Primary */
+  --login-accent-hover: #5C4233;               /* Coffee Bean darker */
+  --login-accent-light: #A07A65;               /* Coffee Bean lighter */
+  --login-secondary: #34312D;                  /* Graphite */
+  --login-text: #14110F;                       /* Pitch Black */
+  --login-text-secondary: #54442B;
+  --login-text-muted: #8A846E;
+  --login-border: #E8E6E1;
   --login-white: #FFFFFF;
+  --login-cream: #E4E1C7;                      /* Vanilla Cream */
 
   min-height: 100vh;
   display: flex;
   background: var(--login-bg);
-  font-family: var(--font-inter, system-ui, sans-serif);
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
 
-/* Dark mode support */
+/* Dark mode support - Coffee Bean Brand */
 .dark .login-page {
-  --login-bg: oklch(0.145 0 0);
-  --login-bg-dark: oklch(0.145 0 0);
-  --login-bg-muted: oklch(0.269 0 0);
-  --login-text: oklch(0.985 0 0);
-  --login-text-secondary: oklch(0.708 0 0);
-  --login-text-muted: oklch(0.556 0 0);
-  --login-border: oklch(1 0 0 / 10%);
-  --login-white: oklch(0.269 0 0);
-  --login-accent: oklch(0.922 0 0);
-  --login-accent-hover: oklch(0.985 0 0);
+  --login-bg: #14110F;                           /* Pitch Black */
+  --login-bg-dark: #14110F;
+  --login-bg-muted: #1E1A17;                     /* Slightly lighter */
+  --login-text: #F5F3F0;                         /* Off-white */
+  --login-text-secondary: #C4B8A8;               /* Muted cream */
+  --login-text-muted: #8A7E6D;                   /* Muted brown */
+  --login-border: rgba(118, 83, 65, 0.2);        /* Coffee Bean border */
+  --login-white: #1E1A17;
+  --login-accent: #A07A65;                       /* Coffee Bean lighter for dark mode */
+  --login-accent-hover: #C49A80;                 /* Even lighter on hover */
+  --login-cream: #E4E1C7;                        /* Vanilla Cream */
 }
 
 /* Left Panel - Visual Side */
@@ -65,15 +68,15 @@
   }
 }
 
-/* Animated gradient background - matching internal mesh gradient */
+/* Animated gradient background - Coffee Bean mesh gradient */
 .login-visual::before {
   content: "";
   position: absolute;
   inset: -50%;
   background:
-    radial-gradient(circle at 20% 20%, color-mix(in oklch, var(--login-accent), transparent 85%) 0%, transparent 40%),
-    radial-gradient(circle at 80% 20%, color-mix(in oklch, var(--login-secondary), transparent 88%) 0%, transparent 40%),
-    radial-gradient(circle at 40% 80%, color-mix(in oklch, var(--login-accent), transparent 90%) 0%, transparent 40%);
+    radial-gradient(circle at 20% 20%, rgba(118, 83, 65, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(52, 49, 45, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 40% 80%, rgba(160, 122, 101, 0.10) 0%, transparent 40%);
   animation: login-gradient 20s linear infinite;
   z-index: 0;
 }
@@ -214,15 +217,15 @@
 }
 
 .login-float-card-icon-primary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(118, 83, 65, 0.3);            /* Coffee Bean */
 }
 
 .login-float-card-icon-secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(160, 122, 101, 0.25);         /* Coffee Bean lighter */
 }
 
 .login-float-card-icon-tertiary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(228, 225, 199, 0.15);         /* Vanilla Cream */
 }
 
 .login-float-card-title {

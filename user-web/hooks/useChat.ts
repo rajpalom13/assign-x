@@ -66,15 +66,39 @@ export function useChat(projectId: string | null, userId: string | null) {
         chatService.markMessagesAsRead(room.id, userId)
 
         // Subscribe to real-time updates
-        unsubscribeRef.current = chatService.subscribeToRoom(room.id, (newMessage) => {
-          setState((prev) => ({
-            ...prev,
-            messages: [...prev.messages, newMessage],
-          }))
+        unsubscribeRef.current = chatService.subscribeToRoom(room.id, async (newMessage) => {
+          // Fetch the complete message with sender info
+          try {
+            const messagesWithSender = await chatService.getMessages(room.id, 1)
+            const fullMessage = messagesWithSender.find(m => m.id === newMessage.id)
 
-          // Mark as read if from other user
-          if (newMessage.sender_id !== userId) {
-            chatService.markMessagesAsRead(room.id, userId)
+            setState((prev) => {
+              // Avoid duplicate messages
+              if (prev.messages.some(m => m.id === newMessage.id)) {
+                return prev
+              }
+              return {
+                ...prev,
+                messages: [...prev.messages, fullMessage || newMessage],
+              }
+            })
+
+            // Mark as read if from other user
+            if (newMessage.sender_id !== userId) {
+              chatService.markMessagesAsRead(room.id, userId)
+            }
+          } catch (error) {
+            console.error("Error fetching new message:", error)
+            // Fallback to raw message if fetch fails
+            setState((prev) => {
+              if (prev.messages.some(m => m.id === newMessage.id)) {
+                return prev
+              }
+              return {
+                ...prev,
+                messages: [...prev.messages, newMessage],
+              }
+            })
           }
         })
       } catch (error: any) {

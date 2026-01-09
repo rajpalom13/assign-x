@@ -35,6 +35,28 @@ const reverseListingTypeMap: Record<ListingType, string> = {
 };
 
 /**
+ * Map UI category names to database listing_type values
+ * Handles both singular and plural category names
+ */
+const categoryToDBTypeMap: Record<string, string | string[]> = {
+  // Singular (ListingType)
+  product: "sell",
+  housing: "housing",
+  opportunity: "opportunity",
+  community: "community_post",
+  // Plural (MarketplaceCategory)
+  products: "sell",
+  opportunities: "opportunity",
+  // Additional mappings for all DB enum values
+  sell: "sell",
+  rent: "rent",
+  free: "free",
+  community_post: "community_post",
+  poll: "poll",
+  event: "event",
+};
+
+/**
  * Data for creating a new marketplace listing
  */
 export interface CreateListingData {
@@ -242,14 +264,22 @@ export async function getMarketplaceListings(
     // Filter by category/listing_type
     if (opts.category && opts.category !== "all") {
       if (Array.isArray(opts.category)) {
-        query = query.in("listing_type", opts.category);
+        // Map each category to its DB type
+        const dbTypes = opts.category
+          .map((cat: string) => categoryToDBTypeMap[cat] || cat)
+          .flat();
+        query = query.in("listing_type", dbTypes);
       } else {
-        const dbType = reverseListingTypeMap[opts.category as ListingType];
+        // Use the comprehensive category map
+        const dbType = categoryToDBTypeMap[opts.category];
         if (dbType) {
-          query = query.eq("listing_type", dbType);
-        } else {
-          query = query.eq("listing_type", opts.category);
+          if (Array.isArray(dbType)) {
+            query = query.in("listing_type", dbType);
+          } else {
+            query = query.eq("listing_type", dbType);
+          }
         }
+        // If no mapping found, don't filter (safer than passing invalid enum)
       }
     }
 

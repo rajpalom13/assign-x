@@ -51,7 +51,6 @@ import {
 } from "@/lib/actions/marketplace";
 import type { AnyListing, ListingType, MarketplaceCategory } from "@/types/marketplace";
 import type { Tutor, Question } from "@/types/connect";
-import { featuredTutors, questions } from "@/lib/data/connect";
 import { BookSessionSheet } from "@/components/connect/book-session-sheet";
 import { TutorProfileSheet } from "@/components/connect/tutor-profile-sheet";
 import { AskQuestionSheet } from "@/components/connect/ask-question-sheet";
@@ -149,23 +148,23 @@ export function ConnectPro() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Tutors state
-  const [tutors] = useState<Tutor[]>(featuredTutors);
+  const [tutors] = useState<Tutor[]>([]);
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [showBookSession, setShowBookSession] = useState(false);
   const [showTutorProfile, setShowTutorProfile] = useState(false);
   const tutorScrollRef = useRef<HTMLDivElement>(null);
 
   // Q&A state
-  const [qaList] = useState<Question[]>(questions);
+  const [qaList] = useState<Question[]>([]);
   const [showAskQuestion, setShowAskQuestion] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [showQuestionDetail, setShowQuestionDetail] = useState(false);
 
   // Stats calculations
   const stats = useMemo(() => ({
-    listings: allListings.length || 156,
-    tutors: tutors.length || 24,
-    questions: qaList.length || 89,
+    listings: allListings.length,
+    tutors: tutors.length,
+    questions: qaList.length,
   }), [allListings, tutors, qaList]);
 
   // Fetch listings
@@ -293,7 +292,7 @@ export function ConnectPro() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-8 max-w-6xl mx-auto">
+    <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -397,19 +396,19 @@ export function ConnectPro() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
+                <SheetContent className="w-[320px] sm:w-[380px]">
+                  <SheetHeader className="pb-4">
                     <SheetTitle>Filters</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6 space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
                         <Label className="text-sm font-medium">My Campus Only</Label>
                         <p className="text-xs text-muted-foreground">Show listings from your university</p>
                       </div>
                       <Switch checked={universityOnly} onCheckedChange={setUniversityOnly} />
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <Label className="text-sm font-medium">Price Range</Label>
                       <Slider
                         value={priceRange}
@@ -423,7 +422,7 @@ export function ConnectPro() {
                         <span>₹{priceRange[1].toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-4">
+                    <div className="flex gap-3 pt-2">
                       <Button variant="outline" className="flex-1" onClick={clearFilters}>
                         Clear All
                       </Button>
@@ -518,15 +517,30 @@ export function ConnectPro() {
             )}
 
             {/* Listings Grid */}
-            {isLoading && listings.length === 0 ? (
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="space-y-3">
-                    <Skeleton className="h-48 w-full rounded-lg" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                ))}
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-32" />
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="rounded-xl border border-border bg-card overflow-hidden"
+                    >
+                      <Skeleton className="aspect-[4/3] w-full" />
+                      <div className="p-3 space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                        <div className="flex items-center justify-between pt-2">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-5 w-12 rounded" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             ) : listings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -553,13 +567,18 @@ export function ConnectPro() {
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
                 <p className="text-xs text-muted-foreground">
                   Showing {listings.length} {listings.length === 1 ? "listing" : "listings"}
                   {searchQuery && ` matching "${searchQuery}"`}
                 </p>
                 <MasonryGrid listings={listings} onFavorite={handleFavorite} isLoading={isLoading} />
-              </div>
+              </motion.div>
             )}
           </div>
         )}
