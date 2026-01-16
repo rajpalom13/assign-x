@@ -8,17 +8,43 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { Menu, X, GraduationCap, LayoutDashboard } from "lucide-react";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { createClient } from "@/lib/supabase/client";
 import "@/app/landing.css";
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const prefersReducedMotion = useReducedMotion();
+  const supabase = createClient();
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsLoggedIn(!!user);
+      } catch {
+        setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   // Track scroll position
   useEffect(() => {
@@ -111,32 +137,51 @@ export function Navigation() {
                 )}
               />
 
-              {/* Sign In - Hidden on mobile */}
-              <Link
-                href="/login"
-                className={cn(
-                  "hidden sm:inline-flex px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full",
-                  scrolled
-                    ? "text-white/80 hover:text-white hover:bg-white/10"
-                    : "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-lighter)]"
-                )}
-              >
-                Sign In
-              </Link>
+              {isLoggedIn ? (
+                /* Dashboard button for logged-in users */
+                <Link
+                  href="/home"
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-full font-medium text-sm transition-all duration-300",
+                    "px-5 py-2 bg-[var(--landing-accent-primary)] text-white",
+                    "hover:bg-[var(--landing-accent-primary-hover)]",
+                    "hover:shadow-lg hover:shadow-[var(--landing-accent-primary)]/20",
+                    "hover:scale-[1.02] active:scale-[0.98]"
+                  )}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  {/* Sign In - Hidden on mobile */}
+                  <Link
+                    href="/login"
+                    className={cn(
+                      "hidden sm:inline-flex px-5 py-2 text-sm font-medium transition-all duration-300 rounded-full",
+                      scrolled
+                        ? "text-white/80 hover:text-white hover:bg-white/10"
+                        : "text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] hover:bg-[var(--landing-accent-lighter)]"
+                    )}
+                  >
+                    Sign In
+                  </Link>
 
-              {/* Get Started */}
-              <Link
-                href="/signup"
-                className={cn(
-                  "inline-flex items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
-                  "px-5 py-2 bg-[var(--landing-accent-primary)] text-white",
-                  "hover:bg-[var(--landing-accent-primary-hover)]",
-                  "hover:shadow-lg hover:shadow-[var(--landing-accent-primary)]/20",
-                  "hover:scale-[1.02] active:scale-[0.98]"
-                )}
-              >
-                Get Started
-              </Link>
+                  {/* Get Started */}
+                  <Link
+                    href="/signup"
+                    className={cn(
+                      "inline-flex items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
+                      "px-5 py-2 bg-[var(--landing-accent-primary)] text-white",
+                      "hover:bg-[var(--landing-accent-primary-hover)]",
+                      "hover:shadow-lg hover:shadow-[var(--landing-accent-primary)]/20",
+                      "hover:scale-[1.02] active:scale-[0.98]"
+                    )}
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </motion.div>
 
             {/* Mobile Menu Button */}
@@ -201,32 +246,51 @@ export function Navigation() {
               <div className="p-2">
                 {/* Auth Links */}
                 <div className="space-y-2">
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.15, duration: 0.3 }}
-                  >
-                    <Link
-                      href="/login"
-                      className="block px-4 py-3 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-[var(--landing-accent-lighter)]"
-                      onClick={() => setMobileMenuOpen(false)}
+                  {isLoggedIn ? (
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.15, duration: 0.3 }}
                     >
-                      Sign In
-                    </Link>
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                  >
-                    <Link
-                      href="/signup"
-                      className="block px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-primary)] rounded-lg text-center hover:bg-[var(--landing-accent-primary-hover)] transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Get Started
-                    </Link>
-                  </motion.div>
+                      <Link
+                        href="/home"
+                        className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-primary)] rounded-lg hover:bg-[var(--landing-accent-primary-hover)] transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Go to Dashboard
+                      </Link>
+                    </motion.div>
+                  ) : (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15, duration: 0.3 }}
+                      >
+                        <Link
+                          href="/login"
+                          className="block px-4 py-3 text-sm font-medium text-[var(--landing-text-secondary)] hover:text-[var(--landing-text-primary)] transition-colors rounded-lg hover:bg-[var(--landing-accent-lighter)]"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Sign In
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2, duration: 0.3 }}
+                      >
+                        <Link
+                          href="/signup"
+                          className="block px-4 py-3 text-sm font-medium text-white bg-[var(--landing-accent-primary)] rounded-lg text-center hover:bg-[var(--landing-accent-primary-hover)] transition-colors"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          Get Started
+                        </Link>
+                      </motion.div>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
