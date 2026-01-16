@@ -30,7 +30,14 @@ async function getUserIdForDataFetch(): Promise<string | null> {
   if (!isLoginRequired()) {
     // In dev mode, use admin client to bypass RLS
     const adminClient = createAdminClient();
+
+    if (!adminClient) {
+      console.error("❌ [getUserIdForDataFetch] Admin client not available - SUPABASE_SERVICE_ROLE_KEY may not be set");
+      return null;
+    }
+
     const devEmail = getDevUserEmail();
+    console.log("🔧 [getUserIdForDataFetch] Dev mode - fetching user:", devEmail);
 
     const { data: profile, error } = await adminClient
       .from("profiles")
@@ -43,6 +50,7 @@ async function getUserIdForDataFetch(): Promise<string | null> {
       return null;
     }
 
+    console.log("✅ [getUserIdForDataFetch] Found user ID:", profile?.id);
     return profile?.id || null;
   }
 

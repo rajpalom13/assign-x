@@ -7,12 +7,19 @@ import { NextRequest } from "next/server";
  * Creates an admin Supabase client that bypasses Row Level Security
  * Uses the service role key - ONLY use for server-side operations
  * where RLS bypass is necessary (e.g., dev mode without auth)
- * @returns Supabase admin client instance
+ * @returns Supabase admin client instance or null if service role key is not configured
  */
 export function createAdminClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    console.error("[createAdminClient] SUPABASE_SERVICE_ROLE_KEY is not configured");
+    return null;
+  }
+
   return createJsClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
