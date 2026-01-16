@@ -110,6 +110,11 @@ export async function getProfileByEmail(email: string) {
   // Use admin client to bypass RLS in dev mode
   const adminClient = createAdminClient();
 
+  if (!adminClient) {
+    console.error("❌ [getProfileByEmail] Admin client not available - SUPABASE_SERVICE_ROLE_KEY may not be set");
+    return null;
+  }
+
   const { data: profile, error } = await adminClient
     .from("profiles")
     .select(`

@@ -37,12 +37,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Redirect root to home
-    if (pathname === "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/home";
-      return NextResponse.redirect(url);
-    }
+    // Allow root path (landing page) to be accessible
+    // User can navigate to dashboard from there
 
     // Allow all other routes without authentication
     return NextResponse.next({ request });
