@@ -151,20 +151,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Root page - redirect authenticated users to dashboard or onboarding
-  if (pathname === "/" && user) {
-    // Check if user has fully completed onboarding
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("id", user.id)
-      .single();
-
-    const hasCompletedOnboarding = profile?.onboarding_completed === true;
-    const url = request.nextUrl.clone();
-    url.pathname = hasCompletedOnboarding ? "/home" : "/onboarding";
-    return NextResponse.redirect(url);
-  }
+  // Root page (landing page) - allow access for all users (authenticated or not)
+  // The landing page will show appropriate buttons based on auth state
 
   return supabaseResponse;
 }
