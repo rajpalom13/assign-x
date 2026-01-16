@@ -64,17 +64,26 @@ async function getUserIdForDataFetch(): Promise<string | null> {
  * Get current user's profile with related data
  */
 export async function getProfile() {
-  const supabase = await createClient();
-
   // Check if login is required
   const requireLogin = process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
+
+  console.log("🔧 [getProfile] Config:", {
+    requireLogin,
+    devEmail: process.env.NEXT_PUBLIC_DEV_USER_EMAIL,
+    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    serviceKeyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+  });
 
   if (!requireLogin) {
     // Use default dev user email
     const devEmail = process.env.NEXT_PUBLIC_DEV_USER_EMAIL || "omrajpal.exe@gmail.com";
-    return getProfileByEmail(devEmail);
+    console.log("🔧 [getProfile] Dev mode - fetching profile for:", devEmail);
+    const profile = await getProfileByEmail(devEmail);
+    console.log("🔧 [getProfile] Dev mode result:", profile ? "Found" : "Not found", profile?.id);
+    return profile;
   }
 
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;
@@ -107,13 +116,18 @@ export async function getProfile() {
  * @param email - The email address to look up
  */
 export async function getProfileByEmail(email: string) {
+  console.log("🔧 [getProfileByEmail] Starting for email:", email);
+
   // Use admin client to bypass RLS in dev mode
   const adminClient = createAdminClient();
 
   if (!adminClient) {
-    console.error("❌ [getProfileByEmail] Admin client not available - SUPABASE_SERVICE_ROLE_KEY may not be set");
+    console.error("❌ [getProfileByEmail] Admin client not available");
+    console.error("❌ [getProfileByEmail] SUPABASE_SERVICE_ROLE_KEY length:", process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0);
     return null;
   }
+
+  console.log("🔧 [getProfileByEmail] Admin client created, querying...");
 
   const { data: profile, error } = await adminClient
     .from("profiles")
@@ -134,10 +148,11 @@ export async function getProfileByEmail(email: string) {
     .single();
 
   if (error) {
-    console.error("❌ [getProfileByEmail] Error:", error);
+    console.error("❌ [getProfileByEmail] Query error:", error.message, error.code);
     return null;
   }
 
+  console.log("✅ [getProfileByEmail] Found profile:", profile?.id, profile?.full_name);
   return profile;
 }
 
