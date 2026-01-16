@@ -91,6 +91,14 @@ function FloatingCard({
   );
 }
 
+/**
+ * Check if login is required based on environment variable
+ * In dev mode (REQUIRE_LOGIN=false), we bypass authentication
+ */
+function isLoginRequired(): boolean {
+  return process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
+}
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -98,9 +106,15 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
-  // Redirect if already logged in
+  // Redirect if login is not required (dev mode) or already logged in
   useEffect(() => {
     const checkUser = async () => {
+      // In dev mode, redirect directly to home without auth check
+      if (!isLoginRequired()) {
+        router.replace("/home");
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();

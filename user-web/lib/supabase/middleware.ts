@@ -7,10 +7,48 @@ import { NextResponse, type NextRequest } from "next/server";
  * - New users (no profile/user_type) -> onboarding
  * - Existing users (has profile/user_type) -> dashboard
  * - Unauthenticated users on protected routes -> login
+ *
+ * DEV MODE: When NEXT_PUBLIC_REQUIRE_LOGIN=false, authentication is bypassed
+ * and all protected routes are accessible without login
+ *
  * @param request - The incoming request
  * @returns NextResponse with updated session cookies
  */
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Check if login is required (dev mode bypass)
+  const requireLogin = process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
+
+  // If login is not required, allow access to all routes except explicitly redirect login to home
+  if (!requireLogin) {
+    // Redirect login page to home in dev mode
+    if (pathname === "/login") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+
+    // Redirect onboarding routes to home (user is already "onboarded" in dev mode)
+    const onboardingRoutes = ["/onboarding", "/signup/student", "/signup/professional"];
+    if (onboardingRoutes.some((route) => pathname.startsWith(route))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+
+    // Redirect root to home
+    if (pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+
+    // Allow all other routes without authentication
+    return NextResponse.next({ request });
+  }
+
+  // Normal authentication flow when login is required
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -43,8 +81,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
 
   // Protected routes - redirect to login if not authenticated
   const protectedRoutes = [

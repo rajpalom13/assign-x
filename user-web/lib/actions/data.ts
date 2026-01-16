@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import {
   createProjectSchema,
@@ -9,10 +9,64 @@ import {
 } from "@/lib/validations";
 
 /**
+ * Check if login is required based on environment variable
+ */
+function isLoginRequired(): boolean {
+  return process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
+}
+
+/**
+ * Get the dev user email from environment
+ */
+function getDevUserEmail(): string {
+  return process.env.NEXT_PUBLIC_DEV_USER_EMAIL || "omrajpal.exe@gmail.com";
+}
+
+/**
+ * Get user ID for data fetching - handles both authenticated and dev mode
+ * @returns User ID or null if not available
+ */
+async function getUserIdForDataFetch(): Promise<string | null> {
+  if (!isLoginRequired()) {
+    // In dev mode, use admin client to bypass RLS
+    const adminClient = createAdminClient();
+    const devEmail = getDevUserEmail();
+
+    const { data: profile, error } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("email", devEmail)
+      .single();
+
+    if (error) {
+      console.error("❌ [getUserIdForDataFetch] Error fetching dev user:", error);
+      return null;
+    }
+
+    return profile?.id || null;
+  }
+
+  // Normal auth flow
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
+
+/**
  * Get current user's profile with related data
  */
 export async function getProfile() {
   const supabase = await createClient();
+
+  // Check if login is required
+  const requireLogin = process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
+
+  if (!requireLogin) {
+    // Use default dev user email
+    const devEmail = process.env.NEXT_PUBLIC_DEV_USER_EMAIL || "omrajpal.exe@gmail.com";
+    return getProfileByEmail(devEmail);
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;
@@ -39,13 +93,49 @@ export async function getProfile() {
 }
 
 /**
+ * Get profile by email address
+ * Used for dev mode when authentication is bypassed
+ * Uses admin client to bypass RLS
+ * @param email - The email address to look up
+ */
+export async function getProfileByEmail(email: string) {
+  // Use admin client to bypass RLS in dev mode
+  const adminClient = createAdminClient();
+
+  const { data: profile, error } = await adminClient
+    .from("profiles")
+    .select(`
+      *,
+      students (
+        *,
+        university:universities (*),
+        course:courses (*)
+      ),
+      professionals (
+        *,
+        industry:industries (*)
+      ),
+      wallet:wallets (*)
+    `)
+    .eq("email", email)
+    .single();
+
+  if (error) {
+    console.error("❌ [getProfileByEmail] Error:", error);
+    return null;
+  }
+
+  return profile;
+}
+
+/**
  * Get user's projects with filtering
  */
 export async function getProjects(status?: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return [];
+  if (!userId) return [];
 
   let query = supabase
     .from("projects")
@@ -54,7 +144,7 @@ export async function getProjects(status?: string) {
       subject:subjects (id, name, icon, slug),
       reference_style:reference_styles (id, name, version)
     `)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (status) {
@@ -75,9 +165,9 @@ export async function getProjects(status?: string) {
  */
 export async function getProjectById(id: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return null;
+  if (!userId) return null;
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -92,7 +182,7 @@ export async function getProjectById(id: string) {
       timeline:project_timeline (*)
     `)
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
 
   if (error) {
@@ -107,14 +197,14 @@ export async function getProjectById(id: string) {
  */
 export async function getNotifications(limit = 20) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return [];
+  if (!userId) return [];
 
   const { data: notifications, error } = await supabase
     .from("notifications")
     .select("*")
-    .eq("profile_id", user.id)
+    .eq("profile_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -130,15 +220,15 @@ export async function getNotifications(limit = 20) {
  */
 export async function markNotificationRead(id: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("notifications")
     .update({ is_read: true, read_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("profile_id", user.id);
+    .eq("profile_id", userId);
 
   if (error) {
     return { error: error.message };
@@ -153,14 +243,14 @@ export async function markNotificationRead(id: string) {
  */
 export async function markAllNotificationsRead() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("notifications")
     .update({ is_read: true, read_at: new Date().toISOString() })
-    .eq("profile_id", user.id)
+    .eq("profile_id", userId)
     .eq("is_read", false);
 
   if (error) {
@@ -176,14 +266,14 @@ export async function markAllNotificationsRead() {
  */
 export async function getWallet() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return null;
+  if (!userId) return null;
 
   const { data: wallet, error } = await supabase
     .from("wallets")
     .select("*")
-    .eq("profile_id", user.id)
+    .eq("profile_id", userId)
     .single();
 
   if (error) {
@@ -198,14 +288,14 @@ export async function getWallet() {
  */
 export async function getWalletTransactions(limit = 20) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return [];
+  if (!userId) return [];
 
   const { data: wallet } = await supabase
     .from("wallets")
     .select("id")
-    .eq("profile_id", user.id)
+    .eq("profile_id", userId)
     .single();
 
   if (!wallet) return [];
@@ -289,14 +379,14 @@ export async function getFAQs(category?: string) {
  */
 export async function getSupportTickets() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return [];
+  if (!userId) return [];
 
   const { data: tickets, error } = await supabase
     .from("support_tickets")
     .select("*")
-    .eq("requester_id", user.id)
+    .eq("requester_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -316,9 +406,9 @@ export async function createSupportTicket(data: {
   projectId?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Generate ticket number
   const ticketNumber = `TKT-${Date.now().toString(36).toUpperCase()}`;
@@ -327,7 +417,7 @@ export async function createSupportTicket(data: {
     .from("support_tickets")
     .insert({
       ticket_number: ticketNumber,
-      requester_id: user.id,
+      requester_id: userId,
       subject: data.subject,
       description: data.description,
       category: data.category,
@@ -455,14 +545,14 @@ export async function submitFeedback(data: {
   projectId?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("user_feedback")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       overall_satisfaction: data.overallSatisfaction,
       feedback_text: data.feedbackText,
       would_recommend: data.wouldRecommend,
@@ -489,9 +579,9 @@ export async function updateProfile(data: {
   country?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("profiles")
@@ -503,7 +593,7 @@ export async function updateProfile(data: {
       country: data.country,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", user.id);
+    .eq("id", userId);
 
   if (error) {
     return { error: error.message };
@@ -526,9 +616,9 @@ export async function updateStudentProfile(data: {
   dateOfBirth?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("students")
@@ -541,7 +631,7 @@ export async function updateStudentProfile(data: {
       student_id_number: data.studentId,
       date_of_birth: data.dateOfBirth,
     })
-    .eq("profile_id", user.id);
+    .eq("profile_id", userId);
 
   if (error) {
     return { error: error.message };
@@ -584,9 +674,9 @@ export async function createProject(data: {
 
   const validatedData = validationResult.data;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Resolve subject ID - lookup by slug if not a UUID
   let resolvedSubjectId: string | null = null;
@@ -639,7 +729,7 @@ export async function createProject(data: {
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       project_number: projectNumber,
       service_type: validatedData.serviceType,
       title: validatedData.title,
@@ -695,19 +785,19 @@ export async function uploadProjectFile(
 
   const validatedFile = validationResult.data;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Verify user has a profile (required for FK constraint on uploaded_by)
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
   if (profileError || !profile) {
-    console.error("[uploadProjectFile] Profile not found for user:", user.id, profileError);
+    console.error("[uploadProjectFile] Profile not found for user:", userId, profileError);
     return { error: "User profile not found. Please complete your profile setup first." };
   }
 
@@ -718,7 +808,7 @@ export async function uploadProjectFile(
     .eq("id", projectId)
     .single();
 
-  if (!projectOwner || projectOwner.user_id !== user.id) {
+  if (!projectOwner || projectOwner.user_id !== userId) {
     return { error: "Project not found or access denied" };
   }
 
@@ -749,7 +839,7 @@ export async function uploadProjectFile(
         file_type: validatedFile.type,
         file_size_bytes: validatedFile.size,
         file_category: "user_upload",
-        uploaded_by: user.id,
+        uploaded_by: userId,
       });
 
     if (fileError) {
@@ -819,16 +909,16 @@ const defaultPreferences: Omit<UserPreferencesData, "id" | "createdAt" | "update
  */
 export async function getUserPreferences(): Promise<UserPreferencesData> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) {
+  if (!userId) {
     return defaultPreferences as UserPreferencesData;
   }
 
   const { data: preferences, error } = await supabase
     .from("user_preferences")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error || !preferences) {
@@ -857,15 +947,15 @@ export async function updateUserPreferences(data: {
   notifications?: Partial<NotificationPreferencesData>;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Get existing preferences to merge with updates
   const { data: existing } = await supabase
     .from("user_preferences")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
 
   const now = new Date().toISOString();
@@ -887,7 +977,7 @@ export async function updateUserPreferences(data: {
         updated_at: now,
       })
       .eq("id", existing.id)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (error) {
       return { error: error.message };
@@ -897,7 +987,7 @@ export async function updateUserPreferences(data: {
     const { error } = await supabase
       .from("user_preferences")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         theme: data.theme || defaultPreferences.theme,
         language: data.language || defaultPreferences.language,
         notifications: mergedNotifications,
@@ -946,14 +1036,14 @@ export async function updateNotificationPreferences(
  */
 export async function resetUserPreferences() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   const { error } = await supabase
     .from("user_preferences")
     .delete()
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
 
   if (error) {
     return { error: error.message };
@@ -973,16 +1063,16 @@ export async function resetUserPreferences() {
  */
 export async function uploadAvatar(base64Data: string, fileName: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   try {
     const { uploadToCloudinary } = await import("@/lib/cloudinary/client");
 
     // Upload to Cloudinary
     const uploadResult = await uploadToCloudinary(base64Data, {
-      folder: `assignx/avatars/${user.id}`,
+      folder: `assignx/avatars/${userId}`,
       publicId: `avatar_${Date.now()}`,
       resourceType: "image",
     });
@@ -994,7 +1084,7 @@ export async function uploadAvatar(base64Data: string, fileName: string) {
         avatar_url: uploadResult.url,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", user.id);
+      .eq("id", userId);
 
     if (updateError) {
       return { error: "Failed to update profile" };
@@ -1016,9 +1106,9 @@ export async function uploadAvatar(base64Data: string, fileName: string) {
  */
 export async function createRevisionRequest(projectId: string, feedback: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Verify project belongs to user
   const { data: project } = await supabase
@@ -1027,7 +1117,7 @@ export async function createRevisionRequest(projectId: string, feedback: string)
     .eq("id", projectId)
     .single();
 
-  if (!project || project.user_id !== user.id) {
+  if (!project || project.user_id !== userId) {
     return { error: "Project not found" };
   }
 
@@ -1036,7 +1126,7 @@ export async function createRevisionRequest(projectId: string, feedback: string)
     .from("project_revisions")
     .insert({
       project_id: projectId,
-      requested_by: user.id,
+      requested_by: userId,
       revision_notes: feedback,
       status: "pending",
     })
@@ -1055,7 +1145,7 @@ export async function createRevisionRequest(projectId: string, feedback: string)
 
   // Create notification
   await supabase.from("notifications").insert({
-    profile_id: user.id,
+    profile_id: userId,
     type: "revision",
     title: "Revision Request Submitted",
     message: "Your revision request has been submitted and will be reviewed shortly.",
@@ -1076,9 +1166,9 @@ export async function createRevisionRequest(projectId: string, feedback: string)
  */
 export async function exportUserData() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   try {
     // Fetch all user data
@@ -1089,11 +1179,11 @@ export async function exportUserData() {
       transactionsResult,
       notificationsResult,
     ] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("projects").select("*").eq("user_id", user.id),
-      supabase.from("wallets").select("*").eq("profile_id", user.id).single(),
-      supabase.from("wallet_transactions").select("*").eq("wallet_id", user.id),
-      supabase.from("notifications").select("*").eq("profile_id", user.id),
+      supabase.from("profiles").select("*").eq("id", userId).single(),
+      supabase.from("projects").select("*").eq("user_id", userId),
+      supabase.from("wallets").select("*").eq("profile_id", userId).single(),
+      supabase.from("wallet_transactions").select("*").eq("wallet_id", userId),
+      supabase.from("notifications").select("*").eq("profile_id", userId),
     ]);
 
     const exportData = {
@@ -1121,9 +1211,9 @@ export async function exportUserData() {
  */
 export async function markProjectComplete(projectId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Verify project belongs to user and is in deliverable state
   const { data: project } = await supabase
@@ -1132,7 +1222,7 @@ export async function markProjectComplete(projectId: string) {
     .eq("id", projectId)
     .single();
 
-  if (!project || project.user_id !== user.id) {
+  if (!project || project.user_id !== userId) {
     return { error: "Project not found" };
   }
 
@@ -1158,7 +1248,7 @@ export async function markProjectComplete(projectId: string) {
 
   // Create notification
   await supabase.from("notifications").insert({
-    profile_id: user.id,
+    profile_id: userId,
     type: "project",
     title: "Project Completed",
     message: `Project ${project.project_number} has been marked as complete. Thank you for using AssignX!`,
@@ -1168,7 +1258,7 @@ export async function markProjectComplete(projectId: string) {
 
   // Log activity
   await supabase.from("activity_logs").insert({
-    profile_id: user.id,
+    profile_id: userId,
     action: "project_completed",
     action_category: "project",
     target_type: "project",
@@ -1197,15 +1287,15 @@ export async function bookExpertSession(data: {
   notes?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Create booking record
   const { data: booking, error } = await supabase
     .from("expert_bookings")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       expert_id: data.expertId,
       session_type: data.sessionType,
       scheduled_date: data.date,
@@ -1227,7 +1317,7 @@ export async function bookExpertSession(data: {
 
   // Create notification
   await supabase.from("notifications").insert({
-    profile_id: user.id,
+    profile_id: userId,
     type: "booking",
     title: "Session Booked",
     message: `Your ${data.sessionType} session has been booked for ${data.date} at ${data.time}.`,
@@ -1247,15 +1337,15 @@ export async function submitConnectQuestion(data: {
   category?: string;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const userId = await getUserIdForDataFetch();
 
-  if (!user) return { error: "Not authenticated" };
+  if (!userId) return { error: "Not authenticated" };
 
   // Try to insert into questions table, fall back to support tickets
   const { data: question, error } = await supabase
     .from("connect_questions")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       expert_id: data.expertId,
       question: data.question,
       category: data.category,
@@ -1270,7 +1360,7 @@ export async function submitConnectQuestion(data: {
       const { data: ticket, error: ticketError } = await supabase
         .from("support_tickets")
         .insert({
-          requester_id: user.id,
+          requester_id: userId,
           ticket_number: `Q-${Date.now().toString(36).toUpperCase()}`,
           subject: "Expert Question",
           description: data.question,

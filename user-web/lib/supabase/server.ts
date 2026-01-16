@@ -4,6 +4,25 @@ import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 
 /**
+ * Creates an admin Supabase client that bypasses Row Level Security
+ * Uses the service role key - ONLY use for server-side operations
+ * where RLS bypass is necessary (e.g., dev mode without auth)
+ * @returns Supabase admin client instance
+ */
+export function createAdminClient() {
+  return createJsClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
+
+/**
  * Creates a Supabase client for use in Server Components, Server Actions, and Route Handlers
  * Uses cookie-based authentication (for web app)
  * @returns Supabase server client instance

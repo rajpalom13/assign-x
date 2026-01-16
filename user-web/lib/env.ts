@@ -79,6 +79,9 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().min(1),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  // Development settings for bypassing auth
+  NEXT_PUBLIC_REQUIRE_LOGIN: z.string().optional().default("true"),
+  NEXT_PUBLIC_DEV_USER_EMAIL: z.string().email().optional(),
 })
 
 /**
@@ -128,6 +131,8 @@ function validateClientEnv(): ClientEnv {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_REQUIRE_LOGIN: process.env.NEXT_PUBLIC_REQUIRE_LOGIN,
+    NEXT_PUBLIC_DEV_USER_EMAIL: process.env.NEXT_PUBLIC_DEV_USER_EMAIL,
   }
 
   const parsed = clientEnvSchema.safeParse(clientEnvValues)
@@ -177,6 +182,11 @@ export const features = {
     process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN
   ),
   analytics: Boolean(process.env.NEXT_PUBLIC_ANALYTICS_ID),
+  /**
+   * When false, bypasses authentication and uses default dev user
+   * Useful for development and testing without requiring Google OAuth
+   */
+  requireLogin: process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false",
 }
 
 /**
