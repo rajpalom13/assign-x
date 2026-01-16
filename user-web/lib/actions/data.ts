@@ -846,7 +846,7 @@ export async function uploadProjectFile(
       console.error("[uploadProjectFile] Database insert error:", {
         error: fileError,
         projectId,
-        userId: user.id,
+        userId,
         fileName: sanitizedFileName,
       });
       return { error: `Failed to save file record: ${fileError.message || "Unknown error"}` };
