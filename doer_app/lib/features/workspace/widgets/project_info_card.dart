@@ -41,7 +41,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/doer_project_model.dart';
 import '../../dashboard/widgets/deadline_countdown.dart';
 import '../../dashboard/widgets/urgency_badge.dart';
 
@@ -52,11 +52,11 @@ import '../../dashboard/widgets/urgency_badge.dart';
 /// supervisor info. Used in workspace for quick project reference.
 ///
 /// ## Props
-/// - [project]: The [ProjectModel] to display
+/// - [project]: The [DoerProjectModel] to display
 /// - [expanded]: Whether details section is visible
 /// - [onToggleExpand]: Callback to toggle expanded state
 class ProjectInfoCard extends StatelessWidget {
-  final ProjectModel project;
+  final DoerProjectModel project;
   final bool expanded;
   final VoidCallback? onToggleExpand;
 
@@ -117,7 +117,7 @@ class ProjectInfoCard extends StatelessWidget {
                     children: [
                       _buildInfoChip(
                         icon: Icons.category,
-                        label: project.subject,
+                        label: project.subject ?? 'General',
                         color: AppColors.accent,
                       ),
                       const SizedBox(width: AppSpacing.sm),
@@ -283,10 +283,10 @@ class ProjectInfoCard extends StatelessWidget {
 /// urgency badge when applicable.
 ///
 /// ## Props
-/// - [project]: The [ProjectModel] to display
+/// - [project]: The [DoerProjectModel] to display
 /// - [onInfoTap]: Callback for info button (opens project details)
 class CompactProjectHeader extends StatelessWidget {
-  final ProjectModel project;
+  final DoerProjectModel project;
   final VoidCallback? onInfoTap;
 
   const CompactProjectHeader({
@@ -336,7 +336,7 @@ class CompactProjectHeader extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        project.subject,
+                        project.subject ?? 'General',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,

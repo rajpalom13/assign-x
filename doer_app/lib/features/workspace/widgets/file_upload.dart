@@ -42,14 +42,14 @@
 /// See also:
 /// - [WorkspaceScreen] for usage context
 /// - [WorkspaceProvider] for file state management
-/// - [WorkFile] model for file data structure
+/// - [DeliverableModel] model for file data structure
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../providers/workspace_provider.dart';
+import '../../../data/models/deliverable_model.dart';
 
 /// Tappable file upload area widget.
 ///
@@ -135,12 +135,12 @@ class FileUploadArea extends StatelessWidget {
 /// the primary submission file. Displays empty state when no files.
 ///
 /// ## Props
-/// - [files]: List of [WorkFile] objects to display
+/// - [files]: List of [DeliverableModel] objects to display
 /// - [onRemove]: Callback when remove button is pressed
 /// - [onSetPrimary]: Callback to mark file as primary submission
 /// - [editable]: Enable/disable action buttons
 class FileList extends StatelessWidget {
-  final List<WorkFile> files;
+  final List<DeliverableModel> files;
   final ValueChanged<String>? onRemove;
   final ValueChanged<String>? onSetPrimary;
   final bool editable;
@@ -217,12 +217,12 @@ class FileList extends StatelessWidget {
 /// - Remove button for deletion
 ///
 /// ## Props
-/// - [file]: The [WorkFile] to display
+/// - [file]: The [DeliverableModel] to display
 /// - [onRemove]: Remove button callback
 /// - [onSetPrimary]: Set-as-primary callback
 /// - [onTap]: Optional tap handler for file preview
 class FileListItem extends StatelessWidget {
-  final WorkFile file;
+  final DeliverableModel file;
   final VoidCallback? onRemove;
   final VoidCallback? onSetPrimary;
   final VoidCallback? onTap;
@@ -241,7 +241,7 @@ class FileListItem extends StatelessWidget {
       elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: AppSpacing.borderRadiusSm,
-        side: file.isPrimary
+        side: file.isFinal
             ? const BorderSide(color: AppColors.primary, width: 2)
             : BorderSide.none,
       ),
@@ -285,7 +285,7 @@ class FileListItem extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            file.name,
+                            file.fileName,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -295,7 +295,7 @@ class FileListItem extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (file.isPrimary)
+                        if (file.isFinal)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
                             padding: const EdgeInsets.symmetric(
@@ -319,7 +319,7 @@ class FileListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${file.formattedSize} • ${_formatTime(file.uploadedAt)}',
+                      '${file.formattedSize} • ${_formatTime(file.createdAt)}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -330,7 +330,7 @@ class FileListItem extends StatelessWidget {
               ),
 
               // Actions
-              if (onSetPrimary != null && !file.isPrimary)
+              if (onSetPrimary != null && !file.isFinal)
                 IconButton(
                   onPressed: onSetPrimary,
                   icon: const Icon(Icons.star_border),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../data/models/project_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/loading_overlay.dart';
 import '../widgets/app_header.dart';

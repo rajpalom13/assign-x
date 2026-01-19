@@ -1,10 +1,11 @@
+import '../../../data/models/project_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/doer_project_model.dart';
 import '../../../providers/dashboard_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/loading_overlay.dart';
@@ -355,7 +356,7 @@ class _StatItem extends StatelessWidget {
 /// and "In Progress" sections with pull-to-refresh.
 class _MyProjectsTab extends StatelessWidget {
   /// List of assigned projects.
-  final List<ProjectModel> projects;
+  final List<DoerProjectModel> projects;
 
   /// Callback to refresh project list.
   final VoidCallback onRefresh;
@@ -486,7 +487,7 @@ class _MyProjectsTab extends StatelessWidget {
 /// with accept buttons and confirmation dialogs.
 class _OpenPoolTab extends StatelessWidget {
   /// List of available projects in the pool.
-  final List<ProjectModel> projects;
+  final List<DoerProjectModel> projects;
 
   /// Callback to refresh project list.
   final VoidCallback onRefresh;
@@ -515,7 +516,7 @@ class _OpenPoolTab extends StatelessWidget {
     }
 
     // Sort by urgency and deadline
-    final sortedProjects = List<ProjectModel>.from(projects)
+    final sortedProjects = List<DoerProjectModel>.from(projects)
       ..sort((a, b) {
         // Urgent projects first
         if (a.isUrgent && !b.isUrgent) return -1;
@@ -546,7 +547,7 @@ class _OpenPoolTab extends StatelessWidget {
   }
 
   /// Shows confirmation dialog before accepting a project.
-  void _confirmAccept(BuildContext context, ProjectModel project) {
+  void _confirmAccept(BuildContext context, DoerProjectModel project) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

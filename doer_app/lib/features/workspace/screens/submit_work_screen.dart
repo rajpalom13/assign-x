@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/doer_project_model.dart';
+import '../../../data/models/deliverable_model.dart';
 import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
@@ -54,7 +55,7 @@ import '../widgets/file_upload.dart';
 /// See also:
 /// - [WorkspaceProvider] for workspace state
 /// - [WorkspaceScreen] for file management
-/// - [WorkFile] for file model
+/// - [DeliverableModel] for file model
 class SubmitWorkScreen extends ConsumerStatefulWidget {
   final String projectId;
 
@@ -84,8 +85,8 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
     final workspaceNotifier = ref.watch(workspaceProvider(widget.projectId));
     final workspaceState = workspaceNotifier.state;
     final project = workspaceState.project;
-    final files = workspaceState.files;
-    final primaryFile = files.where((f) => f.isPrimary).firstOrNull;
+    final files = workspaceState.deliverables;
+    final primaryFile = files.where((f) => f.isFinal).firstOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -169,7 +170,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
     );
   }
 
-  Widget _buildSummaryCard(ProjectModel? project, WorkspaceState workspaceState) {
+  Widget _buildSummaryCard(DoerProjectModel? project, WorkspaceState workspaceState) {
     return Card(
       elevation: 2,
       shape: const RoundedRectangleBorder(
@@ -226,7 +227,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
             // Files count
             _buildSummaryRow(
               'Files',
-              '${workspaceState.files.length} file${workspaceState.files.length != 1 ? 's' : ''}',
+              '${workspaceState.deliverables.length} file${workspaceState.deliverables.length != 1 ? 's' : ''}',
             ),
 
             // Warning if progress is low
@@ -291,7 +292,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
     );
   }
 
-  Widget _buildFileSection(List<WorkFile> files, WorkFile? primaryFile) {
+  Widget _buildFileSection(List<DeliverableModel> files, DeliverableModel? primaryFile) {
     return Card(
       elevation: 2,
       shape: const RoundedRectangleBorder(
@@ -454,7 +455,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
   }
 
   Widget _buildBottomBar(WorkspaceState workspaceState) {
-    final canSubmit = workspaceState.files.isNotEmpty &&
+    final canSubmit = workspaceState.deliverables.isNotEmpty &&
         _confirmChecklist &&
         _confirmOriginal &&
         !_isSubmitting;
@@ -502,7 +503,7 @@ class _SubmitWorkScreenState extends ConsumerState<SubmitWorkScreen> {
   }
 
   String _getDisabledReason(WorkspaceState workspaceState) {
-    if (workspaceState.files.isEmpty) {
+    if (workspaceState.deliverables.isEmpty) {
       return 'Please upload at least one file';
     }
     if (!_confirmChecklist) {

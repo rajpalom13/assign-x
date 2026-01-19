@@ -9,6 +9,8 @@ import '../../../data/models/training_model.dart';
 import '../../../providers/activation_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../widgets/training_module_card.dart';
+import '../widgets/training_pdf_viewer.dart';
+import '../widgets/training_video_player.dart';
 
 /// Training screen for completing training modules.
 ///
@@ -328,168 +330,23 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     }
   }
 
-  /// Builds video content placeholder.
-  ///
-  /// TODO: Integrate with chewie/video_player for actual video playback.
+  /// Builds video content using TrainingVideoPlayer widget.
   Widget _buildVideoContent(TrainingModule module) {
-    // Placeholder for video player
-    // In production, use chewie/video_player package
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            color: Colors.black,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  const Text(
-                    'Video Player',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Duration: ${module.durationMinutes} minutes',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Container(
-          padding: AppSpacing.paddingLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                module.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                module.description,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return TrainingVideoPlayer(
+      videoUrl: module.contentUrl,
+      title: module.title,
+      description: module.description,
+      durationMinutes: module.durationMinutes,
     );
   }
 
-  /// Builds PDF content placeholder.
-  ///
-  /// TODO: Integrate with flutter_pdfview for actual PDF rendering.
+  /// Builds PDF content using TrainingPdfViewer widget.
   Widget _buildPdfContent(TrainingModule module) {
-    // Placeholder for PDF viewer
-    // In production, use flutter_pdfview package
-    return SingleChildScrollView(
-      padding: AppSpacing.paddingLg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            height: 400,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: AppSpacing.borderRadiusLg,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.picture_as_pdf,
-                  size: 64,
-                  color: Colors.red,
-                ),
-                SizedBox(height: AppSpacing.lg),
-                Text(
-                  'PDF Viewer',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Document will be displayed here',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            module.title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            module.description,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              const Icon(
-                Icons.access_time,
-                size: 16,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Estimated reading time: ${module.durationMinutes} minutes',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return TrainingPdfViewer(
+      pdfUrl: module.contentUrl,
+      title: module.title,
+      description: module.description,
+      durationMinutes: module.durationMinutes,
     );
   }
 

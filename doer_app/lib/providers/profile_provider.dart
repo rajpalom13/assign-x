@@ -27,6 +27,10 @@
 ///   bio: 'Updated bio',
 /// );
 ///
+/// // Upload avatar
+/// final imageFile = File('/path/to/image.jpg');
+/// await ref.read(profileProvider.notifier).uploadAvatar(imageFile);
+///
 /// // Update notification preferences
 /// await ref.read(profileProvider.notifier).updateNotificationPreferences(
 ///   newPreferences,
@@ -60,11 +64,14 @@
 /// - [PaymentTransaction] for payment records
 library;
 
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/supabase_config.dart';
-import '../data/mock/mock_profile_data.dart';
+import '../core/constants/api_constants.dart';
 import '../shared/utils/masking_utils.dart';
 
 /// User profile data model.
@@ -891,10 +898,10 @@ class ProfileNotifier extends Notifier<ProfileState> {
       if (user == null) {
         state = state.copyWith(
           isLoading: false,
-          profile: MockProfileData.getProfile(),
-          paymentHistory: MockProfileData.getPaymentHistory(),
-          bankDetails: MockProfileData.getBankDetails(),
-          notifications: MockProfileData.getNotifications(),
+          profile: null,
+          paymentHistory: [],
+          bankDetails: null,
+          notifications: [],
         );
         return;
       }
@@ -920,13 +927,16 @@ class ProfileNotifier extends Notifier<ProfileState> {
         _loadNotificationPreferences(),
       ]);
     } catch (e) {
-      // Use mock data for testing
+      if (kDebugMode) {
+        debugPrint('ProfileNotifier._loadProfile error: $e');
+      }
       state = state.copyWith(
         isLoading: false,
-        profile: MockProfileData.getProfile(),
-        paymentHistory: MockProfileData.getPaymentHistory(),
-        bankDetails: MockProfileData.getBankDetails(),
-        notifications: MockProfileData.getNotifications(),
+        profile: null,
+        paymentHistory: [],
+        bankDetails: null,
+        notifications: [],
+        errorMessage: 'Failed to load profile',
       );
     }
   }
@@ -1105,6 +1115,86 @@ class ProfileNotifier extends Notifier<ProfileState> {
       );
 
       return true;
+    }
+  }
+
+  /// Uploads a new avatar image and updates the profile.
+  ///
+  /// ## Parameters
+  ///
+  /// - [imageFile]: The image file to upload
+  ///
+  /// ## Returns
+  ///
+  /// `true` if upload was successful, `false` otherwise.
+  ///
+  /// ## State Updates
+  ///
+  /// Sets [isSaving] to true during upload, false on completion.
+  /// Updates [UserProfile.avatarUrl] with the new image URL.
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final imageFile = File('/path/to/image.jpg');
+  /// final success = await ref.read(profileProvider.notifier).uploadAvatar(imageFile);
+  /// if (success) {
+  ///   // Show success message
+  /// }
+  /// ```
+  Future<bool> uploadAvatar(File imageFile) async {
+    if (state.profile == null) return false;
+
+    state = state.copyWith(isSaving: true, errorMessage: null);
+
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) {
+        state = state.copyWith(
+          isSaving: false,
+          errorMessage: 'User not authenticated',
+        );
+        return false;
+      }
+
+      // Upload to Supabase storage
+      final fileName = 'avatar_$userId.jpg';
+      final path = 'avatars/$fileName';
+
+      await _client.storage.from(ApiConstants.profileImagesBucket).upload(
+            path,
+            imageFile,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      // Get public URL
+      final avatarUrl = _client.storage
+          .from(ApiConstants.profileImagesBucket)
+          .getPublicUrl(path);
+
+      // Update profile with new avatar URL
+      await _client
+          .from('profiles')
+          .update({'avatar_url': avatarUrl})
+          .eq('id', userId);
+
+      // Update local state
+      final updatedProfile = state.profile!.copyWith(avatarUrl: avatarUrl);
+      state = state.copyWith(
+        profile: updatedProfile,
+        isSaving: false,
+      );
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ProfileNotifier.uploadAvatar error: $e');
+      }
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to upload avatar: $e',
+      );
+      return false;
     }
   }
 

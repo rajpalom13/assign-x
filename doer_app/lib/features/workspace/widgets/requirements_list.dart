@@ -40,7 +40,7 @@
 /// See also:
 /// - [ProjectDetailScreen] for usage context
 /// - [WorkspaceScreen] for workspace usage
-/// - [ProjectModel] for requirement data
+/// - [DoerProjectModel] for requirement data
 library;
 
 import 'package:flutter/material.dart';

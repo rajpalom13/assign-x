@@ -66,9 +66,13 @@ library models;
 
 export 'activation_model.dart';
 export 'bank_details_model.dart' hide BankDetailsFormData;
+export 'chat_model.dart';
+export 'deliverable_model.dart';
 export 'doer_model.dart';
+export 'doer_project_model.dart';
 export 'profile_model.dart';
 export 'project_model.dart';
 export 'quiz_model.dart';
 export 'training_model.dart';
 export 'user_model.dart';
+export 'wallet_model.dart';

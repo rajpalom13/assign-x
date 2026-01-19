@@ -35,6 +35,7 @@ import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/profile_setup_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/activation/screens/activation_gate_screen.dart';
 import '../../features/activation/screens/training_screen.dart';
 import '../../features/activation/screens/quiz_screen.dart';
@@ -68,6 +69,7 @@ const _publicRoutes = [
   RouteNames.onboarding,
   RouteNames.login,
   RouteNames.register,
+  RouteNames.forgotPassword,
 ];
 
 /// Routes accessible during activation (unactivated but authenticated users).
@@ -192,6 +194,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.register,
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.forgotPassword,
+        name: 'forgotPassword',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
       // Profile Setup

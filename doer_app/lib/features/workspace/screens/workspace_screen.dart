@@ -172,11 +172,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
                           // Progress tracker
                           ProgressTracker(
-                            progress: workspaceState.progress,
+                            progress: workspaceState.progress / 100.0,
                             onChanged: (value) => ref
-                                .read(workspaceProvider(widget.projectId)
-                                    )
-                                .updateProgress(value),
+                                .read(workspaceProvider(widget.projectId))
+                                .updateProgress((value * 100).round()),
                           ),
 
                           const SizedBox(height: AppSpacing.lg),
@@ -309,7 +308,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
             // File list
             FileList(
-              files: workspaceState.files,
+              files: workspaceState.deliverables,
               onRemove: (fileId) => ref
                   .read(workspaceProvider(widget.projectId))
                   .removeFile(fileId),
@@ -467,23 +466,25 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     );
   }
 
-  void _mockAddFile() {
-    // Mock adding a file
-    final mockFile = WorkFile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: 'document_${DateTime.now().second}.docx',
-      size: 125000 + (DateTime.now().millisecond * 100),
-      type: 'application/docx',
-      uploadedAt: DateTime.now(),
-    );
+  void _mockAddFile() async {
+    // Mock adding a file - in production, use file_picker package
+    final fileName = 'document_${DateTime.now().second}.docx';
+    final fileSize = 125000 + (DateTime.now().millisecond * 100);
 
-    ref.read(workspaceProvider(widget.projectId)).addFile(mockFile);
+    final success = await ref.read(workspaceProvider(widget.projectId)).addFile(
+          filePath: '/mock/path/$fileName', // Mock path
+          fileName: fileName,
+          fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          fileSizeBytes: fileSize,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('File uploaded successfully'),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File uploaded successfully'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 }

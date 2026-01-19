@@ -61,11 +61,11 @@
 /// - [Citation] for citation generation
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/supabase_config.dart';
-import '../data/mock/mock_resources_data.dart';
 
 /// Training module model representing educational content.
 ///
@@ -659,9 +659,11 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
         isLoading: false,
       );
     } catch (e) {
-      // Use mock data
+      if (kDebugMode) {
+        debugPrint('ResourcesNotifier._loadTrainingModules error: $e');
+      }
       state = state.copyWith(
-        trainingModules: MockResourcesData.getTrainingModules(),
+        trainingModules: [],
         isLoading: false,
       );
     }
@@ -772,10 +774,19 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
 
     try {
       // In production, this would call an AI detection API
+      // TODO: Implement actual AI detection service integration
       await Future.delayed(const Duration(seconds: 2));
 
-      // Mock AI check result
-      final result = MockResourcesData.getAICheckResult(content);
+      // Placeholder result until API is integrated
+      final result = AICheckResult(
+        id: 'check_${DateTime.now().millisecondsSinceEpoch}',
+        content: content,
+        aiScore: 0.0,
+        humanScore: 100.0,
+        highlights: [],
+        verdict: 'AI detection service not yet configured',
+        checkedAt: DateTime.now(),
+      );
 
       state = state.copyWith(
         currentAiCheck: result,
@@ -785,6 +796,9 @@ class ResourcesNotifier extends Notifier<ResourcesState> {
 
       return result;
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ResourcesNotifier.checkForAI error: $e');
+      }
       state = state.copyWith(
         isChecking: false,
         errorMessage: 'Failed to check content',

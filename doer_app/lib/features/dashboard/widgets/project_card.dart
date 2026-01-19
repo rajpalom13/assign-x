@@ -40,7 +40,7 @@
 /// ```
 ///
 /// See also:
-/// - [ProjectModel] for the data structure
+/// - [DoerProjectModel] for the data structure
 /// - [DeadlineCountdown] for deadline display
 /// - [UrgencyBadge] for urgency indicator
 library;
@@ -49,7 +49,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/doer_project_model.dart';
 import '../../../shared/widgets/app_button.dart';
 import 'urgency_badge.dart';
 import 'deadline_countdown.dart';
@@ -71,7 +71,7 @@ import 'deadline_countdown.dart';
 /// - Revision: Red border with warning banner
 /// - Urgent: Shows urgency badge
 class ProjectCard extends StatelessWidget {
-  final ProjectModel project;
+  final DoerProjectModel project;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
   final bool showAcceptButton;
@@ -155,7 +155,7 @@ class ProjectCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  if (project.isUrgent || project.urgency == ProjectUrgency.urgent)
+                  if (project.isUrgent)
                     const UrgencyBadge(),
                 ],
               ),
@@ -173,7 +173,7 @@ class ProjectCard extends StatelessWidget {
                   borderRadius: AppSpacing.borderRadiusSm,
                 ),
                 child: Text(
-                  project.subject,
+                  project.subject ?? 'General',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -267,7 +267,7 @@ class ProjectCard extends StatelessWidget {
               ],
 
               // Status badge for assigned projects
-              if (!showAcceptButton && project.status != ProjectStatus.open) ...[
+              if (!showAcceptButton && project.status != DoerProjectStatus.pendingAssignment) ...[
                 const SizedBox(height: AppSpacing.md),
                 _buildStatusRow(),
               ],
@@ -283,18 +283,18 @@ class ProjectCard extends StatelessWidget {
     String statusText = project.status.displayName;
 
     switch (project.status) {
-      case ProjectStatus.inProgress:
+      case DoerProjectStatus.inProgress:
         statusColor = AppColors.info;
         break;
-      case ProjectStatus.submitted:
-      case ProjectStatus.underReview:
+      case DoerProjectStatus.delivered:
+      case DoerProjectStatus.forReview:
         statusColor = AppColors.warning;
         break;
-      case ProjectStatus.completed:
-      case ProjectStatus.paid:
+      case DoerProjectStatus.completed:
+      case DoerProjectStatus.paid:
         statusColor = AppColors.success;
         break;
-      case ProjectStatus.revisionRequested:
+      case DoerProjectStatus.revisionRequested:
         statusColor = AppColors.error;
         break;
       default:
@@ -363,7 +363,7 @@ class ProjectCard extends StatelessWidget {
 /// - Subject and price in a row
 /// - Urgency badge (if applicable)
 class CompactProjectCard extends StatelessWidget {
-  final ProjectModel project;
+  final DoerProjectModel project;
   final VoidCallback? onTap;
 
   const CompactProjectCard({
@@ -404,20 +404,29 @@ class CompactProjectCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          project.subject,
+                          project.subject ?? 'General',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          project.formattedPrice,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.success,
-                          ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.currency_rupee,
+                              size: 12,
+                              color: AppColors.success,
+                            ),
+                            Text(
+                              project.price.toStringAsFixed(0),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -342,6 +342,29 @@ class Validators {
   static String? upi(String? value) => upiId(value);
 
   // ---------------------------------------------------------------------------
+  // Boolean Email Validation
+  // ---------------------------------------------------------------------------
+
+  /// Validates email format and returns boolean.
+  ///
+  /// Convenience method for boolean validation (true if valid, false if invalid).
+  ///
+  /// @param value The email to validate
+  /// @returns true if email is valid, false otherwise
+  ///
+  /// ## Example
+  /// ```dart
+  /// Validators.isValidEmail('user@example.com'); // true
+  /// Validators.isValidEmail('invalid-email');    // false
+  /// ```
+  static bool isValidEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return false;
+    }
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value);
+  }
+
+  // ---------------------------------------------------------------------------
   // URL Validation
   // ---------------------------------------------------------------------------
 

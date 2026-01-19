@@ -859,6 +859,63 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  /// Signs in with magic link (passwordless email authentication).
+  ///
+  /// Sends a magic link to the provided email address. The user clicks
+  /// the link in their email to complete authentication without a password.
+  ///
+  /// ## Parameters
+  ///
+  /// - [email]: Email address to send the magic link to
+  ///
+  /// ## Returns
+  ///
+  /// `true` if the magic link was sent successfully, `false` otherwise.
+  ///
+  /// ## State Updates
+  ///
+  /// - Sets status to [AuthStatus.loading] during operation
+  /// - On success: [AuthStatus.unauthenticated] (waiting for link click)
+  /// - On error: [AuthStatus.error] with descriptive message
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final success = await ref.read(authProvider.notifier).signInWithMagicLink(
+  ///   email: 'user@example.com',
+  /// );
+  /// if (success) {
+  ///   // Show message to check email
+  /// }
+  /// ```
+  Future<bool> signInWithMagicLink({required String email}) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
+    try {
+      final success = await _repository.signInWithMagicLink(email: email);
+
+      // After sending, keep state as unauthenticated (user needs to click link)
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        errorMessage: null,
+      );
+
+      return success;
+    } catch (e) {
+      String errorMessage = 'Failed to send magic link';
+      if (e.toString().contains('rate limit')) {
+        errorMessage = 'Too many attempts. Please try again later.';
+      } else if (e.toString().contains('invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      }
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: errorMessage,
+      );
+      return false;
+    }
+  }
+
   /// Refreshes the current user's profile from the database.
   ///
   /// Use this method to sync local state with server after external changes.
@@ -872,6 +929,61 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> refreshProfile() async {
     if (state.user != null) {
       await _fetchUserProfile(state.user!.id);
+    }
+  }
+
+  /// Sends a password reset email to the specified address.
+  ///
+  /// Initiates the password reset flow by sending a reset link via email.
+  /// The user will receive an email with a link to reset their password.
+  ///
+  /// ## Parameters
+  ///
+  /// - [email]: Email address to send the reset link to
+  ///
+  /// ## Returns
+  ///
+  /// `true` if the reset email was sent successfully, `false` otherwise.
+  ///
+  /// ## State Updates
+  ///
+  /// - Does not change authentication state (user remains unauthenticated)
+  /// - On error: Sets [AuthState.errorMessage] with descriptive message
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final success = await ref.read(authProvider.notifier).resetPassword(
+  ///   email: 'user@example.com',
+  /// );
+  /// if (success) {
+  ///   // Show success message to check email
+  /// } else {
+  ///   // Show error from authState.errorMessage
+  /// }
+  /// ```
+  Future<bool> resetPassword({required String email}) async {
+    try {
+      await _repository.resetPasswordForEmail(email);
+      // Clear any previous error messages
+      state = state.copyWith(errorMessage: null);
+      return true;
+    } on supabase.AuthException catch (e) {
+      String errorMessage = 'Failed to send reset email';
+      if (e.message.toLowerCase().contains('rate limit')) {
+        errorMessage = 'Too many attempts. Please try again later.';
+      } else if (e.message.toLowerCase().contains('invalid')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else {
+        errorMessage = e.message;
+      }
+      state = state.copyWith(errorMessage: errorMessage);
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'An unexpected error occurred. Please try again.',
+      );
+      return false;
     }
   }
 }

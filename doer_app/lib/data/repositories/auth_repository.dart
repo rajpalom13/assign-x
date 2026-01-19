@@ -438,6 +438,57 @@ abstract class AuthRepository {
   /// }
   /// ```
   Future<List<SubjectModel>> getAvailableSubjects();
+
+  /// Signs in with magic link (passwordless email authentication).
+  ///
+  /// Sends a magic link to the provided email address. The user clicks
+  /// the link to complete authentication without a password.
+  ///
+  /// Parameters:
+  /// - [email]: Email address to send the magic link to
+  /// - [redirectTo]: Optional URL to redirect to after authentication
+  ///
+  /// Returns `true` if the magic link was sent successfully.
+  ///
+  /// Throws [AuthException] if:
+  /// - Email format is invalid
+  /// - Rate limit exceeded
+  /// - Email sending fails
+  ///
+  /// Example:
+  /// ```dart
+  /// final success = await authRepo.signInWithMagicLink(
+  ///   email: 'user@example.com',
+  /// );
+  /// if (success) {
+  ///   print('Check your email for the magic link');
+  /// }
+  /// ```
+  Future<bool> signInWithMagicLink({
+    required String email,
+    String? redirectTo,
+  });
+
+  /// Sends a password reset email to the specified address.
+  ///
+  /// Triggers Supabase to send a password reset link via email.
+  /// The user can click the link to set a new password.
+  ///
+  /// ## Parameters
+  ///
+  /// - [email]: Email address to send the reset link to
+  ///
+  /// ## Throws
+  ///
+  /// - [AuthException]: If the email sending fails or rate limit is hit
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// await repository.resetPasswordForEmail('user@example.com');
+  /// // User receives email with reset link
+  /// ```
+  Future<void> resetPasswordForEmail(String email);
 }
 
 /// Supabase implementation of [AuthRepository].
@@ -868,6 +919,43 @@ class SupabaseAuthRepository implements AuthRepository {
 
     } catch (e, stackTrace) {
       LoggerService.error('AuthRepository: Google sign-in failed', e);
+      LoggerService.error('AuthRepository: Stack trace', stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> signInWithMagicLink({
+    required String email,
+    String? redirectTo,
+  }) async {
+    LoggerService.info('🔐 [AUTH] Sending magic link...', data: {'email': email});
+
+    try {
+      await _client.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: redirectTo,
+      );
+
+      LoggerService.info('✅ [AUTH] Magic link sent successfully to $email');
+      return true;
+    } catch (e, stackTrace) {
+      LoggerService.error('AuthRepository: Magic link failed', e);
+      LoggerService.error('AuthRepository: Stack trace', stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    LoggerService.info('🔐 [AUTH] Sending password reset email...', data: {'email': email});
+
+    try {
+      await _client.auth.resetPasswordForEmail(email);
+
+      LoggerService.info('✅ [AUTH] Password reset email sent successfully to $email');
+    } catch (e, stackTrace) {
+      LoggerService.error('AuthRepository: Password reset failed', e);
       LoggerService.error('AuthRepository: Stack trace', stackTrace);
       rethrow;
     }

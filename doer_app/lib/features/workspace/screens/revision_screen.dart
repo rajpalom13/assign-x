@@ -450,7 +450,7 @@ Overall, the content quality is good but needs structural improvements.''';
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${workspaceState.files.length} files submitted',
+                  '${workspaceState.deliverables.length} files submitted',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,

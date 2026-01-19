@@ -63,6 +63,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// Whether a login request is currently in progress.
   bool _isLoading = false;
 
+  /// Whether to show magic link mode instead of password.
+  bool _useMagicLink = false;
+
+  /// Whether magic link was sent successfully.
+  bool _magicLinkSent = false;
+
   /// Disposes of text controllers to prevent memory leaks.
   @override
   void dispose() {
@@ -153,6 +159,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  /// Handles magic link sign-in.
+  ///
+  /// Sends a magic link to the user's email address for passwordless
+  /// authentication. Shows a confirmation message when successful.
+  Future<void> _handleMagicLink() async {
+    // Validate email only
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !Validators.isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final success = await ref.read(authProvider.notifier).signInWithMagicLink(
+            email: email,
+          );
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _magicLinkSent = success;
+      });
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Magic link sent to $email. Check your inbox!'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      } else {
+        final errorMessage = ref.read(authProvider).errorMessage;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'Failed to send magic link'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send magic link: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   /// Builds the login screen UI.
   ///
   /// Layout structure:
@@ -219,44 +285,114 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Password field
-                AppTextField(
-                  label: 'Password',
-                  hint: 'Enter your password',
-                  controller: _passwordController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_outline,
-                  validator: (value) => Validators.required(value, fieldName: 'Password'),
-                ),
+                // Show password field only if not using magic link
+                if (!_useMagicLink) ...[
+                  // Password field
+                  AppTextField(
+                    label: 'Password',
+                    hint: 'Enter your password',
+                    controller: _passwordController,
+                    obscureText: true,
+                    prefixIcon: Icons.lock_outline,
+                    validator: (value) => Validators.required(value, fieldName: 'Password'),
+                  ),
 
-                const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
 
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
+                  // Forgot password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => context.go(RouteNames.forgotPassword),
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Login button
+                  AppButton(
+                    text: 'Sign In',
+                    onPressed: _handleLogin,
+                    isLoading: _isLoading,
+                    isFullWidth: true,
+                    size: AppButtonSize.large,
+                  ),
+                ] else ...[
+                  // Magic link mode
+                  const SizedBox(height: AppSpacing.lg),
+
+                  if (_magicLinkSent) ...[
+                    // Success message
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: AppColors.success),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'Magic link sent! Check your email inbox.',
+                              style: TextStyle(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      text: 'Resend Magic Link',
+                      onPressed: _handleMagicLink,
+                      isLoading: _isLoading,
+                      isFullWidth: true,
+                      variant: AppButtonVariant.outline,
+                    ),
+                  ] else ...[
+                    AppButton(
+                      text: 'Send Magic Link',
+                      onPressed: _handleMagicLink,
+                      isLoading: _isLoading,
+                      isFullWidth: true,
+                      size: AppButtonSize.large,
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Toggle between password and magic link
+                Center(
                   child: TextButton(
                     onPressed: () {
-                      // TODO: Navigate to forgot password
+                      setState(() {
+                        _useMagicLink = !_useMagicLink;
+                        _magicLinkSent = false;
+                      });
                     },
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(
+                    child: Text(
+                      _useMagicLink
+                          ? 'Sign in with password instead'
+                          : 'Sign in with magic link (passwordless)',
+                      style: const TextStyle(
                         color: AppColors.accent,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Login button
-                AppButton(
-                  text: 'Sign In',
-                  onPressed: _handleLogin,
-                  isLoading: _isLoading,
-                  isFullWidth: true,
-                  size: AppButtonSize.large,
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),

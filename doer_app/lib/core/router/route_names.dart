@@ -77,11 +77,6 @@ class RouteNames {
   /// Path: `/forgot-password`
   static const String forgotPassword = '/forgot-password';
 
-  /// OTP verification screen.
-  ///
-  /// Path: `/otp-verification`
-  static const String otpVerification = '/otp-verification';
-
   // ---------------------------------------------------------------------------
   // Profile Setup
   // ---------------------------------------------------------------------------

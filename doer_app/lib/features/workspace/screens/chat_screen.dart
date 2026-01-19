@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
+import '../../../data/models/chat_model.dart';
 import '../../../providers/workspace_provider.dart';
 
 /// Chat screen for real-time project communication with supervisor.
@@ -43,7 +44,7 @@ import '../../../providers/workspace_provider.dart';
 ///
 /// See also:
 /// - [WorkspaceProvider] for chat state
-/// - [ChatMessage] for message model
+/// - [ChatMessageModel] for message model
 /// - [_ChatBubble] for message rendering
 /// - [MessageType] for message type enum
 class ChatScreen extends ConsumerStatefulWidget {
@@ -382,7 +383,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 /// - Info icon
 /// - Muted styling
 class _ChatBubble extends StatelessWidget {
-  final ChatMessage message;
+  final ChatMessageModel message;
 
   const _ChatBubble({required this.message});
 

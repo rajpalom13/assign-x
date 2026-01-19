@@ -104,3 +104,7 @@
 library;
 
 export 'auth_repository.dart';
+export 'chat_repository.dart';
+export 'deliverable_repository.dart';
+export 'project_repository.dart';
+export 'wallet_repository.dart';

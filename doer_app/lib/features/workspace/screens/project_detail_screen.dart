@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
-import '../../../data/models/project_model.dart';
+import '../../../data/models/doer_project_model.dart';
 import '../../../providers/workspace_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/loading_overlay.dart';
@@ -47,7 +47,7 @@ import '../widgets/requirements_list.dart';
 ///
 /// See also:
 /// - [WorkspaceProvider] for project state
-/// - [ProjectModel] for project data model
+/// - [DoerProjectModel] for project data model
 /// - [WorkspaceScreen] for active work
 /// - [ChatScreen] for project communication
 class ProjectDetailScreen extends ConsumerWidget {
@@ -142,7 +142,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                             children: [
                               _buildInfoChip(
                                 Icons.category,
-                                project.subject,
+                                project.subject ?? 'General',
                                 AppColors.accent,
                               ),
                               _buildInfoChip(
@@ -366,24 +366,24 @@ class ProjectDetailScreen extends ConsumerWidget {
     );
   }
 
-  Color _getStatusColor(ProjectStatus status) {
+  Color _getStatusColor(DoerProjectStatus status) {
     switch (status.toString()) {
-      case 'ProjectStatus.inProgress':
+      case 'DoerProjectStatus.inProgress':
         return AppColors.info;
-      case 'ProjectStatus.submitted':
-      case 'ProjectStatus.underReview':
+      case 'DoerProjectStatus.submitted':
+      case 'DoerProjectStatus.underReview':
         return AppColors.warning;
-      case 'ProjectStatus.completed':
-      case 'ProjectStatus.paid':
+      case 'DoerProjectStatus.completed':
+      case 'DoerProjectStatus.paid':
         return AppColors.success;
-      case 'ProjectStatus.revisionRequested':
+      case 'DoerProjectStatus.revisionRequested':
         return AppColors.error;
       default:
         return AppColors.textSecondary;
     }
   }
 
-  Widget _buildBottomBar(BuildContext context, ProjectModel project) {
+  Widget _buildBottomBar(BuildContext context, DoerProjectModel project) {
     return Container(
       padding: AppSpacing.paddingMd,
       decoration: BoxDecoration(
