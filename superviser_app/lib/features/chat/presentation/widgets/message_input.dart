@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/validators.dart';
 import '../../data/models/message_model.dart';
 
 /// Text input widget for composing messages.
 ///
-/// Supports text input, file attachments, and replies.
+/// Supports text input, file attachments, replies, and contact info detection.
+/// Implements S39 - Contact Sharing Prevention feature.
 class MessageInput extends StatefulWidget {
   const MessageInput({
     super.key,
@@ -46,6 +48,7 @@ class _MessageInputState extends State<MessageInput> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   bool _hasText = false;
+  ContactDetectionResult? _contactWarning;
 
   @override
   void initState() {
@@ -62,20 +65,81 @@ class _MessageInputState extends State<MessageInput> {
   }
 
   void _onTextChanged() {
-    final hasText = _controller.text.trim().isNotEmpty;
-    if (hasText != _hasText) {
-      setState(() {
-        _hasText = hasText;
-      });
-    }
+    final text = _controller.text;
+    final hasText = text.trim().isNotEmpty;
+
+    // Detect contact information
+    final detection = ContactDetector.detect(text);
+
+    setState(() {
+      _hasText = hasText;
+      _contactWarning = detection.detected ? detection : null;
+    });
   }
 
   Future<void> _handleSend() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
+    // If contact info detected, show warning dialog
+    if (_contactWarning?.detected == true) {
+      final proceed = await _showContactWarningDialog();
+      if (!proceed) return;
+    }
+
     _controller.clear();
+    _contactWarning = null;
     await widget.onSend(text);
+  }
+
+  Future<bool> _showContactWarningDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Colors.orange,
+          size: 48,
+        ),
+        title: const Text('Contact Information Detected'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your message appears to contain a ${ContactDetector.getTypeLabel(_contactWarning!.type!)}.',
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Sharing personal contact details is against our policies and may result in account suspension.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'If you send this message, it will be flagged for review.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Edit Message'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: const Text('Send Anyway'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   @override
@@ -123,6 +187,46 @@ class _MessageInputState extends State<MessageInput> {
                   ],
                 ),
               ),
+            // Contact warning banner (S39 - Contact Sharing Prevention)
+            if (_contactWarning?.detected == true)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                color: Colors.red.withValues(alpha: 0.1),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Contact information detected',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.red.shade800,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          Text(
+                            'Sharing ${ContactDetector.getTypeLabel(_contactWarning!.type!)} is not allowed',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Colors.red.shade600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Input row
             Padding(
               padding: const EdgeInsets.all(12),
@@ -146,6 +250,9 @@ class _MessageInputState extends State<MessageInput> {
                       decoration: BoxDecoration(
                         color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(24),
+                        border: _contactWarning?.detected == true
+                            ? Border.all(color: Colors.red, width: 1.5)
+                            : null,
                       ),
                       child: TextField(
                         controller: _controller,

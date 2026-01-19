@@ -508,6 +508,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Signs in using Magic Link (passwordless authentication).
+  ///
+  /// Sends a magic link to the user's email for passwordless login.
+  /// When the user clicks the link, they are automatically signed in.
+  ///
+  /// ## Parameters
+  /// - [email]: The email address to send the magic link to
+  ///
+  /// ## Returns
+  /// `true` if magic link was sent, `false` if it failed.
+  ///
+  /// ## Side Effects
+  /// - Sets [AuthState.isLoading] during operation
+  /// - Sets [AuthState.error] on failure
+  ///
+  /// ## Example
+  /// ```dart
+  /// final success = await ref.read(authProvider.notifier).signInWithMagicLink(
+  ///   email: 'user@example.com',
+  /// );
+  /// if (success) {
+  ///   showMessage('Check your email!');
+  /// }
+  /// ```
+  Future<bool> signInWithMagicLink({required String email}) async {
+    try {
+      state = state.copyWith(isLoading: true, clearError: true);
+
+      final success = await _repository.signInWithMagicLink(email: email);
+
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
   /// Clears the current error message.
   ///
   /// Call this method before attempting a new operation to reset

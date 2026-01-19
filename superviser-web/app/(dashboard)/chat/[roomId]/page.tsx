@@ -56,14 +56,14 @@ export default function ChatRoomPage() {
           room_id: msg.chat_room_id,
           sender_id: msg.sender_id,
           sender_name: msg.profiles?.full_name || "Unknown",
-          sender_role: msg.sender_role || "user",
+          sender_role: (msg.profiles?.user_type as "user" | "supervisor" | "doer" | "support" | "system") || "user",
           type: msg.message_type || "text",
-          content: msg.content,
-          file_url: msg.file_url,
-          file_name: msg.file_name,
-          file_size: msg.file_size,
-          is_read: msg.is_read || false,
-          created_at: msg.created_at,
+          content: msg.content || "",
+          file_url: msg.file_url || undefined,
+          file_name: msg.file_name || undefined,
+          file_size: msg.file_size_bytes || undefined,
+          is_read: msg.is_deleted === false,
+          created_at: msg.created_at || new Date().toISOString(),
         }))
       }))
     }
@@ -94,6 +94,11 @@ export default function ChatRoomPage() {
   }, [sendMessage, sendFile])
 
   const handleSuspendChat = useCallback(async (roomId: string, reason: string) => {
+    if (!supervisor?.profile_id) {
+      toast.error("Unable to suspend chat: Supervisor not found")
+      return
+    }
+
     const supabase = createClient()
 
     try {
@@ -103,7 +108,7 @@ export default function ChatRoomPage() {
           is_suspended: true,
           suspension_reason: reason,
           suspended_at: new Date().toISOString(),
-          suspended_by: supervisor?.profile_id
+          suspended_by: supervisor.profile_id
         })
         .eq("id", roomId)
 
@@ -114,10 +119,9 @@ export default function ChatRoomPage() {
         .from("chat_messages")
         .insert({
           chat_room_id: roomId,
-          sender_id: supervisor?.profile_id,
+          sender_id: supervisor.profile_id,
           content: `Chat suspended by supervisor. Reason: ${reason}`,
-          message_type: "system",
-          sender_role: "system"
+          message_type: "system"
         })
 
       toast.success("Chat suspended successfully")
@@ -129,6 +133,11 @@ export default function ChatRoomPage() {
   }, [supervisor, refetchRooms])
 
   const handleResumeChat = useCallback(async (roomId: string) => {
+    if (!supervisor?.profile_id) {
+      toast.error("Unable to resume chat: Supervisor not found")
+      return
+    }
+
     const supabase = createClient()
 
     try {
@@ -149,10 +158,9 @@ export default function ChatRoomPage() {
         .from("chat_messages")
         .insert({
           chat_room_id: roomId,
-          sender_id: supervisor?.profile_id,
+          sender_id: supervisor.profile_id,
           content: "Chat resumed by supervisor",
-          message_type: "system",
-          sender_role: "system"
+          message_type: "system"
         })
 
       toast.success("Chat resumed successfully")
@@ -226,7 +234,7 @@ export default function ChatRoomPage() {
   // Transform rooms to ChatWindow format
   const chatRooms: ChatRoom[] = rooms.map(room => ({
     id: room.id,
-    project_id: room.project_id,
+    project_id: room.project_id || undefined,
     project_number: room.projects?.project_number || "Unknown",
     type: room.room_type as ChatRoom["type"],
     name: room.room_type === "project_user_supervisor"
@@ -238,17 +246,17 @@ export default function ChatRoomPage() {
       id: p.id,
       user_id: p.profile_id,
       name: p.profiles?.full_name || "Unknown",
-      role: p.role as "user" | "supervisor" | "doer",
-      avatar_url: p.profiles?.avatar_url,
+      role: p.participant_role as "user" | "supervisor" | "doer",
+      avatar_url: p.profiles?.avatar_url || undefined,
       is_online: false, // Would need presence tracking
-      joined_at: p.joined_at,
+      joined_at: p.joined_at || new Date().toISOString(),
     })),
-    is_suspended: room.is_suspended,
-    suspension_reason: room.suspension_reason,
+    is_suspended: room.is_suspended || false,
+    suspension_reason: room.suspension_reason || undefined,
     last_message: messagesMap[room.id]?.[messagesMap[room.id].length - 1],
     unread_count: 0,
-    created_at: room.created_at,
-    updated_at: room.updated_at,
+    created_at: room.created_at || new Date().toISOString(),
+    updated_at: room.updated_at || room.created_at || new Date().toISOString(),
   }))
 
   return (
@@ -262,7 +270,6 @@ export default function ChatRoomPage() {
         onSuspendChat={handleSuspendChat}
         onResumeChat={handleResumeChat}
         onDownloadFile={handleDownloadFile}
-        isLoading={messagesLoading}
       />
     </div>
   )

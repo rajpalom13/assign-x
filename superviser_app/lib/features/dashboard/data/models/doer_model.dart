@@ -214,6 +214,17 @@ class DoerModel {
     }
   }
 
+  /// Returns the number of currently active projects assigned to this doer.
+  ///
+  /// TODO: This currently returns 0 as a placeholder. This should be implemented
+  /// by either:
+  /// 1. Adding a `total_active_projects` field to the doers table in Supabase
+  /// 2. Calculating this by counting projects with status 'assigned' or 'in_progress'
+  ///    where doer_id matches this doer's ID
+  ///
+  /// For now, returns 0 to satisfy compilation requirements.
+  int get activeProjects => 0;
+
   /// Creates a copy of this [DoerModel] with the specified fields replaced.
   ///
   /// All parameters are optional. If not provided, the current value is retained.

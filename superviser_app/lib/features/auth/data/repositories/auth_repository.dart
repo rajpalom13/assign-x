@@ -611,6 +611,56 @@ class AuthRepository {
       throw AppAuthException('Google sign-in failed: $e');
     }
   }
+
+  /// Signs in using Magic Link (passwordless authentication).
+  ///
+  /// Sends a magic link to the user's email address for passwordless
+  /// authentication. When the user clicks the link, they are automatically
+  /// signed in to the app.
+  ///
+  /// ## Parameters
+  /// - [email]: The email address to send the magic link to
+  /// - [redirectTo]: Optional URL to redirect to after authentication
+  ///
+  /// ## Returns
+  /// A [Future] that completes with `true` if the magic link was sent
+  /// successfully, `false` otherwise.
+  ///
+  /// ## Throws
+  /// - [AppAuthException] if the magic link request fails
+  ///
+  /// ## Example
+  /// ```dart
+  /// final success = await authRepo.signInWithMagicLink(
+  ///   email: 'user@example.com',
+  /// );
+  /// if (success) {
+  ///   showMessage('Check your email for the magic link!');
+  /// }
+  /// ```
+  Future<bool> signInWithMagicLink({
+    required String email,
+    String? redirectTo,
+  }) async {
+    try {
+      print('🔐 [AUTH] Sending magic link to: $email');
+
+      await _client.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: redirectTo,
+      );
+
+      print('✅ [AUTH] Magic link sent successfully to: $email');
+      return true;
+    } on AuthApiException catch (e) {
+      print('❌ [AUTH] Magic link failed: ${e.message}');
+      throw AppAuthException.fromSupabase(e);
+    } catch (e) {
+      print('❌ [AUTH] Magic link failed: $e');
+      if (e is AppAuthException) rethrow;
+      throw AppAuthException('Failed to send magic link: $e');
+    }
+  }
 }
 
 /// Riverpod provider for [AuthRepository].

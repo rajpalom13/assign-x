@@ -491,3 +491,156 @@ abstract class Validators {
     };
   }
 }
+
+/// Type of contact information detected.
+enum ContactType {
+  phone,
+  email,
+  social,
+  url,
+}
+
+/// Result of contact information detection.
+class ContactDetectionResult {
+  const ContactDetectionResult({
+    required this.detected,
+    this.type,
+    this.value,
+  });
+
+  /// Whether contact information was detected.
+  final bool detected;
+
+  /// Type of contact info detected.
+  final ContactType? type;
+
+  /// The detected contact value.
+  final String? value;
+
+  /// Creates a result with no detection.
+  const ContactDetectionResult.none()
+      : detected = false,
+        type = null,
+        value = null;
+}
+
+/// Contact information detection utility.
+///
+/// Used to detect and prevent sharing of personal contact details
+/// in chat messages (S39 - Contact Sharing Prevention feature).
+///
+/// ## Detected Patterns
+///
+/// - **Phone numbers**: 10+ digits with optional country code
+/// - **Email addresses**: Standard email format
+/// - **Social media**: @handles and social platform mentions
+/// - **URLs**: Web links and domains
+///
+/// ## Example
+///
+/// ```dart
+/// final result = ContactDetector.detect('Call me at 123-456-7890');
+/// if (result.detected) {
+///   print('Detected ${result.type}: ${result.value}');
+///   // Show warning to user
+/// }
+/// ```
+abstract class ContactDetector {
+  /// Pattern for phone numbers (10+ digits).
+  static final _phonePattern = RegExp(r'(?:\+?[\d\s\-()]{10,})');
+
+  /// Pattern for email addresses.
+  static final _emailPattern =
+      RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
+
+  /// Pattern for social media handles and mentions.
+  static final _socialPattern = RegExp(
+    r'(?:@[\w]+|(?:instagram|twitter|facebook|linkedin|whatsapp|telegram|discord)[\s:]*[\w@/.]+)',
+    caseSensitive: false,
+  );
+
+  /// Pattern for URLs.
+  static final _urlPattern = RegExp(
+    r'(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/\S*)?',
+    caseSensitive: false,
+  );
+
+  /// Detects contact information in text.
+  ///
+  /// Checks for phone numbers, email addresses, social media handles,
+  /// and URLs in the provided text.
+  ///
+  /// ## Parameters
+  ///
+  /// - [text]: The text to check for contact information
+  ///
+  /// ## Returns
+  ///
+  /// A [ContactDetectionResult] with detection details.
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final result = ContactDetector.detect('Email me at test@example.com');
+  /// print(result.detected);  // true
+  /// print(result.type);      // ContactType.email
+  /// print(result.value);     // 'test@example.com'
+  /// ```
+  static ContactDetectionResult detect(String text) {
+    // Check for phone numbers
+    final phoneMatch = _phonePattern.firstMatch(text);
+    if (phoneMatch != null) {
+      return ContactDetectionResult(
+        detected: true,
+        type: ContactType.phone,
+        value: phoneMatch.group(0),
+      );
+    }
+
+    // Check for email addresses
+    final emailMatch = _emailPattern.firstMatch(text);
+    if (emailMatch != null) {
+      return ContactDetectionResult(
+        detected: true,
+        type: ContactType.email,
+        value: emailMatch.group(0),
+      );
+    }
+
+    // Check for social media handles
+    final socialMatch = _socialPattern.firstMatch(text);
+    if (socialMatch != null) {
+      return ContactDetectionResult(
+        detected: true,
+        type: ContactType.social,
+        value: socialMatch.group(0),
+      );
+    }
+
+    // Check for URLs
+    final urlMatch = _urlPattern.firstMatch(text);
+    if (urlMatch != null) {
+      return ContactDetectionResult(
+        detected: true,
+        type: ContactType.url,
+        value: urlMatch.group(0),
+      );
+    }
+
+    return const ContactDetectionResult.none();
+  }
+
+  /// Returns a human-readable label for the contact type.
+  static String getTypeLabel(ContactType type) {
+    switch (type) {
+      case ContactType.phone:
+        return 'phone number';
+      case ContactType.email:
+        return 'email address';
+      case ContactType.social:
+        return 'social media handle';
+      case ContactType.url:
+        return 'website link';
+    }
+  }
+}

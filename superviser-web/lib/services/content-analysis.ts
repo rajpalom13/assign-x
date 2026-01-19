@@ -88,17 +88,19 @@ export async function analyzeForAI(content: string): Promise<AIDetectionResult> 
   }
 
   // Generate segment analysis
-  const segments = analyzeSegments(sentences, aiProbability)
+  const segments = analyzeSegments(text, sentences, aiProbability)
 
   return {
+    id: `ai-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    file_name: "content-analysis",
     overall_verdict: verdict,
     confidence_level: confidenceLevel,
     ai_probability: Math.round(aiProbability),
     human_probability: Math.round(humanProbability),
     mixed_probability: Math.round(mixedProbability),
     segments,
-    analysis_timestamp: new Date().toISOString(),
-    word_count: words.length,
+    checked_at: new Date().toISOString(),
+    status: "completed",
   }
 }
 
@@ -183,13 +185,15 @@ export async function checkPlagiarism(content: string): Promise<PlagiarismCheckR
   matches.sort((a, b) => b.similarity_percentage - a.similarity_percentage)
 
   return {
+    id: `plag-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    file_name: "content-check",
     overall_score: overallScore,
     unique_content: uniqueContent,
     matched_content: overallScore,
     sources_found: matches.length,
+    checked_at: new Date().toISOString(),
     matches: matches.slice(0, 10), // Limit to top 10 matches
-    analysis_timestamp: new Date().toISOString(),
-    word_count: words.length,
+    status: "completed",
   }
 }
 
@@ -329,7 +333,9 @@ function calculateStarterVariety(sentences: string[]): number {
   return uniqueStarters.size / starters.length
 }
 
-function analyzeSegments(sentences: string[], baseAiScore: number): AISegment[] {
+function analyzeSegments(originalText: string, sentences: string[], baseAiScore: number): AISegment[] {
+  let currentIndex = 0
+
   return sentences.slice(0, 5).map((sentence, index) => {
     // Vary the score per segment based on sentence characteristics
     const words = sentence.split(/\s+/)
@@ -346,9 +352,17 @@ function analyzeSegments(sentences: string[], baseAiScore: number): AISegment[] 
     else if (segmentScore <= 40) classification = "human"
     else classification = "mixed"
 
+    // Find the sentence position in the original text
+    const trimmedSentence = sentence.trim()
+    const startIndex = originalText.indexOf(trimmedSentence, currentIndex)
+    const endIndex = startIndex >= 0 ? startIndex + trimmedSentence.length : currentIndex
+    currentIndex = endIndex
+
     return {
       id: `seg-${index}`,
-      text: sentence.trim(),
+      text: trimmedSentence,
+      start_index: Math.max(0, startIndex),
+      end_index: endIndex,
       classification,
       probability: Math.round(segmentScore),
     }

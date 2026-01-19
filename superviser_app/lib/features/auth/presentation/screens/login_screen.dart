@@ -109,6 +109,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   /// Focus node for the password field, used for form submission.
   final _passwordFocusNode = FocusNode();
 
+  /// Whether magic link mode is active instead of password mode.
+  bool _useMagicLink = false;
+
+  /// Whether magic link was sent successfully.
+  bool _magicLinkSent = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -175,6 +181,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Router will automatically navigate based on auth state
   }
 
+  /// Handles magic link sign-in.
+  ///
+  /// Sends a magic link to the user's email for passwordless authentication.
+  /// Shows a success state when the email is sent successfully.
+  Future<void> _handleMagicLink() async {
+    // Validate email only
+    final email = _emailController.text.trim();
+    if (email.isEmpty || Validators.email(email) != null) {
+      context.showErrorSnackBar('Please enter a valid email address');
+      return;
+    }
+
+    // Clear any existing error
+    ref.read(authProvider.notifier).clearError();
+
+    // Unfocus to hide keyboard
+    context.unfocus();
+
+    // Send magic link
+    final success = await ref.read(authProvider.notifier).signInWithMagicLink(
+          email: email,
+        );
+
+    if (!mounted) return;
+
+    if (success) {
+      setState(() => _magicLinkSent = true);
+      context.showSuccessSnackBar('Magic link sent to $email. Check your inbox!');
+    } else {
+      final error = ref.read(authProvider).error;
+      if (error != null) {
+        context.showErrorSnackBar(error);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -206,39 +248,113 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   controller: _emailController,
                   focusNode: _emailFocusNode,
                   validator: Validators.email,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _passwordFocusNode.requestFocus(),
+                  textInputAction: _useMagicLink ? TextInputAction.done : TextInputAction.next,
+                  onSubmitted: (_) => _useMagicLink
+                      ? _handleMagicLink()
+                      : _passwordFocusNode.requestFocus(),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Password field
-                PasswordTextField(
-                  controller: _passwordController,
-                  focusNode: _passwordFocusNode,
-                  validator: Validators.password,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _handleLogin(),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Forgot password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TertiaryButton(
-                    text: 'Forgot Password?',
-                    onPressed: () => context.push('/forgot-password'),
+                // Show password field only if not using magic link
+                if (!_useMagicLink) ...[
+                  // Password field
+                  PasswordTextField(
+                    controller: _passwordController,
+                    focusNode: _passwordFocusNode,
+                    validator: Validators.password,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _handleLogin(),
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-                // Login button
-                PrimaryButton(
-                  text: 'Log In',
-                  onPressed: _handleLogin,
-                  isLoading: isLoading,
+                  // Forgot password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TertiaryButton(
+                      text: 'Forgot Password?',
+                      onPressed: () => context.push('/forgot-password'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Login button
+                  PrimaryButton(
+                    text: 'Log In',
+                    onPressed: _handleLogin,
+                    isLoading: isLoading,
+                  ),
+                ] else ...[
+                  // Magic link mode
+                  if (_magicLinkSent) ...[
+                    // Success state
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: AppColors.success),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Magic link sent! Check your email inbox.',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: isLoading ? null : _handleMagicLink,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Resend Magic Link',
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    // Send magic link button
+                    PrimaryButton(
+                      text: 'Send Magic Link',
+                      onPressed: _handleMagicLink,
+                      isLoading: isLoading,
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 16),
+
+                // Toggle between password and magic link
+                Center(
+                  child: TertiaryButton(
+                    text: _useMagicLink
+                        ? 'Sign in with password instead'
+                        : 'Sign in with magic link (passwordless)',
+                    onPressed: () {
+                      setState(() {
+                        _useMagicLink = !_useMagicLink;
+                        _magicLinkSent = false;
+                      });
+                    },
+                  ),
                 ),
 
                 const SizedBox(height: 24),

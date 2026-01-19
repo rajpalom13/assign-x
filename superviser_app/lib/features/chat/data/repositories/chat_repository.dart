@@ -29,7 +29,6 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRooms error: $e');
-        return _getMockChatRooms();
       }
       rethrow;
     }
@@ -47,10 +46,6 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRoom error: $e');
-        return _getMockChatRooms().firstWhere(
-          (r) => r.id == roomId,
-          orElse: () => _getMockChatRooms().first,
-        );
       }
       rethrow;
     }
@@ -68,10 +63,6 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRoomByProject error: $e');
-        return _getMockChatRooms().firstWhere(
-          (r) => r.projectId == projectId,
-          orElse: () => _getMockChatRooms().first,
-        );
       }
       rethrow;
     }
@@ -104,7 +95,6 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getMessages error: $e');
-        return _getMockMessages(roomId);
       }
       rethrow;
     }
@@ -149,22 +139,6 @@ class ChatRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.sendMessage error: $e');
-        // Return mock message for development
-        return MessageModel(
-          id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-          chatRoomId: roomId,
-          senderId: _userId ?? 'sup_1',
-          senderName: 'You',
-          senderRole: 'supervisor',
-          content: content,
-          type: type,
-          fileUrl: fileUrl,
-          fileName: fileName,
-          fileType: fileType,
-          fileSize: fileSize,
-          replyToId: replyToId,
-          createdAt: DateTime.now(),
-        );
       }
       rethrow;
     }
@@ -281,130 +255,6 @@ class ChatRepository {
             .toList());
   }
 
-  /// Mock chat rooms for development.
-  List<ChatRoomModel> _getMockChatRooms() {
-    final now = DateTime.now();
-    return [
-      ChatRoomModel(
-        id: 'chat_1',
-        projectId: 'proj_1',
-        projectTitle: 'Research Paper on Machine Learning',
-        projectNumber: 'PRJ-2025-0001',
-        type: ChatRoomType.group,
-        participants: [_userId ?? 'sup_1', 'user_1', 'doer_1'],
-        lastMessage: 'The draft is looking good! A few minor comments...',
-        lastMessageAt: now.subtract(const Duration(minutes: 30)),
-        lastMessageBy: 'You',
-        unreadCount: 2,
-        createdAt: now.subtract(const Duration(days: 5)),
-      ),
-      ChatRoomModel(
-        id: 'chat_2',
-        projectId: 'proj_2',
-        projectTitle: 'Business Plan for Tech Startup',
-        projectNumber: 'PRJ-2025-0002',
-        type: ChatRoomType.doerSupervisor,
-        participants: [_userId ?? 'sup_1', 'doer_2'],
-        lastMessage: 'Final version submitted for review',
-        lastMessageAt: now.subtract(const Duration(hours: 6)),
-        lastMessageBy: 'Bob Expert',
-        unreadCount: 0,
-        createdAt: now.subtract(const Duration(days: 7)),
-      ),
-      ChatRoomModel(
-        id: 'chat_3',
-        projectId: 'proj_3',
-        projectTitle: 'Literature Review: Climate Change',
-        projectNumber: 'PRJ-2025-0003',
-        type: ChatRoomType.clientSupervisor,
-        participants: [_userId ?? 'sup_1', 'user_3'],
-        lastMessage: 'Thank you for the update!',
-        lastMessageAt: now.subtract(const Duration(hours: 2)),
-        lastMessageBy: 'Mike Brown',
-        unreadCount: 1,
-        createdAt: now.subtract(const Duration(days: 4)),
-      ),
-    ];
-  }
-
-  /// Mock messages for development.
-  List<MessageModel> _getMockMessages(String roomId) {
-    final now = DateTime.now();
-    return [
-      MessageModel(
-        id: 'msg_1',
-        chatRoomId: roomId,
-        senderId: 'user_1',
-        senderName: 'John Smith',
-        senderRole: 'client',
-        content: 'Hello, I wanted to check on the progress of my project.',
-        type: MessageType.text,
-        createdAt: now.subtract(const Duration(hours: 3)),
-        isRead: true,
-      ),
-      MessageModel(
-        id: 'msg_2',
-        chatRoomId: roomId,
-        senderId: _userId ?? 'sup_1',
-        senderName: 'You',
-        senderRole: 'supervisor',
-        content:
-            'Hi John! The project is progressing well. The doer has completed about 70% of the work.',
-        type: MessageType.text,
-        createdAt: now.subtract(const Duration(hours: 2, minutes: 45)),
-        isRead: true,
-      ),
-      MessageModel(
-        id: 'msg_3',
-        chatRoomId: roomId,
-        senderId: 'doer_1',
-        senderName: 'Alice Writer',
-        senderRole: 'doer',
-        content:
-            'I\'m working on the conclusion section now. Should be done by tomorrow.',
-        type: MessageType.text,
-        createdAt: now.subtract(const Duration(hours: 2, minutes: 30)),
-        isRead: true,
-      ),
-      MessageModel(
-        id: 'msg_4',
-        chatRoomId: roomId,
-        senderId: 'doer_1',
-        senderName: 'Alice Writer',
-        senderRole: 'doer',
-        content: 'Here\'s the draft for review:',
-        type: MessageType.text,
-        createdAt: now.subtract(const Duration(hours: 1)),
-        isRead: true,
-      ),
-      MessageModel(
-        id: 'msg_5',
-        chatRoomId: roomId,
-        senderId: 'doer_1',
-        senderName: 'Alice Writer',
-        senderRole: 'doer',
-        content: null,
-        type: MessageType.file,
-        fileUrl: 'https://example.com/files/draft.pdf',
-        fileName: 'research_paper_draft.pdf',
-        fileType: 'application/pdf',
-        fileSize: 1024 * 256,
-        createdAt: now.subtract(const Duration(hours: 1)),
-        isRead: true,
-      ),
-      MessageModel(
-        id: 'msg_6',
-        chatRoomId: roomId,
-        senderId: _userId ?? 'sup_1',
-        senderName: 'You',
-        senderRole: 'supervisor',
-        content: 'The draft is looking good! A few minor comments on section 3.',
-        type: MessageType.text,
-        createdAt: now.subtract(const Duration(minutes: 30)),
-        isRead: true,
-      ),
-    ];
-  }
 }
 
 /// Provider for the chat repository.

@@ -53,7 +53,7 @@ function getRoomIcon(type: ChatRoomType) {
   }
 }
 
-function getParticipantInfo(room: { chat_participants?: Array<{ profiles?: { full_name?: string; avatar_url?: string } | null; role?: string }> | null; room_type?: ChatRoomType }) {
+function getParticipantInfo(room: { chat_participants?: Array<{ profiles?: { full_name?: string; avatar_url?: string | null } | null; participant_role?: string }> | null; room_type?: ChatRoomType }) {
   if (!room.chat_participants || room.chat_participants.length === 0) {
     return { name: "Unknown", avatar: undefined }
   }
@@ -65,7 +65,7 @@ function getParticipantInfo(room: { chat_participants?: Array<{ profiles?: { ful
 
   // Find the other participant (not supervisor)
   const otherParticipant = room.chat_participants.find(
-    (p) => p.role !== "supervisor"
+    (p) => p.participant_role !== "supervisor"
   )
 
   if (otherParticipant?.profiles) {
@@ -255,18 +255,6 @@ export default function ChatPage() {
                           <p className="text-xs text-muted-foreground truncate mt-0.5">
                             {projectTitle}
                           </p>
-                          {room.last_message_preview && (
-                            <p
-                              className={cn(
-                                "text-sm mt-2 line-clamp-1",
-                                unreadCount > 0
-                                  ? "font-medium text-foreground"
-                                  : "text-muted-foreground"
-                              )}
-                            >
-                              {room.last_message_preview}
-                            </p>
-                          )}
                         </div>
 
                         {/* Meta */}

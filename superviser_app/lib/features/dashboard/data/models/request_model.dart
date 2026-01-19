@@ -224,6 +224,12 @@ class RequestModel {
     }
   }
 
+  /// Returns the project budget (quoted amount to the client).
+  ///
+  /// This is an alias for [userQuote] provided for backwards compatibility
+  /// and improved readability in UI code.
+  double? get budget => userQuote;
+
   /// Creates a copy of this [RequestModel] with the specified fields replaced.
   ///
   /// All parameters are optional. If not provided, the current value is retained.
