@@ -53,6 +53,7 @@ import {
 } from "@/components/project-detail";
 import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import { generateInvoiceHTML } from "@/lib/actions/invoice";
 import { createRevisionRequest, markProjectComplete } from "@/lib/actions/data";
 import { useChat } from "@/hooks/useChat";
@@ -63,6 +64,16 @@ import { flagUserForViolation, type FlagReason } from "@/lib/actions/user-flaggi
 import type { ProjectDetail, ProjectStatus } from "@/types/project";
 import { STATUS_CONFIG } from "@/types/project";
 import { projectService, type TimelineEvent } from "@/services";
+
+/**
+ * Get time-based gradient class for dynamic theming
+ */
+function getTimeBasedGradientClass(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
+  if (hour >= 12 && hour < 18) return "mesh-gradient-afternoon";
+  return "mesh-gradient-evening";
+}
 
 interface ProjectDetailClientProps {
   project: ProjectDetail;
@@ -127,6 +138,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   const config = STATUS_CONFIG[project.status];
   const stepIndex = getStepIndex(project.status);
   const showInvoice = stepIndex >= 3;
+
+  // Memoize time-based gradient class
+  const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
   const isQuoted = project.status === "quoted" || project.status === "payment_pending";
   const isDelivered = stepIndex >= 7;
   const isCompleted = project.status === "completed" || project.status === "auto_approved";
@@ -209,11 +223,11 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   const explanation = statusExplanations[stepIndex];
 
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
+    <div className={cn("h-screen flex overflow-hidden mesh-background mesh-gradient-bottom-right-animated", gradientClass)}>
       {/* Left Panel - Project Info */}
-      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-border h-screen">
+      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-border/50 h-screen backdrop-blur-sm bg-background/80">
         {/* Header */}
-        <div className="flex items-center gap-4 p-4 border-b border-border bg-background">
+        <div className="flex items-center gap-4 p-4 border-b border-border/50 bg-background/60 backdrop-blur-sm">
           <button
             onClick={() => router.push("/projects")}
             className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -284,7 +298,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
           {/* Quote Payment Card */}
           {isQuoted && paymentAmount > 0 && (
-            <div className="p-5 rounded-xl border border-border bg-card">
+            <div className="action-card-glass p-5 rounded-xl">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                 <CreditCard className="h-3.5 w-3.5" />
                 Payment Required
@@ -302,7 +316,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
           {/* Status Explanation */}
           {!isQuoted && explanation && (
-            <div className="p-4 rounded-xl border border-border bg-card">
+            <div className="action-card-glass p-4 rounded-xl">
               <p className="text-sm font-medium mb-1">{explanation.title}</p>
               <p className="text-xs text-muted-foreground">{explanation.description}</p>
             </div>
@@ -330,7 +344,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           {/* Timeline Info */}
           {stepIndex >= 3 && stepIndex < 7 && project.deadline && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl border border-border bg-card">
+              <div className="action-card-glass p-3 rounded-xl">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <Calendar className="h-3 w-3" />
                   Deadline
@@ -341,8 +355,8 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               </div>
               {timeInfo && (
                 <div className={cn(
-                  "p-3 rounded-xl border bg-card",
-                  timeInfo.urgent ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "border-border"
+                  "p-3 rounded-xl",
+                  timeInfo.urgent ? "border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "action-card-glass"
                 )}>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <Timer className="h-3 w-3" />
@@ -358,7 +372,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
           {/* Expert Info */}
           {stepIndex >= 4 && stepIndex < 7 && project.supervisorName && (
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+            <div className="action-card-glass flex items-center gap-3 p-3 rounded-xl">
               <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-medium">
                 {project.supervisorName.charAt(0)}
               </div>
@@ -377,7 +391,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               <div className="space-y-3">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Details</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl border border-border bg-card">
+                  <div className="action-card-glass p-3 rounded-xl">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <BookOpen className="h-3 w-3" />
                       Subject
@@ -385,7 +399,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     <p className="text-sm font-medium">{project.subjectName || "Not specified"}</p>
                   </div>
                   {project.wordCount && (
-                    <div className="p-3 rounded-xl border border-border bg-card">
+                    <div className="action-card-glass p-3 rounded-xl">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Hash className="h-3 w-3" />
                         Word Count
@@ -394,7 +408,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     </div>
                   )}
                   {project.deadline && (
-                    <div className="p-3 rounded-xl border border-border bg-card">
+                    <div className="action-card-glass p-3 rounded-xl">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Calendar className="h-3 w-3" />
                         Deadline
@@ -408,7 +422,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               </div>
 
               {project.instructions && (
-                <div className="p-4 rounded-xl border border-border bg-card">
+                <div className="action-card-glass p-4 rounded-xl">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
                 </div>
@@ -427,7 +441,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+                        className="action-card-glass flex items-center gap-3 p-3 rounded-xl hover:border-foreground/20 transition-colors"
                       >
                         <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                           <FileText className="h-4 w-4" />
@@ -479,9 +493,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
       </div>
 
       {/* Right Panel - Chat */}
-      <div className="flex-1 flex flex-col h-screen bg-muted/30">
+      <div className="flex-1 flex flex-col h-screen backdrop-blur-sm bg-background/50">
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border bg-background">
+        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50 bg-background/60 backdrop-blur-sm">
           <button onClick={() => router.push("/projects")} className="p-2 -ml-1">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -503,7 +517,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
         </div>
 
         {/* Mobile Tabs */}
-        <div className="lg:hidden flex border-b border-border bg-background">
+        <div className="lg:hidden flex border-b border-border/50 bg-background/60 backdrop-blur-sm">
           <button
             className={cn("flex-1 py-3 text-sm font-medium border-b-2 transition-colors", mobileTab === "info" ? "border-primary text-foreground" : "border-transparent text-muted-foreground")}
             onClick={() => setMobileTab("info")}
@@ -530,12 +544,12 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl border border-border bg-card">
+              <div className="action-card-glass p-3 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">Subject</p>
                 <p className="text-sm font-medium">{project.subjectName || "N/A"}</p>
               </div>
               {project.deadline && (
-                <div className="p-3 rounded-xl border border-border bg-card">
+                <div className="action-card-glass p-3 rounded-xl">
                   <p className="text-xs text-muted-foreground mb-1">Deadline</p>
                   <p className="text-sm font-medium">
                     {new Date(project.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
@@ -545,7 +559,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             {project.instructions && (
-              <div className="p-4 rounded-xl border border-border bg-card">
+              <div className="action-card-glass p-4 rounded-xl">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
               </div>
@@ -711,7 +725,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   return (
     <>
       {/* Chat Header */}
-      <div className="p-4 border-b border-border bg-background">
+      <div className="p-4 border-b border-border/50 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">Chat</h2>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -719,7 +733,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
             Online
           </span>
         </div>
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+        <div className="action-card-glass flex items-center gap-3 p-3 rounded-xl">
           <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-medium relative">
             {supervisor.charAt(0)}
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
@@ -820,7 +834,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border bg-background">
+      <div className="p-3 border-t border-border/50 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-border bg-muted/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
           <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" />
           <input

@@ -129,6 +129,7 @@ class WalletNotifier extends StateNotifier<AsyncValue<Wallet>> {
 
   Future<void> topUp(double amount) async {
     try {
+      // ignore: deprecated_member_use_from_same_package
       final updated = await _repository.topUpWallet(amount);
       state = AsyncValue.data(updated);
     } catch (e, st) {

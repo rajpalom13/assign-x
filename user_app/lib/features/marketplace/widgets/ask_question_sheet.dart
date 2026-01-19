@@ -40,7 +40,7 @@ class _AskQuestionSheetState extends ConsumerState<AskQuestionSheet> {
   final _tagController = TextEditingController();
 
   ProjectSubject? _selectedSubject;
-  List<String> _tags = [];
+  final List<String> _tags = [];
   bool _isAnonymous = false;
   bool _isSubmitting = false;
 
@@ -232,7 +232,7 @@ class _AskQuestionSheetState extends ConsumerState<AskQuestionSheet> {
                           _buildLabel('Subject', required: true),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<ProjectSubject>(
-                            value: _selectedSubject,
+                            initialValue: _selectedSubject,
                             decoration: _inputDecoration(
                               hintText: 'Select a subject',
                             ),
@@ -353,7 +353,7 @@ class _AskQuestionSheetState extends ConsumerState<AskQuestionSheet> {
                                   onChanged: (value) {
                                     setState(() => _isAnonymous = value);
                                   },
-                                  activeColor: AppColors.primary,
+                                  activeThumbColor: AppColors.primary,
                                 ),
                               ],
                             ),

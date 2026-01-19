@@ -18,10 +18,36 @@ import {
   TrendingUp,
   Award,
   X,
+  Mail,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+
+/**
+ * Supported college email domain patterns
+ */
+const COLLEGE_EMAIL_PATTERNS = [
+  /\.edu$/i,
+  /\.edu\.in$/i,
+  /\.ac\.in$/i,
+  /\.ac\.uk$/i,
+  /\.edu\.au$/i,
+  /\.edu\.ca$/i,
+  /\.edu\.[a-z]{2}$/i,
+];
+
+/**
+ * Validates if email is from a college domain
+ */
+function isCollegeEmail(email: string): boolean {
+  const domain = email.toLowerCase().split("@")[1];
+  if (!domain) return false;
+  return COLLEGE_EMAIL_PATTERNS.some(pattern => pattern.test(domain));
+}
 
 import "../onboarding/onboarding.css";
 
@@ -275,6 +301,11 @@ function SignupContent() {
   const [error, setError] = useState<string | null>(null);
   const [showEmailError, setShowEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
+  // Magic link states
+  const [showMagicLink, setShowMagicLink] = useState(false);
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -296,9 +327,103 @@ function SignupContent() {
   };
 
   const handleBack = () => {
-    setSelectedRole(null);
-    setCurrentStep(0);
-    setError(null);
+    if (showMagicLink) {
+      // Go back from magic link to auth options
+      setShowMagicLink(false);
+      setMagicLinkEmail("");
+      setMagicLinkError(null);
+      setMagicLinkSent(false);
+    } else {
+      // Go back from auth options to role selection
+      setSelectedRole(null);
+      setCurrentStep(0);
+      setError(null);
+    }
+  };
+
+  /**
+   * Validates email format
+   */
+  const isValidEmailFormat = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  /**
+   * Handle magic link sign in
+   */
+  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMagicLinkError(null);
+
+    const email = magicLinkEmail.trim().toLowerCase();
+
+    // Basic validation
+    if (!email) {
+      setMagicLinkError("Please enter your email address");
+      return;
+    }
+
+    if (!isValidEmailFormat(email)) {
+      setMagicLinkError("Please enter a valid email address");
+      return;
+    }
+
+    // For students, validate educational email
+    if (selectedRole === "student" && !isCollegeEmail(email)) {
+      setMagicLinkError(
+        "Student accounts require a valid educational email (.edu, .ac.in, .ac.uk, etc.)"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Store role in cookie (same as OAuth flow)
+      document.cookie = `signup_role=${selectedRole}; path=/; max-age=600; SameSite=Lax`;
+      document.cookie = `signup_intent=true; path=/; max-age=600; SameSite=Lax`;
+
+      const response = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          role: selectedRole,
+          redirectTo: "/home",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send magic link");
+      }
+
+      setMagicLinkSent(true);
+      toast.success("Magic link sent!", {
+        description: "Check your email inbox for the sign-in link.",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setMagicLinkError(message);
+      toast.error("Failed to send magic link", {
+        description: message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Reset magic link form to try different email
+   */
+  const handleTryDifferentEmail = () => {
+    setMagicLinkSent(false);
+    setMagicLinkEmail("");
+    setMagicLinkError(null);
   };
 
   const handleGoogleSignIn = async () => {
@@ -515,10 +640,10 @@ function SignupContent() {
               </motion.div>
             )}
 
-            {/* Step 1: Google Sign-in */}
+            {/* Step 1: Sign-in Options */}
             {currentStep === 1 && selectedRoleData && (
               <motion.div
-                key="google-signin"
+                key="signin-options"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -529,92 +654,227 @@ function SignupContent() {
                   className="onboarding-back-button"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to role selection
+                  {showMagicLink ? "Back to sign-in options" : "Back to role selection"}
                 </button>
 
-                <div className="onboarding-form-header">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
-                    <selectedRoleData.icon className="h-8 w-8" />
-                  </div>
-                  <h2 className="onboarding-form-title">
-                    Sign up as {selectedRoleData.title}
-                  </h2>
-                  <p className="onboarding-form-subtitle">
-                    Continue with Google to create your account
-                  </p>
-                </div>
+                {/* Magic Link Success State */}
+                {magicLinkSent ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center"
+                  >
+                    <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                      <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h2 className="mb-2 text-2xl font-semibold text-foreground">
+                      Check your email
+                    </h2>
+                    <p className="mb-6 text-muted-foreground">
+                      We sent a magic link to{" "}
+                      <span className="font-medium text-foreground">{magicLinkEmail}</span>
+                    </p>
+                    <p className="mb-6 text-sm text-muted-foreground">
+                      Click the link in your email to sign in. The link expires in 10 minutes.
+                    </p>
+                    <div className="space-y-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleTryDifferentEmail}
+                        className="w-full"
+                      >
+                        Try a different email
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : showMagicLink ? (
+                  /* Magic Link Form */
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="onboarding-form-header">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                        <Mail className="h-6 w-6 text-primary" />
+                      </div>
+                      <h2 className="onboarding-form-title">Sign in with email</h2>
+                      <p className="onboarding-form-subtitle">
+                        We&apos;ll send you a magic link to sign in instantly
+                      </p>
+                    </div>
 
-                {/* Student email hint */}
-                {selectedRole === "student" && (
-                  <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
-                    <AlertCircle className="h-4 w-4 text-[#765341]" />
-                    <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
-                      <strong>Student accounts require a valid college email</strong>
-                      <br />
-                      Please sign in with your institutional email (e.g.,
-                      name@university.edu or name@college.ac.in)
-                    </AlertDescription>
-                  </Alert>
+                    {/* Student email requirement notice */}
+                    {selectedRole === "student" && (
+                      <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
+                        <AlertCircle className="h-4 w-4 text-[#765341]" />
+                        <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
+                          <strong>Educational email required</strong>
+                          <br />
+                          Use your college email (.edu, .ac.in, .ac.uk, etc.)
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                      <div>
+                        <Input
+                          type="email"
+                          placeholder={
+                            selectedRole === "student"
+                              ? "yourname@college.edu"
+                              : "Enter your email address"
+                          }
+                          value={magicLinkEmail}
+                          onChange={(e) => {
+                            setMagicLinkEmail(e.target.value);
+                            setMagicLinkError(null);
+                          }}
+                          disabled={isLoading}
+                          aria-invalid={!!magicLinkError}
+                          className="h-12"
+                        />
+                        {magicLinkError && (
+                          <motion.p
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-2 text-sm text-destructive"
+                          >
+                            {magicLinkError}
+                          </motion.p>
+                        )}
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isLoading || !magicLinkEmail.trim()}
+                        className="h-12 w-full"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Magic Link"
+                        )}
+                      </Button>
+                    </form>
+
+                    <p className="mt-4 text-center text-xs text-muted-foreground">
+                      We&apos;ll send you a secure link that expires in 10 minutes.
+                    </p>
+                  </motion.div>
+                ) : (
+                  /* Auth Options (Google + Magic Link) */
+                  <>
+                    <div className="onboarding-form-header">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
+                        <selectedRoleData.icon className="h-8 w-8" />
+                      </div>
+                      <h2 className="onboarding-form-title">
+                        Sign up as {selectedRoleData.title}
+                      </h2>
+                      <p className="onboarding-form-subtitle">
+                        Choose how you want to create your account
+                      </p>
+                    </div>
+
+                    {/* Student email hint */}
+                    {selectedRole === "student" && (
+                      <Alert className="mb-6 border-[#765341]/30 bg-[#765341]/10 dark:border-[#765341]/40 dark:bg-[#765341]/20">
+                        <AlertCircle className="h-4 w-4 text-[#765341]" />
+                        <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
+                          <strong>Student accounts require a valid college email</strong>
+                          <br />
+                          Please sign in with your institutional email (e.g.,
+                          name@university.edu or name@college.ac.in)
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Error message */}
+                    {error && (
+                      <Alert variant="destructive" className="mb-6">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Google Sign-in Button */}
+                    <Button
+                      onClick={handleGoogleSignIn}
+                      disabled={isLoading}
+                      className="onboarding-google-button"
+                      variant="outline"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <GoogleIcon className="h-5 w-5" />
+                      )}
+                      <span>
+                        {isLoading ? "Connecting..." : "Continue with Google"}
+                      </span>
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Magic Link Button */}
+                    <Button
+                      onClick={() => setShowMagicLink(true)}
+                      disabled={isLoading}
+                      variant="outline"
+                      className="w-full h-12"
+                    >
+                      <Mail className="mr-2 h-5 w-5" />
+                      Sign in with Email
+                    </Button>
+
+                    {/* Security note */}
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-6">
+                      <Shield className="h-4 w-4" />
+                      Secure passwordless authentication
+                    </div>
+
+                    {/* Terms */}
+                    <p className="text-center text-xs text-muted-foreground mt-4">
+                      By continuing, you agree to our{" "}
+                      <button
+                        onClick={() => router.push("/terms")}
+                        className="underline hover:text-foreground"
+                      >
+                        Terms of Service
+                      </button>{" "}
+                      and{" "}
+                      <button
+                        onClick={() => router.push("/privacy")}
+                        className="underline hover:text-foreground"
+                      >
+                        Privacy Policy
+                      </button>
+                    </p>
+
+                    <p className="text-center text-sm text-muted-foreground mt-8">
+                      Already have an account?{" "}
+                      <button
+                        onClick={() => router.push("/login")}
+                        className="text-primary font-medium hover:underline"
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  </>
                 )}
-
-                {/* Error message */}
-                {error && (
-                  <Alert variant="destructive" className="mb-6">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Google Sign-in Button */}
-                <Button
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                  className="onboarding-google-button"
-                  variant="outline"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <GoogleIcon className="h-5 w-5" />
-                  )}
-                  <span>
-                    {isLoading ? "Connecting..." : "Continue with Google"}
-                  </span>
-                </Button>
-
-                {/* Security note */}
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-6">
-                  <Shield className="h-4 w-4" />
-                  Secure authentication powered by Google
-                </div>
-
-                {/* Terms */}
-                <p className="text-center text-xs text-muted-foreground mt-4">
-                  By continuing, you agree to our{" "}
-                  <button
-                    onClick={() => router.push("/terms")}
-                    className="underline hover:text-foreground"
-                  >
-                    Terms of Service
-                  </button>{" "}
-                  and{" "}
-                  <button
-                    onClick={() => router.push("/privacy")}
-                    className="underline hover:text-foreground"
-                  >
-                    Privacy Policy
-                  </button>
-                </p>
-
-                <p className="text-center text-sm text-muted-foreground mt-8">
-                  Already have an account?{" "}
-                  <button
-                    onClick={() => router.push("/login")}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </p>
               </motion.div>
             )}
           </AnimatePresence>

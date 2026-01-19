@@ -149,31 +149,39 @@ class ProfileHero extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Name with verification badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  profile.name ?? 'User',
-                  style: AppTextStyles.headingSmall.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-                if (profile.isVerified) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check,
-                      size: 12,
-                      color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      profile.name ?? 'User',
+                      style: AppTextStyles.headingSmall.copyWith(
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (profile.isVerified) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check,
+                        size: 12,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
 
             const SizedBox(height: 4),

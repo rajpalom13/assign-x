@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import {
   Settings,
@@ -28,6 +28,17 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StaggerItem } from "@/components/skeletons";
+
+/**
+ * Get time-based gradient class for dynamic theming
+ */
+function getTimeBasedGradientClass(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
+  if (hour >= 12 && hour < 18) return "mesh-gradient-afternoon";
+  return "mesh-gradient-evening";
+}
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -49,7 +60,7 @@ import type { FeedbackData } from "@/types/settings";
 import { signOut } from "@/lib/actions/auth";
 
 /**
- * Settings section component
+ * Settings section component - Glass morphism styling
  */
 function SettingsSection({
   icon: Icon,
@@ -66,13 +77,13 @@ function SettingsSection({
 }) {
   return (
     <div className={cn(
-      "rounded-xl border bg-card overflow-hidden",
-      variant === "danger" ? "border-red-200 dark:border-red-900/50" : "border-border"
+      "action-card-glass rounded-xl overflow-hidden",
+      variant === "danger" && "border-red-200/50 dark:border-red-900/30"
     )}>
-      <div className="flex items-center gap-3 p-4 border-b border-border">
+      <div className="flex items-center gap-3 p-4 border-b border-border/30">
         <div className={cn(
           "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
-          variant === "danger" ? "bg-red-100 dark:bg-red-900/30" : "bg-muted"
+          variant === "danger" ? "bg-red-100 dark:bg-red-900/30" : "bg-muted/60"
         )}>
           <Icon className={cn(
             "h-4.5 w-4.5",
@@ -230,6 +241,9 @@ export function SettingsPro() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Memoize time-based gradient class
+  const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
+
   const [notifications, setNotifications] = useState({
     pushNotifications: true,
     emailNotifications: true,
@@ -337,17 +351,21 @@ export function SettingsPro() {
   };
 
   return (
-    <main className="flex-1 p-6 md:p-8 max-w-3xl mx-auto space-y-6 pb-24">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your preferences and account</p>
-      </div>
+    <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full", gradientClass)}>
+      <main className="relative z-10 p-6 md:p-8 max-w-3xl mx-auto space-y-6 pb-24">
+        {/* Header */}
+        <StaggerItem>
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+            <p className="text-sm text-muted-foreground">Manage your preferences and account</p>
+          </div>
+        </StaggerItem>
 
-      {/* Two Column Grid */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        {/* Notifications */}
-        <SettingsSection icon={Bell} title="Notifications" description="Manage how you receive updates">
+        {/* Two Column Grid */}
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Notifications */}
+          <StaggerItem>
+            <SettingsSection icon={Bell} title="Notifications" description="Manage how you receive updates">
           <div className="space-y-1">
             <SettingToggle
               label="Push Notifications"
@@ -374,10 +392,12 @@ export function SettingsPro() {
               onCheckedChange={() => handleNotificationToggle("marketingEmails")}
             />
           </div>
-        </SettingsSection>
+            </SettingsSection>
+          </StaggerItem>
 
-        {/* Appearance */}
-        <SettingsSection icon={Palette} title="Appearance" description="Customize how the app looks">
+          {/* Appearance */}
+          <StaggerItem>
+            <SettingsSection icon={Palette} title="Appearance" description="Customize how the app looks">
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-foreground mb-3">Theme</p>
@@ -415,10 +435,12 @@ export function SettingsPro() {
               />
             </div>
           </div>
-        </SettingsSection>
+            </SettingsSection>
+          </StaggerItem>
 
-        {/* Privacy & Data */}
-        <SettingsSection icon={Lock} title="Privacy & Data" description="Control your data">
+          {/* Privacy & Data */}
+          <StaggerItem>
+            <SettingsSection icon={Lock} title="Privacy & Data" description="Control your data">
           <div className="space-y-4">
             <div className="space-y-1">
               <SettingToggle
@@ -474,10 +496,12 @@ export function SettingsPro() {
               </button>
             </div>
           </div>
-        </SettingsSection>
+            </SettingsSection>
+          </StaggerItem>
 
-        {/* About */}
-        <SettingsSection icon={Info} title="About AssignX" description="App information">
+          {/* About */}
+          <StaggerItem>
+            <SettingsSection icon={Info} title="About AssignX" description="App information">
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-2">
               <div className="p-3 rounded-lg bg-muted/50 text-center">
@@ -501,11 +525,13 @@ export function SettingsPro() {
               <LegalLink icon={Scale} label="Open Source" description="Third-party licenses" href="#" />
             </div>
           </div>
-        </SettingsSection>
-      </div>
+            </SettingsSection>
+          </StaggerItem>
+        </div>
 
-      {/* Feedback - Full Width */}
-      <SettingsSection icon={MessageSquare} title="Send Feedback" description="Help us improve">
+        {/* Feedback - Full Width */}
+        <StaggerItem>
+          <SettingsSection icon={MessageSquare} title="Send Feedback" description="Help us improve">
         <form onSubmit={handleSubmitFeedback} className="space-y-4">
           <div>
             <p className="text-sm font-medium text-foreground mb-3">Feedback Type</p>
@@ -562,10 +588,12 @@ export function SettingsPro() {
             )}
           </Button>
         </form>
-      </SettingsSection>
+          </SettingsSection>
+        </StaggerItem>
 
-      {/* Danger Zone */}
-      <SettingsSection icon={AlertTriangle} title="Danger Zone" description="Irreversible actions" variant="danger">
+        {/* Danger Zone */}
+        <StaggerItem>
+          <SettingsSection icon={AlertTriangle} title="Danger Zone" description="Irreversible actions" variant="danger">
         <div className="space-y-2">
           <div className="flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-800">
             <div>
@@ -614,9 +642,10 @@ export function SettingsPro() {
             </Button>
           </div>
         </div>
-      </SettingsSection>
+          </SettingsSection>
+        </StaggerItem>
 
-      {/* Clear Cache Dialog */}
+        {/* Clear Cache Dialog */}
       <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -655,6 +684,7 @@ export function SettingsPro() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </main>
+      </main>
+    </div>
   );
 }

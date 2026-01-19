@@ -1,121 +1,112 @@
 "use client";
 
 /**
- * Dashboard Pro - Minimal Design
- * Clean, Notion/Linear inspired design matching projects page
+ * Dashboard Pro - New Design System
+ * Matching the design with corner-positioned pastel mesh gradients,
+ * asymmetric bento grid with smooth hover animations, and glass morphism cards
+ *
+ * Updated to use the unified skeleton system with:
+ * - PageSkeletonProvider for loading state management
+ * - Minimum 1000ms skeleton display
+ * - StaggerItem for choreographed reveal animations
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  FileText,
-  FolderKanban,
+  CheckCircle,
+  Sparkles,
+  BarChart3,
   ChevronRight,
-  Search,
-  BookOpen,
-  CheckCircle2,
-  ArrowRight,
+  GraduationCap,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
-import { useProjectStore, type Project } from "@/stores";
+import { useProjectStore } from "@/stores";
 import { motion } from "framer-motion";
+import { PageSkeletonProvider, StaggerItem } from "@/components/skeletons";
+import { SkeletonBox, SkeletonText } from "@/components/skeletons/primitives";
+import { QuickStats } from "@/components/dashboard/quick-stats";
+import { GreetingAnimation } from "@/components/dashboard/greeting-animation";
 
 /**
  * Status configuration with consistent neutral theme
  */
-const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string; bg: string }> = {
-  submitted: { label: "Submitted", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
-  analyzing: { label: "Reviewing", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
-  quoted: { label: "Quote Ready", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
-  payment_pending: { label: "Payment Due", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
-  paid: { label: "Paid", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
-  assigned: { label: "Assigned", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
-  in_progress: { label: "In Progress", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
-  qc: { label: "Quality Check", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
-  delivered: { label: "Delivered", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
-  completed: { label: "Completed", color: "text-foreground", dot: "bg-foreground", bg: "bg-foreground/10" },
-  revision: { label: "Revision", color: "text-muted-foreground", dot: "bg-muted-foreground", bg: "bg-muted/50" },
+const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
+  submitted: { label: "Submitted", dot: "bg-muted-foreground" },
+  analyzing: { label: "Reviewing", dot: "bg-muted-foreground" },
+  quoted: { label: "Quote Ready", dot: "bg-primary" },
+  payment_pending: { label: "Payment Due", dot: "bg-primary" },
+  paid: { label: "Paid", dot: "bg-foreground" },
+  assigned: { label: "Assigned", dot: "bg-muted-foreground" },
+  in_progress: { label: "In Progress", dot: "bg-primary" },
+  qc: { label: "Quality Check", dot: "bg-primary" },
+  delivered: { label: "Delivered", dot: "bg-foreground" },
+  completed: { label: "Completed", dot: "bg-foreground" },
+  revision: { label: "Revision", dot: "bg-muted-foreground" },
 };
 
 /**
- * Generate chart data from projects
+ * Action card data configuration
+ * Layout: Left column [tall, short], Right column [short, tall]
  */
-function generateChartData(projects: Project[]) {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-  const currentMonth = new Date().getMonth();
+const ACTION_CARDS = [
+  {
+    id: "new-project",
+    icon: Plus,
+    title: "Create New Project",
+    description: "Start a new AI-driven initiative.",
+    href: "/projects/new",
+    column: "left" as const,
+  },
+  {
+    id: "experts",
+    icon: GraduationCap,
+    title: "Expert Consultations",
+    description: "Book 1-on-1 sessions with verified experts.",
+    href: "/experts",
+    column: "left" as const,
+  },
+  {
+    id: "content",
+    icon: Sparkles,
+    title: "Generate Content",
+    description: "Instantly create high-quality text and visuals.",
+    href: "/projects/new?type=content",
+    column: "right" as const,
+  },
+  {
+    id: "plagiarism",
+    icon: CheckCircle,
+    title: "AI Plagiarism Check",
+    description: "Ensure content originality and compliance.",
+    href: "/projects/new?type=plagiarism",
+    column: "right" as const,
+  },
+];
 
-  return months.map((month, index) => {
-    const monthIndex = (currentMonth - 5 + index + 12) % 12;
-    const projectsInMonth = projects.filter((p) => {
-      const date = new Date(p.created_at || Date.now());
-      return date.getMonth() === monthIndex;
-    }).length;
-
-    const completedInMonth = projects.filter((p) => {
-      const date = new Date(p.updated_at || p.created_at || Date.now());
-      return date.getMonth() === monthIndex && ["completed", "delivered"].includes(p.status);
-    }).length;
-
-    return {
-      name: month,
-      projects: projectsInMonth,
-      completed: completedInMonth,
-    };
-  });
-}
+// Default expanded indices: left=0 (first card tall), right=1 (second card tall)
+const DEFAULT_LEFT_EXPANDED = 0;
+const DEFAULT_RIGHT_EXPANDED = 1;
 
 /**
- * Enhanced Custom Tooltip for Chart
- */
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) {
-  if (active && payload && payload.length) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl px-4 py-3 shadow-xl"
-      >
-        <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
-        <div className="space-y-1">
-          <p className="text-sm font-semibold flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-foreground" />
-            {payload[0]?.value || 0} created
-          </p>
-          {payload[1] && (
-            <p className="text-sm font-semibold flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-muted-foreground" />
-              {payload[1]?.value || 0} completed
-            </p>
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-  return null;
-}
-
-/**
- * Main Dashboard Component
+ * Main Dashboard Component - New Design
+ * Uses PageSkeletonProvider for unified loading experience
  */
 export function DashboardPro() {
   const router = useRouter();
   const { user, isLoading: userLoading, fetchUser } = useUserStore();
   const { projects, isLoading: projectsLoading, fetchProjects } = useProjectStore();
-  const [chartPeriod, setChartPeriod] = useState<"6m" | "3m" | "1m">("6m");
+
+  // Track which column has the expanded card (null = use default)
+  const [leftHovered, setLeftHovered] = useState<number | null>(null);
+  const [rightHovered, setRightHovered] = useState<number | null>(null);
+
+  // Effective expanded states (use hover or default)
+  const leftExpanded = leftHovered ?? DEFAULT_LEFT_EXPANDED;
+  const rightExpanded = rightHovered ?? DEFAULT_RIGHT_EXPANDED;
 
   useEffect(() => {
     fetchUser();
@@ -123,420 +114,370 @@ export function DashboardPro() {
   }, [fetchUser, fetchProjects]);
 
   const isLoading = userLoading || projectsLoading;
-
-  // Calculate stats
-  const activeStatuses = ["submitted", "analyzing", "quoted", "payment_pending", "paid", "assigned", "in_progress", "qc"];
-  const completedStatuses = ["completed", "delivered", "qc_approved"];
-
-  const activeProjects = projects.filter((p) => activeStatuses.includes(p.status)).length;
-  const completedProjects = projects.filter((p) => completedStatuses.includes(p.status)).length;
-  const totalProjects = projects.length;
-  const walletBalance = user?.wallet?.balance || 0;
-  const recentProjects = projects.slice(0, 4);
-  const firstName = user?.fullName?.split(" ")[0] || "there";
-
-  // Chart data
-  const chartData = useMemo(() => generateChartData(projects), [projects]);
-
-  // Completion rate
-  const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
+  const firstName = user?.fullName?.split(" ")[0] || user?.full_name?.split(" ")[0] || "there";
 
   // Needs attention - projects requiring user action
   const ATTENTION_STATUSES = ["quoted", "payment_pending", "delivered", "revision"];
   const needsAttention = useMemo(() => {
     return projects
       .filter((p) => ATTENTION_STATUSES.includes(p.status))
-      .slice(0, 4);
+      .slice(0, 3);
   }, [projects]);
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto space-y-8">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <Skeleton className="h-8 w-28" />
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-[88px] rounded-xl" />
-          ))}
-        </div>
-        <div className="grid lg:grid-cols-3 gap-4">
-          <Skeleton className="lg:col-span-2 h-[260px] rounded-xl" />
-          <Skeleton className="h-[260px] rounded-xl" />
-        </div>
-      </div>
-    );
-  }
+  // Get left and right column cards
+  const leftCards = ACTION_CARDS.filter((c) => c.column === "left");
+  const rightCards = ACTION_CARDS.filter((c) => c.column === "right");
+
+  // Handlers for left column
+  const handleLeftHover = useCallback((index: number) => {
+    setLeftHovered(index);
+  }, []);
+
+  const handleLeftLeave = useCallback(() => {
+    setLeftHovered(null);
+  }, []);
+
+  // Handlers for right column
+  const handleRightHover = useCallback((index: number) => {
+    setRightHovered(index);
+  }, []);
+
+  const handleRightLeave = useCallback(() => {
+    setRightHovered(null);
+  }, []);
 
   return (
-    <div className="flex-1 p-6 md:p-8 max-w-5xl mx-auto">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Good {getGreeting()}, {firstName}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Here's what's happening with your projects today
-            </p>
-          </div>
-          <Button
-            size="sm"
-            className="h-8 rounded-lg"
-            onClick={() => router.push("/projects/new")}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            New Project
-          </Button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Active" value={activeProjects} />
-          <StatCard label="Completed" value={completedProjects} />
-          <StatCard label="Success Rate" value={`${completionRate}%`} />
-          <StatCard label="Wallet" value={`₹${walletBalance.toLocaleString()}`} />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          {/* Chart Section - Takes 2 columns */}
-          <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-semibold">Project Activity</h2>
-                <p className="text-sm text-muted-foreground">Track your project trends</p>
-              </div>
-              <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
-                {(["6m", "3m", "1m"] as const).map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setChartPeriod(period)}
-                    className={cn(
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
-                      chartPeriod === period
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {period === "6m" ? "6 months" : period === "3m" ? "3 months" : "1 month"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorProjects" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--foreground))" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.15} />
-                      <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                    width={35}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="projects"
-                    stroke="hsl(var(--foreground))"
-                    strokeWidth={2}
-                    fill="url(#colorProjects)"
-                    dot={false}
-                    activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="completed"
-                    stroke="hsl(var(--muted-foreground))"
-                    strokeWidth={2}
-                    fill="url(#colorCompleted)"
-                    dot={false}
-                    activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-foreground" />
-                <span className="text-xs text-muted-foreground">Created</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Completed</span>
-              </div>
-              <span className="text-xs text-muted-foreground ml-auto">
-                {totalProjects} total
-              </span>
-            </div>
-          </div>
-
-          {/* Needs Attention Widget */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-semibold">Needs Attention</h2>
-                <p className="text-xs text-muted-foreground">
-                  {needsAttention.length} item{needsAttention.length !== 1 ? "s" : ""} require action
-                </p>
-              </div>
-            </div>
-
-            {needsAttention.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center mb-3">
-                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium">All caught up</p>
-                <p className="text-xs text-muted-foreground mt-1">No pending actions</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {needsAttention.map((project) => {
-                  const status = STATUS_CONFIG[project.status] || {
-                    label: project.status,
-                    dot: "bg-muted-foreground",
-                  };
-                  return (
-                    <button
-                      key={project.id}
-                      onClick={() => router.push(`/project/${project.id}`)}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-                    >
-                      <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{project.title}</p>
-                        <p className="text-xs text-muted-foreground">{status.label}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Bottom Section */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* Quick Actions */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="text-base font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              <QuickAction
-                icon={<FileText className="h-4 w-4" />}
-                label="New Project"
-                description="Submit a new project"
-                href="/projects/new"
-              />
-              <QuickAction
-                icon={<Search className="h-4 w-4" />}
-                label="AI Check"
-                description="Verify content originality"
-                href="/projects/new?type=plagiarism"
-              />
-              <QuickAction
-                icon={<BookOpen className="h-4 w-4" />}
-                label="Proofread"
-                description="Review and polish documents"
-                href="/projects/new?type=proofreading"
-              />
-              <QuickAction
-                icon={<FolderKanban className="h-4 w-4" />}
-                label="All Projects"
-                description="View project history"
-                href="/projects"
-              />
-            </div>
-          </div>
-
-          {/* Recent Projects */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold">Recent Projects</h2>
-              {recentProjects.length > 0 && (
-                <button
-                  onClick={() => router.push("/projects")}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  View all
-                  <ArrowRight className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-
-            {recentProjects.length === 0 ? (
-              <EmptyState
-                title="No projects yet"
-                description="Create your first project to get started"
-                action={{
-                  label: "New project",
-                  onClick: () => router.push("/projects/new"),
-                }}
-              />
-            ) : (
-              <div className="space-y-1">
-                {recentProjects.map((project) => (
-                  <ProjectRow key={project.id} project={project} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Stat Card Component - Minimal design matching projects page
- */
-function StatCard({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="p-4 rounded-xl border border-border bg-card">
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-    </div>
-  );
-}
-
-/**
- * Project Row Component - Minimal design matching projects page
- */
-function ProjectRow({ project }: { project: Project }) {
-  const router = useRouter();
-  const status = STATUS_CONFIG[project.status] || {
-    label: project.status,
-    dot: "bg-muted-foreground",
-  };
-
-  return (
-    <button
-      onClick={() => router.push(`/project/${project.id}`)}
-      className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+    <PageSkeletonProvider
+      isLoading={isLoading}
+      skeleton={<DashboardBentoSkeleton />}
+      minimumDuration={1000}
+      className="h-full min-h-full"
     >
-      <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{project.title}</p>
+      <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full h-full", getTimeBasedGradientClass())}>
+        <div className="relative z-10 min-h-full h-full p-6 md:p-6 lg:p-8 flex items-center justify-center overflow-auto">
+          <div className="max-w-6xl w-full">
+            {/* Main Content - Two Column Layout */}
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start lg:items-center">
+              {/* Left Column - Greeting */}
+              <StaggerItem className="flex-1 space-y-4">
+                {/* Greeting with subtle animation */}
+                <div className="relative">
+                  <motion.h1
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-foreground/90"
+                  >
+                    Good {getGreeting()},
+                  </motion.h1>
+                  {/* Name with Lottie animation to the right */}
+                  <div className="flex items-center gap-3">
+                    <motion.h2
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: 0.05 }}
+                      className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground"
+                    >
+                      {firstName}
+                    </motion.h2>
+                    {/* Lottie animation to the right of name */}
+                    <GreetingAnimation
+                      className="hidden md:block"
+                      size={72}
+                    />
+                  </div>
+                </div>
+                <motion.p
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-lg text-muted-foreground mt-4 max-w-md"
+                >
+                  Ready to optimize your workflow and generate insights.
+                </motion.p>
+
+                {/* Quick Stats Row */}
+                <QuickStats
+                  activeProjects={projects.filter(p => ["in_progress", "assigned", "qc"].includes(p.status)).length}
+                  pendingActions={projects.filter(p => ["quoted", "payment_pending", "delivered", "revision"].includes(p.status)).length}
+                  walletBalance={user?.wallet?.balance || 0}
+                  className="mt-2"
+                />
+
+                {/* Needs Attention Section - Below Greeting */}
+                {needsAttention.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    className="mt-8 pt-6 border-t border-border/40"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Needs Attention
+                      </span>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {needsAttention.length}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {needsAttention.map((project, index) => {
+                        const status = STATUS_CONFIG[project.status] || {
+                          label: project.status,
+                          dot: "bg-muted-foreground",
+                        };
+                        return (
+                          <motion.button
+                            key={project.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.35 + index * 0.05, duration: 0.3 }}
+                            onClick={() => router.push(`/project/${project.id}`)}
+                            className="w-full flex items-center gap-3 p-3 rounded-xl action-card-glass text-left group"
+                          >
+                            <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{project.title}</p>
+                              <p className="text-xs text-muted-foreground">{status.label}</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </StaggerItem>
+
+              {/* Right Column - Bento Grid Action Cards */}
+              <StaggerItem className="w-full lg:w-auto">
+                <div className="flex gap-4 lg:gap-5 max-w-md lg:max-w-lg">
+                  {/* Left Column of Cards */}
+                  <div
+                    className="flex-1 flex flex-col gap-4 lg:gap-5"
+                    onMouseLeave={handleLeftLeave}
+                  >
+                    {leftCards.map((card, index) => (
+                      <BentoCard
+                        key={card.id}
+                        {...card}
+                        cardIndex={index}
+                        isTall={leftExpanded === index}
+                        onHover={() => handleLeftHover(index)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Right Column of Cards */}
+                  <div
+                    className="flex-1 flex flex-col gap-4 lg:gap-5"
+                    onMouseLeave={handleRightLeave}
+                  >
+                    {rightCards.map((card, index) => (
+                      <BentoCard
+                        key={card.id}
+                        {...card}
+                        cardIndex={index}
+                        isTall={rightExpanded === index}
+                        onHover={() => handleRightHover(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </StaggerItem>
+            </div>
+          </div>
+        </div>
       </div>
-      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-        {status.label}
-      </span>
-      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-    </button>
+    </PageSkeletonProvider>
   );
 }
 
+// Spring configuration for ultra smooth animations
+const springConfig = {
+  type: "spring" as const,
+  stiffness: 300,
+  damping: 30,
+  mass: 0.8,
+};
+
 /**
- * Activity Item Component
+ * Bento Card Component - Glass morphism with smooth height animation
  */
-function ActivityItem({
+function BentoCard({
+  icon: Icon,
   title,
-  status,
-  time,
-  isLast,
-}: {
-  title: string;
-  status: string;
-  time: string;
-  isLast: boolean;
-}) {
-  const statusConfig = STATUS_CONFIG[status] || { dot: "bg-muted-foreground", label: status };
-
-  return (
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center">
-        <div className={cn("h-2 w-2 rounded-full mt-1.5", statusConfig.dot)} />
-        {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
-      </div>
-      <div className="flex-1 pb-3">
-        <p className="text-sm font-medium truncate">{title}</p>
-        <p className="text-xs text-muted-foreground">
-          {statusConfig.label} · {time}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Quick Action Component - Enhanced design
- */
-function QuickAction({
-  icon,
-  label,
   description,
   href,
+  cardIndex,
+  isTall,
+  onHover,
 }: {
-  icon: React.ReactNode;
-  label: string;
+  icon: React.ElementType;
+  title: string;
   description: string;
   href: string;
+  cardIndex: number;
+  isTall: boolean;
+  onHover: () => void;
 }) {
+  // Height values for tall and short states
+  const tallHeight = 220;
+  const shortHeight = 140;
+
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 p-4 rounded-lg border-2 border-border bg-card hover:border-[#765341]/50 hover:bg-gradient-to-r hover:from-[#765341]/10 hover:to-[#A07A65]/10 hover:shadow-md hover:-translate-y-0.5 transition-all group"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        height: isTall ? tallHeight : shortHeight,
+      }}
+      transition={{
+        opacity: { duration: 0.4, delay: 0.1 + cardIndex * 0.1 },
+        y: { duration: 0.4, delay: 0.1 + cardIndex * 0.1 },
+        height: springConfig,
+      }}
+      onMouseEnter={onHover}
+      className="relative will-change-[height]"
     >
-      <div className="h-10 w-10 rounded-lg border border-border bg-muted/30 flex items-center justify-center text-muted-foreground group-hover:bg-[#765341] group-hover:text-white group-hover:border-[#765341] transition-all">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground truncate">{description}</p>
-      </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:text-[#765341] transition-all" />
-    </Link>
+      <Link
+        href={href}
+        className="block h-full rounded-2xl p-5 lg:p-6 action-card-glass group cursor-pointer overflow-hidden"
+      >
+        <div className="flex flex-col h-full">
+          {/* Icon */}
+          <div className="mb-4">
+            <motion.div
+              animate={{
+                scale: isTall ? 1.1 : 1,
+              }}
+              transition={springConfig}
+            >
+              <Icon
+                className="h-7 w-7 text-foreground/70 group-hover:text-foreground transition-colors duration-200"
+                strokeWidth={1.5}
+              />
+            </motion.div>
+          </div>
+
+          {/* Content */}
+          <div className="mt-auto">
+            <motion.h3
+              className="font-semibold text-foreground mb-1"
+              animate={{
+                fontSize: isTall ? "1.125rem" : "0.9375rem",
+              }}
+              transition={springConfig}
+            >
+              {title}
+            </motion.h3>
+            <motion.p
+              className="text-muted-foreground leading-relaxed overflow-hidden"
+              animate={{
+                opacity: isTall ? 1 : 0.7,
+                fontSize: isTall ? "0.875rem" : "0.75rem",
+                maxHeight: isTall ? 60 : 20,
+              }}
+              transition={{
+                ...springConfig,
+                opacity: { duration: 0.2 },
+              }}
+            >
+              {description}
+            </motion.p>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
   );
 }
 
 /**
- * Empty State Component
+ * Dashboard Bento Skeleton Component
+ * Custom skeleton that matches the unique bento grid layout
+ * Uses staggered shimmer animations for a polished loading experience
  */
-function EmptyState({
-  title,
-  description,
-  action,
-}: {
-  title: string;
-  description: string;
-  action?: { label: string; onClick: () => void };
-}) {
+function DashboardBentoSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted mb-2">
-        <FolderKanban className="h-4 w-4 text-muted-foreground" />
+    <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full h-full", getTimeBasedGradientClass())}>
+      <div className="relative z-10 min-h-full h-full p-6 md:p-6 lg:p-8 flex items-center justify-center overflow-auto">
+        <div className="max-w-6xl w-full">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start lg:items-center">
+            {/* Left Column Skeleton - Greeting Area */}
+            <div className="flex-1 space-y-4">
+              {/* "Good Morning," text */}
+              <SkeletonText width={260} lineHeight={56} delay={0} />
+              {/* User name */}
+              <SkeletonText width={200} lineHeight={56} delay={50} />
+              {/* Subtitle */}
+              <div className="mt-4">
+                <SkeletonText width={320} lineHeight={24} delay={100} />
+              </div>
+
+              {/* Needs Attention Section Skeleton */}
+              <div className="mt-8 pt-6 border-t border-border/40 space-y-3">
+                <div className="flex items-center gap-2">
+                  <SkeletonText width={110} lineHeight={16} delay={150} />
+                  <SkeletonBox width={24} height={20} delay={175} className="rounded-full" />
+                </div>
+                {/* Attention items */}
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-card/50 border border-border/50"
+                  >
+                    <SkeletonBox width={8} height={8} delay={200 + i * 50} className="rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <SkeletonText width={180} lineHeight={14} delay={225 + i * 50} />
+                      <SkeletonText width={80} lineHeight={12} delay={250 + i * 50} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column Skeleton - Bento Grid */}
+            <div className="w-full lg:w-auto">
+              <div className="flex gap-4 lg:gap-5 max-w-md lg:max-w-lg">
+                {/* Left Column of Cards */}
+                <div className="flex-1 flex flex-col gap-4 lg:gap-5">
+                  <BentoCardSkeleton height={220} delay={300} />
+                  <BentoCardSkeleton height={140} delay={350} />
+                </div>
+                {/* Right Column of Cards */}
+                <div className="flex-1 flex flex-col gap-4 lg:gap-5">
+                  <BentoCardSkeleton height={140} delay={400} />
+                  <BentoCardSkeleton height={220} delay={450} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <p className="text-sm font-medium">{title}</p>
-      <p className="text-xs text-muted-foreground mt-0.5 mb-3">{description}</p>
-      {action && (
-        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={action.onClick}>
-          <Plus className="h-3 w-3 mr-1" />
-          {action.label}
-        </Button>
-      )}
+    </div>
+  );
+}
+
+/**
+ * Bento Card Skeleton - Individual card skeleton for the bento grid
+ */
+function BentoCardSkeleton({ height, delay }: { height: number; delay: number }) {
+  return (
+    <div
+      className="rounded-2xl p-5 lg:p-6 bg-card/60 border border-border/50 backdrop-blur-sm"
+      style={{ height }}
+    >
+      <div className="flex flex-col h-full">
+        {/* Icon placeholder */}
+        <SkeletonBox width={28} height={28} delay={delay} className="rounded-lg mb-4" />
+
+        {/* Content at bottom */}
+        <div className="mt-auto space-y-2">
+          <SkeletonText width={120} lineHeight={18} delay={delay + 25} />
+          <SkeletonText width={160} lineHeight={14} delay={delay + 50} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -546,28 +487,18 @@ function EmptyState({
  */
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 17) return "afternoon";
-  return "evening";
+  if (hour < 12) return "Morning";
+  if (hour < 17) return "Afternoon";
+  return "Evening";
 }
 
 /**
- * Format relative time
+ * Get time-based gradient class for subtle theming
+ * Morning: warm peachy tones, Afternoon: neutral, Evening: cool purple tones
  */
-function formatRelativeTime(dateString: string | undefined): string {
-  if (!dateString) return "Recently";
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+function getTimeBasedGradientClass(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
+  if (hour >= 12 && hour < 17) return "mesh-gradient-afternoon";
+  return "mesh-gradient-evening";
 }

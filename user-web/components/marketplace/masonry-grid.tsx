@@ -39,6 +39,12 @@ export interface ListingDisplay {
 }
 
 /**
+ * Grid layout variants
+ */
+type GridVariant = "masonry"
+
+
+/**
  * Props for MasonryGrid component
  */
 interface MasonryGridProps {
@@ -48,16 +54,18 @@ interface MasonryGridProps {
   hasMore?: boolean
   isLoading?: boolean
   className?: string
+  /** Grid layout variant - 'masonry' for Pinterest-style, 'bento' for random sized cards */
+  variant?: GridVariant
 }
 
 /**
- * Breakpoint configuration for Masonry columns
+ * Breakpoint configuration for Masonry columns - 5 columns on large screens
  */
 const breakpointColumns = {
-  default: 4,
-  1280: 4,
-  1024: 3,
-  768: 2,
+  default: 5,
+  1280: 5,
+  1024: 4,
+  768: 3,
   640: 2,
 }
 
@@ -73,6 +81,7 @@ export function MasonryGrid({
   hasMore = false,
   isLoading = false,
   className,
+  variant = "masonry",
 }: MasonryGridProps) {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -146,6 +155,8 @@ export function MasonryGrid({
     )
   }
 
+
+  // Render masonry grid layout
   return (
     <div className={cn("w-full", className)}>
       <Masonry

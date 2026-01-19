@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../data/models/project_model.dart';
 import '../../../providers/project_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/payment_prompt_modal.dart';
-import '../widgets/project_card.dart';
+import '../widgets/progress_indicator.dart';
 import '../widgets/review_actions.dart';
 
-/// My Projects screen with tab navigation.
+/// My Projects screen with tab navigation and new glass design system.
 class MyProjectsScreen extends ConsumerStatefulWidget {
   const MyProjectsScreen({super.key});
 
@@ -19,37 +22,22 @@ class MyProjectsScreen extends ConsumerStatefulWidget {
   ConsumerState<MyProjectsScreen> createState() => _MyProjectsScreenState();
 }
 
-class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
+  int _selectedTabIndex = 0;
 
   final _tabs = const [
-    _TabInfo('In Review', Icons.hourglass_empty),
-    _TabInfo('In Progress', Icons.engineering_outlined),
-    _TabInfo('For Review', Icons.rate_review_outlined),
-    _TabInfo('History', Icons.history),
+    _TabInfo('All', Icons.folder_outlined),
+    _TabInfo('Active', Icons.play_circle_outline),
+    _TabInfo('Completed', Icons.check_circle_outline),
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        ref.read(selectedProjectTabProvider.notifier).state = _tabController.index;
-      }
-    });
-
     // Check for pending payments on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPendingPayments();
     });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _checkPendingPayments() async {
@@ -68,15 +56,12 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
   /// Navigates to the payment screen for the given project.
   void _handlePayNow(Project project) {
     if (!mounted) return;
-    // Navigate to project payment screen
     context.push(RouteNames.projectPayPath(project.id));
   }
 
-  /// Handles the "Remind Later" action by showing feedback
-  /// and storing the reminder preference.
+  /// Handles the "Remind Later" action by showing feedback.
   void _handleRemindLater(Project project) {
     if (!mounted) return;
-    // Show feedback to user
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('We\'ll remind you about payment for "${project.title}"'),
@@ -88,82 +73,164 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen>
         ),
       ),
     );
-    // TODO: Store reminder preference in local storage
-    // This allows showing the reminder again after some time
   }
 
   @override
   Widget build(BuildContext context) {
-    final projectCounts = ref.watch(projectCountsProvider);
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('My Projects'),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: AppTextStyles.labelMedium,
-            tabs: _tabs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tab = entry.value;
-              return Tab(
-                child: Row(
-                  children: [
-                    Icon(tab.icon, size: 16),
-                    const SizedBox(width: 6),
-                    Text(tab.label),
-                    projectCounts.when(
-                      data: (counts) {
-                        final count = counts[index] ?? 0;
-                        if (count == 0) return const SizedBox.shrink();
-                        return Container(
-                          margin: const EdgeInsets.only(left: 6),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withAlpha(25),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            count.toString(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                    ),
-                  ],
+      body: MeshGradientBackground(
+        position: MeshPosition.topRight,
+        colors: [MeshColors.meshPeach, MeshColors.meshOrange, MeshColors.meshYellow],
+        opacity: 0.5,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              _buildHeader(),
+
+              const SizedBox(height: 16),
+
+              // Glass Tab Bar
+              _buildGlassTabBar(),
+
+              const SizedBox(height: 16),
+
+              // Projects List
+              Expanded(
+                child: _ProjectTabContent(
+                  tabIndex: _selectedTabIndex,
+                  onApprove: _handleApprove,
+                  onRequestChanges: _handleRequestChanges,
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ProjectTabContent(tabIndex: 0),
-          _ProjectTabContent(tabIndex: 1),
-          _ProjectTabContent(tabIndex: 2),
-          _ProjectTabContent(tabIndex: 3),
+          Text(
+            'My Projects',
+            style: AppTextStyles.headingLarge.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Track and manage your assignments',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGlassTabBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GlassContainer(
+        blur: 12,
+        opacity: 0.6,
+        borderRadius: BorderRadius.circular(20),
+        padding: const EdgeInsets.all(6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(_tabs.length, (index) {
+            final tab = _tabs[index];
+            final isSelected = _selectedTabIndex == index;
+            return _buildTab(tab.label, index, isSelected);
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab(String label, int index, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTabIndex = index;
+        });
+        ref.read(selectedProjectTabProvider.notifier).state = index;
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(13),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleApprove(Project project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Approve Delivery'),
+        content: const Text(
+          'Are you sure you want to approve this delivery? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+            ),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(projectNotifierProvider.notifier).approveProject(project.id);
+    }
+  }
+
+  Future<void> _handleRequestChanges(Project project) async {
+    FeedbackInputModal.show(
+      context,
+      onSubmit: (feedback) async {
+        await ref
+            .read(projectNotifierProvider.notifier)
+            .requestChanges(project.id, feedback);
+      },
     );
   }
 }
@@ -177,8 +244,14 @@ class _TabInfo {
 
 class _ProjectTabContent extends ConsumerWidget {
   final int tabIndex;
+  final Future<void> Function(Project) onApprove;
+  final Future<void> Function(Project) onRequestChanges;
 
-  const _ProjectTabContent({required this.tabIndex});
+  const _ProjectTabContent({
+    required this.tabIndex,
+    required this.onApprove,
+    required this.onRequestChanges,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -196,15 +269,16 @@ class _ProjectTabContent extends ConsumerWidget {
             ref.invalidate(projectCountsProvider);
           },
           child: ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
             itemCount: projects.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final project = projects[index];
-              return ProjectCard(
+              return _GlassProjectCard(
                 project: project,
-                onApprove: () => _handleApprove(context, ref, project),
-                onRequestChanges: () => _handleRequestChanges(context, ref, project),
+                onTap: () => context.push('/projects/${project.id}'),
+                onApprove: () => onApprove(project),
+                onRequestChanges: () => onRequestChanges(project),
               );
             },
           ),
@@ -237,52 +311,352 @@ class _ProjectTabContent extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Future<void> _handleApprove(
-    BuildContext context,
-    WidgetRef ref,
-    Project project,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Approve Delivery'),
-        content: const Text(
-          'Are you sure you want to approve this delivery? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+/// Glass-styled project card with status dot and progress indicator.
+class _GlassProjectCard extends StatelessWidget {
+  final Project project;
+  final VoidCallback onTap;
+  final VoidCallback? onApprove;
+  final VoidCallback? onRequestChanges;
+
+  const _GlassProjectCard({
+    required this.project,
+    required this.onTap,
+    this.onApprove,
+    this.onRequestChanges,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      onTap: onTap,
+      blur: 15,
+      opacity: 0.75,
+      elevation: 2,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row: Title, service type, status badge
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Service type icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withAlpha(30),
+                      AppColors.accent.withAlpha(15),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  project.serviceType.icon,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Title and service type
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      project.title,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      project.serviceType.displayName,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Status badge with colored dot
+              _StatusBadgeWithDot(status: project.status),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
+
+          const SizedBox(height: 16),
+
+          // Progress indicator (only for in_progress)
+          if (project.status == ProjectStatus.inProgress) ...[
+            ProjectProgressIndicator(
+              percent: project.progressPercentage,
+              showLabel: true,
             ),
-            child: const Text('Approve'),
+            const SizedBox(height: 16),
+          ],
+
+          // Bottom row: Last updated and action
+          Row(
+            children: [
+              // Last updated with clock icon
+              Icon(
+                Icons.access_time_outlined,
+                size: 14,
+                color: AppColors.textTertiary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _formatLastUpdated(project.updatedAt ?? project.createdAt),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+              ),
+
+              const Spacer(),
+
+              // Action buttons based on status
+              _buildActionButtons(context),
+            ],
+          ),
+
+          // Owner avatar section (if applicable)
+          if (project.doerId != null) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.divider),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: AppColors.primary.withAlpha(30),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Expert assigned',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatLastUpdated(DateTime updatedAt) {
+    final now = DateTime.now();
+    final difference = now.difference(updatedAt);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return DateFormat('MMM d').format(updatedAt);
+    }
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    switch (project.status) {
+      case ProjectStatus.quoted:
+      case ProjectStatus.paymentPending:
+        return _ActionChip(
+          label: 'Pay Now',
+          icon: Icons.payment,
+          color: AppColors.warning,
+          onTap: () => context.push('/projects/${project.id}/pay'),
+        );
+
+      case ProjectStatus.delivered:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ActionChip(
+              label: 'Changes',
+              icon: Icons.edit_note,
+              color: AppColors.textSecondary,
+              outlined: true,
+              onTap: onRequestChanges,
+            ),
+            const SizedBox(width: 8),
+            _ActionChip(
+              label: 'Approve',
+              icon: Icons.check,
+              color: AppColors.success,
+              onTap: onApprove,
+            ),
+          ],
+        );
+
+      default:
+        return _ActionChip(
+          label: 'View',
+          icon: Icons.arrow_forward,
+          color: AppColors.primary,
+          outlined: true,
+          onTap: onTap,
+        );
+    }
+  }
+}
+
+/// Status badge with colored dot indicator.
+class _StatusBadgeWithDot extends StatelessWidget {
+  final ProjectStatus status;
+
+  const _StatusBadgeWithDot({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: _getDotColor().withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _getDotColor().withAlpha(40),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Colored dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: _getDotColor(),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Status text
+          Text(
+            status.displayName,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _getDotColor(),
+            ),
           ),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      await ref.read(projectNotifierProvider.notifier).approveProject(project.id);
-    }
   }
 
-  Future<void> _handleRequestChanges(
-    BuildContext context,
-    WidgetRef ref,
-    Project project,
-  ) async {
-    FeedbackInputModal.show(
-      context,
-      onSubmit: (feedback) async {
-        await ref
-            .read(projectNotifierProvider.notifier)
-            .requestChanges(project.id, feedback);
-      },
+  /// Get dot color based on status.
+  ///
+  /// Status dot colors:
+  /// - submitted: gray
+  /// - quoted: primary (coffee bean)
+  /// - payment_pending: primary
+  /// - paid: foreground
+  /// - in_progress: primary
+  /// - completed: foreground/success
+  /// - revision_requested: warning
+  /// - cancelled: error
+  Color _getDotColor() {
+    switch (status) {
+      case ProjectStatus.draft:
+      case ProjectStatus.submitted:
+        return AppColors.textTertiary;
+      case ProjectStatus.quoted:
+      case ProjectStatus.paymentPending:
+      case ProjectStatus.inProgress:
+      case ProjectStatus.assigned:
+      case ProjectStatus.assigning:
+        return AppColors.primary;
+      case ProjectStatus.paid:
+      case ProjectStatus.analyzing:
+        return AppColors.textPrimary;
+      case ProjectStatus.completed:
+      case ProjectStatus.autoApproved:
+      case ProjectStatus.delivered:
+      case ProjectStatus.qcApproved:
+        return AppColors.success;
+      case ProjectStatus.revisionRequested:
+      case ProjectStatus.inRevision:
+      case ProjectStatus.submittedForQc:
+      case ProjectStatus.qcInProgress:
+        return AppColors.warning;
+      case ProjectStatus.cancelled:
+      case ProjectStatus.refunded:
+      case ProjectStatus.qcRejected:
+        return AppColors.error;
+    }
+  }
+}
+
+/// Compact action chip button.
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool outlined;
+  final VoidCallback? onTap;
+
+  const _ActionChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    this.outlined = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: outlined ? Colors.transparent : color,
+          borderRadius: BorderRadius.circular(8),
+          border: outlined ? Border.all(color: color.withAlpha(100)) : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: outlined ? color : Colors.white,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: outlined ? color : Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -302,13 +676,11 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                shape: BoxShape.circle,
-              ),
+            GlassContainer(
+              blur: 15,
+              opacity: 0.6,
+              borderRadius: BorderRadius.circular(40),
+              padding: const EdgeInsets.all(20),
               child: Icon(
                 icon,
                 size: 40,
@@ -341,26 +713,20 @@ class _EmptyState extends StatelessWidget {
     switch (tabIndex) {
       case 0:
         return (
-          Icons.hourglass_empty,
-          'No Projects in Review',
-          'Projects waiting for quotes will appear here',
+          Icons.folder_outlined,
+          'No Projects Yet',
+          'Your projects will appear here once you create them',
         );
       case 1:
         return (
-          Icons.engineering_outlined,
-          'No Projects in Progress',
+          Icons.play_circle_outline,
+          'No Active Projects',
           'Projects being worked on will appear here',
         );
       case 2:
         return (
-          Icons.rate_review_outlined,
-          'Nothing to Review',
-          'Completed projects awaiting your approval will appear here',
-        );
-      case 3:
-        return (
-          Icons.history,
-          'No History Yet',
+          Icons.check_circle_outline,
+          'No Completed Projects',
           'Your completed projects will appear here',
         );
       default:

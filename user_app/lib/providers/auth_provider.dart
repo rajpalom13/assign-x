@@ -270,6 +270,91 @@ class AuthStateNotifier extends AsyncNotifier<AuthStateData> {
     _selectedUserType = userType;
   }
 
+  /// Store role selected before sign-in (survives OAuth redirect).
+  /// This is used when user selects role first, then authenticates.
+  UserType? _preSignInRole;
+  UserType? get preSignInRole => _preSignInRole;
+
+  void setPreSignInRole(UserType? role) {
+    _preSignInRole = role;
+    // Also set as selected user type for profile creation
+    if (role != null) {
+      _selectedUserType = role;
+    }
+  }
+
+  /// Sign in with magic link (passwordless email authentication).
+  ///
+  /// Sends a magic link to the provided email address.
+  /// Returns true if the link was sent successfully.
+  Future<bool> signInWithMagicLink({
+    required String email,
+    UserType? userType,
+  }) async {
+    state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
+        const AuthStateData(isLoading: true));
+
+    try {
+      // Store role for use after sign-in completes
+      if (userType != null) {
+        setPreSignInRole(userType);
+      }
+
+      final success = await _authRepository.signInWithMagicLink(
+        email: email,
+        userType: userType,
+      );
+
+      state = AsyncValue.data(
+        state.valueOrNull?.copyWith(isLoading: false) ?? const AuthStateData(),
+      );
+
+      return success;
+    } catch (e) {
+      state = AsyncValue.data(
+        state.valueOrNull?.copyWith(isLoading: false, error: e.toString()) ??
+            AuthStateData(error: e.toString()),
+      );
+      rethrow;
+    }
+  }
+
+  /// Verify OTP token from magic link.
+  Future<bool> verifyOtp({
+    required String email,
+    required String token,
+  }) async {
+    state = AsyncValue.data(state.valueOrNull?.copyWith(isLoading: true) ??
+        const AuthStateData(isLoading: true));
+
+    try {
+      final success = await _authRepository.verifyOtp(
+        email: email,
+        token: token,
+      );
+
+      if (success) {
+        final user = _authRepository.currentUser;
+        if (user != null) {
+          final profile = await _authRepository.getUserProfile(user.id);
+          state = AsyncValue.data(AuthStateData(user: user, profile: profile));
+        }
+      } else {
+        state = AsyncValue.data(
+          state.valueOrNull?.copyWith(isLoading: false) ?? const AuthStateData(),
+        );
+      }
+
+      return success;
+    } catch (e) {
+      state = AsyncValue.data(
+        state.valueOrNull?.copyWith(isLoading: false, error: e.toString()) ??
+            AuthStateData(error: e.toString()),
+      );
+      rethrow;
+    }
+  }
+
   /// Set selected professional type (for professionals).
   ProfessionalType? _selectedProfessionalType;
   ProfessionalType? get selectedProfessionalType => _selectedProfessionalType;

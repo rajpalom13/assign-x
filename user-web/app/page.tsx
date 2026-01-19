@@ -2,7 +2,15 @@
 
 /**
  * Home page - Landing page for AssignX
- * Matches saas template structure exactly with same sections
+ * Clean, modern design inspired by Canva/Linear
+ *
+ * Sections:
+ * 1. Hero - Clean headline with CTA
+ * 2. User Type Cards - Students, Professionals, Business Owners
+ * 3. Trust Stats - Animated counters for key metrics
+ * 4. Value Proposition - End-to-end expert handling banner
+ * 5. Horizontal Scroll - Feature showcase
+ * 6. CTA - Final call to action
  */
 
 import "./landing.css";
@@ -10,6 +18,9 @@ import { LenisProvider } from "@/components/providers/lenis-provider";
 import {
   Navigation,
   HeroSection,
+  UserTypeCards,
+  TrustStats,
+  ValueProposition,
   HorizontalScroll,
   CTASection,
   Footer,
@@ -24,10 +35,19 @@ export default function Home() {
 
         {/* Main content */}
         <main>
-          {/* Hero Section - Light background, 55/45 split */}
+          {/* Hero Section - Clean, centered layout */}
           <HeroSection />
 
-          {/* Horizontal Scroll - GSAP text-based horizontal scroll experience */}
+          {/* User Type Cards - Students, Professionals, Business Owners */}
+          <UserTypeCards />
+
+          {/* Trust Stats - Animated counters */}
+          <TrustStats />
+
+          {/* Value Proposition Banner - End-to-end handling */}
+          <ValueProposition />
+
+          {/* Horizontal Scroll - Feature showcase */}
           <HorizontalScroll />
 
           {/* CTA Section - Final call to action */}

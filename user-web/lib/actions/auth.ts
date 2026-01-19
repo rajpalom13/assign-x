@@ -38,6 +38,152 @@ export async function signInWithGoogle() {
 }
 
 /**
+ * Sign in with Magic Link (passwordless)
+ * Sends a magic link to the user's email
+ *
+ * @param email - User's email address
+ * @param redirectTo - Optional redirect path after authentication
+ * @returns Success status or error message
+ */
+export async function signInWithMagicLink(email: string, redirectTo?: string) {
+  const supabase = await createClient();
+
+  // Validate email
+  if (!email || typeof email !== "string") {
+    return { error: "Email is required" };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: "Please enter a valid email address" };
+  }
+
+  // Build callback URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const callbackUrl = redirectTo
+    ? `${siteUrl}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+    : `${siteUrl}/auth/callback`;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.toLowerCase().trim(),
+    options: {
+      emailRedirectTo: callbackUrl,
+      shouldCreateUser: true,
+    },
+  });
+
+  if (error) {
+    if (error.message.includes("rate limit")) {
+      return { error: "Too many requests. Please wait a few minutes before trying again." };
+    }
+    return { error: error.message };
+  }
+
+  return { success: true, message: "Magic link sent successfully" };
+}
+
+/**
+ * Verify college email for Campus Connect access
+ * Sends a verification magic link to the college email
+ *
+ * @param email - College email address (.edu, .ac.in, etc.)
+ * @param isAddingToAccount - Whether adding to existing account
+ * @returns Success status or error message
+ */
+export async function verifyCollegeEmail(email: string, isAddingToAccount: boolean = false) {
+  const supabase = await createClient();
+
+  // Validate email format
+  if (!email || typeof email !== "string") {
+    return { error: "Email is required" };
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    return { error: "Please enter a valid email address" };
+  }
+
+  // Validate college email domain
+  const COLLEGE_PATTERNS = [
+    /\.edu$/i,
+    /\.edu\.in$/i,
+    /\.ac\.in$/i,
+    /\.ac\.uk$/i,
+    /\.edu\.au$/i,
+    /\.edu\.ca$/i,
+    /\.edu\.[a-z]{2}$/i,
+  ];
+
+  const domain = normalizedEmail.split("@")[1];
+  const isCollegeEmail = COLLEGE_PATTERNS.some(pattern => pattern.test(domain));
+
+  if (!isCollegeEmail) {
+    return {
+      error: "Please use a valid college/university email address (.edu, .edu.in, .ac.in, .ac.uk)",
+    };
+  }
+
+  // Build callback URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const callbackUrl = `${siteUrl}/auth/callback?verify_college=true&adding=${isAddingToAccount}`;
+
+  if (isAddingToAccount) {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "You must be logged in to add a college email" };
+    }
+
+    // Check if email is already verified by another user
+    const { data: existingStudent } = await supabase
+      .from("students")
+      .select("profile_id")
+      .eq("college_email", normalizedEmail)
+      .eq("college_email_verified", true)
+      .single();
+
+    if (existingStudent && existingStudent.profile_id !== user.id) {
+      return { error: "This college email is already verified by another account" };
+    }
+
+    // Store pending college email
+    const { error: updateError } = await supabase
+      .from("students")
+      .upsert({
+        profile_id: user.id,
+        college_email: normalizedEmail,
+        college_email_verified: false,
+        college_email_verification_sent_at: new Date().toISOString(),
+      }, {
+        onConflict: "profile_id",
+      });
+
+    if (updateError) {
+      return { error: "Failed to save college email" };
+    }
+  }
+
+  // Send verification magic link
+  const { error } = await supabase.auth.signInWithOtp({
+    email: normalizedEmail,
+    options: {
+      emailRedirectTo: callbackUrl,
+      shouldCreateUser: !isAddingToAccount,
+    },
+  });
+
+  if (error) {
+    if (error.message.includes("rate limit")) {
+      return { error: "Too many requests. Please wait a few minutes before trying again." };
+    }
+    return { error: error.message };
+  }
+
+  return { success: true, message: "Verification email sent successfully" };
+}
+
+/**
  * Sign out the current user
  * Note: localStorage clearing must be done client-side before calling this
  */

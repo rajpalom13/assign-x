@@ -1411,3 +1411,105 @@ export async function submitConnectQuestion(data: {
   revalidatePath("/connect");
   return { success: true, questionId: question.id };
 }
+
+// =============================================================================
+// ONBOARDING TOUR
+// =============================================================================
+
+/**
+ * Mark the onboarding tour as completed for the current user
+ * Saves the completion status to user_preferences in the database
+ */
+export async function markTourCompleted() {
+  const supabase = await createClient();
+  const userId = await getUserIdForDataFetch();
+
+  if (!userId) return { error: "Not authenticated" };
+
+  const now = new Date().toISOString();
+
+  // Get existing preferences
+  const { data: existing } = await supabase
+    .from("user_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    // Update existing preferences
+    const { error } = await supabase
+      .from("user_preferences")
+      .update({
+        has_completed_tour: true,
+        tour_completed_at: now,
+        updated_at: now,
+      })
+      .eq("id", existing.id)
+      .eq("user_id", userId);
+
+    if (error) {
+      // If column doesn't exist, just return success (graceful degradation)
+      if (error.code === "42703") {
+        return { success: true };
+      }
+      return { error: error.message };
+    }
+  } else {
+    // Create new preferences record with tour completion
+    const { error } = await supabase
+      .from("user_preferences")
+      .insert({
+        user_id: userId,
+        theme: "system",
+        language: "en",
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          inAppNotifications: true,
+          projectUpdates: true,
+          marketingEmails: false,
+          weeklyDigest: true,
+        },
+        has_completed_tour: true,
+        tour_completed_at: now,
+        created_at: now,
+        updated_at: now,
+      });
+
+    if (error) {
+      // If column doesn't exist, just return success (graceful degradation)
+      if (error.code === "42703") {
+        return { success: true };
+      }
+      return { error: error.message };
+    }
+  }
+
+  return { success: true };
+}
+
+/**
+ * Check if the current user has completed the onboarding tour
+ * Returns from user_preferences in the database
+ */
+export async function getTourCompletionStatus(): Promise<{ completed: boolean; completedAt?: string }> {
+  const supabase = await createClient();
+  const userId = await getUserIdForDataFetch();
+
+  if (!userId) return { completed: false };
+
+  const { data: preferences, error } = await supabase
+    .from("user_preferences")
+    .select("has_completed_tour, tour_completed_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !preferences) {
+    return { completed: false };
+  }
+
+  return {
+    completed: preferences.has_completed_tour ?? false,
+    completedAt: preferences.tour_completed_at ?? undefined,
+  };
+}

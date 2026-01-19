@@ -14,3 +14,8 @@ export { CourseSelector } from "./course-selector";
 export { IndustrySelector } from "./industry-selector";
 export { TermsModal } from "./terms-modal";
 export { SuccessAnimation } from "./success-animation";
+
+// New auth components
+export { AuthLayout, GoogleIcon } from "./auth-layout";
+export { MagicLinkForm } from "./magic-link-form";
+export { CollegeVerifyForm } from "./college-verify-form";

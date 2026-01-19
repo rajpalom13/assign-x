@@ -7,6 +7,7 @@ import '../../features/add_project/screens/new_project_form.dart';
 import '../../features/add_project/screens/proofreading_form.dart';
 import '../../features/add_project/screens/report_request_form.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/signin_screen.dart';
 import '../../features/chat/screens/project_chat_screen.dart';
 import '../../features/home/screens/main_shell.dart';
 import '../../features/marketplace/screens/create_listing_screen.dart';
@@ -26,6 +27,7 @@ import '../../features/projects/screens/project_detail_screen.dart';
 import '../../features/projects/screens/project_timeline_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../shared/animations/page_transitions.dart';
 import 'route_names.dart';
 
 /// Global navigator key for navigation without context.
@@ -54,6 +56,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final publicRoutes = [
         RouteNames.onboarding,
         RouteNames.login,
+        RouteNames.signin,
       ];
 
       // Profile completion routes
@@ -91,184 +94,267 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Splash
+      // Splash - no transition for initial load
       GoRoute(
         path: RouteNames.splash,
         name: 'splash',
         builder: (context, state) => const SplashScreen(),
       ),
 
-      // Onboarding
+      // Onboarding - fade scale transition
       GoRoute(
         path: RouteNames.onboarding,
         name: 'onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const OnboardingScreen(),
+          state: state,
+        ),
       ),
 
-      // Auth
+      // Auth - fade scale transition
       GoRoute(
         path: RouteNames.login,
         name: 'login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const LoginScreen(),
+          state: state,
+        ),
       ),
 
-      // Role Selection
+      // Sign In - for returning users
+      GoRoute(
+        path: RouteNames.signin,
+        name: 'signin',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const SignInScreen(),
+          state: state,
+        ),
+      ),
+
+      // Role Selection - fade scale transition
       GoRoute(
         path: RouteNames.roleSelection,
         name: 'roleSelection',
-        builder: (context, state) => const RoleSelectionScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const RoleSelectionScreen(),
+          state: state,
+        ),
       ),
 
-      // Student Profile
+      // Student Profile - slide right transition
       GoRoute(
         path: RouteNames.studentProfile,
         name: 'studentProfile',
-        builder: (context, state) => const StudentProfileScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const StudentProfileScreen(),
+          state: state,
+        ),
       ),
 
-      // Professional Profile
+      // Professional Profile - slide right transition
       GoRoute(
         path: RouteNames.professionalProfile,
         name: 'professionalProfile',
-        builder: (context, state) => const ProfessionalProfileScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const ProfessionalProfileScreen(),
+          state: state,
+        ),
       ),
 
-      // Signup Success
+      // Signup Success - fade scale transition
       GoRoute(
         path: RouteNames.signupSuccess,
         name: 'signupSuccess',
-        builder: (context, state) => const SignupSuccessScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const SignupSuccessScreen(),
+          state: state,
+        ),
       ),
 
-      // Main App Shell (Home with bottom nav)
+      // Main App Shell (Home with dock navigation)
       GoRoute(
         path: RouteNames.home,
         name: 'home',
-        builder: (context, state) => const MainShell(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const MainShell(),
+          state: state,
+        ),
       ),
 
-      // Add Project routes
+      // Add Project routes - slide up transitions for modal-like forms
       GoRoute(
         path: '/add-project/new',
         name: 'addProjectNew',
-        builder: (context, state) => const NewProjectForm(),
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const NewProjectForm(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: '/add-project/proofread',
         name: 'addProjectProofread',
-        builder: (context, state) => const ProofreadingForm(),
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ProofreadingForm(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: '/add-project/report',
         name: 'addProjectReport',
-        builder: (context, state) => const ReportRequestForm(),
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ReportRequestForm(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: '/add-project/expert',
         name: 'addProjectExpert',
-        builder: (context, state) => const ExpertOpinionForm(),
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const ExpertOpinionForm(),
+          state: state,
+        ),
       ),
 
-      // Marketplace
+      // Marketplace - fade scale for main, slide for details
       GoRoute(
         path: '/marketplace',
         name: 'marketplace',
-        builder: (context, state) => const MarketplaceScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const MarketplaceScreen(),
+          state: state,
+        ),
         routes: [
           GoRoute(
             path: 'create',
             name: 'createListing',
-            builder: (context, state) => const CreateListingScreen(),
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const CreateListingScreen(),
+              state: state,
+            ),
           ),
           GoRoute(
             path: ':id',
             name: 'listingDetail',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
-              return ItemDetailScreen(listingId: id);
+              return AppPageTransitions.slideRight(
+                child: ItemDetailScreen(listingId: id),
+                state: state,
+              );
             },
           ),
         ],
       ),
 
-      // Notifications
+      // Notifications - slide right transition
       GoRoute(
         path: '/notifications',
         name: 'notifications',
-        builder: (context, state) => const Scaffold(
-          appBar: null,
-          body: Center(child: Text('Notifications - Coming in Batch 2')),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const Scaffold(
+            appBar: null,
+            body: Center(child: Text('Notifications - Coming in Batch 2')),
+          ),
+          state: state,
         ),
       ),
 
-      // Wallet
+      // Wallet - slide right transition
       GoRoute(
         path: '/wallet',
         name: 'wallet',
-        builder: (context, state) => const WalletScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const WalletScreen(),
+          state: state,
+        ),
       ),
 
-      // Profile routes
+      // Profile routes - slide right transitions
       GoRoute(
         path: '/profile/edit',
         name: 'editProfile',
-        builder: (context, state) => const EditProfileScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const EditProfileScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: '/profile/help',
         name: 'helpSupport',
-        builder: (context, state) => const HelpSupportScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const HelpSupportScreen(),
+          state: state,
+        ),
       ),
       GoRoute(
         path: '/profile/payment-methods',
         name: 'paymentMethods',
-        builder: (context, state) => const PaymentMethodsScreen(),
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const PaymentMethodsScreen(),
+          state: state,
+        ),
       ),
 
-      // Projects
+      // Projects - slide right for detail, sub-routes
       GoRoute(
         path: '/projects/:id',
         name: 'projectDetail',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id']!;
-          return ProjectDetailScreen(projectId: id);
+          return AppPageTransitions.slideRight(
+            child: ProjectDetailScreen(projectId: id),
+            state: state,
+          );
         },
         routes: [
           GoRoute(
             path: 'pay',
             name: 'projectPay',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
-              return Scaffold(
-                appBar: AppBar(title: const Text('Payment')),
-                body: Center(child: Text('Pay for Project $id - Coming soon')),
+              return AppPageTransitions.slideUp(
+                child: Scaffold(
+                  appBar: AppBar(title: const Text('Payment')),
+                  body:
+                      Center(child: Text('Pay for Project $id - Coming soon')),
+                ),
+                state: state,
               );
             },
           ),
           GoRoute(
             path: 'timeline',
             name: 'projectTimeline',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
-              return ProjectTimelineScreen(projectId: id);
+              return AppPageTransitions.slideRight(
+                child: ProjectTimelineScreen(projectId: id),
+                state: state,
+              );
             },
           ),
           GoRoute(
             path: 'chat',
             name: 'projectChat',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
-              return ProjectChatScreen(projectId: id);
+              return AppPageTransitions.slideRight(
+                child: ProjectChatScreen(projectId: id),
+                state: state,
+              );
             },
           ),
           GoRoute(
             path: 'draft',
             name: 'projectDraft',
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
               // Get draft URL from query params or fetch from project
               final draftUrl = state.uri.queryParameters['url'];
-              return LiveDraftWebview(projectId: id, draftUrl: draftUrl);
+              return AppPageTransitions.slideRight(
+                child: LiveDraftWebview(projectId: id, draftUrl: draftUrl),
+                state: state,
+              );
             },
           ),
         ],

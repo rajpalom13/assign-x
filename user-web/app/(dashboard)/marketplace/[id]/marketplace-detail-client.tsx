@@ -387,7 +387,7 @@ export function MarketplaceDetailClient({
                   Contact Seller
                 </Button>
               </SheetTrigger>
-              <SheetContent>
+              <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-xl">
                 <SheetHeader>
                   <SheetTitle>Contact {listing.userName}</SheetTitle>
                 </SheetHeader>

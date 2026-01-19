@@ -1,22 +1,31 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
   Plus,
   ArrowUpRight,
   ArrowDownLeft,
   Loader2,
-  TrendingUp,
-  TrendingDown,
-  Receipt,
   Wallet,
+  Trophy,
+  Clock,
+  CreditCard,
+  Send,
+  ChevronRight,
+  Utensils,
+  Coffee,
+  Gift,
+  ShoppingBag,
+  Car,
+  Music,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeletonProvider, StaggerItem, WalletSkeleton } from "@/components/skeletons";
 import { WalletTopUpSheet } from "@/components/profile/wallet-top-up-sheet";
 import { getWallet, getWalletTransactions } from "@/lib/actions/data";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/stores/user-store";
 
 /**
  * All possible transaction types from database enum
@@ -73,86 +82,356 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * Get date group label
- */
-function getDateGroup(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === now.toDateString()) {
-    return "Today";
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return "Yesterday";
-  }
-
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  if (date >= startOfMonth) {
-    return "This Month";
-  }
-
-  return "Earlier";
-}
-
-/**
- * Format time for display
- */
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-/**
  * Format date for display
  */
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-IN", {
-    day: "numeric",
     month: "short",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
 /**
- * Group transactions by date
+ * Mock offers data
  */
-function groupTransactionsByDate(
-  transactions: Transaction[]
-): Record<string, Transaction[]> {
-  const groups: Record<string, Transaction[]> = {};
+const OFFERS = [
+  { id: 1, icon: Utensils, text: "10% off Cafeteria", color: "text-orange-600" },
+  { id: 2, icon: Gift, text: "Cashback Friday", color: "text-amber-500" },
+  { id: 3, icon: Coffee, text: "Free Coffee", color: "text-emerald-600" },
+  { id: 4, icon: ShoppingBag, text: "Campus Store Deal", color: "text-blue-600" },
+];
 
-  transactions.forEach((tx) => {
-    const group = getDateGroup(tx.created_at);
-    if (!groups[group]) {
-      groups[group] = [];
+/**
+ * Get icon for transaction description
+ */
+function getTransactionIcon(description: string) {
+  const desc = description.toLowerCase();
+  if (desc.includes("coffee") || desc.includes("cafe")) return Coffee;
+  if (desc.includes("food") || desc.includes("cafeteria")) return Utensils;
+  if (desc.includes("uber") || desc.includes("ride") || desc.includes("ola")) return Car;
+  if (desc.includes("spotify") || desc.includes("music")) return Music;
+  if (desc.includes("amazon") || desc.includes("shop")) return ShoppingBag;
+  return null;
+}
+
+/**
+ * Wallet content inner component - renders the actual wallet UI
+ * Used inside PageSkeletonProvider for choreographed reveal with staggered animations
+ */
+interface WalletContentInnerProps {
+  wallet: { balance: number } | null;
+  stats: { monthlySpend: number; pendingAmount: number; rewardPoints: number };
+  lastMonthTransactions: Transaction[];
+  userName: string;
+  topUpOpen: boolean;
+  setTopUpOpen: (open: boolean) => void;
+}
+
+function WalletContentInner({
+  wallet,
+  stats,
+  lastMonthTransactions,
+  userName,
+  topUpOpen,
+  setTopUpOpen,
+}: WalletContentInnerProps) {
+  const offersRef = useRef<HTMLDivElement>(null);
+
+  // Scroll offers
+  const scrollOffers = (direction: "left" | "right") => {
+    if (offersRef.current) {
+      const scrollAmount = direction === "left" ? -200 : 200;
+      offersRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
-    groups[group].push(tx);
-  });
+  };
 
-  return groups;
+  return (
+    <>
+      <div className="relative min-h-screen">
+        {/* Curved Dome Hero Background with Image */}
+        <div className="wallet-dome-hero">
+          {/* Image Background */}
+          <div className="wallet-dome-image">
+            <Image
+              src="/gradient.jpg"
+              alt=""
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
+            />
+            {/* Gradient overlay for smooth transition */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+          </div>
+          {/* Offers Section - Inside the curve */}
+          <StaggerItem>
+            <section className="px-6 pt-6 pb-4">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Offers</h2>
+              <div className="relative">
+                <div
+                  ref={offersRef}
+                  className="flex gap-3 overflow-x-auto scrollbar-hide pb-2"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  {OFFERS.map((offer) => (
+                    <button
+                      key={offer.id}
+                      className="offer-pill flex-shrink-0"
+                    >
+                      <offer.icon className={cn("h-5 w-5", offer.color)} />
+                      <span className="text-sm font-medium">
+                        {offer.text}
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => scrollOffers("right")}
+                    className="offer-pill flex-shrink-0"
+                  >
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+            </section>
+          </StaggerItem>
+
+          {/* Spacer - Pushes content to align card center with curve boundary */}
+          <div className="h-72 md:h-96" />
+        </div>
+
+        {/* Credit Card - Centered exactly at curve boundary (50% inside, 50% outside) */}
+        <StaggerItem>
+          <section className="relative z-10 -mt-36 px-6 flex justify-center">
+            <div className="wallet-credit-card w-full max-w-sm aspect-[1.6/1]">
+              {/* Card Header */}
+              <div className="flex justify-between items-start mb-6">
+                <span className="text-xl font-semibold tracking-wide text-white/90">
+                  AssignX
+                </span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded bg-white/10 text-white/70">
+                  CVV
+                </span>
+              </div>
+
+              {/* Chip */}
+              <div className="w-10 h-7 rounded bg-gradient-to-br from-amber-300/60 to-amber-500/60 mb-6 flex items-center justify-center">
+                <div className="w-6 h-4 rounded-sm bg-gradient-to-r from-amber-200/50 to-amber-400/50" />
+              </div>
+
+              {/* Card Number */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-lg tracking-widest text-white/60">****</span>
+                <span className="text-lg tracking-widest text-white/60">****</span>
+                <span className="text-lg tracking-widest text-white/60">****</span>
+                <span className="text-xl tracking-widest font-semibold text-white">
+                  4567
+                </span>
+              </div>
+
+              {/* Card Footer */}
+              <div className="flex justify-between items-end">
+                <span className="text-sm font-medium text-white/80">{userName}</span>
+                <span className="text-sm font-medium text-white/80">12/26</span>
+              </div>
+            </div>
+          </section>
+        </StaggerItem>
+
+        {/* Balance Widgets - Below the card */}
+        <StaggerItem>
+          <section className="px-6 pt-6 pb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Wallet Balance */}
+              <div className="balance-widget">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Wallet Balance</p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {formatCurrency(wallet?.balance || 0)}
+                </p>
+              </div>
+
+              {/* Rewards / Points */}
+              <div className="balance-widget">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Rewards / Points</p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {stats.rewardPoints.toLocaleString()}
+                </p>
+              </div>
+
+              {/* Pending */}
+              <div className="balance-widget">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Pending</p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {formatCurrency(stats.pendingAmount)}
+                </p>
+              </div>
+
+              {/* Monthly Spend */}
+              <div className="balance-widget">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Monthly Spend</p>
+                <p className="text-xl font-semibold tabular-nums">
+                  {formatCurrency(stats.monthlySpend)}
+                </p>
+              </div>
+            </div>
+          </section>
+        </StaggerItem>
+
+        {/* Action Buttons */}
+        <StaggerItem>
+          <section className="px-6 pb-8 flex justify-center gap-3">
+            <button className="wallet-action-btn">
+              <Send className="h-4 w-4 inline-block mr-2" />
+              Send
+            </button>
+            <button
+              className="wallet-action-btn"
+              onClick={() => setTopUpOpen(true)}
+            >
+              <Plus className="h-4 w-4 inline-block mr-2" />
+              Add Money
+            </button>
+            <button className="wallet-action-btn">
+              <ArrowUpRight className="h-4 w-4 inline-block mr-2" />
+              Withdraw
+            </button>
+          </section>
+        </StaggerItem>
+
+        {/* Transaction History - Outside the curved dome */}
+        <StaggerItem>
+          <section className="px-6 pb-8">
+            <h2 className="text-xl font-semibold mb-1 text-foreground">
+              Transaction History
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">Last Month</p>
+
+            {lastMonthTransactions.length === 0 ? (
+              <div className="action-card-glass rounded-2xl p-8 text-center">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">No transactions yet</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[200px] mx-auto">
+                  Add money to your wallet to get started
+                </p>
+              </div>
+            ) : (
+              <div className="action-card-glass rounded-2xl p-4">
+                {lastMonthTransactions.map((tx) => {
+                  const isIncoming = isIncomingTransaction(tx.transaction_type);
+                  const CustomIcon = getTransactionIcon(tx.description);
+
+                  return (
+                    <div
+                      key={tx.id}
+                      className="transaction-item"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Transaction Icon */}
+                        <div
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                            isIncoming
+                              ? "bg-emerald-100 dark:bg-emerald-900/30"
+                              : "bg-muted"
+                          )}
+                        >
+                          {CustomIcon ? (
+                            <CustomIcon className="h-5 w-5 text-foreground/70" />
+                          ) : isIncoming ? (
+                            <ArrowDownLeft className="h-5 w-5 text-emerald-600" />
+                          ) : (
+                            <ArrowUpRight className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+
+                        {/* Transaction Details */}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {tx.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(tx.created_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount and Status */}
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <p
+                          className={cn(
+                            "text-sm font-semibold tabular-nums",
+                            isIncoming ? "text-emerald-600" : "text-foreground"
+                          )}
+                        >
+                          {isIncoming ? "+" : "-"}
+                          {formatCurrency(tx.amount)}
+                        </p>
+                        <span
+                          className={cn(
+                            "text-xs px-2 py-0.5 rounded-full",
+                            tx.status === "completed"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              : tx.status === "pending"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          )}
+                        >
+                          {tx.status === "completed"
+                            ? "Completed"
+                            : tx.status === "pending"
+                            ? "Pending"
+                            : "Failed"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </StaggerItem>
+      </div>
+
+      <WalletTopUpSheet open={topUpOpen} onOpenChange={setTopUpOpen} />
+    </>
+  );
 }
 
 /**
- * Wallet page content
+ * Wallet page with data fetching and skeleton provider
+ * Manages loading state and provides choreographed reveal
  */
-function WalletContent() {
+function WalletPageContent() {
   const searchParams = useSearchParams();
+  const { user } = useUserStore();
   const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [filter, setFilter] = useState<"all" | "credit" | "debit">("all");
 
+  // Handle topup action from URL
   useEffect(() => {
     if (searchParams.get("action") === "topup") {
       setTopUpOpen(true);
     }
   }, [searchParams]);
 
+  // Fetch wallet data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -169,281 +448,60 @@ function WalletContent() {
     fetchData();
   }, []);
 
-  // Calculate monthly stats
-  const monthlyStats = useMemo(() => {
+  // Calculate stats
+  const stats = useMemo(() => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    let income = 0;
-    let spent = 0;
-    let pendingCount = 0;
+    let monthlySpend = 0;
+    let pendingAmount = 0;
 
     transactions.forEach((tx) => {
       const txDate = new Date(tx.created_at);
-      if (txDate >= startOfMonth) {
-        if (isIncomingTransaction(tx.transaction_type)) {
-          income += tx.amount;
-        } else {
-          spent += tx.amount;
-        }
+      if (!isIncomingTransaction(tx.transaction_type) && txDate >= startOfMonth) {
+        monthlySpend += tx.amount;
       }
       if (tx.status === "pending") {
-        pendingCount++;
+        pendingAmount += tx.amount;
       }
     });
 
-    return { income, spent, pendingCount, totalTransactions: transactions.length };
+    return { monthlySpend, pendingAmount, rewardPoints: 1250 };
   }, [transactions]);
 
-  // Filter transactions
-  const filteredTransactions = useMemo(() => {
-    if (filter === "all") return transactions;
-    if (filter === "credit") {
-      return transactions.filter((tx) =>
-        isIncomingTransaction(tx.transaction_type)
-      );
-    }
-    return transactions.filter(
-      (tx) => !isIncomingTransaction(tx.transaction_type)
-    );
-  }, [transactions, filter]);
+  // Get last month's transactions
+  const lastMonthTransactions = useMemo(() => {
+    return transactions.slice(0, 10);
+  }, [transactions]);
 
-  // Group filtered transactions by date
-  const groupedTransactions = useMemo(
-    () => groupTransactionsByDate(filteredTransactions),
-    [filteredTransactions]
-  );
-
-  const dateGroupOrder = ["Today", "Yesterday", "This Month", "Earlier"];
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <div className="grid grid-cols-3 gap-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-        <Skeleton className="h-64 w-full rounded-xl" />
-      </div>
-    );
-  }
+  // Get user display name
+  const userName = user?.fullName || user?.full_name || "User";
 
   return (
-    <div className="space-y-6">
-      {/* Balance Card */}
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Available Balance</p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-semibold tracking-tight">
-                {formatCurrency(wallet?.balance || 0)}
-              </span>
-            </div>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-foreground/5 flex items-center justify-center">
-            <Wallet className="h-6 w-6 text-foreground/70" />
-          </div>
-        </div>
-        <div className="flex items-center gap-3 pt-5 mt-5 border-t border-border">
-          <Button
-            onClick={() => setTopUpOpen(true)}
-            size="sm"
-            className="h-9 rounded-lg"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Money
-          </Button>
-        </div>
-      </div>
-
-      {/* Monthly Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Income</span>
-          </div>
-          <p className="text-lg font-semibold tabular-nums">
-            {formatCurrency(monthlyStats.income)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">This month</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Spent</span>
-          </div>
-          <p className="text-lg font-semibold tabular-nums">
-            {formatCurrency(monthlyStats.spent)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">This month</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Total</span>
-          </div>
-          <p className="text-lg font-semibold tabular-nums">
-            {monthlyStats.totalTransactions}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">Transactions</p>
-        </div>
-      </div>
-
-      {/* Transactions */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground">Transactions</h2>
-          <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg">
-            {(["all", "credit", "debit"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-md transition-all",
-                  filter === f
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {f === "all" ? "All" : f === "credit" ? "In" : "Out"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {filteredTransactions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 py-12">
-            <div className="flex flex-col items-center justify-center text-center px-4">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                {filter === "all" ? (
-                  <Receipt className="h-5 w-5 text-muted-foreground" />
-                ) : filter === "credit" ? (
-                  <ArrowDownLeft className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ArrowUpRight className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-              <p className="text-sm font-medium">
-                {filter === "all"
-                  ? "No transactions yet"
-                  : filter === "credit"
-                  ? "No incoming transactions"
-                  : "No outgoing transactions"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-                {filter === "all"
-                  ? "Add money to your wallet to get started"
-                  : filter === "credit"
-                  ? "Top-ups and earnings will appear here"
-                  : "Payments and withdrawals will appear here"}
-              </p>
-              {filter === "all" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-4 h-8"
-                  onClick={() => setTopUpOpen(true)}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Add Money
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {dateGroupOrder.map((group) => {
-              const groupTxs = groupedTransactions[group];
-              if (!groupTxs || groupTxs.length === 0) return null;
-
-              return (
-                <div key={group} className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground px-2 mb-2">
-                    {group}
-                  </p>
-                  <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-                    {groupTxs.map((tx) => {
-                      const isIncoming = isIncomingTransaction(
-                        tx.transaction_type
-                      );
-                      return (
-                        <div
-                          key={tx.id}
-                          className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className={cn(
-                                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                                isIncoming
-                                  ? "bg-foreground/10 text-foreground"
-                                  : "bg-muted text-muted-foreground"
-                              )}
-                            >
-                              {isIncoming ? (
-                                <ArrowDownLeft className="h-4 w-4" />
-                              ) : (
-                                <ArrowUpRight className="h-4 w-4" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {tx.description}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {group === "Today" || group === "Yesterday"
-                                  ? formatTime(tx.created_at)
-                                  : formatDate(tx.created_at)}
-                                {tx.status === "pending" && (
-                                  <span className="ml-1.5 text-muted-foreground">
-                                    • Pending
-                                  </span>
-                                )}
-                                {tx.status === "failed" && (
-                                  <span className="ml-1.5 text-muted-foreground">
-                                    • Failed
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <p
-                            className={cn(
-                              "text-sm font-semibold tabular-nums",
-                              isIncoming
-                                ? "text-foreground"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {isIncoming ? "+" : "−"}
-                            {formatCurrency(tx.amount)}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <WalletTopUpSheet open={topUpOpen} onOpenChange={setTopUpOpen} />
-    </div>
+    <PageSkeletonProvider
+      isLoading={isLoading}
+      skeleton={<WalletSkeleton />}
+      minimumDuration={1000}
+      className="flex-1"
+    >
+      <WalletContentInner
+        wallet={wallet}
+        stats={stats}
+        lastMonthTransactions={lastMonthTransactions}
+        userName={userName}
+        topUpOpen={topUpOpen}
+        setTopUpOpen={setTopUpOpen}
+      />
+    </PageSkeletonProvider>
   );
 }
 
 /**
- * Wallet Page
+ * Wallet Page - Main export with Suspense boundary
  */
 export default function WalletPage() {
   return (
-    <div className="flex-1 p-6 md:p-8 max-w-lg mx-auto">
+    <div className="flex-1 min-h-screen">
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-12">
@@ -451,7 +509,7 @@ export default function WalletPage() {
           </div>
         }
       >
-        <WalletContent />
+        <WalletPageContent />
       </Suspense>
     </div>
   );

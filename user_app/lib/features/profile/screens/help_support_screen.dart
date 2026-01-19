@@ -367,7 +367,7 @@ class _RaiseTicketSection extends StatelessWidget {
 
           // Category dropdown
           DropdownButtonFormField<String>(
-            value: selectedCategory,
+            initialValue: selectedCategory,
             decoration: InputDecoration(
               labelText: 'Issue Category',
               prefixIcon: Icon(Icons.category_outlined, color: AppColors.textSecondary),

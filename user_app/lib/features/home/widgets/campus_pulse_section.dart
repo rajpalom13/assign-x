@@ -167,24 +167,32 @@ class _PulseCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        item.price,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          item.price,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 4),
                       Icon(
                         Icons.location_on_outlined,
                         size: 12,
                         color: AppColors.textTertiary,
                       ),
                       const SizedBox(width: 2),
-                      Text(
-                        item.distance,
-                        style: AppTextStyles.caption.copyWith(
-                          fontSize: 10,
+                      Flexible(
+                        child: Text(
+                          item.distance,
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 10,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PaymentPromptModal } from "@/components/projects";
 import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
 import { createClient } from "@/lib/supabase/client";
 import { walletService } from "@/services";
-import type { Project } from "@/stores";
+import { useProjectStore, type Project } from "@/stores";
+import { PageSkeletonProvider, ProjectsSkeleton } from "@/components/skeletons";
 import { ProjectsPro } from "./projects-pro";
 
 /**
  * My Projects page
  * Premium SAAS-style design with glassmorphism
  * Header is now rendered by the dashboard layout
+ *
+ * Uses PageSkeletonProvider for unified skeleton loading:
+ * - Shows ProjectsSkeleton while loading
+ * - Minimum 1000ms display time
+ * - Staggered reveal animations on content
  */
 export default function ProjectsPage() {
   const [showPayment, setShowPayment] = useState(false);
@@ -20,26 +26,50 @@ export default function ProjectsPage() {
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [userName, setUserName] = useState<string | undefined>();
   const [walletBalance, setWalletBalance] = useState(0);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Get user data and wallet balance on mount
+  // Track if initial fetch has been done to prevent re-fetches
+  const hasFetched = useRef(false);
+
+  // Get loading state and fetch function from project store
+  const { isLoading: projectsLoading, fetchProjects } = useProjectStore();
+
+  // Determine overall loading state - only for initial load
+  const isLoading = !initialLoadComplete;
+
+  // Fetch projects and user data on mount (ONCE)
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email);
-        setUserName(data.user.user_metadata?.full_name);
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const loadData = async () => {
+      const supabase = createClient();
+
+      // Fetch user data and projects in parallel
+      const [userResult] = await Promise.all([
+        supabase.auth.getUser(),
+        fetchProjects(), // Fetch projects here, not in ProjectsPro
+      ]);
+
+      if (userResult.data.user) {
+        setUserId(userResult.data.user.id);
+        setUserEmail(userResult.data.user.email);
+        setUserName(userResult.data.user.user_metadata?.full_name);
 
         // Get wallet balance
         try {
-          const balance = await walletService.getBalance(data.user.id);
+          const balance = await walletService.getBalance(userResult.data.user.id);
           setWalletBalance(balance);
         } catch (error) {
           console.error("Failed to get wallet balance:", error);
         }
       }
-    });
-  }, []);
+
+      setInitialLoadComplete(true);
+    };
+
+    loadData();
+  }, [fetchProjects]);
 
   const handlePayNow = (project: Project) => {
     setSelectedProject(project);
@@ -58,8 +88,15 @@ export default function ProjectsPage() {
 
   return (
     <>
-      {/* Premium Projects View */}
-      <ProjectsPro onPayNow={handlePayNow} />
+      {/* Page Skeleton Provider - shows skeleton for minimum 1000ms */}
+      <PageSkeletonProvider
+        isLoading={isLoading}
+        skeleton={<ProjectsSkeleton />}
+        minimumDuration={1000}
+      >
+        {/* Premium Projects View */}
+        <ProjectsPro onPayNow={handlePayNow} />
+      </PageSkeletonProvider>
 
       {/* Payment Prompt Modal */}
       <PaymentPromptModal onPay={handlePayNow} />

@@ -25,26 +25,60 @@ function createRedirectResponse(url: string, clearSignupCookies: boolean = false
 }
 
 /**
- * OAuth callback handler
- * Handles both login and signup flows:
+ * Check if email is from a college domain
+ */
+function isCollegeEmail(email: string): boolean {
+  const COLLEGE_EMAIL_PATTERNS = [
+    /\.edu$/i,
+    /\.edu\.in$/i,
+    /\.ac\.in$/i,
+    /\.ac\.uk$/i,
+    /\.edu\.au$/i,
+    /\.edu\.ca$/i,
+    /\.edu\.[a-z]{2}$/i,
+  ];
+  const domain = email.toLowerCase().split("@")[1];
+  if (!domain) return false;
+  return COLLEGE_EMAIL_PATTERNS.some(pattern => pattern.test(domain));
+}
+
+/**
+ * OAuth and Magic Link callback handler
  *
- * Login flow (no signup cookie):
- * - Existing users with profile -> dashboard
- * - New users -> onboarding
+ * Handles multiple auth flows:
  *
- * Signup flow (signup_intent cookie):
- * - Validates email for students
- * - Creates profile with selected role
- * - Redirects to appropriate registration form
+ * 1. OAuth Login (Google):
+ *    - New users -> onboarding
+ *    - Existing users with profile -> dashboard
+ *
+ * 2. OAuth Signup (with signup cookies):
+ *    - Validates student email for students
+ *    - Creates profile with selected role
+ *    - Redirects to registration form
+ *
+ * 3. Magic Link Login:
+ *    - Same as OAuth login flow
+ *
+ * 4. College Email Verification:
+ *    - Updates student record with verified college email
+ *    - Redirects to dashboard or profile
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = searchParams.get("next");
+  const verifyCollege = searchParams.get("verify_college") === "true";
+  const isAddingCollege = searchParams.get("adding") === "true";
+  const roleFromUrl = searchParams.get("role"); // Role from magic link URL
 
   // Read signup intent from cookies (set by role-selection component)
   const cookieHeader = request.headers.get("cookie");
-  const isSignup = getCookieValue(cookieHeader, "signup_intent") === "true";
-  const role = getCookieValue(cookieHeader, "signup_role");
+  const isSignupFromCookie = getCookieValue(cookieHeader, "signup_intent") === "true";
+  const roleFromCookie = getCookieValue(cookieHeader, "signup_role");
+
+  // Use URL role first (magic link), then cookie role (OAuth)
+  const role = roleFromUrl || roleFromCookie;
+  const isSignup = isSignupFromCookie || !!roleFromUrl;
 
   if (code) {
     const supabase = await createClient();
@@ -58,7 +92,32 @@ export async function GET(request: Request) {
       if (user) {
         const userEmail = user.email || "";
 
-        // SIGNUP FLOW
+        // COLLEGE EMAIL VERIFICATION FLOW
+        if (verifyCollege && isCollegeEmail(userEmail)) {
+          // Update the student record with verified college email
+          const { error: updateError } = await supabase
+            .from("students")
+            .update({
+              college_email: userEmail,
+              college_email_verified: true,
+              college_email_verified_at: new Date().toISOString(),
+            })
+            .eq("profile_id", user.id);
+
+          if (updateError) {
+            console.error("[College Verify Callback Error]", updateError);
+          }
+
+          // Redirect based on whether they were adding to account or new signup
+          if (isAddingCollege) {
+            return NextResponse.redirect(`${origin}/profile?college_verified=true`);
+          } else {
+            // New user with college email - go to onboarding
+            return NextResponse.redirect(`${origin}/onboarding?step=role&college_verified=true`);
+          }
+        }
+
+        // SIGNUP FLOW (with signup cookies)
         if (isSignup && role) {
           // For students, validate that they're using an educational email
           if (role === "student") {
@@ -130,7 +189,7 @@ export async function GET(request: Request) {
           }
         }
 
-        // LOGIN FLOW (existing behavior)
+        // LOGIN FLOW (OAuth or Magic Link without signup cookies)
         // Check for existing profile with user_type set
         const { data: profile } = await supabase
           .from("profiles")
@@ -140,7 +199,7 @@ export async function GET(request: Request) {
 
         // If no profile exists or no user_type, redirect to onboarding
         if (!profile || !profile.user_type) {
-          // Create a basic profile if it doesn't exist (for new OAuth users)
+          // Create a basic profile if it doesn't exist (for new OAuth/magic link users)
           if (!profile) {
             await supabase.from("profiles").insert({
               id: user.id,
@@ -161,8 +220,19 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/onboarding?step=role`);
         }
 
-        // User has completed profile, go to dashboard
-        return NextResponse.redirect(`${origin}/home`);
+        // Check if user has completed onboarding
+        if (!profile.onboarding_completed) {
+          // Has user_type but not completed - redirect to appropriate signup form
+          if (profile.user_type === "student") {
+            return NextResponse.redirect(`${origin}/signup/student`);
+          } else {
+            return NextResponse.redirect(`${origin}/signup/professional`);
+          }
+        }
+
+        // User has completed profile, redirect to custom next path or dashboard
+        const redirectPath = next || "/home";
+        return NextResponse.redirect(`${origin}${redirectPath}`);
       }
     }
   }

@@ -439,7 +439,7 @@ class _ActionButtonState extends State<_ActionButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
-          transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
+          transform: Matrix4.diagonal3Values(_isPressed ? 0.95 : 1.0, _isPressed ? 0.95 : 1.0, 1.0),
           padding: EdgeInsets.symmetric(
             horizontal: widget.compact ? 10 : 14,
             vertical: widget.compact ? 6 : 8,

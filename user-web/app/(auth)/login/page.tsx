@@ -2,7 +2,8 @@
  * @fileoverview Premium Login Page
  *
  * Split-screen login with animated visual panel,
- * floating cards, and smooth animations. Uses unique warm/cool color palette.
+ * floating cards, and smooth animations. Supports
+ * both Google OAuth and Magic Link authentication.
  *
  * @route /login
  * @access public
@@ -15,81 +16,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  Star,
-  TrendingUp,
-  Shield,
-  Zap,
-  Lock,
-  Sparkles,
-} from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
+import { toast } from "sonner";
+
+import { AuthLayout, GoogleIcon } from "@/components/auth/auth-layout";
+import { MagicLinkForm } from "@/components/auth/magic-link-form";
+import { Button } from "@/components/ui/button";
 
 import "./login.css";
-
-// Google logo SVG component
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
-
-// Floating card component
-function FloatingCard({
-  icon: Icon,
-  iconBg,
-  title,
-  value,
-  label,
-  className,
-  delay,
-}: {
-  icon: React.ElementType;
-  iconBg: string;
-  title: string;
-  value: string;
-  label: string;
-  className: string;
-  delay: number;
-}) {
-  const prefersReducedMotion = useReducedMotion();
-
-  return (
-    <motion.div
-      initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-      className={`login-float-card ${className}`}
-    >
-      <div className={`login-float-card-icon ${iconBg}`}>
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <div className="login-float-card-title">{title}</div>
-      <div className="login-float-card-value">{value}</div>
-      <div className="login-float-card-label">{label}</div>
-    </motion.div>
-  );
-}
 
 /**
  * Check if login is required based on environment variable
@@ -99,12 +33,36 @@ function isLoginRequired(): boolean {
   return process.env.NEXT_PUBLIC_REQUIRE_LOGIN !== "false";
 }
 
+/**
+ * Main login content component
+ */
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
   const [loading, setLoading] = useState(false);
+  const [showMagicLink, setShowMagicLink] = useState(false);
   const supabase = createClient();
+
+  // Check for error messages from callback
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const message = searchParams.get("message");
+
+    if (error === "auth_failed") {
+      toast.error("Authentication failed", {
+        description: "Please try again or use a different method.",
+      });
+    } else if (error === "invalid_student_email") {
+      toast.error("Invalid student email", {
+        description: message || "Please use a valid college/university email.",
+      });
+    } else if (error) {
+      toast.error("Error", {
+        description: message || "An error occurred during sign in.",
+      });
+    }
+  }, [searchParams]);
 
   // Redirect if login is not required (dev mode) or already logged in
   useEffect(() => {
@@ -125,237 +83,212 @@ function LoginContent() {
     checkUser();
   }, [router, supabase.auth]);
 
+  /**
+   * Handles Google OAuth sign in
+   */
   const handleGoogle = async () => {
     setLoading(true);
     const callbackUrl = `${window.location.origin}/auth/callback`;
 
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: callbackUrl,
       },
     });
-    setLoading(false);
+
+    if (error) {
+      toast.error("Sign in failed", {
+        description: error.message,
+      });
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="login-page">
-      {/* Left Panel - Visual Side */}
-      <div className="login-visual">
-        {/* Floating cards */}
-        <div className="login-floating-cards">
-          <FloatingCard
-            icon={TrendingUp}
-            iconBg="login-float-card-icon-primary"
-            title="Success Rate"
-            value="98%"
-            label="This month"
-            className="login-float-card-1"
-            delay={0.8}
-          />
-          <FloatingCard
-            icon={Star}
-            iconBg="login-float-card-icon-tertiary"
-            title="Student Rating"
-            value="4.9"
-            label="500+ reviews"
-            className="login-float-card-2"
-            delay={1.0}
-          />
-        </div>
+  // Show magic link form
+  if (showMagicLink) {
+    return (
+      <AuthLayout>
+        <MagicLinkForm
+          onBack={() => setShowMagicLink(false)}
+          title="Sign in with email"
+          description="We'll send you a magic link to sign in instantly. No password needed."
+        />
 
-        {/* Content */}
-        <div className="login-visual-content">
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="login-visual-logo"
-          >
-            <span>
-              <Sparkles className="w-4 h-4" />
-              AssignX
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="login-visual-heading"
-          >
-            Your academic <span>success</span> starts here
-          </motion.h1>
-
-          <motion.p
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="login-visual-subheading"
-          >
-            Expert guidance for reports, research, and academic excellence.
-            Join thousands of students achieving their goals.
-          </motion.p>
-        </div>
-
-        {/* Footer stats */}
-        <motion.div
+        {/* Terms */}
+        <motion.p
           initial={prefersReducedMotion ? {} : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="login-visual-footer"
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-6 text-center text-[11px] text-muted-foreground"
         >
-          <div className="login-visual-stat">
-            <span className="login-visual-stat-value">50K+</span>
-            <span className="login-visual-stat-label">Projects done</span>
-          </div>
-          <div className="login-visual-stat">
-            <span className="login-visual-stat-value">10K+</span>
-            <span className="login-visual-stat-label">Students</span>
-          </div>
-          <div className="login-visual-stat">
-            <span className="login-visual-stat-value">24/7</span>
-            <span className="login-visual-stat-label">Support</span>
-          </div>
-        </motion.div>
-      </div>
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+            Privacy Policy
+          </Link>
+          .
+        </motion.p>
+      </AuthLayout>
+    );
+  }
 
-      {/* Right Panel - Login Form */}
-      <div className="login-form-panel">
-        <div className="login-form-container">
-          {/* Mobile logo */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="login-mobile-logo"
-          >
-            <span>
-              <Sparkles className="w-4 h-4" />
-              AssignX
-            </span>
-          </motion.div>
+  // Main login view
+  return (
+    <AuthLayout>
+      {/* Heading */}
+      <motion.h1
+        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="text-center text-[32px] font-semibold leading-tight tracking-[-0.02em] text-foreground md:text-[36px]"
+      >
+        Welcome back
+      </motion.h1>
 
-          {/* Heading */}
-          <motion.h1
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="login-heading"
-          >
-            Welcome back
-          </motion.h1>
+      <motion.p
+        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="mt-2 text-center text-sm text-muted-foreground"
+      >
+        Sign in to continue to your dashboard
+      </motion.p>
 
-          <motion.p
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="login-subheading"
-          >
-            Sign in to continue to your dashboard
-          </motion.p>
+      {/* Google Button */}
+      <motion.div
+        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
+        <Button
+          onClick={handleGoogle}
+          disabled={loading}
+          variant="outline"
+          className="mt-8 h-14 w-full gap-2.5 rounded-xl border text-sm font-medium"
+        >
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <GoogleIcon className="h-[18px] w-[18px]" />
+          )}
+          {loading ? "Connecting..." : "Continue with Google"}
+        </Button>
+      </motion.div>
 
-          {/* Google Button */}
-          <motion.button
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            onClick={handleGoogle}
-            disabled={loading}
-            className="login-google-btn"
-          >
-            <GoogleIcon />
-            {loading ? "Connecting..." : "Continue with Google"}
-          </motion.button>
+      {/* Divider */}
+      <motion.div
+        initial={prefersReducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="my-6 flex items-center gap-3"
+      >
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-[11px] uppercase tracking-[0.05em] text-muted-foreground">
+          or
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </motion.div>
 
-          {/* Divider */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="login-divider"
-          >
-            <div className="login-divider-line" />
-            <span className="login-divider-text">Secure & Fast</span>
-            <div className="login-divider-line" />
-          </motion.div>
+      {/* Magic Link Button */}
+      <motion.div
+        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, duration: 0.5 }}
+      >
+        <Button
+          onClick={() => setShowMagicLink(true)}
+          variant="outline"
+          className="h-14 w-full gap-2.5 rounded-xl text-sm font-medium"
+        >
+          <Mail className="h-5 w-5" />
+          Continue with Email
+        </Button>
+      </motion.div>
 
-          {/* Info */}
-          <motion.p
-            initial={prefersReducedMotion ? {} : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="login-info"
-          >
-            No password needed. We use Google for secure, one-click
-            authentication.
-          </motion.p>
+      {/* Info */}
+      <motion.p
+        initial={prefersReducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="mt-6 text-center text-[13px] text-muted-foreground"
+      >
+        No password needed. We&apos;ll send you a secure sign-in link.
+      </motion.p>
 
-          {/* Sign up link */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.55, duration: 0.5 }}
-            className="login-signup-link"
-          >
-            <span>Don&apos;t have an account?</span>
-            <Link href="/signup">Sign up</Link>
-          </motion.div>
+      {/* Sign up link */}
+      <motion.div
+        initial={prefersReducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55, duration: 0.5 }}
+        className="mt-5 flex items-center justify-center gap-1.5"
+      >
+        <span className="text-[13px] text-muted-foreground">
+          Don&apos;t have an account?
+        </span>
+        <Link
+          href="/signup"
+          className="text-[13px] font-medium text-foreground transition-colors hover:text-primary"
+        >
+          Sign up
+        </Link>
+      </motion.div>
 
-          {/* Terms */}
-          <motion.p
-            initial={prefersReducedMotion ? {} : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="login-terms"
-          >
-            By continuing, you agree to our{" "}
-            <Link href="/terms">Terms of Service</Link> and{" "}
-            <Link href="/privacy">Privacy Policy</Link>.
-          </motion.p>
+      {/* College verification link */}
+      <motion.div
+        initial={prefersReducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="mt-3 flex items-center justify-center"
+      >
+        <Link
+          href="/verify-college"
+          className="text-[13px] text-muted-foreground transition-colors hover:text-primary"
+        >
+          Verify college email for Campus Connect
+        </Link>
+      </motion.div>
 
-          {/* Trust badges */}
-          <motion.div
-            initial={prefersReducedMotion ? {} : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="login-trust"
-          >
-            <div className="login-trust-item">
-              <Shield />
-              <span>Secure</span>
-            </div>
-            <div className="login-trust-item">
-              <Lock />
-              <span>Encrypted</span>
-            </div>
-            <div className="login-trust-item">
-              <Zap />
-              <span>Fast</span>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </div>
+      {/* Terms */}
+      <motion.p
+        initial={prefersReducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.65, duration: 0.5 }}
+        className="mt-6 text-center text-[11px] text-muted-foreground"
+      >
+        By continuing, you agree to our{" "}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+          Privacy Policy
+        </Link>
+        .
+      </motion.p>
+    </AuthLayout>
   );
 }
 
+/**
+ * Login Page with Suspense boundary
+ */
 export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="login-page">
-          <div className="login-form-panel">
-            <div className="login-form-container">
-              <div className="animate-pulse">
-                <div className="h-10 w-32 bg-gray-200 rounded-full mx-auto mb-8" />
-                <div className="h-8 w-48 bg-gray-200 rounded mx-auto mb-4" />
-                <div className="h-4 w-64 bg-gray-200 rounded mx-auto mb-8" />
-                <div className="h-14 w-full bg-gray-200 rounded-xl" />
-              </div>
-            </div>
+        <AuthLayout>
+          <div className="animate-pulse">
+            <div className="mx-auto mb-2 h-10 w-48 rounded bg-muted" />
+            <div className="mx-auto mb-8 h-4 w-64 rounded bg-muted" />
+            <div className="h-14 w-full rounded-xl bg-muted" />
+            <div className="my-6 h-px w-full bg-muted" />
+            <div className="h-14 w-full rounded-xl bg-muted" />
           </div>
-        </div>
+        </AuthLayout>
       }
     >
       <LoginContent />

@@ -1,9 +1,8 @@
-/// Chat-related models for real-time messaging.
+/// Chat room model representing a conversation context.
 ///
+/// Chat-related models for real-time messaging.
 /// Includes [ChatRoom], [ChatMessage], and [ChatParticipant] models
 /// that map to Supabase database tables.
-
-/// Chat room model representing a conversation context.
 class ChatRoom {
   final String id;
   final String? projectId;

@@ -98,6 +98,57 @@ class AuthRepository {
     return success;
   }
 
+  /// Sign in with magic link (passwordless email authentication).
+  ///
+  /// Sends a magic link to the provided email address.
+  /// Returns true if the link was sent successfully.
+  Future<bool> signInWithMagicLink({
+    required String email,
+    String? redirectTo,
+    UserType? userType,
+  }) async {
+    debugPrint('🔐 [AUTH] Sending magic link to: $email');
+    debugPrint('🔐 [AUTH] User type: ${userType?.toDbString() ?? 'not set'}');
+
+    try {
+      await _client.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: redirectTo,
+        data: userType != null ? {'user_type': userType.toDbString()} : null,
+      );
+      debugPrint('✅ [AUTH] Magic link sent successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [AUTH] Failed to send magic link: $e');
+      rethrow;
+    }
+  }
+
+  /// Verify OTP token from magic link.
+  ///
+  /// This is called when the user clicks the magic link.
+  Future<bool> verifyOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.magiclink,
+  }) async {
+    debugPrint('🔐 [AUTH] Verifying OTP for: $email');
+
+    try {
+      final response = await _client.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: type,
+      );
+      final success = response.session != null;
+      debugPrint('✅ [AUTH] OTP verification ${success ? 'successful' : 'failed'}');
+      return success;
+    } catch (e) {
+      debugPrint('❌ [AUTH] OTP verification failed: $e');
+      rethrow;
+    }
+  }
+
   /// Sign out the current user.
   Future<void> signOut() async {
     // Sign out from Google

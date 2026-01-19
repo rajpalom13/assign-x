@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_shadows.dart';
+import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../shared/animations/common_animations.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
 /// Pinterest-style item card for marketplace listings.
 ///
-/// Uses the new UI polish system with:
+/// Uses the new glass morphism design system with:
+/// - GlassCard for container styling
 /// - AppShadows for elevation
 /// - TapScaleContainer for press animations
 /// - SkeletonLoader for loading placeholders
@@ -42,22 +45,22 @@ class _ItemCardState extends State<ItemCard> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: _isHovered ? AppShadows.cardHover : AppShadows.md,
-          ),
+        child: GlassCard(
+          blur: 10,
+          opacity: _isHovered ? 0.85 : 0.75,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          padding: EdgeInsets.zero,
+          elevation: _isHovered ? 3 : 2,
+          enableHoverEffect: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image section
               if (widget.listing.hasImages)
                 ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppSpacing.radiusMd),
+                  ),
                   child: Stack(
                     children: [
                       // Product image with skeleton loading
@@ -86,18 +89,23 @@ class _ItemCardState extends State<ItemCard> {
                           bottom: 8,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: 10,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.textPrimary.withAlpha(200),
-                              borderRadius: BorderRadius.circular(6),
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primaryDark,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                               boxShadow: AppShadows.sm,
                             ),
                             child: Text(
                               widget.listing.priceString,
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.textOnPrimary,
+                                color: Colors.white,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -108,7 +116,7 @@ class _ItemCardState extends State<ItemCard> {
                       Positioned(
                         right: 8,
                         top: 8,
-                        child: _LikeButton(
+                        child: _GlassLikeButton(
                           isLiked: widget.listing.isLiked,
                           onTap: widget.onLike,
                         ),
@@ -121,12 +129,12 @@ class _ItemCardState extends State<ItemCard> {
                           bottom: 8,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.success,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(6),
                               boxShadow: AppShadows.xs,
                             ),
                             child: Text(
@@ -145,7 +153,7 @@ class _ItemCardState extends State<ItemCard> {
 
               // Content section
               Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -159,23 +167,33 @@ class _ItemCardState extends State<ItemCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
                     // Location and distance
-                    if (widget.listing.location != null || widget.listing.distanceKm != null)
+                    if (widget.listing.location != null ||
+                        widget.listing.distanceKm != null)
                       Row(
                         children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 12,
-                            color: AppColors.textTertiary,
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight.withAlpha(26),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Icon(
+                              Icons.location_on_outlined,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
                           ),
-                          const SizedBox(width: 2),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              widget.listing.distanceString ?? widget.listing.location ?? '',
+                              widget.listing.distanceString ??
+                                  widget.listing.location ??
+                                  '',
                               style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textTertiary,
+                                color: AppColors.textSecondary,
                                 fontSize: 11,
                               ),
                               maxLines: 1,
@@ -184,33 +202,46 @@ class _ItemCardState extends State<ItemCard> {
                           ),
                         ],
                       ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-                    // Time and likes
+                    // Time and likes row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          widget.listing.timeAgo,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textTertiary,
-                            fontSize: 10,
+                        // Time ago
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            widget.listing.timeAgo,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textTertiary,
+                              fontSize: 10,
+                            ),
                           ),
                         ),
+                        // Like count
                         if (widget.listing.likeCount > 0)
                           Row(
                             children: [
                               Icon(
                                 Icons.favorite,
-                                size: 10,
+                                size: 12,
                                 color: AppColors.accent,
                               ),
-                              const SizedBox(width: 2),
+                              const SizedBox(width: 3),
                               Text(
                                 '${widget.listing.likeCount}',
                                 style: AppTextStyles.caption.copyWith(
                                   color: AppColors.textTertiary,
-                                  fontSize: 10,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -228,21 +259,21 @@ class _ItemCardState extends State<ItemCard> {
   }
 }
 
-/// Animated like button with press feedback.
-class _LikeButton extends StatefulWidget {
+/// Animated glass-style like button with press feedback.
+class _GlassLikeButton extends StatefulWidget {
   final bool isLiked;
   final VoidCallback? onTap;
 
-  const _LikeButton({
+  const _GlassLikeButton({
     required this.isLiked,
     this.onTap,
   });
 
   @override
-  State<_LikeButton> createState() => _LikeButtonState();
+  State<_GlassLikeButton> createState() => _GlassLikeButtonState();
 }
 
-class _LikeButtonState extends State<_LikeButton>
+class _GlassLikeButtonState extends State<_GlassLikeButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -266,7 +297,7 @@ class _LikeButtonState extends State<_LikeButton>
   }
 
   @override
-  void didUpdateWidget(_LikeButton oldWidget) {
+  void didUpdateWidget(_GlassLikeButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isLiked && !oldWidget.isLiked) {
       _controller.forward().then((_) => _controller.reverse());
@@ -287,13 +318,13 @@ class _LikeButtonState extends State<_LikeButton>
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(230),
-                shape: BoxShape.circle,
-                boxShadow: AppShadows.sm,
-              ),
+            child: GlassContainer(
+              blur: 12,
+              opacity: 0.9,
+              padding: const EdgeInsets.all(8),
+              borderRadius: BorderRadius.circular(20),
+              borderColor: Colors.white.withAlpha(77),
+              backgroundColor: Colors.white,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: Icon(
@@ -337,23 +368,21 @@ class _CompactItemCardState extends State<CompactItemCard> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: _isHovered ? AppColors.primary.withAlpha(50) : AppColors.border,
-            ),
-            boxShadow: _isHovered ? AppShadows.sm : AppShadows.xs,
-          ),
+        child: GlassCard(
+          blur: 8,
+          opacity: _isHovered ? 0.85 : 0.7,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          padding: EdgeInsets.zero,
+          elevation: _isHovered ? 2 : 1,
+          enableHoverEffect: false,
           child: Row(
             children: [
               // Image with skeleton loader
               if (widget.listing.hasImages)
                 ClipRRect(
-                  borderRadius:
-                      const BorderRadius.horizontal(left: Radius.circular(8)),
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(AppSpacing.radiusSm),
+                  ),
                   child: CachedNetworkImage(
                     imageUrl: widget.listing.primaryImage!,
                     width: 80,
@@ -380,7 +409,7 @@ class _CompactItemCardState extends State<CompactItemCard> {
               // Content
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -393,12 +422,27 @@ class _CompactItemCardState extends State<CompactItemCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.listing.priceString,
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary.withAlpha(20),
+                              AppColors.primaryLight.withAlpha(20),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          widget.listing.priceString,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -413,36 +457,36 @@ class _CompactItemCardState extends State<CompactItemCard> {
   }
 }
 
-/// Skeleton loader for marketplace item cards.
+/// Skeleton loader for marketplace item cards with glass effect.
 class ItemCardSkeleton extends StatelessWidget {
   const ItemCardSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppShadows.sm,
-      ),
+    return GlassCard(
+      blur: 8,
+      opacity: 0.6,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      padding: EdgeInsets.zero,
+      elevation: 1,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Image skeleton
           const SkeletonLoader(
             height: 120,
-            borderRadius: 12,
+            borderRadius: 0,
           ),
           // Content skeleton
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 SkeletonLoader(height: 14, width: 120),
-                SizedBox(height: 6),
+                SizedBox(height: 8),
                 SkeletonLoader(height: 12, width: 80),
-                SizedBox(height: 4),
+                SizedBox(height: 6),
                 SkeletonLoader(height: 10, width: 60),
               ],
             ),

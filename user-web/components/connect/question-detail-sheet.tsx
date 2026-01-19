@@ -51,7 +51,7 @@ export function QuestionDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+      <SheetContent side="bottom" className="h-[90vh] rounded-t-xl flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-start gap-2 text-left">
             <span className="flex-1">{question.title}</span>

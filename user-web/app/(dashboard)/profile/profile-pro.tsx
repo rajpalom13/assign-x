@@ -26,6 +26,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StaggerItem } from "@/components/skeletons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,16 @@ import { AvatarUploadDialog } from "@/components/profile/avatar-upload-dialog";
 import { toast } from "sonner";
 import { getWallet, getProjects } from "@/lib/actions/data";
 import type { UserProfile, UserSubscription } from "@/types/profile";
+
+/**
+ * Get time-based gradient class for dynamic theming
+ */
+function getTimeBasedGradientClass(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
+  if (hour >= 12 && hour < 18) return "mesh-gradient-afternoon";
+  return "mesh-gradient-evening";
+}
 
 interface ProfileProProps {
   profile: UserProfile;
@@ -60,7 +71,7 @@ function StatCard({
 }) {
   const content = (
     <div className={cn(
-      "p-4 rounded-xl border border-border bg-card",
+      "action-card-glass p-4 rounded-xl",
       href && "hover:border-foreground/20 transition-colors cursor-pointer"
     )}>
       <div className="flex items-center justify-between mb-2">
@@ -99,7 +110,7 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full p-3 rounded-xl border border-border bg-card hover:border-foreground/20 transition-colors text-left"
+      className="action-card-glass flex items-center gap-3 w-full p-3 rounded-xl hover:border-foreground/20 transition-colors text-left"
     >
       <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
         <Icon className="h-5 w-5 text-muted-foreground" />
@@ -134,6 +145,9 @@ export function ProfilePro({
   const [projectsCompleted, setProjectsCompleted] = useState<number | null>(null);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Memoize time-based gradient class
+  const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
 
   const referral = useMemo(() => ({
     code: "EXPERT20",
@@ -204,9 +218,11 @@ export function ProfilePro({
   };
 
   return (
-    <main className="flex-1 p-6 md:p-8 max-w-2xl mx-auto space-y-6">
-      {/* Profile Header */}
-      <section className="p-5 rounded-xl border border-border bg-card">
+    <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full", gradientClass)}>
+      <main className="relative z-10 flex-1 p-6 md:p-8 max-w-2xl mx-auto space-y-6 pb-24">
+        {/* Profile Header */}
+        <StaggerItem>
+          <section className="action-card-glass p-5 rounded-xl">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
           {/* Avatar */}
           <div className="relative">
@@ -267,10 +283,12 @@ export function ProfilePro({
             </Button>
           </div>
         </div>
-      </section>
+          </section>
+        </StaggerItem>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Stats Grid */}
+        <StaggerItem>
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {isStatsLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="p-4 rounded-xl border border-border bg-card">
@@ -309,10 +327,12 @@ export function ProfilePro({
             />
           </>
         )}
-      </section>
+          </section>
+        </StaggerItem>
 
-      {/* Wallet CTA */}
-      <section className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+        {/* Wallet CTA */}
+        <StaggerItem>
+          <section className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
@@ -330,10 +350,12 @@ export function ProfilePro({
             </Link>
           </Button>
         </div>
-      </section>
+          </section>
+        </StaggerItem>
 
-      {/* Referral Section */}
-      <section className="p-4 rounded-xl border border-border bg-card space-y-4">
+        {/* Referral Section */}
+        <StaggerItem>
+          <section className="action-card-glass p-4 rounded-xl space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
             <Gift className="h-5 w-5 text-amber-600" />
@@ -390,10 +412,12 @@ export function ProfilePro({
             </div>
           </div>
         </div>
-      </section>
+          </section>
+        </StaggerItem>
 
-      {/* Quick Settings */}
-      <section className="space-y-3">
+        {/* Quick Settings */}
+        <StaggerItem>
+          <section className="space-y-3">
         <h2 className="text-sm font-medium text-foreground">Settings</h2>
         <div className="space-y-2">
           <QuickAction
@@ -429,10 +453,12 @@ export function ProfilePro({
             badge={subscription.tier === "free" ? "Upgrade" : undefined}
           />
         </div>
-      </section>
+          </section>
+        </StaggerItem>
 
-      {/* Footer */}
-      <footer className="pt-4 text-center">
+        {/* Footer */}
+        <StaggerItem>
+          <footer className="pt-4 text-center">
         <p className="text-xs text-muted-foreground mb-1">AssignX v1.0.0</p>
         <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
           <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
@@ -441,15 +467,17 @@ export function ProfilePro({
           <span>·</span>
           <Link href="/help" className="hover:text-foreground transition-colors">Help</Link>
         </div>
-      </footer>
+          </footer>
+        </StaggerItem>
 
-      {/* Avatar Upload Dialog */}
-      <AvatarUploadDialog
-        open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
-        onUpload={handleAvatarUpload}
-        currentAvatar={profile.avatar}
-      />
-    </main>
+        {/* Avatar Upload Dialog */}
+        <AvatarUploadDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          onUpload={handleAvatarUpload}
+          currentAvatar={profile.avatar}
+        />
+      </main>
+    </div>
   );
 }

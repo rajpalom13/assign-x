@@ -1,3 +1,4 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -316,7 +317,14 @@ class ProfileRepository {
   }
 
   /// Log out user.
+  ///
+  /// Signs out from both Google and Supabase to ensure a clean logout.
   Future<void> logout() async {
+    // Sign out from Google to clear the cached session
+    final googleSignIn = GoogleSignIn();
+    await googleSignIn.signOut();
+
+    // Sign out from Supabase
     await _supabase.auth.signOut();
   }
 

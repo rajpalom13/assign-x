@@ -75,7 +75,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen> {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
 
-    if (image != null) {
+    if (image != null && mounted) {
       // TODO: Upload attachment and send message with file URL
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('File attachments coming soon')),

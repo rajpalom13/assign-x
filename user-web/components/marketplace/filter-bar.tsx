@@ -137,7 +137,7 @@ export function FilterBar({
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent side="bottom" className="h-auto max-h-[80vh] rounded-t-xl">
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>

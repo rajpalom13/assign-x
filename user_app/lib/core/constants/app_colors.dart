@@ -1,52 +1,65 @@
 import 'package:flutter/material.dart';
 
-/// App color constants following the Premium Earthy Design System.
+/// App color constants following the Coffee Bean Design System.
 ///
-/// Palette: Pitch Black to Toasted Almond
-/// #141204 | #262A10 | #54442B | #A9714B | #E8985E
+/// Palette: Pitch Black to Warm Brown
+/// #14110F | #54442B | #765341 | #9D7B65 | #E4E1C7
 ///
 /// Theme: Professionalism, Warmth, Trust
 class AppColors {
   AppColors._();
 
   // ============================================================
-  // PRIMARY COLORS - Cinnamon Wood
+  // PRIMARY COLORS - Coffee Bean
   // ============================================================
 
-  /// Primary brand color - Cinnamon Wood (#A9714B)
-  static const Color primary = Color(0xFFA9714B);
+  /// Primary brand color - Coffee Bean (#765341)
+  static const Color primary = Color(0xFF765341);
 
   /// Lighter variant of primary for hover states
-  static const Color primaryLight = Color(0xFFBD8A66);
+  static const Color primaryLight = Color(0xFF8D6A58);
 
   /// Darker variant of primary for pressed states
-  static const Color primaryDark = Color(0xFF8B5D3D);
+  static const Color primaryDark = Color(0xFF5F4334);
 
   // ============================================================
-  // ACCENT COLORS - Toasted Almond
+  // ACCENT COLORS - Warm Brown
   // ============================================================
 
-  /// Accent color - Toasted Almond (#E8985E)
-  static const Color accent = Color(0xFFE8985E);
+  /// Accent color - Warm Brown (#9D7B65)
+  static const Color accent = Color(0xFF9D7B65);
 
   /// Lighter variant of accent
-  static const Color accentLight = Color(0xFFF0B285);
+  static const Color accentLight = Color(0xFFB39580);
 
   /// Darker variant of accent
-  static const Color accentDark = Color(0xFFD07D42);
+  static const Color accentDark = Color(0xFF87654F);
+
+  // ============================================================
+  // CORE PALETTE COLORS
+  // ============================================================
+
+  /// Dark Brown (#54442B) - For gradients and dark accents
+  static const Color darkBrown = Color(0xFF54442B);
+
+  /// Pitch Black (#14110F) - Deepest dark color
+  static const Color pitchBlack = Color(0xFF14110F);
+
+  /// Vanilla Cream (#E4E1C7) - Light accent color
+  static const Color vanillaCream = Color(0xFFE4E1C7);
 
   // ============================================================
   // GRADIENT COLORS
   // ============================================================
 
-  /// Gradient start - Pitch Black variant (#262A10)
-  static const Color gradientStart = Color(0xFF262A10);
+  /// Gradient start - Pitch Black (#14110F)
+  static const Color gradientStart = Color(0xFF14110F);
 
   /// Gradient middle - Dark Brown (#54442B)
   static const Color gradientMiddle = Color(0xFF54442B);
 
-  /// Gradient end - Toasted Almond (#E8985E)
-  static const Color gradientEnd = Color(0xFFE8985E);
+  /// Gradient end - Warm Brown (#9D7B65)
+  static const Color gradientEnd = Color(0xFF9D7B65);
 
   /// Primary gradient for buttons and highlights
   static const LinearGradient primaryGradient = LinearGradient(
@@ -59,18 +72,18 @@ class AppColors {
   static const LinearGradient subtleGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFEFDFB), Color(0xFFF9F7F4)],
+    colors: [Color(0xFFFEFDFB), Color(0xFFFAF9F7)],
   );
 
   // ============================================================
   // BACKGROUND COLORS - Light Theme
   // ============================================================
 
-  /// Main background - Warm Cream (#F9F7F4)
-  static const Color background = Color(0xFFF9F7F4);
+  /// Main background - Warm White (#FEFDFB)
+  static const Color background = Color(0xFFFEFDFB);
 
-  /// Surface color - Warm White (#FEFDFB)
-  static const Color surface = Color(0xFFFEFDFB);
+  /// Surface color - Light Surface (#FAF9F7)
+  static const Color surface = Color(0xFFFAF9F7);
 
   /// Muted surface - Warm Gray (#F1EEEA)
   static const Color surfaceVariant = Color(0xFFF1EEEA);
@@ -82,34 +95,34 @@ class AppColors {
   // BACKGROUND COLORS - Dark Theme
   // ============================================================
 
-  /// Dark background - Pitch Black (#141204)
-  static const Color backgroundDark = Color(0xFF141204);
+  /// Dark background - Pitch Black (#14110F)
+  static const Color backgroundDark = Color(0xFF14110F);
 
-  /// Dark surface - Dark Olive-Black (#1E1D0B)
-  static const Color surfaceDark = Color(0xFF1E1D0B);
+  /// Dark surface - Dark Surface (#1C1815)
+  static const Color surfaceDark = Color(0xFF1C1815);
 
-  /// Dark muted surface - Dark Brown (#332B1A)
-  static const Color surfaceVariantDark = Color(0xFF332B1A);
+  /// Dark muted surface - Dark Brown variant (#2D261F)
+  static const Color surfaceVariantDark = Color(0xFF2D261F);
 
   /// Dark card background
-  static const Color cardDark = Color(0xFF1E1D0B);
+  static const Color cardDark = Color(0xFF1C1815);
 
   // ============================================================
   // TEXT COLORS - Light Theme
   // ============================================================
 
-  /// Primary text - Pitch Black (#141204)
-  static const Color textPrimary = Color(0xFF141204);
+  /// Primary text - Pitch Black (#14110F)
+  static const Color textPrimary = Color(0xFF14110F);
 
-  /// Secondary text - Warm brown-gray (#7A6E52)
-  static const Color textSecondary = Color(0xFF7A6E52);
+  /// Secondary text - Warm brown-gray (#6B5D4D)
+  static const Color textSecondary = Color(0xFF6B5D4D);
 
-  /// Tertiary text - Lighter brown-gray (#9B917F)
+  /// Tertiary text - Lighter brown-gray (#8F826F)
   /// Meets WCAG 2.1 AA contrast ratio (4.5:1) against light backgrounds
-  static const Color textTertiary = Color(0xFF9B917F);
+  static const Color textTertiary = Color(0xFF8F826F);
 
   /// Text on primary/accent colors
-  static const Color textOnPrimary = Color(0xFFF9F7F4);
+  static const Color textOnPrimary = Color(0xFFFEFDFB);
 
   // ============================================================
   // TEXT COLORS - Dark Theme
@@ -128,26 +141,26 @@ class AppColors {
   // STATUS COLORS
   // ============================================================
 
-  /// Success - Green (#16A34A)
-  static const Color success = Color(0xFF16A34A);
+  /// Success - Sage Green (#259369) - Earthy, natural feel
+  static const Color success = Color(0xFF259369);
 
   /// Success light background
-  static const Color successLight = Color(0xFFDCFCE7);
+  static const Color successLight = Color(0xFFD4F5E5);
 
-  /// Warning - Gold (#F59E0B)
+  /// Warning - Warm Amber (#F59E0B)
   static const Color warning = Color(0xFFF59E0B);
 
   /// Warning light background
   static const Color warningLight = Color(0xFFFEF3C7);
 
-  /// Error/Destructive - Red (#DC2626)
-  static const Color error = Color(0xFFDC2626);
+  /// Error/Destructive - Warm Red (#DC352F)
+  static const Color error = Color(0xFFDC352F);
 
   /// Error light background
   static const Color errorLight = Color(0xFFFEE2E2);
 
-  /// Info - Blue (#2596BE)
-  static const Color info = Color(0xFF2596BE);
+  /// Info - Balanced Blue (#2B93BE)
+  static const Color info = Color(0xFF2B93BE);
 
   /// Info light background
   static const Color infoLight = Color(0xFFDBEAFE);
@@ -162,23 +175,23 @@ class AppColors {
   /// Analyzing light background
   static const Color analyzingLight = Color(0xFFFEF9C3);
 
-  /// Payment pending status - Gold/Orange
+  /// Payment pending status - Warm Amber
   static const Color paymentPending = Color(0xFFF59E0B);
 
-  /// In progress status - Uses primary
-  static const Color inProgress = Color(0xFFA9714B);
+  /// In progress status - Uses primary (Coffee Bean)
+  static const Color inProgress = Color(0xFF765341);
 
-  /// For review status - Accent
-  static const Color forReview = Color(0xFFE8985E);
+  /// For review status - Accent (Warm Brown)
+  static const Color forReview = Color(0xFF9D7B65);
 
-  /// Completed status - Success green
-  static const Color completed = Color(0xFF16A34A);
+  /// Completed status - Success (Sage Green)
+  static const Color completed = Color(0xFF259369);
 
-  /// Revision required status - Error red
-  static const Color revision = Color(0xFFDC2626);
+  /// Revision required status - Error (Warm Red)
+  static const Color revision = Color(0xFFDC352F);
 
   /// Archived status - Muted gray
-  static const Color archived = Color(0xFF7A6E52);
+  static const Color archived = Color(0xFF6B5D4D);
 
   // ============================================================
   // BORDER COLORS
@@ -187,11 +200,11 @@ class AppColors {
   /// Default border - Warm gray (#DDD7CD)
   static const Color border = Color(0xFFDDD7CD);
 
-  /// Focused border - Uses primary
-  static const Color borderFocused = Color(0xFFA9714B);
+  /// Focused border - Uses primary (Coffee Bean)
+  static const Color borderFocused = Color(0xFF765341);
 
-  /// Error border
-  static const Color borderError = Color(0xFFDC2626);
+  /// Error border - Warm Red
+  static const Color borderError = Color(0xFFDC352F);
 
   /// Dark theme border
   static const Color borderDark = Color(0xFF4D4333);
@@ -213,6 +226,100 @@ class AppColors {
   static const Color overlayLight = Color(0x1AFFFFFF);
 
   // ============================================================
+  // GLASS EFFECT COLORS
+  // ============================================================
+
+  /// Glass background - White with opacity for glass morphism
+  static Color get glassBackground => Colors.white.withValues(alpha: 0.85);
+
+  /// Glass border - Subtle white border for glass effect
+  static Color get glassBorder => Colors.white.withValues(alpha: 0.3);
+
+  /// Glass background dark - For dark theme glass effects
+  static Color get glassBackgroundDark => Colors.black.withValues(alpha: 0.6);
+
+  /// Glass border dark - For dark theme glass borders
+  static Color get glassBorderDark => Colors.white.withValues(alpha: 0.1);
+
+  // ============================================================
+  // MESH GRADIENT COLORS - Pastel variants for backgrounds
+  // ============================================================
+
+  /// Mesh Pink - Soft pastel pink
+  static const Color meshPink = Color(0xFFFBE8E8);
+
+  /// Mesh Peach - Soft pastel peach
+  static const Color meshPeach = Color(0xFFFCEDE8);
+
+  /// Mesh Orange - Soft pastel orange
+  static const Color meshOrange = Color(0xFFFEF3E8);
+
+  /// Mesh Yellow - Soft pastel yellow
+  static const Color meshYellow = Color(0xFFFEF9E8);
+
+  /// Mesh Green - Soft pastel green
+  static const Color meshGreen = Color(0xFFE8F5EC);
+
+  /// Mesh Blue - Soft pastel blue
+  static const Color meshBlue = Color(0xFFE8F0F8);
+
+  /// Mesh Purple - Soft pastel purple
+  static const Color meshPurple = Color(0xFFF0E8F8);
+
+  /// Mesh gradient for decorative backgrounds
+  static const LinearGradient meshGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [meshPink, meshPeach, meshYellow, meshGreen, meshBlue],
+    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+  );
+
+  // ============================================================
+  // MODERN GRADIENT COLORS - Vibrant for modern app style
+  // ============================================================
+
+  /// Modern Pink - Vibrant pink for gradients
+  static const Color modernPink = Color(0xFFFF6B9D);
+
+  /// Modern Magenta - Deep magenta/pink
+  static const Color modernMagenta = Color(0xFFE91E8C);
+
+  /// Modern Purple - Soft purple for gradients
+  static const Color modernPurple = Color(0xFFC471ED);
+
+  /// Modern Blue - Bright blue
+  static const Color modernBlue = Color(0xFF12C2E9);
+
+  /// Modern Cyan - Light cyan
+  static const Color modernCyan = Color(0xFF00D4FF);
+
+  /// Modern gradient for auth screens (pink to blue)
+  static const LinearGradient modernAuthGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFFFFB6C1), // Light pink
+      Color(0xFFE991CF), // Medium pink
+      Color(0xFFC471ED), // Purple
+      Color(0xFF8EC5FC), // Light blue
+    ],
+    stops: [0.0, 0.35, 0.65, 1.0],
+  );
+
+  /// Subtle modern gradient (very light, for backgrounds)
+  static const LinearGradient subtleModernGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFFFFF5F7), // Very light pink
+      Color(0xFFFAF5FF), // Very light purple
+      Color(0xFFF5FAFF), // Very light blue
+      Color(0xFFFFFFFF), // White
+    ],
+    stops: [0.0, 0.3, 0.6, 1.0],
+  );
+
+  // ============================================================
   // SHIMMER COLORS - Loading States
   // ============================================================
 
@@ -223,7 +330,7 @@ class AppColors {
   static const Color shimmerHighlight = Color(0xFFF5F2ED);
 
   /// Shimmer base color - Dark theme
-  static const Color shimmerBaseDark = Color(0xFF332B1A);
+  static const Color shimmerBaseDark = Color(0xFF2D261F);
 
   /// Shimmer highlight color - Dark theme
   static const Color shimmerHighlightDark = Color(0xFF4D4333);
@@ -236,26 +343,26 @@ class AppColors {
   static const Color inputBackground = Color(0xFFF1EEEA);
 
   /// Input background dark
-  static const Color inputBackgroundDark = Color(0xFF332B1A);
+  static const Color inputBackgroundDark = Color(0xFF2D261F);
 
   // ============================================================
   // CHART COLORS - Earthy palette for data visualization
   // ============================================================
 
-  /// Chart color 1 - Cinnamon
-  static const Color chart1 = Color(0xFFA9714B);
+  /// Chart color 1 - Coffee Bean (Primary)
+  static const Color chart1 = Color(0xFF765341);
 
-  /// Chart color 2 - Toasted Almond
-  static const Color chart2 = Color(0xFFE8985E);
+  /// Chart color 2 - Warm Brown (Accent)
+  static const Color chart2 = Color(0xFF9D7B65);
 
   /// Chart color 3 - Dark Brown
   static const Color chart3 = Color(0xFF54442B);
 
-  /// Chart color 4 - Dark Khaki
-  static const Color chart4 = Color(0xFF6B6630);
+  /// Chart color 4 - Sage Green
+  static const Color chart4 = Color(0xFF259369);
 
-  /// Chart color 5 - Olive
-  static const Color chart5 = Color(0xFF808040);
+  /// Chart color 5 - Balanced Blue
+  static const Color chart5 = Color(0xFF2B93BE);
 
   // ============================================================
   // UTILITY METHODS
@@ -274,5 +381,15 @@ class AppColors {
     // Calculate relative luminance
     final luminance = backgroundColor.computeLuminance();
     return luminance > 0.5 ? textPrimary : textPrimaryDark;
+  }
+
+  /// Get glass background based on theme brightness
+  static Color getGlassBackground(Brightness brightness) {
+    return brightness == Brightness.dark ? glassBackgroundDark : glassBackground;
+  }
+
+  /// Get glass border based on theme brightness
+  static Color getGlassBorder(Brightness brightness) {
+    return brightness == Brightness.dark ? glassBorderDark : glassBorder;
   }
 }

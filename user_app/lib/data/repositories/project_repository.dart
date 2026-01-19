@@ -26,10 +26,27 @@ class ProjectRepository {
   }
 
   /// Fetches projects by status tab.
+  ///
+  /// Tab indices (new design):
+  /// - 0: All projects
+  /// - 1: Active projects (not completed, auto_approved, cancelled, refunded)
+  /// - 2: Completed projects (completed, auto_approved, cancelled, refunded)
   Future<List<Project>> getProjectsByTab(int tabIndex) async {
     final allProjects = await getProjects();
 
-    return allProjects.where((p) => p.status.tabIndex == tabIndex).toList();
+    switch (tabIndex) {
+      case 0:
+        // All projects
+        return allProjects;
+      case 1:
+        // Active projects
+        return allProjects.where((p) => p.status.isActive).toList();
+      case 2:
+        // Completed projects
+        return allProjects.where((p) => !p.status.isActive).toList();
+      default:
+        return allProjects;
+    }
   }
 
   /// Fetches projects with pending payments.
@@ -236,16 +253,23 @@ class ProjectRepository {
     return updateProjectStatus(projectId, ProjectStatus.cancelled);
   }
 
-  /// Gets project count by status.
+  /// Gets project count by status tab.
+  ///
+  /// Tab indices (new design):
+  /// - 0: All projects
+  /// - 1: Active projects
+  /// - 2: Completed projects
   Future<Map<int, int>> getProjectCounts() async {
     final projects = await getProjects();
-    final counts = <int, int>{0: 0, 1: 0, 2: 0, 3: 0};
 
-    for (final project in projects) {
-      final tabIndex = project.status.tabIndex;
-      counts[tabIndex] = (counts[tabIndex] ?? 0) + 1;
-    }
+    final allCount = projects.length;
+    final activeCount = projects.where((p) => p.status.isActive).length;
+    final completedCount = projects.where((p) => !p.status.isActive).length;
 
-    return counts;
+    return {
+      0: allCount,
+      1: activeCount,
+      2: completedCount,
+    };
   }
 }
