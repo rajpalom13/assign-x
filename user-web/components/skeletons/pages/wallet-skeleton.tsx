@@ -1,9 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { SkeletonStatsRow } from "../composites";
 import { SkeletonTransactionItem } from "../composites";
-import { SkeletonBox, SkeletonText, SkeletonButton, SkeletonBadge } from "../primitives";
+import { SkeletonBox, SkeletonText, SkeletonButton } from "../primitives";
 
 interface WalletSkeletonProps {
   className?: string;
@@ -11,70 +10,142 @@ interface WalletSkeletonProps {
 
 /**
  * Full page skeleton for Wallet (/wallet)
- * Matches the unified layout structure with credit card hero
+ * Matches the 2-column layout with credit card, quick actions, offers, and payment history
  */
 export function WalletSkeleton({ className }: WalletSkeletonProps) {
   return (
-    <div className={cn("space-y-6 p-4 md:p-6", className)}>
-      {/* Hero with Credit Card */}
-      <div className="relative rounded-2xl bg-gradient-to-br from-muted/30 via-muted/50 to-muted/30 overflow-hidden">
-        {/* Offers Pills */}
-        <div className="flex gap-2 p-4 overflow-x-auto">
-          {[1, 2, 3].map((i) => (
-            <SkeletonBadge key={i} width={100} delay={i * 30} />
-          ))}
-        </div>
+    <div className={cn("relative min-h-full pb-32", className)}>
+      <div className="container max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* Credit Card */}
-        <div className="flex justify-center py-6">
-          <div className="w-[300px] h-[180px] rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 p-5 relative overflow-hidden">
-            {/* Card shimmer overlay */}
-            <div className="skeleton-shimmer absolute inset-0" />
+          {/* LEFT COLUMN - Credit Card & Quick Actions */}
+          <div className="lg:col-span-4 space-y-6">
 
-            {/* Card content skeleton */}
-            <div className="relative z-10 h-full flex flex-col justify-between">
-              <div className="flex justify-between items-start">
-                <SkeletonText width={100} lineHeight={14} animate="pulse" delay={100} />
-                <SkeletonBox width={40} height={30} rounded="md" animate="pulse" delay={150} />
+            {/* Credit Card Container */}
+            <div className="space-y-4">
+              {/* Credit Card Skeleton */}
+              <div className="w-full max-w-[340px] aspect-[1.7/1] bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl shadow-xl p-5 relative overflow-hidden">
+                {/* Card shimmer overlay */}
+                <div className="skeleton-shimmer absolute inset-0" />
+
+                {/* Mastercard logo placeholder */}
+                <div className="absolute top-4 right-4 flex items-center gap-0">
+                  <SkeletonBox width={24} height={24} rounded="full" animate="pulse" delay={50} />
+                  <div className="-ml-2.5">
+                    <SkeletonBox width={24} height={24} rounded="full" animate="pulse" delay={100} />
+                  </div>
+                </div>
+
+                {/* Card content skeleton */}
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  {/* Balance */}
+                  <div>
+                    <SkeletonText width={50} lineHeight={12} animate="pulse" delay={150} className="mb-1" />
+                    <SkeletonText width={120} lineHeight={24} animate="pulse" delay={200} />
+                  </div>
+
+                  {/* Card Number */}
+                  <div className="flex items-center gap-2.5">
+                    <SkeletonText width={30} lineHeight={14} animate="pulse" delay={250} />
+                    <SkeletonText width={30} lineHeight={14} animate="pulse" delay={280} />
+                    <SkeletonText width={30} lineHeight={14} animate="pulse" delay={310} />
+                    <SkeletonText width={40} lineHeight={16} animate="pulse" delay={340} />
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <SkeletonText width={60} lineHeight={10} animate="pulse" delay={370} className="mb-1" />
+                      <SkeletonText width={80} lineHeight={12} animate="pulse" delay={400} />
+                    </div>
+                    <div>
+                      <SkeletonText width={40} lineHeight={10} animate="pulse" delay={430} className="mb-1" />
+                      <SkeletonText width={35} lineHeight={12} animate="pulse" delay={460} />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <SkeletonText width={180} lineHeight={16} animate="pulse" delay={200} />
-                <div className="flex gap-4">
-                  <SkeletonText width={60} lineHeight={12} animate="pulse" delay={250} />
-                  <SkeletonText width={60} lineHeight={12} animate="pulse" delay={300} />
+              {/* Quick Action Buttons */}
+              <div className="grid grid-cols-2 gap-4 max-w-[340px]">
+                <SkeletonBox width="100%" height={100} rounded="xl" animate="pulse" delay={500} className="glass-card border border-border/30" />
+                <SkeletonBox width="100%" height={100} rounded="xl" animate="pulse" delay={550} className="glass-card border border-border/30" />
+              </div>
+            </div>
+
+            {/* Stats Cards Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Rewards */}
+              <div className="glass-card border border-border/30 p-4 rounded-xl">
+                <SkeletonBox width={28} height={28} rounded="lg" animate="pulse" delay={620} className="mb-2" />
+                <SkeletonText width={50} lineHeight={10} animate="pulse" delay={640} className="mb-1" />
+                <SkeletonText width={40} lineHeight={18} animate="pulse" delay={660} />
+              </div>
+
+              {/* Wallet Balance */}
+              <div className="glass-card border border-border/30 p-4 rounded-xl">
+                <SkeletonBox width={28} height={28} rounded="lg" animate="pulse" delay={670} className="mb-2" />
+                <SkeletonText width={70} lineHeight={10} animate="pulse" delay={690} className="mb-1" />
+                <SkeletonText width={50} lineHeight={18} animate="pulse" delay={710} />
+              </div>
+
+              {/* Monthly Spend - Full Width */}
+              <div className="glass-card border border-border/30 p-4 col-span-2 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <SkeletonBox width={28} height={28} rounded="lg" animate="pulse" delay={720} className="mb-1" />
+                    <SkeletonText width={80} lineHeight={10} animate="pulse" delay={740} />
+                  </div>
+                  <SkeletonText width={70} lineHeight={20} animate="pulse" delay={760} />
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <SkeletonButton key={i} size="lg" className="w-full" delay={350 + i * 50} />
-        ))}
-      </div>
+          {/* RIGHT COLUMN - Offers & Payment History */}
+          <div className="lg:col-span-8 space-y-5">
 
-      {/* Stats Row */}
-      <SkeletonStatsRow delay={500} />
+            {/* Offers Section */}
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <SkeletonText width={100} lineHeight={16} animate="pulse" delay={800} />
+              </div>
 
-      {/* Transactions Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <SkeletonText width={160} lineHeight={24} delay={700} />
-          <SkeletonBadge width={80} delay={750} />
-        </div>
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="min-w-[180px] p-5 rounded-2xl bg-muted/50 animate-pulse"
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <SkeletonBox width={48} height={48} rounded="xl" animate="pulse" delay={870 + i * 50} />
+                      <div className="text-center space-y-1">
+                        <SkeletonText width={100} lineHeight={14} animate="pulse" delay={890 + i * 50} />
+                        <SkeletonText width={60} lineHeight={12} animate="pulse" delay={910 + i * 50} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        {/* Date Header */}
-        <SkeletonText width={60} lineHeight={14} delay={800} />
+            {/* Payment History Section */}
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <SkeletonText width={130} lineHeight={16} animate="pulse" delay={1050} />
+                <SkeletonBox width={36} height={36} rounded="xl" animate="pulse" delay={1100} />
+              </div>
 
-        {/* Transaction Items */}
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <SkeletonTransactionItem key={i} delay={850 + i * 60} />
-          ))}
+              {/* Transaction List */}
+              <div className="glass-card rounded-2xl p-2 border border-border/20">
+                <div className="space-y-0.5">
+                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                    <SkeletonTransactionItem key={i} delay={1150 + i * 60} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -38,21 +38,31 @@ function StatPill({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{
+        scale: 1.05,
+        y: -2,
+        transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] },
+      }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        "flex items-center gap-2 px-3 py-1.5 rounded-full",
+        "flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer",
         "bg-card/60 backdrop-blur-sm border border-border/50",
         "text-sm transition-all duration-300",
-        "hover:bg-card/80 hover:border-border/70",
+        "hover:bg-card/80 hover:border-border/70 hover:shadow-md",
         highlight && "border-primary/30 bg-primary/5"
       )}
     >
-      <Icon
-        className={cn(
-          "h-3.5 w-3.5",
-          highlight ? "text-primary" : "text-muted-foreground"
-        )}
-        strokeWidth={1.5}
-      />
+      <motion.div
+        whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.4 } }}
+      >
+        <Icon
+          className={cn(
+            "h-3.5 w-3.5",
+            highlight ? "text-primary" : "text-muted-foreground"
+          )}
+          strokeWidth={1.5}
+        />
+      </motion.div>
       <span className="text-muted-foreground">{label}</span>
       <span className={cn("font-medium", highlight ? "text-primary" : "text-foreground")}>
         {value}

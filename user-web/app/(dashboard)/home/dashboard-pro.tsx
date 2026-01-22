@@ -151,39 +151,39 @@ export function DashboardPro() {
       isLoading={isLoading}
       skeleton={<DashboardBentoSkeleton />}
       minimumDuration={1000}
-      className="h-full min-h-full"
+      className="h-full"
     >
-      <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full h-full", getTimeBasedGradientClass())}>
-        <div className="relative z-10 min-h-full h-full p-6 md:p-6 lg:p-8 flex items-center justify-center overflow-auto">
-          <div className="max-w-6xl w-full">
+      <div className={cn("mesh-background mesh-gradient-bottom-right-animated h-full overflow-hidden", getTimeBasedGradientClass())}>
+        <div className="relative z-10 h-full px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 flex items-center justify-center">
+          <div className="max-w-[1400px] w-full">
             {/* Main Content - Two Column Layout */}
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start lg:items-center">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start lg:items-center justify-between">
               {/* Left Column - Greeting */}
-              <StaggerItem className="flex-1 space-y-4">
+              <StaggerItem className="flex-1 max-w-2xl space-y-4">
                 {/* Greeting with subtle animation */}
                 <div className="relative">
                   <motion.h1
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight text-foreground/90"
+                    className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light tracking-tight text-foreground/90"
                   >
                     Good {getGreeting()},
                   </motion.h1>
                   {/* Name with Lottie animation to the right */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 mt-1">
                     <motion.h2
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.5, delay: 0.05 }}
-                      className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-foreground"
+                      className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold tracking-tight text-foreground"
                     >
                       {firstName}
                     </motion.h2>
                     {/* Lottie animation to the right of name */}
                     <GreetingAnimation
                       className="hidden md:block"
-                      size={72}
+                      size={64}
                     />
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export function DashboardPro() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="text-lg text-muted-foreground mt-4 max-w-md"
+                  className="text-base md:text-lg text-muted-foreground mt-3 max-w-lg"
                 >
                   Ready to optimize your workflow and generate insights.
                 </motion.p>
@@ -216,12 +216,12 @@ export function DashboardPro() {
                       <span className="text-sm font-medium text-muted-foreground">
                         Needs Attention
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
                         {needsAttention.length}
                       </span>
                     </div>
                     <div className="space-y-2">
-                      {needsAttention.map((project, index) => {
+                      {needsAttention.slice(0, 3).map((project, index) => {
                         const status = STATUS_CONFIG[project.status] || {
                           label: project.status,
                           dot: "bg-muted-foreground",
@@ -233,14 +233,29 @@ export function DashboardPro() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.35 + index * 0.05, duration: 0.3 }}
                             onClick={() => router.push(`/project/${project.id}`)}
+                            whileHover={{
+                              x: 4,
+                              transition: smoothEasing,
+                            }}
+                            whileTap={{ scale: 0.98 }}
                             className="w-full flex items-center gap-3 p-3 rounded-xl action-card-glass text-left group"
                           >
-                            <div className={cn("h-2 w-2 rounded-full shrink-0", status.dot)} />
+                            <motion.div
+                              className={cn("h-2 w-2 rounded-full shrink-0", status.dot)}
+                              whileHover={{ scale: 1.3 }}
+                              transition={{ duration: 0.2 }}
+                            />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">{project.title}</p>
-                              <p className="text-xs text-muted-foreground">{status.label}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{status.label}</p>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <motion.div
+                              initial={{ opacity: 0, x: -4 }}
+                              whileHover={{ opacity: 1, x: 0 }}
+                              transition={smoothEasing}
+                            >
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </motion.div>
                           </motion.button>
                         );
                       })}
@@ -250,11 +265,11 @@ export function DashboardPro() {
               </StaggerItem>
 
               {/* Right Column - Bento Grid Action Cards */}
-              <StaggerItem className="w-full lg:w-auto">
-                <div className="flex gap-4 lg:gap-5 max-w-md lg:max-w-lg">
+              <StaggerItem className="w-full lg:w-auto lg:flex-shrink-0">
+                <div className="flex gap-4 lg:gap-5 w-full lg:w-auto">
                   {/* Left Column of Cards */}
                   <div
-                    className="flex-1 flex flex-col gap-4 lg:gap-5"
+                    className="flex-1 flex flex-col gap-4 lg:gap-5 min-w-[200px]"
                     onMouseLeave={handleLeftLeave}
                   >
                     {leftCards.map((card, index) => (
@@ -270,7 +285,7 @@ export function DashboardPro() {
 
                   {/* Right Column of Cards */}
                   <div
-                    className="flex-1 flex flex-col gap-4 lg:gap-5"
+                    className="flex-1 flex flex-col gap-4 lg:gap-5 min-w-[200px]"
                     onMouseLeave={handleRightLeave}
                   >
                     {rightCards.map((card, index) => (
@@ -296,9 +311,15 @@ export function DashboardPro() {
 // Spring configuration for ultra smooth animations
 const springConfig = {
   type: "spring" as const,
-  stiffness: 300,
-  damping: 30,
-  mass: 0.8,
+  stiffness: 260,
+  damping: 26,
+  mass: 0.6,
+};
+
+// Smooth easing configuration for hover effects
+const smoothEasing = {
+  duration: 0.4,
+  ease: [0.25, 0.1, 0.25, 1] as const, // easeInOutCubic
 };
 
 /**
@@ -321,9 +342,10 @@ function BentoCard({
   isTall: boolean;
   onHover: () => void;
 }) {
-  // Height values for tall and short states
-  const tallHeight = 220;
-  const shortHeight = 140;
+  // Height values for tall and short states - properly sized
+  const tallHeight = 240;
+  const shortHeight = 160;
+  const [isHovering, setIsHovering] = useState(false);
 
   return (
     <motion.div
@@ -338,24 +360,40 @@ function BentoCard({
         y: { duration: 0.4, delay: 0.1 + cardIndex * 0.1 },
         height: springConfig,
       }}
-      onMouseEnter={onHover}
+      onMouseEnter={() => {
+        onHover();
+        setIsHovering(true);
+      }}
+      onMouseLeave={() => setIsHovering(false)}
       className="relative will-change-[height]"
     >
       <Link
         href={href}
-        className="block h-full rounded-2xl p-5 lg:p-6 action-card-glass group cursor-pointer overflow-hidden"
+        className="block h-full rounded-2xl p-5 lg:p-6 action-card-glass group cursor-pointer overflow-hidden relative"
       >
-        <div className="flex flex-col h-full">
+        {/* Hover background effect */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none rounded-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovering ? 1 : 0 }}
+          transition={smoothEasing}
+        />
+
+        <div className="flex flex-col h-full relative z-10">
           {/* Icon */}
           <div className="mb-4">
             <motion.div
               animate={{
-                scale: isTall ? 1.1 : 1,
+                scale: isTall ? 1.15 : 1,
+                rotate: isHovering ? [0, -5, 5, 0] : 0,
               }}
-              transition={springConfig}
+              transition={{
+                scale: springConfig,
+                rotate: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] },
+              }}
             >
               <Icon
-                className="h-7 w-7 text-foreground/70 group-hover:text-foreground transition-colors duration-200"
+                className="h-7 w-7 text-foreground/70 group-hover:text-foreground transition-colors duration-300"
                 strokeWidth={1.5}
               />
             </motion.div>
@@ -366,28 +404,45 @@ function BentoCard({
             <motion.h3
               className="font-semibold text-foreground mb-1"
               animate={{
-                fontSize: isTall ? "1.125rem" : "0.9375rem",
+                fontSize: isTall ? "1.125rem" : "1rem",
+                y: isHovering ? -2 : 0,
               }}
-              transition={springConfig}
+              transition={{
+                fontSize: springConfig,
+                y: smoothEasing,
+              }}
             >
               {title}
             </motion.h3>
             <motion.p
               className="text-muted-foreground leading-relaxed overflow-hidden"
               animate={{
-                opacity: isTall ? 1 : 0.7,
+                opacity: isTall ? 1 : 0.75,
                 fontSize: isTall ? "0.875rem" : "0.75rem",
-                maxHeight: isTall ? 60 : 20,
+                maxHeight: isTall ? 64 : 20,
               }}
               transition={{
-                ...springConfig,
-                opacity: { duration: 0.2 },
+                fontSize: springConfig,
+                maxHeight: springConfig,
+                opacity: smoothEasing,
               }}
             >
               {description}
             </motion.p>
           </div>
         </div>
+
+        {/* Border glow on hover */}
+        <motion.div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={{
+            border: '1px solid transparent',
+          }}
+          animate={{
+            borderColor: isHovering ? 'rgba(var(--primary-rgb, 118, 83, 65), 0.2)' : 'transparent',
+          }}
+          transition={smoothEasing}
+        />
       </Link>
     </motion.div>
   );
@@ -400,26 +455,26 @@ function BentoCard({
  */
 function DashboardBentoSkeleton() {
   return (
-    <div className={cn("mesh-background mesh-gradient-bottom-right-animated min-h-full h-full", getTimeBasedGradientClass())}>
-      <div className="relative z-10 min-h-full h-full p-6 md:p-6 lg:p-8 flex items-center justify-center overflow-auto">
-        <div className="max-w-6xl w-full">
-          <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-start lg:items-center">
+    <div className={cn("mesh-background mesh-gradient-bottom-right-animated h-full overflow-hidden", getTimeBasedGradientClass())}>
+      <div className="relative z-10 h-full px-4 py-6 md:px-6 md:py-8 lg:px-8 lg:py-10 flex items-center justify-center">
+        <div className="max-w-[1400px] w-full">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start lg:items-center justify-between">
             {/* Left Column Skeleton - Greeting Area */}
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 max-w-2xl space-y-4">
               {/* "Good Morning," text */}
-              <SkeletonText width={260} lineHeight={56} delay={0} />
+              <SkeletonText width={280} lineHeight={64} delay={0} />
               {/* User name */}
-              <SkeletonText width={200} lineHeight={56} delay={50} />
+              <SkeletonText width={240} lineHeight={64} delay={50} />
               {/* Subtitle */}
-              <div className="mt-4">
-                <SkeletonText width={320} lineHeight={24} delay={100} />
+              <div className="mt-3">
+                <SkeletonText width={360} lineHeight={24} delay={100} />
               </div>
 
               {/* Needs Attention Section Skeleton */}
               <div className="mt-8 pt-6 border-t border-border/40 space-y-3">
                 <div className="flex items-center gap-2">
-                  <SkeletonText width={110} lineHeight={16} delay={150} />
-                  <SkeletonBox width={24} height={20} delay={175} className="rounded-full" />
+                  <SkeletonText width={120} lineHeight={16} delay={150} />
+                  <SkeletonBox width={28} height={24} delay={175} className="rounded-full" />
                 </div>
                 {/* Attention items */}
                 {[1, 2, 3].map((i) => (
@@ -429,8 +484,8 @@ function DashboardBentoSkeleton() {
                   >
                     <SkeletonBox width={8} height={8} delay={200 + i * 50} className="rounded-full" />
                     <div className="flex-1 space-y-1.5">
-                      <SkeletonText width={180} lineHeight={14} delay={225 + i * 50} />
-                      <SkeletonText width={80} lineHeight={12} delay={250 + i * 50} />
+                      <SkeletonText width={200} lineHeight={14} delay={225 + i * 50} />
+                      <SkeletonText width={90} lineHeight={12} delay={250 + i * 50} />
                     </div>
                   </div>
                 ))}
@@ -438,17 +493,17 @@ function DashboardBentoSkeleton() {
             </div>
 
             {/* Right Column Skeleton - Bento Grid */}
-            <div className="w-full lg:w-auto">
-              <div className="flex gap-4 lg:gap-5 max-w-md lg:max-w-lg">
+            <div className="w-full lg:w-auto lg:flex-shrink-0">
+              <div className="flex gap-4 lg:gap-5">
                 {/* Left Column of Cards */}
-                <div className="flex-1 flex flex-col gap-4 lg:gap-5">
-                  <BentoCardSkeleton height={220} delay={300} />
-                  <BentoCardSkeleton height={140} delay={350} />
+                <div className="flex-1 flex flex-col gap-4 lg:gap-5 min-w-[200px]">
+                  <BentoCardSkeleton height={240} delay={300} />
+                  <BentoCardSkeleton height={160} delay={350} />
                 </div>
                 {/* Right Column of Cards */}
-                <div className="flex-1 flex flex-col gap-4 lg:gap-5">
-                  <BentoCardSkeleton height={140} delay={400} />
-                  <BentoCardSkeleton height={220} delay={450} />
+                <div className="flex-1 flex flex-col gap-4 lg:gap-5 min-w-[200px]">
+                  <BentoCardSkeleton height={160} delay={400} />
+                  <BentoCardSkeleton height={240} delay={450} />
                 </div>
               </div>
             </div>

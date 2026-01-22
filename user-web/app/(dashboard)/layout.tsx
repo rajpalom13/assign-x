@@ -88,7 +88,7 @@ export default function DashboardLayout({
 
   return (
     <TourProvider autoStart onComplete={handleTourComplete}>
-      <div className="h-screen flex flex-col overflow-hidden bg-background" data-tour="welcome">
+      <div className="h-screen flex flex-col bg-background" data-tour="welcome">
         {/* Header */}
         <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-2 dashboard-header-glass border-b border-border/30 transition-all duration-200 px-4 md:px-6">
           {/* Left: Logo + Page Title */}
@@ -116,7 +116,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Main Content with Page Transitions */}
-        <main className="flex-1 overflow-hidden">
+        <main className={pathname === "/home" ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto"}>
           <DashboardClientShell>
             <AnimatePresence mode="wait">
               <motion.div
@@ -125,7 +125,7 @@ export default function DashboardLayout({
                 animate="animate"
                 exit="exit"
                 variants={pageVariants}
-                className="h-full overflow-y-auto pb-[120px] scrollbar-thin"
+                className={pathname === "/home" ? "h-full" : "min-h-full"}
               >
                 {children}
               </motion.div>

@@ -88,38 +88,76 @@ export const ExpertCard = memo(function ExpertCard({
     }
   };
 
-  // Compact variant for lists
+  // Compact variant for lists - Premium Minimal Design
   if (variant === "compact") {
     return (
       <Card
-        className={cn("cursor-pointer transition-shadow hover:shadow-md", className)}
+        className={cn(
+          "cursor-pointer transition-all duration-300 group glass-card",
+          "hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5",
+          "border-border/30",
+          className
+        )}
         onClick={onClick}
       >
-        <CardContent className="flex items-center gap-3 p-3">
-          <div className="relative">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={expert.avatar} alt={expert.name} />
-              <AvatarFallback>{getInitials(expert.name)}</AvatarFallback>
-            </Avatar>
-            <span
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background",
-                getAvailabilityColor(expert.availability)
-              )}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1">
-              <span className="font-medium truncate">{expert.name}</span>
-              {expert.verified && <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />}
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            {/* Avatar with verified badge */}
+            <div className="relative flex-shrink-0">
+              <Avatar className="h-12 w-12 border-2 border-background ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
+                <AvatarImage src={expert.avatar} alt={expert.name} />
+                <AvatarFallback className="text-sm font-semibold">
+                  {getInitials(expert.name)}
+                </AvatarFallback>
+              </Avatar>
+              <span
+                className={cn(
+                  "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background shadow-sm",
+                  getAvailabilityColor(expert.availability)
+                )}
+              />
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span>{expert.rating.toFixed(1)}</span>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 space-y-2">
+              <div>
+                <div className="flex items-center gap-1">
+                  <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                    {expert.name}
+                  </h3>
+                  {expert.verified && (
+                    <BadgeCheck className="h-4 w-4 text-blue-500 flex-shrink-0" strokeWidth={2.5} fill="currentColor" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground truncate">
+                  {expert.designation}
+                </p>
               </div>
-              <span>-</span>
-              <span>{formatINR(expert.pricePerSession)}/session</span>
+
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">
+                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" strokeWidth={0} />
+                  <span className="font-semibold text-foreground">{expert.rating.toFixed(1)}</span>
+                </div>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">{expert.totalSessions} sessions</span>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <span className="text-base font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {formatINR(expert.pricePerSession)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground ml-0.5">/session</span>
+                </div>
+                <Button
+                  size="sm"
+                  className="px-3 py-1 h-7 text-xs shadow-sm hover:shadow-md transition-all"
+                  onClick={(e) => { e.stopPropagation(); onBook?.(); }}
+                >
+                  Book
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -127,72 +165,93 @@ export const ExpertCard = memo(function ExpertCard({
     );
   }
 
-  // Featured variant with gradient background
+  // Featured variant - compact glassmorphism
   if (variant === "featured") {
     return (
       <Card
         className={cn(
-          "cursor-pointer overflow-hidden transition-all hover:shadow-lg",
-          "bg-gradient-to-br from-[#FFF5F0] via-[#FFE8DD] to-[#FFD4C4] border-[#FFD4C4]/40",
-          "dark:from-primary/5 dark:via-primary/8 dark:to-primary/10 dark:border-primary/20",
+          "cursor-pointer overflow-hidden transition-all duration-500 group",
+          "glass-card hover:shadow-xl hover:border-primary/30",
+          "hover:-translate-y-0.5",
+          "bg-gradient-to-br from-amber-50/80 via-orange-50/60 to-red-50/80 dark:from-amber-950/20 dark:via-orange-950/15 dark:to-red-950/20",
+          "border-amber-200/40 dark:border-amber-800/30",
           className
         )}
         onClick={onClick}
       >
         <CardContent className="p-4">
-          <div className="flex items-start gap-4">
-            <div className="relative">
-              <Avatar className="h-16 w-16 border-2 border-primary/20">
+          <div className="flex items-start gap-3">
+            <div className="relative flex-shrink-0">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full opacity-75 group-hover:opacity-100 blur transition duration-500" />
+              <Avatar className="h-14 w-14 border-2 border-white dark:border-background relative ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
                 <AvatarImage src={expert.avatar} alt={expert.name} />
-                <AvatarFallback className="text-lg">{getInitials(expert.name)}</AvatarFallback>
+                <AvatarFallback className="text-base font-bold bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900 dark:to-orange-900">
+                  {getInitials(expert.name)}
+                </AvatarFallback>
               </Avatar>
               <span
                 className={cn(
-                  "absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-background",
-                  getAvailabilityColor(expert.availability)
+                  "absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background shadow-lg",
+                  getAvailabilityColor(expert.availability),
+                  "ring-1 ring-background"
                 )}
               />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <h3 className="font-semibold truncate">{expert.name}</h3>
-                {expert.verified && <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />}
-              </div>
-
-              <p className="text-sm text-muted-foreground mb-2 truncate">
-                {expert.designation}
-              </p>
-
-              <div className="flex items-center gap-2 text-sm mb-2">
-                <div className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">{expert.rating.toFixed(1)}</span>
-                  <span className="text-muted-foreground">({expert.reviewCount})</span>
+            <div className="flex-1 min-w-0 space-y-2">
+              <div>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <h3 className="text-base font-bold truncate group-hover:text-primary transition-colors">
+                    {expert.name}
+                  </h3>
+                  {expert.verified && (
+                    <BadgeCheck className="h-4 w-4 text-blue-500 flex-shrink-0" strokeWidth={2.5} fill="currentColor" />
+                  )}
+                  <Badge variant="secondary" className="shrink-0 text-[9px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+                    FEATURED
+                  </Badge>
                 </div>
-                <span className="text-muted-foreground">-</span>
-                <span className="text-muted-foreground">{expert.totalSessions} sessions</span>
+                <p className="text-xs text-muted-foreground truncate">
+                  {expert.designation}
+                </p>
               </div>
 
-              <div className="flex flex-wrap gap-1 mb-3">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-1 bg-amber-100/50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">
+                  <Star className="h-3 w-3 fill-amber-500 text-amber-500" strokeWidth={0} />
+                  <span className="font-bold text-foreground">{expert.rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground text-[10px]">({expert.reviewCount})</span>
+                </div>
+                <span className="text-muted-foreground text-[10px]">
+                  {expert.totalSessions} sessions
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
                 {expert.specializations.slice(0, 2).map((spec) => (
-                  <Badge key={spec} variant="secondary" className="text-xs">
+                  <Badge key={spec} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 bg-white/60 dark:bg-white/5">
                     {SPEC_LABELS[spec]}
                   </Badge>
                 ))}
                 {expert.specializations.length > 2 && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-dashed">
                     +{expert.specializations.length - 2}
                   </Badge>
                 )}
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-1">
                 <div>
-                  <span className="text-lg font-bold">{formatINR(expert.pricePerSession)}</span>
-                  <span className="text-sm text-muted-foreground">/session</span>
+                  <span className="text-lg font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {formatINR(expert.pricePerSession)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground ml-0.5">/session</span>
                 </div>
-                <Button size="sm" onClick={(e) => { e.stopPropagation(); onBook?.(); }}>
+                <Button
+                  size="sm"
+                  className="px-4 py-1 h-8 text-xs shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+                  onClick={(e) => { e.stopPropagation(); onBook?.(); }}
+                >
                   Book Now
                 </Button>
               </div>
@@ -203,93 +262,68 @@ export const ExpertCard = memo(function ExpertCard({
     );
   }
 
-  // Default variant
+  // Default variant - Ultra Minimal
   return (
     <Card
-      className={cn("cursor-pointer transition-all hover:shadow-md card-hover", className)}
+      className={cn(
+        "cursor-pointer transition-all duration-300 group glass-card",
+        "hover:shadow-md hover:border-primary/20",
+        "border-border/20",
+        className
+      )}
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className="relative">
-            <Avatar className="h-14 w-14">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-14 w-14 border-2 border-background">
               <AvatarImage src={expert.avatar} alt={expert.name} />
-              <AvatarFallback>{getInitials(expert.name)}</AvatarFallback>
+              <AvatarFallback className="text-sm font-semibold">
+                {getInitials(expert.name)}
+              </AvatarFallback>
             </Avatar>
-            <span
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background",
-                getAvailabilityColor(expert.availability)
-              )}
-            />
           </div>
 
+          {/* Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <h3 className="font-medium truncate">{expert.name}</h3>
-              {expert.verified && <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />}
+            <div className="flex items-center gap-1 mb-0.5">
+              <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
+                {expert.name}
+              </h3>
+              {expert.verified && (
+                <BadgeCheck className="h-4 w-4 text-blue-500 flex-shrink-0" strokeWidth={2.5} fill="currentColor" />
+              )}
             </div>
-
-            <p className="text-sm text-muted-foreground mb-2 truncate">
+            <p className="text-sm text-muted-foreground truncate mb-2">
               {expert.designation}
             </p>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <div className="flex items-center gap-3 text-sm">
               <div className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                <span>{expert.rating.toFixed(1)}</span>
-                <span>({expert.reviewCount})</span>
+                <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" strokeWidth={0} />
+                <span className="font-semibold">{expert.rating.toFixed(1)}</span>
               </div>
-              <span>-</span>
-              <Badge variant="outline" className="text-xs">
-                {expert.totalSessions} sessions
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap gap-1 mb-3">
-              {expert.specializations.slice(0, 3).map((spec) => (
-                <Badge key={spec} variant="secondary" className="text-xs">
-                  {SPEC_LABELS[spec]}
-                </Badge>
-              ))}
-              {expert.specializations.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{expert.specializations.length - 3}
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>{expert.responseTime}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Video className="h-3 w-3" />
-                <span>Google Meet</span>
-              </div>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground text-xs">{expert.totalSessions} sessions</span>
             </div>
           </div>
 
-          <div className="text-right shrink-0">
-            <div className="mb-2">
-              <span className="text-lg font-bold">{formatINR(expert.pricePerSession)}</span>
-              <span className="text-xs text-muted-foreground block">/session</span>
+          {/* Price & Book */}
+          <div className="text-right flex-shrink-0 space-y-2">
+            <div>
+              <div className="text-xl font-bold">
+                {formatINR(expert.pricePerSession)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">/session</div>
             </div>
-            <Button size="sm" onClick={(e) => { e.stopPropagation(); onBook?.(); }}>
+            <Button
+              size="sm"
+              className="w-full px-4 shadow-sm hover:shadow-md transition-all"
+              onClick={(e) => { e.stopPropagation(); onBook?.(); }}
+            >
               Book
             </Button>
           </div>
-        </div>
-
-        {/* Trust badges */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Shield className="h-3 w-3 text-green-500" />
-            <span>Platform-secured payment</span>
-          </div>
-          <span className="text-muted-foreground">-</span>
-          <span className="text-xs text-muted-foreground">Money-back guarantee</span>
         </div>
       </CardContent>
     </Card>
