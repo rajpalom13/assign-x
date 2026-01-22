@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -44,10 +44,24 @@ const SPECIALIZATIONS = [
   { value: "mathematics", label: "Mathematics" },
 ];
 
+// Spring configuration for ultra smooth animations
+const springConfig = {
+  type: "spring" as const,
+  stiffness: 260,
+  damping: 26,
+  mass: 0.6,
+};
+
+// Smooth easing configuration for hover effects
+const smoothEasing = {
+  duration: 0.4,
+  ease: [0.25, 0.1, 0.25, 1] as const,
+};
+
 /**
- * Stat Card Component with animations
+ * Bento Stat Card Component with asymmetrical sizing
  */
-interface StatCardProps {
+interface BentoStatCardProps {
   icon: React.ElementType;
   value: string;
   label: string;
@@ -55,10 +69,12 @@ interface StatCardProps {
   iconColor: string;
   valueColor: string;
   labelColor: string;
-  delay: number;
+  cardIndex: number;
+  isTall: boolean;
+  onHover: () => void;
 }
 
-function StatCard({
+function BentoStatCard({
   icon: Icon,
   value,
   label,
@@ -66,38 +82,89 @@ function StatCard({
   iconColor,
   valueColor,
   labelColor,
-  delay,
-}: StatCardProps) {
+  cardIndex,
+  isTall,
+  onHover,
+}: BentoStatCardProps) {
+  const tallHeight = 200;
+  const shortHeight = 140;
   const [isHovering, setIsHovering] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      onMouseEnter={() => setIsHovering(true)}
+      animate={{
+        opacity: 1,
+        y: 0,
+        height: isTall ? tallHeight : shortHeight,
+      }}
+      transition={{
+        opacity: { duration: 0.4, delay: 0.1 + cardIndex * 0.1 },
+        y: { duration: 0.4, delay: 0.1 + cardIndex * 0.1 },
+        height: springConfig,
+      }}
+      onMouseEnter={() => {
+        onHover();
+        setIsHovering(true);
+      }}
       onMouseLeave={() => setIsHovering(false)}
-      className="glass-card rounded-2xl p-6 border border-border/20 hover:border-primary/20 transition-all cursor-pointer relative overflow-hidden"
-      style={{ background: gradient }}
+      className="relative will-change-[height] cursor-pointer"
     >
-      <div className="flex flex-col items-center text-center gap-3 relative z-10">
+      <div
+        className="h-full rounded-2xl p-5 glass-card border border-border/20 hover:border-primary/20 transition-all overflow-hidden relative group"
+        style={{ background: gradient }}
+      >
+        {/* Hover background effect */}
         <motion.div
-          className="w-12 h-12 rounded-xl bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-sm"
-          animate={{
-            rotate: isHovering ? [0, -10, 10, 0] : 0,
-          }}
-          transition={{
-            duration: 0.4,
-            ease: [0.34, 1.56, 0.64, 1],
-          }}
-        >
-          <Icon className={cn("h-6 w-6", iconColor)} strokeWidth={2.5} />
-        </motion.div>
-        <div>
-          <p className={cn("text-2xl font-bold", valueColor)}>{value}</p>
-          <p className={cn("text-xs font-medium mt-1", labelColor)}>{label}</p>
+          className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none rounded-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovering ? 1 : 0 }}
+          transition={smoothEasing}
+        />
+
+        <div className="flex flex-col h-full relative z-10 items-center text-center">
+          {/* Icon */}
+          <div className="mb-3">
+            <motion.div
+              animate={{
+                scale: isTall ? 1.15 : 1,
+                rotate: isHovering ? [0, -10, 10, 0] : 0,
+              }}
+              transition={{
+                scale: springConfig,
+                rotate: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] },
+              }}
+              className="w-12 h-12 rounded-xl bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-sm"
+            >
+              <Icon className={cn("h-6 w-6", iconColor)} strokeWidth={2.5} />
+            </motion.div>
+          </div>
+
+          {/* Content */}
+          <div className="mt-auto">
+            <motion.p
+              className={cn("font-bold", valueColor)}
+              animate={{
+                fontSize: isTall ? "1.75rem" : "1.5rem",
+              }}
+              transition={springConfig}
+            >
+              {value}
+            </motion.p>
+            <motion.p
+              className={cn("font-medium mt-1", labelColor)}
+              animate={{
+                opacity: isTall ? 1 : 0.85,
+                fontSize: isTall ? "0.875rem" : "0.75rem",
+              }}
+              transition={{
+                fontSize: springConfig,
+                opacity: smoothEasing,
+              }}
+            >
+              {label}
+            </motion.p>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -107,6 +174,58 @@ function StatCard({
 /**
  * Expert Listing Page - Perfect Layout
  */
+// Default expanded indices: left=0 (first card tall), right=1 (second card tall)
+const DEFAULT_LEFT_EXPANDED = 0;
+const DEFAULT_RIGHT_EXPANDED = 1;
+
+// Stat cards configuration
+const STAT_CARDS = {
+  left: [
+    {
+      id: "experts",
+      icon: Users,
+      value: "50+",
+      label: "Verified Experts",
+      gradient: "linear-gradient(90deg, #E3F2FD 0%, #FFFFFF 100%)",
+      iconColor: "text-blue-600",
+      valueColor: "text-blue-900",
+      labelColor: "text-blue-700/70",
+    },
+    {
+      id: "sessions",
+      icon: TrendingUp,
+      value: "5K+",
+      label: "Sessions Done",
+      gradient: "linear-gradient(90deg, #FFF3E0 0%, #FFFFFF 100%)",
+      iconColor: "text-orange-600",
+      valueColor: "text-orange-900",
+      labelColor: "text-orange-700/70",
+    },
+  ],
+  right: [
+    {
+      id: "rating",
+      icon: Star,
+      value: "4.8",
+      label: "Average Rating",
+      gradient: "linear-gradient(90deg, #E8F5E9 0%, #FFFFFF 100%)",
+      iconColor: "text-green-600",
+      valueColor: "text-green-900",
+      labelColor: "text-green-700/70",
+    },
+    {
+      id: "secure",
+      icon: Shield,
+      value: "100%",
+      label: "Secure Payment",
+      gradient: "linear-gradient(90deg, #F3E5F5 0%, #FFFFFF 100%)",
+      iconColor: "text-purple-600",
+      valueColor: "text-purple-900",
+      labelColor: "text-purple-700/70",
+    },
+  ],
+};
+
 export default function ExpertsPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<ExpertFilters>(DEFAULT_FILTERS);
@@ -116,6 +235,14 @@ export default function ExpertsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentFeaturedIndex, setCurrentFeaturedIndex] = useState(0);
   const carouselRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track which column has the expanded card
+  const [leftHovered, setLeftHovered] = useState<number | null>(null);
+  const [rightHovered, setRightHovered] = useState<number | null>(null);
+
+  // Effective expanded states (use hover or default)
+  const leftExpanded = leftHovered ?? DEFAULT_LEFT_EXPANDED;
+  const rightExpanded = rightHovered ?? DEFAULT_RIGHT_EXPANDED;
 
   const featuredExperts = getFeaturedExperts();
 
@@ -202,20 +329,38 @@ export default function ExpertsPage() {
     );
   };
 
+  // Handlers for left column
+  const handleLeftHover = useCallback((index: number) => {
+    setLeftHovered(index);
+  }, []);
+
+  const handleLeftLeave = useCallback(() => {
+    setLeftHovered(null);
+  }, []);
+
+  // Handlers for right column
+  const handleRightHover = useCallback((index: number) => {
+    setRightHovered(index);
+  }, []);
+
+  const handleRightLeave = useCallback(() => {
+    setRightHovered(null);
+  }, []);
+
   return (
     <div className="relative min-h-full pb-32 mesh-background mesh-gradient-experts">
       <div className="container max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
           {/* LEFT COLUMN - Header & Stats */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-4 space-y-8">
 
             {/* Header Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="space-y-3"
+              className="space-y-4"
             >
               <h1 className="text-4xl font-bold tracking-tight">Expert Consultations</h1>
               <p className="text-base text-muted-foreground leading-relaxed">
@@ -223,61 +368,44 @@ export default function ExpertsPage() {
               </p>
             </motion.div>
 
-            {/* Stats Grid - 2x2 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="grid grid-cols-2 gap-4"
-            >
-              <StatCard
-                icon={Users}
-                value="50+"
-                label="Verified Experts"
-                gradient="linear-gradient(90deg, #E3F2FD 0%, #FFFFFF 100%)"
-                iconColor="text-blue-600"
-                valueColor="text-blue-900"
-                labelColor="text-blue-700/70"
-                delay={0.1}
-              />
+            {/* Stats Bento Grid - Asymmetrical */}
+            <div className="flex gap-4">
+              {/* Left Column of Cards */}
+              <div
+                className="flex-1 flex flex-col gap-4"
+                onMouseLeave={handleLeftLeave}
+              >
+                {STAT_CARDS.left.map((card, index) => (
+                  <BentoStatCard
+                    key={card.id}
+                    {...card}
+                    cardIndex={index}
+                    isTall={leftExpanded === index}
+                    onHover={() => handleLeftHover(index)}
+                  />
+                ))}
+              </div>
 
-              <StatCard
-                icon={Star}
-                value="4.8"
-                label="Average Rating"
-                gradient="linear-gradient(90deg, #E8F5E9 0%, #FFFFFF 100%)"
-                iconColor="text-green-600"
-                valueColor="text-green-900"
-                labelColor="text-green-700/70"
-                delay={0.15}
-              />
-
-              <StatCard
-                icon={TrendingUp}
-                value="5K+"
-                label="Sessions Done"
-                gradient="linear-gradient(90deg, #FFF3E0 0%, #FFFFFF 100%)"
-                iconColor="text-orange-600"
-                valueColor="text-orange-900"
-                labelColor="text-orange-700/70"
-                delay={0.2}
-              />
-
-              <StatCard
-                icon={Shield}
-                value="100%"
-                label="Secure Payment"
-                gradient="linear-gradient(90deg, #F3E5F5 0%, #FFFFFF 100%)"
-                iconColor="text-purple-600"
-                valueColor="text-purple-900"
-                labelColor="text-purple-700/70"
-                delay={0.25}
-              />
-            </motion.div>
+              {/* Right Column of Cards */}
+              <div
+                className="flex-1 flex flex-col gap-4"
+                onMouseLeave={handleRightLeave}
+              >
+                {STAT_CARDS.right.map((card, index) => (
+                  <BentoStatCard
+                    key={card.id}
+                    {...card}
+                    cardIndex={index}
+                    isTall={rightExpanded === index}
+                    onHover={() => handleRightHover(index)}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* RIGHT COLUMN - Featured, Search, List */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-8 space-y-6">
 
             {/* Top Experts Section */}
             <motion.div

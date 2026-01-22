@@ -182,8 +182,7 @@ export const ExpertCard = memo(function ExpertCard({
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="relative flex-shrink-0">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full opacity-75 group-hover:opacity-100 blur transition duration-500" />
-              <Avatar className="h-14 w-14 border-2 border-white dark:border-background relative ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+              <Avatar className="h-14 w-14 border-2 border-white dark:border-background relative">
                 <AvatarImage src={expert.avatar} alt={expert.name} />
                 <AvatarFallback className="text-base font-bold bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900 dark:to-orange-900">
                   {getInitials(expert.name)}
