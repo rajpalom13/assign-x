@@ -59,16 +59,12 @@ const smoothEasing = {
 };
 
 /**
- * Bento Stat Card Component with asymmetrical sizing
+ * Bento Stat Card Component with asymmetrical sizing - Monotonous brown theme
  */
 interface BentoStatCardProps {
   icon: React.ElementType;
   value: string;
   label: string;
-  gradient: string;
-  iconColor: string;
-  valueColor: string;
-  labelColor: string;
   cardIndex: number;
   isTall: boolean;
   onHover: () => void;
@@ -78,10 +74,6 @@ function BentoStatCard({
   icon: Icon,
   value,
   label,
-  gradient,
-  iconColor,
-  valueColor,
-  labelColor,
   cardIndex,
   isTall,
   onHover,
@@ -111,50 +103,55 @@ function BentoStatCard({
       className="relative will-change-[height] cursor-pointer"
     >
       <div
-        className="h-full rounded-2xl p-5 glass-card border border-border/20 hover:border-primary/20 transition-all overflow-hidden relative group"
-        style={{ background: gradient }}
+        className="h-full rounded-2xl bg-background border border-[#8B7355] hover:border-[#6B5845] transition-all overflow-hidden relative group"
+        style={{
+          backgroundColor: '#FAFAF9',
+          borderWidth: '1px',
+        }}
       >
         {/* Hover background effect */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none rounded-xl"
+          className="absolute inset-0 bg-[#8B7355]/5 pointer-events-none rounded-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: isHovering ? 1 : 0 }}
           transition={smoothEasing}
         />
 
-        <div className="flex flex-col h-full relative z-10 items-center text-center">
+        <div className="flex flex-col h-full relative z-10 items-center justify-center text-center px-4 py-6">
           {/* Icon */}
-          <div className="mb-3">
-            <motion.div
-              animate={{
-                scale: isTall ? 1.15 : 1,
-                rotate: isHovering ? [0, -10, 10, 0] : 0,
-              }}
-              transition={{
-                scale: springConfig,
-                rotate: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] },
-              }}
-              className="w-12 h-12 rounded-xl bg-white/70 backdrop-blur-sm flex items-center justify-center shadow-sm"
-            >
-              <Icon className={cn("h-6 w-6", iconColor)} strokeWidth={2.5} />
-            </motion.div>
-          </div>
+          <motion.div
+            animate={{
+              scale: isTall ? 1.1 : 1,
+              rotate: isHovering ? [0, -10, 10, 0] : 0,
+            }}
+            transition={{
+              scale: springConfig,
+              rotate: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] },
+            }}
+            className="mb-4"
+          >
+            <Icon
+              className="text-[#8B7355]"
+              size={isTall ? 32 : 28}
+              strokeWidth={1.5}
+            />
+          </motion.div>
 
           {/* Content */}
-          <div className="mt-auto">
+          <div className="space-y-2">
             <motion.p
-              className={cn("font-bold", valueColor)}
+              className="font-bold text-foreground"
               animate={{
-                fontSize: isTall ? "1.75rem" : "1.5rem",
+                fontSize: isTall ? "2rem" : "1.75rem",
               }}
               transition={springConfig}
             >
               {value}
             </motion.p>
             <motion.p
-              className={cn("font-medium mt-1", labelColor)}
+              className="text-muted-foreground font-medium"
               animate={{
-                opacity: isTall ? 1 : 0.85,
+                opacity: isTall ? 1 : 0.8,
                 fontSize: isTall ? "0.875rem" : "0.75rem",
               }}
               transition={{
@@ -178,7 +175,7 @@ function BentoStatCard({
 const DEFAULT_LEFT_EXPANDED = 0;
 const DEFAULT_RIGHT_EXPANDED = 1;
 
-// Stat cards configuration
+// Stat cards configuration - Monotonous with brown accents
 const STAT_CARDS = {
   left: [
     {
@@ -186,20 +183,12 @@ const STAT_CARDS = {
       icon: Users,
       value: "50+",
       label: "Verified Experts",
-      gradient: "linear-gradient(90deg, #E3F2FD 0%, #FFFFFF 100%)",
-      iconColor: "text-blue-600",
-      valueColor: "text-blue-900",
-      labelColor: "text-blue-700/70",
     },
     {
       id: "sessions",
       icon: TrendingUp,
       value: "5K+",
       label: "Sessions Done",
-      gradient: "linear-gradient(90deg, #FFF3E0 0%, #FFFFFF 100%)",
-      iconColor: "text-orange-600",
-      valueColor: "text-orange-900",
-      labelColor: "text-orange-700/70",
     },
   ],
   right: [
@@ -208,20 +197,12 @@ const STAT_CARDS = {
       icon: Star,
       value: "4.8",
       label: "Average Rating",
-      gradient: "linear-gradient(90deg, #E8F5E9 0%, #FFFFFF 100%)",
-      iconColor: "text-green-600",
-      valueColor: "text-green-900",
-      labelColor: "text-green-700/70",
     },
     {
       id: "secure",
       icon: Shield,
       value: "100%",
       label: "Secure Payment",
-      gradient: "linear-gradient(90deg, #F3E5F5 0%, #FFFFFF 100%)",
-      iconColor: "text-purple-600",
-      valueColor: "text-purple-900",
-      labelColor: "text-purple-700/70",
     },
   ],
 };
