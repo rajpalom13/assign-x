@@ -133,7 +133,8 @@ export const ExpertCard = memo(function ExpertCard({
       <Card
         className={cn(
           "cursor-pointer overflow-hidden transition-all hover:shadow-lg",
-          "bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20",
+          "bg-gradient-to-br from-[#FFF5F0] via-[#FFE8DD] to-[#FFD4C4] border-[#FFD4C4]/40",
+          "dark:from-primary/5 dark:via-primary/8 dark:to-primary/10 dark:border-primary/20",
           className
         )}
         onClick={onClick}

@@ -170,9 +170,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    height: 100%;
   }
 }
 
@@ -611,6 +617,63 @@
       radial-gradient(ellipse 40% 40% at 60% 60%, oklch(0.88 0.04 280) 0%, transparent 50%);
   }
 
+  /* Experts Page Gradient - Warm peach/pink on right side with cream background */
+  .mesh-gradient-experts {
+    background: oklch(0.985 0.008 60);
+  }
+
+  .mesh-gradient-experts::before {
+    background:
+      radial-gradient(ellipse 65% 70% at 85% 40%, oklch(0.94 0.08 25 / 0.7) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 60% at 90% 60%, oklch(0.93 0.10 35 / 0.6) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 55% at 80% 25%, oklch(0.95 0.06 15 / 0.5) 0%, transparent 48%),
+      radial-gradient(ellipse 45% 50% at 95% 50%, oklch(0.92 0.09 45 / 0.4) 0%, transparent 45%);
+  }
+
+  .dark .mesh-gradient-experts {
+    background: var(--background);
+  }
+
+  /* Animated floating orb for experts page */
+  .mesh-gradient-experts::after {
+    content: "";
+    position: absolute;
+    top: 15%;
+    right: 8%;
+    width: 45%;
+    height: 60%;
+    background: radial-gradient(
+      ellipse at center,
+      oklch(0.95 0.09 30 / 0.5) 0%,
+      oklch(0.93 0.07 40 / 0.3) 35%,
+      transparent 65%
+    );
+    border-radius: 45% 55% 50% 50% / 50% 45% 55% 50%;
+    animation: expertsOrbFloat 12s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(50px);
+  }
+
+  @keyframes expertsOrbFloat {
+    0%, 100% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+      border-radius: 45% 55% 50% 50% / 50% 45% 55% 50%;
+    }
+    25% {
+      transform: translate(-5%, 8%) scale(1.08) rotate(5deg);
+      border-radius: 50% 50% 45% 55% / 45% 55% 50% 50%;
+    }
+    50% {
+      transform: translate(3%, -5%) scale(0.95) rotate(-3deg);
+      border-radius: 55% 45% 50% 50% / 50% 50% 45% 55%;
+    }
+    75% {
+      transform: translate(-3%, 5%) scale(1.05) rotate(4deg);
+      border-radius: 48% 52% 55% 45% / 55% 45% 48% 52%;
+    }
+  }
+
   /* Design System - Action Card Glass */
   .action-card-glass {
     background: color-mix(in oklch, var(--card), transparent 10%);
@@ -620,14 +683,17 @@
     box-shadow:
       0 4px 24px color-mix(in oklch, var(--foreground), transparent 95%),
       inset 0 1px 0 color-mix(in oklch, white, transparent 80%);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    will-change: transform, box-shadow;
   }
 
   .action-card-glass:hover {
     transform: translateY(-2px);
     box-shadow:
       0 8px 32px color-mix(in oklch, var(--foreground), transparent 90%),
+      0 4px 16px color-mix(in oklch, var(--primary), transparent 95%),
       inset 0 1px 0 color-mix(in oklch, white, transparent 70%);
+    border-color: color-mix(in oklch, var(--border), transparent 40%);
   }
 
   /* Design System - Floating Navigation Pill */
@@ -769,67 +835,8 @@
     border-color: color-mix(in oklch, var(--border), transparent 20%);
   }
 
-  /* Design System - Credit Card */
-  .wallet-credit-card {
-    background: linear-gradient(145deg,
-      oklch(0.25 0.02 250) 0%,
-      oklch(0.18 0.015 260) 50%,
-      oklch(0.22 0.02 240) 100%
-    );
-    border-radius: 1rem;
-    padding: 1.5rem;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    box-shadow:
-      0 20px 40px color-mix(in oklch, var(--foreground), transparent 85%),
-      0 8px 16px color-mix(in oklch, var(--foreground), transparent 90%);
-  }
 
-  .wallet-credit-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
-    pointer-events: none;
-  }
 
-  /* Design System - Balance Widget Card */
-  .balance-widget {
-    background: color-mix(in oklch, var(--card), transparent 5%);
-    backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in oklch, var(--border), transparent 50%);
-    border-radius: var(--radius-lg);
-    padding: 1rem 1.25rem;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .balance-widget:hover {
-    border-color: color-mix(in oklch, var(--border), transparent 20%);
-    box-shadow: 0 4px 16px color-mix(in oklch, var(--foreground), transparent 96%);
-  }
-
-  /* Design System - Wallet Action Button */
-  .wallet-action-btn {
-    background: color-mix(in oklch, var(--card), transparent 10%);
-    backdrop-filter: blur(8px);
-    border: 1px solid color-mix(in oklch, var(--border), transparent 50%);
-    border-radius: 9999px;
-    padding: 0.625rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    color: var(--foreground);
-  }
-
-  .wallet-action-btn:hover {
-    background: color-mix(in oklch, var(--card), transparent 5%);
-    border-color: color-mix(in oklch, var(--border), transparent 20%);
-    transform: translateY(-1px);
-  }
 
   /* Design System - Transaction Item */
   .transaction-item {
@@ -881,6 +888,31 @@
     z-index: 2;
   }
 
+  /* Half-Screen Gradient Hero - For wallet page layout */
+  .wallet-half-dome-hero {
+    position: relative;
+    background: var(--background);
+  }
+
+  /* Half-screen gradient background */
+  .wallet-half-dome-gradient {
+    position: absolute;
+    top: 0;
+    left: -25%;
+    right: -25%;
+    height: 50vh;
+    max-height: 500px;
+    overflow: hidden;
+    /* Curved bottom edge */
+    clip-path: ellipse(80% 100% at 50% 0%);
+    z-index: 0;
+  }
+
+  .wallet-half-dome-hero > *:not(.wallet-half-dome-gradient) {
+    position: relative;
+    z-index: 2;
+  }
+
   /* Connect/Marketplace Curved Banner - Image-based with curve */
   .connect-curved-hero {
     position: relative;
@@ -923,40 +955,27 @@
     color: oklch(0.30 0.02 250);
   }
 
-  /* Balance widget card styling - light background */
+  /* Cashback pill styling - clean white pills */
+  .cashback-pill {
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  /* Balance widget card styling */
   .balance-widget {
-    background: white;
-    border-radius: 1rem;
+    background: color-mix(in oklch, var(--card), transparent 5%);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in oklch, var(--border), transparent 50%);
+    border-radius: var(--radius-lg);
     padding: 1rem 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Wallet action button styling */
-  .wallet-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.625rem 1.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    background: oklch(0.25 0.02 250);
-    color: white;
-    border-radius: 9999px;
-    transition: all 0.2s ease;
+  .balance-widget:hover {
+    border-color: color-mix(in oklch, var(--border), transparent 20%);
+    box-shadow: 0 4px 16px color-mix(in oklch, var(--foreground), transparent 96%);
   }
 
-  .wallet-action-btn:hover {
-    background: oklch(0.20 0.02 250);
-    transform: translateY(-1px);
-  }
-
-  /* Wallet credit card styling - dark card */
-  .wallet-credit-card {
-    background: linear-gradient(145deg, oklch(0.25 0.02 250) 0%, oklch(0.18 0.015 250) 100%);
-    border-radius: 1.25rem;
-    padding: 1.5rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  }
 
   /* ========================================
    * BENTO GRID LAYOUT
