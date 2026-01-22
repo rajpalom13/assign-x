@@ -81,18 +81,22 @@ const navSupport = [
   },
 ]
 
-// Sample user data - replace with actual user data from auth context
-const userData = {
-  name: "Doer User",
-  email: "doer@example.com",
-  avatar: "/avatars/default.jpg",
+type UserData = {
+  name: string
+  email: string
+  avatar: string
+}
+
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  userData: UserData
 }
 
 /**
  * AppSidebar component for doer-web
  * Provides navigation for the main application areas
+ * Receives user data from server component
  */
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ userData, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

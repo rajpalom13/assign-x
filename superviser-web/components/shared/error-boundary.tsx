@@ -1,44 +1,64 @@
 /**
- * @fileoverview Error boundary component for graceful error handling and recovery.
+ * @fileoverview Error boundary component to catch and display React errors gracefully.
  * @module components/shared/error-boundary
  */
 
 "use client"
 
-import { Component, ErrorInfo, ReactNode } from "react"
-import { AlertTriangle, RefreshCw, Home } from "lucide-react"
+import React from "react"
+import { AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface Props {
-  children: ReactNode
-  fallback?: ReactNode
+interface ErrorBoundaryProps {
+  children: React.ReactNode
+  fallback?: React.ReactNode
+  onReset?: () => void
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean
-  error?: Error
+  error: Error | null
+  errorInfo: React.ErrorInfo | null
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    }
   }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error }
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Error caught by boundary:", error, errorInfo)
-    // In production, send to error tracking service (e.g., Sentry)
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("[ErrorBoundary] Caught error:", error)
+    console.error("[ErrorBoundary] Error info:", errorInfo)
+
+    this.setState({
+      error,
+      errorInfo,
+    })
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: undefined })
+  handleReset = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    })
+
+    if (this.props.onReset) {
+      this.props.onReset()
+    }
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback
@@ -46,36 +66,54 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex items-center justify-center min-h-[400px] p-4">
-          <Card className="max-w-md w-full">
-            <CardHeader className="text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+          <Card className="max-w-lg w-full">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <CardTitle>Something went wrong</CardTitle>
               </div>
-              <CardTitle>Something went wrong</CardTitle>
               <CardDescription>
-                An unexpected error occurred. Please try again or contact support if the problem persists.
+                An error occurred while rendering this component
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {process.env.NODE_ENV === "development" && this.state.error && (
-                <div className="p-3 bg-muted rounded-md text-xs font-mono overflow-auto max-h-32">
-                  {this.state.error.message}
+            <CardContent className="space-y-4">
+              {this.state.error && (
+                <div className="rounded-md bg-destructive/10 p-3">
+                  <p className="text-sm font-medium text-destructive">
+                    {this.state.error.message}
+                  </p>
+                  {process.env.NODE_ENV === "development" && this.state.error.stack && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                        Stack trace
+                      </summary>
+                      <pre className="mt-2 text-xs overflow-auto max-h-48 bg-background p-2 rounded">
+                        {this.state.error.stack}
+                      </pre>
+                    </details>
+                  )}
                 </div>
               )}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => window.location.href = "/dashboard"}
-                >
-                  <Home className="h-4 w-4 mr-2" />
-                  Go Home
-                </Button>
-                <Button className="flex-1" onClick={this.handleReset}>
+
+              <div className="flex gap-2">
+                <Button onClick={this.handleReset} className="flex-1">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Try Again
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.reload()}
+                  className="flex-1"
+                >
+                  Reload Page
+                </Button>
               </div>
+
+              {process.env.NODE_ENV === "development" && (
+                <p className="text-xs text-muted-foreground text-center">
+                  This error information is only visible in development mode
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -84,4 +122,31 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children
   }
+}
+
+export function ErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[400px] p-4">
+      <Card className="max-w-lg w-full">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <CardTitle>Error</CardTitle>
+          </div>
+          <CardDescription>An unexpected error occurred</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-md bg-destructive/10 p-3">
+            <p className="text-sm font-medium text-destructive">
+              {error.message || "Unknown error"}
+            </p>
+          </div>
+          <Button onClick={resetError} className="w-full">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

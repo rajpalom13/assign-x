@@ -23,7 +23,7 @@ import '../widgets/tutor_profile_sheet.dart';
 /// Main marketplace/connect screen with Pinterest-style staggered grid.
 ///
 /// Features a curved dome hero section with mesh gradient background,
-/// glass-style search bar, and filter pills following the new design system.
+/// glass-style search bar, and filter pills following the Campus Connect design system.
 class MarketplaceScreen extends ConsumerWidget {
   const MarketplaceScreen({super.key});
 

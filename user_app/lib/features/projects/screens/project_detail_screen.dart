@@ -1,10 +1,11 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 import '../../../providers/project_provider.dart';
@@ -17,7 +18,7 @@ import '../widgets/quality_badges.dart';
 import '../widgets/review_actions.dart';
 import '../widgets/status_banner.dart';
 
-/// Project detail screen with all project information.
+/// Project detail screen with modern UI and animations.
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
 
@@ -34,20 +35,52 @@ class ProjectDetailScreen extends ConsumerWidget {
       data: (project) {
         if (project == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Project')),
-            body: const Center(child: Text('Project not found')),
+            body: _buildGradientBackground(
+              child: const Center(
+                child: Text(
+                  'Project not found',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           );
         }
         return _ProjectDetailContent(project: project);
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Loading...')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: _buildGradientBackground(
+          child: const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        ),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Error')),
-        body: Center(child: Text('Error: $error')),
+        body: _buildGradientBackground(
+          child: Center(
+            child: Text(
+              'Error: $error',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
       ),
+    );
+  }
+
+  static Widget _buildGradientBackground({required Widget child}) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1A1A2E),
+            Color(0xFF16213E),
+            Color(0xFF0F3460),
+          ],
+        ),
+      ),
+      child: child,
     );
   }
 }
@@ -62,162 +95,296 @@ class _ProjectDetailContent extends ConsumerStatefulWidget {
       _ProjectDetailContentState();
 }
 
-class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent> {
+class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent>
+    with SingleTickerProviderStateMixin {
   bool _isLoading = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final project = widget.project;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              // App Bar
-              SliverAppBar(
-                expandedHeight: 120,
-                pinned: true,
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.textPrimary,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    project.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  titlePadding: const EdgeInsets.only(
-                    left: 56,
-                    right: 56,
-                    bottom: 16,
-                  ),
-                ),
-                actions: [
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) => _handleMenuAction(value),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'timeline',
-                        child: ListTile(
-                          leading: Icon(Icons.timeline),
-                          title: Text('View Timeline'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      // Invoice option - only show for invoiceable statuses
-                      if (_isInvoiceAvailable(project.status))
-                        const PopupMenuItem(
-                          value: 'invoice',
-                          child: ListTile(
-                            leading: Icon(Icons.receipt_long),
-                            title: Text('Download Invoice'),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      const PopupMenuItem(
-                        value: 'support',
-                        child: ListTile(
-                          leading: Icon(Icons.support_agent),
-                          title: Text('Contact Support'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      if (project.status != ProjectStatus.completed &&
-                          project.status != ProjectStatus.cancelled)
-                        const PopupMenuItem(
-                          value: 'cancel',
-                          child: ListTile(
-                            leading: Icon(Icons.cancel_outlined, color: Colors.red),
-                            title: Text('Cancel Project',
-                                style: TextStyle(color: Colors.red)),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-
-              // Status Banner
-              SliverToBoxAdapter(
-                child: StatusBanner(status: project.status),
-              ),
-
-              // Content
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Project ID and Deadline
-                    _ProjectHeader(project: project),
-
-                    const SizedBox(height: 16),
-
-                    // Review Actions (if delivered)
-                    if (project.status == ProjectStatus.delivered) ...[
-                      ReviewActions(
-                        project: project,
-                        isLoading: _isLoading,
-                        onApprove: () => _handleApprove(),
-                        onRequestChanges: () => _handleRequestChanges(),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Payment section (if pending)
-                    if (project.status == ProjectStatus.paymentPending) ...[
-                      _PaymentSection(project: project),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Live Draft Section
-                    LiveDraftSection(project: project),
-
-                    const SizedBox(height: 16),
-
-                    // Project Brief
-                    ProjectBriefAccordion(project: project),
-
-                    const SizedBox(height: 16),
-
-                    // Deliverables
-                    DeliverablesSection(project: project),
-
-                    const SizedBox(height: 16),
-
-                    // Quality Badges
-                    QualityBadgesSection(project: project),
-
-                    // Bottom padding for FAB
-                    const SizedBox(height: 80),
-                  ]),
-                ),
-              ),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1A1A2E),
+              Color(0xFF16213E),
+              Color(0xFF0F3460),
             ],
           ),
+        ),
+        child: Stack(
+          children: [
+            // Animated content
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: CustomScrollView(
+                  slivers: [
+                    // Modern App Bar
+                    _buildSliverAppBar(context, project),
 
-          // Floating Chat Button
-          Positioned(
-            right: 16,
-            bottom: MediaQuery.of(context).padding.bottom + 16,
-            child: AnimatedFloatingChatButton(
-              unreadCount: 0,
-              onTap: () => context.push('/projects/${project.id}/chat'),
+                    // Content
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // Status Banner
+                          _buildAnimatedCard(
+                            delay: 100,
+                            child: StatusBanner(status: project.status),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Project Header
+                          _buildAnimatedCard(
+                            delay: 200,
+                            child: _ProjectHeader(project: project),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Review Actions (if delivered)
+                          if (project.status == ProjectStatus.delivered) ...[
+                            _buildAnimatedCard(
+                              delay: 300,
+                              child: ReviewActions(
+                                project: project,
+                                isLoading: _isLoading,
+                                onApprove: () => _handleApprove(),
+                                onRequestChanges: () => _handleRequestChanges(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Payment section (if pending)
+                          if (project.status == ProjectStatus.paymentPending) ...[
+                            _buildAnimatedCard(
+                              delay: 300,
+                              child: _PaymentSection(project: project),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Live Draft Section
+                          _buildAnimatedCard(
+                            delay: 400,
+                            child: LiveDraftSection(project: project),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Project Brief
+                          _buildAnimatedCard(
+                            delay: 500,
+                            child: ProjectBriefAccordion(project: project),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Deliverables
+                          _buildAnimatedCard(
+                            delay: 600,
+                            child: DeliverablesSection(project: project),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Quality Badges
+                          _buildAnimatedCard(
+                            delay: 700,
+                            child: QualityBadgesSection(project: project),
+                          ),
+
+                          // Bottom padding for FAB
+                          const SizedBox(height: 100),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+
+            // Floating Chat Button
+            Positioned(
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+              child: AnimatedFloatingChatButton(
+                unreadCount: 0,
+                onTap: () => context.push('/projects/${project.id}/chat'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// Check if invoice is available for the given status.
+  /// Build modern sliver app bar with glass morphism.
+  Widget _buildSliverAppBar(BuildContext context, Project project) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      pinned: true,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: FlexibleSpaceBar(
+              title: Text(
+                project.title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              titlePadding: const EdgeInsets.only(
+                left: 56,
+                right: 56,
+                bottom: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => context.pop(),
+      ),
+      actions: [
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) => _handleMenuAction(value),
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'timeline',
+              child: ListTile(
+                leading: Icon(Icons.timeline),
+                title: Text('View Timeline'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            if (_isInvoiceAvailable(project.status))
+              const PopupMenuItem(
+                value: 'invoice',
+                child: ListTile(
+                  leading: Icon(Icons.receipt_long),
+                  title: Text('Download Invoice'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            const PopupMenuItem(
+              value: 'support',
+              child: ListTile(
+                leading: Icon(Icons.support_agent),
+                title: Text('Contact Support'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            if (project.status != ProjectStatus.completed &&
+                project.status != ProjectStatus.cancelled)
+              const PopupMenuItem(
+                value: 'cancel',
+                child: ListTile(
+                  leading: Icon(Icons.cancel_outlined, color: Colors.red),
+                  title: Text('Cancel Project',
+                      style: TextStyle(color: Colors.red)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Build animated card with staggered animation.
+  Widget _buildAnimatedCard({
+    required int delay,
+    required Widget child,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delay),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   bool _isInvoiceAvailable(ProjectStatus status) {
     return status == ProjectStatus.completed ||
         status == ProjectStatus.delivered ||
@@ -243,7 +410,6 @@ class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent> {
   }
 
   Future<void> _downloadInvoice() async {
-    // Get the web app base URL from environment or use default
     const baseUrl = String.fromEnvironment(
       'WEB_APP_URL',
       defaultValue: 'https://assignx.in',
@@ -383,6 +549,7 @@ class _ProjectDetailContentState extends ConsumerState<_ProjectDetailContent> {
   }
 }
 
+/// Modern project header with glass morphism.
 class _ProjectHeader extends StatelessWidget {
   final Project project;
 
@@ -390,97 +557,130 @@ class _ProjectHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          // Service type icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(25),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              project.serviceType.icon,
-              color: AppColors.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Project info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      project.displayId,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textSecondary,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (project.subjectName != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withAlpha(20),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          project.subjectName!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Due: ',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    DeadlineTimer(
-                      deadline: project.deadline,
-                      style: AppTextStyles.labelMedium,
-                    ),
-                  ],
-                ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.05),
               ],
             ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
-        ],
+          child: Row(
+            children: [
+              // Service type icon with gradient
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.3),
+                      AppColors.accent.withValues(alpha: 0.3),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  project.serviceType.icon,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Project info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          project.displayId,
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (project.subjectName != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary.withValues(alpha: 0.6),
+                                  AppColors.accent.withValues(alpha: 0.6),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              project.subjectName!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Due: ',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        DeadlineTimer(
+                          deadline: project.deadline,
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
+/// Modern payment section with glass morphism.
 class _PaymentSection extends StatelessWidget {
   final Project project;
 
@@ -488,75 +688,107 @@ class _PaymentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withAlpha(15),
-        borderRadius: AppSpacing.borderRadiusMd,
-        border: Border.all(color: AppColors.warning.withAlpha(50)),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.warning.withValues(alpha: 0.2),
+                AppColors.warning.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.warning.withValues(alpha: 0.4),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withAlpha(25),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.payment,
-                  color: AppColors.warning,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Payment Required',
-                      style: AppTextStyles.labelLarge,
-                    ),
-                    Text(
-                      'Complete payment to start work',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.warning.withValues(alpha: 0.4),
+                          AppColors.warning.withValues(alpha: 0.2),
+                        ],
                       ),
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
+                    child: const Icon(
+                      Icons.payment,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Payment Required',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Complete payment to start work',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    project.formattedQuote,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                project.formattedQuote,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.warning,
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/projects/${project.id}/pay'),
+                  icon: const Icon(Icons.payment, color: Colors.white),
+                  label: const Text(
+                    'Pay Now',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.warning,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 8,
+                    shadowColor: AppColors.warning.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('/projects/${project.id}/pay'),
-              icon: const Icon(Icons.payment),
-              label: const Text('Pay Now'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warning,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

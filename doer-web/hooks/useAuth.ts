@@ -68,10 +68,19 @@ export function useAuth() {
       logger.debug('Auth', 'Initializing auth...')
 
       try {
-        // Use getUser() instead of getSession() - more reliable with SSR
-        const { data: { user: authUser }, error: userError } = await supabase.auth.getUser()
+        // First get session to establish client-side session from server cookies
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        logger.debug('Auth', 'Session:', session ? 'Found' : 'None', sessionError ? 'Error occurred' : '')
 
-        logger.debug('Auth', 'User:', authUser ? 'Found' : 'None', userError ? 'Error occurred' : '')
+        if (!session || sessionError) {
+          logger.debug('Auth', 'No session found')
+          setLoading(false)
+          return
+        }
+
+        // Now get the user from the established session
+        const authUser = session.user
+        logger.debug('Auth', 'User:', authUser ? 'Found' : 'None')
 
         if (!isMounted) return
 

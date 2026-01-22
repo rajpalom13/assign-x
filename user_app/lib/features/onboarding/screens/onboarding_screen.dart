@@ -24,7 +24,8 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late final Timer _autoScrollTimer;
+  Timer? _autoScrollTimer;
+  bool _userInteracted = false;
 
   /// Onboarding slides data.
   /// Each slide has gradient colors, title, subtitle, and Lottie animation asset.
@@ -42,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'lottieAsset': 'assets/animations/game.json',
     },
     {
-      'gradientColors': [Color(0xFFEC407A), Color(0xFFF48FB1)], // Pink
+      'gradientColors': [Color(0xFF66BB6A), Color(0xFFA5D6A7)], // Green (changed from pink)
       'title': 'Your Journey Starts',
       'subtitle': 'Join thousands of students achieving academic success',
       'lottieAsset': 'assets/animations/pizza.json',
@@ -52,8 +53,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-scroll timer - advances every 4 seconds
+    _startAutoScroll();
+  }
+
+  /// Start auto-scroll timer.
+  void _startAutoScroll() {
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      // Stop auto-scroll if user has manually interacted
+      if (_userInteracted) {
+        timer.cancel();
+        return;
+      }
+
       if (_currentPage < _pages.length - 1) {
         _pageController.nextPage(
           duration: const Duration(milliseconds: 600),
@@ -72,7 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   void dispose() {
-    _autoScrollTimer.cancel();
+    _autoScrollTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -120,21 +131,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           // Page view for swipeable Lottie content only
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _currentPage = index);
+          GestureDetector(
+            onHorizontalDragStart: (_) {
+              // User started swiping - stop auto-scroll
+              setState(() => _userInteracted = true);
             },
-            itemCount: _pages.length,
-            itemBuilder: (context, index) {
-              final page = _pages[index];
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                  _userInteracted = true; // Mark as interacted on page change
+                });
+              },
+              itemCount: _pages.length,
+              itemBuilder: (context, index) {
+                final page = _pages[index];
 
-              return _OnboardingLottieContent(
-                topSectionHeight: topSectionHeight,
-                lottieAsset: page['lottieAsset'] as String,
-                isActive: index == _currentPage,
-              );
-            },
+                return _OnboardingLottieContent(
+                  topSectionHeight: topSectionHeight,
+                  lottieAsset: page['lottieAsset'] as String,
+                  isActive: index == _currentPage,
+                );
+              },
+            ),
           ),
 
           // Bottom white section with content
@@ -583,14 +603,26 @@ class _LottieAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Make size responsive - 65% of screen width, max 300px
+    final screenWidth = MediaQuery.of(context).size.width;
+    final size = (screenWidth * 0.65).clamp(200.0, 300.0);
+
     return SizedBox(
-      width: 280,
-      height: 280,
+      width: size,
+      height: size,
       child: Lottie.asset(
         asset,
         fit: BoxFit.contain,
         animate: isActive,
         repeat: true,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback if Lottie fails to load
+          return Icon(
+            Icons.image_outlined,
+            size: size * 0.5,
+            color: Colors.white.withValues(alpha: 0.5),
+          );
+        },
       ),
     )
         .animate()
@@ -624,14 +656,15 @@ class _BottomContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
     final isLastPage = currentPage == totalPages - 1;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(24, 50, 24, bottomPadding + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24), // Reduced top padding from 50 to 32
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Title - prominent heading
           Text(
             title,
@@ -693,6 +726,7 @@ class _BottomContent extends StatelessWidget {
             ).animate().fadeIn(delay: 400.ms, duration: 300.ms),
           ],
         ],
+        ),
       ),
     );
   }

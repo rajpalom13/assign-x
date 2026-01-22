@@ -5,9 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/profile_provider.dart';
-import '../widgets/settings_item.dart';
+import '../../../shared/widgets/glass_container.dart';
 
-/// Edit profile screen for personal and college details.
+/// Edit profile screen for personal and college details with modern UI.
+///
+/// Features:
+/// - Gradient background
+/// - Glass morphism cards
+/// - Form validation
+/// - Loading states
+/// - Unsaved changes detection
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -39,9 +46,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _nameController.text = profile.fullName ?? '';
       _phoneController.text = profile.phone ?? '';
       _emailController.text = profile.email;
-      _universityController.text = ''; // Populated from StudentData
-      _courseController.text = ''; // Populated from StudentData
-      _yearController.text = ''; // Populated from StudentData
+      _universityController.text = '';
+      _courseController.text = '';
+      _yearController.text = '';
       _cityController.text = profile.city ?? '';
     });
   }
@@ -62,156 +69,186 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            if (_hasChanges) {
-              _showDiscardDialog();
-            } else {
-              context.pop();
-            }
-          },
-          icon: const Icon(Icons.close),
-        ),
-        title: Text(
-          'Edit Profile',
-          style: AppTextStyles.headingSmall,
-        ),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveProfile,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    'Save',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary.withAlpha(10),
+              AppColors.background,
+              AppColors.accent.withAlpha(8),
+            ],
+            stops: const [0.0, 0.5, 1.0],
           ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        onChanged: () => setState(() => _hasChanges = true),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+        ),
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Trust badge
-              const Center(child: TrustBadge()),
-              const SizedBox(height: 24),
+              // Custom app bar
+              _buildAppBar(),
 
-              // Personal Details Section
-              Text(
-                'Personal Details',
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 12),
+              // Form content
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  onChanged: () => setState(() => _hasChanges = true),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
 
-              _buildTextField(
-                controller: _nameController,
-                label: 'Full Name',
-                icon: Icons.person_outline,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                        // Personal Details Section
+                        _buildSectionHeader('Personal Details', Icons.person_outline),
+                        const SizedBox(height: 16),
 
-              _buildTextField(
-                controller: _phoneController,
-                label: 'Phone Number',
-                icon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                prefixText: '+91 ',
-              ),
-              const SizedBox(height: 16),
+                        GlassCard(
+                          blur: 10,
+                          opacity: 0.9,
+                          padding: const EdgeInsets.all(20),
+                          borderRadius: BorderRadius.circular(16),
+                          elevation: 2,
+                          child: Column(
+                            children: [
+                              _buildTextField(
+                                controller: _nameController,
+                                label: 'Full Name',
+                                icon: Icons.person_outline,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
 
-              _buildTextField(
-                controller: _emailController,
-                label: 'Email Address',
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                enabled: false, // Email cannot be changed
-                helperText: 'Email cannot be changed',
-              ),
-              const SizedBox(height: 32),
+                              _buildTextField(
+                                controller: _phoneController,
+                                label: 'Phone Number',
+                                icon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                                prefixText: '+91 ',
+                              ),
+                              const SizedBox(height: 16),
 
-              // College Details Section
-              Text(
-                'College & Course',
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 12),
+                              _buildTextField(
+                                controller: _emailController,
+                                label: 'Email Address',
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                enabled: false,
+                                helperText: 'Email cannot be changed',
+                              ),
+                            ],
+                          ),
+                        ),
 
-              _buildTextField(
-                controller: _universityController,
-                label: 'University / College',
-                icon: Icons.school_outlined,
-              ),
-              const SizedBox(height: 16),
+                        const SizedBox(height: 32),
 
-              _buildTextField(
-                controller: _courseController,
-                label: 'Course',
-                icon: Icons.menu_book_outlined,
-              ),
-              const SizedBox(height: 16),
+                        // College Details Section
+                        _buildSectionHeader('College & Course', Icons.school_outlined),
+                        const SizedBox(height: 16),
 
-              _buildDropdownField(
-                controller: _yearController,
-                label: 'Year',
-                icon: Icons.calendar_today_outlined,
-                items: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
-              ),
-              const SizedBox(height: 16),
+                        GlassCard(
+                          blur: 10,
+                          opacity: 0.9,
+                          padding: const EdgeInsets.all(20),
+                          borderRadius: BorderRadius.circular(16),
+                          elevation: 2,
+                          child: Column(
+                            children: [
+                              _buildTextField(
+                                controller: _universityController,
+                                label: 'University / College',
+                                icon: Icons.account_balance,
+                              ),
+                              const SizedBox(height: 16),
 
-              _buildTextField(
-                controller: _cityController,
-                label: 'City',
-                icon: Icons.location_city_outlined,
-              ),
-              const SizedBox(height: 40),
+                              _buildTextField(
+                                controller: _courseController,
+                                label: 'Course',
+                                icon: Icons.menu_book_outlined,
+                              ),
+                              const SizedBox(height: 16),
 
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                              _buildDropdownField(
+                                controller: _yearController,
+                                label: 'Year',
+                                icon: Icons.calendar_today_outlined,
+                                items: const ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildTextField(
+                                controller: _cityController,
+                                label: 'City',
+                                icon: Icons.location_city_outlined,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Save button
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primary.withAlpha(200),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withAlpha(60),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shadowColor: Colors.transparent,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save Changes',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Save Changes'),
                 ),
               ),
-              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -219,6 +256,107 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
+  /// Builds the custom app bar.
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              if (_hasChanges) {
+                _showDiscardDialog();
+              } else {
+                context.pop();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.arrow_back, size: 22),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'Edit Profile',
+              style: AppTextStyles.headingSmall,
+            ),
+          ),
+          if (_hasChanges)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withAlpha(25),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Unsaved',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds a section header with icon.
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withAlpha(40),
+                AppColors.primary.withAlpha(20),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: AppTextStyles.labelLarge.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a text field with modern styling.
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -234,29 +372,43 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       keyboardType: keyboardType,
       enabled: enabled,
       validator: validator,
+      style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
         labelText: label,
         helperText: helperText,
-        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         prefixText: prefixText,
         filled: true,
-        fillColor: enabled ? AppColors.surface : AppColors.surfaceVariant,
+        fillColor: enabled ? Colors.white.withAlpha(15) : Colors.white.withAlpha(8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border.withAlpha(30)),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.error, width: 1.5),
         ),
       ),
     );
   }
 
+  /// Builds a dropdown field with modern styling.
   Widget _buildDropdownField({
     required TextEditingController controller,
     required String label,
@@ -267,16 +419,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       initialValue: items.contains(controller.text) ? controller.text : null,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: Colors.white.withAlpha(15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       items: items
@@ -291,6 +447,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
+  /// Saves the profile changes.
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -301,14 +458,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             city: _cityController.text.trim(),
-            // Note: university, course, and year are managed through StudentData
           );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Profile updated successfully'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
           ),
         );
         context.pop();
@@ -317,8 +484,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update profile: $e'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Failed to update: $e')),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -329,26 +507,32 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  /// Shows discard changes dialog.
   void _showDiscardDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+        content: const Text(
+          'You have unsaved changes. Are you sure you want to discard them?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               context.pop();
             },
-            child: Text(
-              'Discard',
-              style: TextStyle(color: AppColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
             ),
+            child: const Text('Discard'),
           ),
         ],
       ),

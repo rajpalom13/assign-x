@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_spacing.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../widgets/budget_display.dart';
 import '../widgets/file_attachment.dart';
@@ -35,7 +34,7 @@ enum ReportFormat {
   const ReportFormat(this.title, this.description);
 }
 
-/// Report request form for plagiarism/AI detection.
+/// Report request form for plagiarism/AI detection with beautiful design.
 class ReportRequestForm extends ConsumerStatefulWidget {
   const ReportRequestForm({super.key});
 
@@ -52,7 +51,6 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
   final Set<ReportFormat> _formats = {ReportFormat.detailed};
   List<AttachmentFile> _attachments = [];
   bool _urgentDelivery = false;
-  // Note: Email uses controller instead
 
   final _emailController = TextEditingController();
 
@@ -62,6 +60,7 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     super.dispose();
   }
 
+  /// Submits the report request.
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -89,7 +88,6 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 2));
 
       final projectId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -128,277 +126,394 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Plag/AI Report'),
-        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Plag/AI Report',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => context.pop(),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: AppSpacing.screenPadding,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.orange.withAlpha(20),
-                    Colors.orange.withAlpha(10),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withAlpha(30)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withAlpha(20),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.document_scanner_outlined,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Plagiarism & AI Detection',
-                          style: AppTextStyles.labelLarge.copyWith(
-                            color: Colors.orange,
-                          ),
-                        ),
-                        Text(
-                          'Get comprehensive authenticity reports',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      body: Stack(
+        children: [
+          // Gradient Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.orange.shade600,
+                  Colors.orange.shade400,
+                  Colors.amber.shade400,
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
 
-            // Report type selection
-            Text('Select Report Type', style: AppTextStyles.labelMedium),
-            const SizedBox(height: 12),
-            ...ReportType.values.map((type) => _ReportTypeCard(
-                  type: type,
-                  isSelected: _reportType == type,
-                  onTap: () => setState(() => _reportType = type),
-                )),
-            const SizedBox(height: 24),
-
-            // Upload document
-            FileAttachment(
-              files: _attachments,
-              onChanged: (files) => setState(() => _attachments = files),
-              label: 'Upload Document',
-              hint: 'Upload the document to analyze',
-              maxFiles: 1,
-              maxSizeMB: 50,
-              allowedExtensions: ['doc', 'docx', 'pdf', 'txt'],
-            ),
-            const SizedBox(height: 24),
-
-            // Report format
-            Text('Report Format', style: AppTextStyles.labelMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ReportFormat.values.map((format) {
-                final isSelected = _formats.contains(format);
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _formats.remove(format);
-                      } else {
-                        _formats.add(format);
-                      }
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected)
-                          const Icon(
-                            Icons.check,
-                            size: 16,
-                            color: Colors.white,
-                          ),
-                        if (isSelected) const SizedBox(width: 4),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              format.title,
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: isSelected
-                                    ? Colors.white
-                                    : AppColors.textPrimary,
-                              ),
-                            ),
+          // Content with glass morphism
+          SafeArea(
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    // Header with icon
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.orange.shade50,
+                            Colors.amber.shade50,
                           ],
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.orange.shade600, Colors.amber.shade400],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.orange.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.document_scanner_outlined,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Plagiarism & AI Detection',
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    color: Colors.orange.shade700,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Get comprehensive authenticity reports',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
-            // Urgent delivery toggle
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.flash_on,
-                    color: _urgentDelivery ? AppColors.warning : AppColors.textTertiary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Urgent Delivery',
-                          style: AppTextStyles.labelMedium,
+                    // Report type selection
+                    _buildSectionLabel('Select Report Type', Icons.analytics_outlined),
+                    const SizedBox(height: 12),
+                    ...ReportType.values.map(
+                      (type) => _ReportTypeCard(
+                        type: type,
+                        isSelected: _reportType == type,
+                        onTap: () => setState(() => _reportType = type),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Upload document
+                    _buildSectionLabel('Upload Document', Icons.cloud_upload_outlined),
+                    const SizedBox(height: 8),
+                    FileAttachment(
+                      files: _attachments,
+                      onChanged: (files) => setState(() => _attachments = files),
+                      label: 'Upload Document',
+                      hint: 'Upload the document to analyze',
+                      maxFiles: 1,
+                      maxSizeMB: 50,
+                      allowedExtensions: ['doc', 'docx', 'pdf', 'txt'],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Report format
+                    _buildSectionLabel('Report Format', Icons.description_outlined),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ReportFormat.values.map((format) {
+                        final isSelected = _formats.contains(format);
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                _formats.remove(format);
+                              } else {
+                                _formats.add(format);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? LinearGradient(
+                                      colors: [Colors.orange.shade600, Colors.amber.shade400],
+                                    )
+                                  : null,
+                              color: isSelected ? null : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.orange.withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isSelected)
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                if (isSelected) const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      format.title,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      format.description,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: isSelected
+                                            ? Colors.white.withValues(alpha: 0.9)
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Urgent delivery toggle
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.orange.shade50,
+                            Colors.white,
+                          ],
                         ),
-                        Text(
-                          _urgentDelivery
-                              ? 'Get report in 2 hours (+₹100)'
-                              : 'Standard delivery (24 hours)',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _urgentDelivery ? Colors.orange.shade600 : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.flash_on,
+                            color: _urgentDelivery ? Colors.orange.shade600 : Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Urgent Delivery',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  _urgentDelivery
+                                      ? 'Get report in 2 hours (+₹100)'
+                                      : 'Standard delivery (24 hours)',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _urgentDelivery,
+                            onChanged: (value) => setState(() => _urgentDelivery = value),
+                            activeTrackColor: Colors.orange.shade600,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Email for delivery
+                    _buildSectionLabel('Email for Report Delivery', Icons.email_outlined),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        hintText: 'your@email.com',
+                        hintStyle: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: Colors.orange.shade600,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.orange.shade600, width: 2),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Price summary
+                    BudgetCard(
+                      price: _calculateTotalPrice(),
+                      subtitle: 'Total Price',
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Submit button
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.orange.shade600, Colors.amber.shade400],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submitRequest,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: _urgentDelivery,
-                    onChanged: (value) => setState(() => _urgentDelivery = value),
-                    activeTrackColor: AppColors.primary.withAlpha(128),
-                    activeThumbColor: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Email for delivery
-            Text('Email for Report Delivery', style: AppTextStyles.labelMedium),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: 'your@email.com',
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-                prefixIcon: Icon(
-                  Icons.email_outlined,
-                  color: AppColors.textTertiary,
-                ),
-                filled: true,
-                fillColor: AppColors.surfaceVariant,
-                border: OutlineInputBorder(
-                  borderRadius: AppSpacing.borderRadiusMd,
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: AppSpacing.borderRadiusMd,
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Price summary
-            BudgetCard(
-              price: _calculateTotalPrice(),
-              subtitle: 'Total Price',
-            ),
-            const SizedBox(height: 16),
-
-            // Submit button
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submitRequest,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Request Report',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Request Report',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.orange.shade700),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 
@@ -406,7 +521,6 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     if (_reportType == null) return null;
     double total = _reportType!.price;
     if (_urgentDelivery) total += 100;
-    // Add for certificate format
     if (_formats.contains(ReportFormat.certificate)) total += 50;
     return total;
   }
@@ -432,10 +546,18 @@ class _ReportTypeCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withAlpha(10) : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    Colors.orange.shade50,
+                    Colors.white,
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? Colors.orange.shade600 : Colors.grey.shade300,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -445,14 +567,17 @@ class _ReportTypeCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withAlpha(20)
-                    : AppColors.surfaceVariant,
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [Colors.orange.shade600, Colors.amber.shade400],
+                      )
+                    : null,
+                color: isSelected ? null : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 type.icon,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
               ),
             ),
             const SizedBox(width: 16),
@@ -463,7 +588,8 @@ class _ReportTypeCard extends StatelessWidget {
                   Text(
                     type.title,
                     style: AppTextStyles.labelLarge.copyWith(
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                      color: isSelected ? Colors.orange.shade700 : AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
@@ -481,13 +607,14 @@ class _ReportTypeCard extends StatelessWidget {
                 Text(
                   '₹${type.price.toInt()}',
                   style: AppTextStyles.headingSmall.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color: isSelected ? Colors.orange.shade700 : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (isSelected)
                   Icon(
                     Icons.check_circle,
-                    color: AppColors.primary,
+                    color: Colors.orange.shade600,
                     size: 20,
                   ),
               ],

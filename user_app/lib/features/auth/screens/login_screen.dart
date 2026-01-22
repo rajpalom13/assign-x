@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -70,12 +71,14 @@ final _roles = [
   ),
 ];
 
-/// Modern login screen with role selection and magic link authentication.
+/// Modern login screen with Dashboard-inspired design.
 ///
 /// Features:
-/// - Step 0: Role selection (Student, Professional, Other)
-/// - Step 1: Auth options (Google OAuth + Magic Link)
-/// - College email validation for students
+/// - Subtle gradient backgrounds (creamy, orangish, purplish tints)
+/// - Glass morphism effects for cards/forms
+/// - Smooth animations consistent with Dashboard
+/// - Role selection (Student, Professional, Other)
+/// - Auth options (Google OAuth + Magic Link)
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -102,8 +105,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   // Animation controllers
   late AnimationController _floatController;
-  late AnimationController _pulseController;
-  late AnimationController _sparkleController;
 
   @override
   void initState() {
@@ -112,23 +113,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       duration: const Duration(seconds: 6),
       vsync: this,
     )..repeat(reverse: true);
-
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _sparkleController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat();
   }
 
   @override
   void dispose() {
     _floatController.dispose();
-    _pulseController.dispose();
-    _sparkleController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -144,13 +133,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void _goBack() {
     setState(() {
       if (_showMagicLink) {
-        // Go back from magic link to auth options
         _showMagicLink = false;
         _emailController.clear();
         _magicLinkError = null;
         _magicLinkSent = false;
       } else {
-        // Go back from auth options to role selection
         _currentStep = 0;
         _selectedRole = null;
         _errorMessage = null;
@@ -173,7 +160,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
 
     try {
-      // Store the selected role for use after OAuth redirect
       ref.read(authStateProvider.notifier).setPreSignInRole(_selectedRole);
       await ref.read(authStateProvider.notifier).signInWithGoogle();
     } catch (e) {
@@ -194,7 +180,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _sendMagicLink() async {
     final email = _emailController.text.trim().toLowerCase();
 
-    // Basic validation
     if (email.isEmpty) {
       setState(() {
         _magicLinkError = 'Please enter your email address';
@@ -202,7 +187,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    // Email format validation
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailRegex.hasMatch(email)) {
       setState(() {
@@ -211,7 +195,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    // For students, validate educational email
     if (_selectedRole == UserType.student && !_isCollegeEmail(email)) {
       setState(() {
         _magicLinkError =
@@ -262,25 +245,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    // Gradient takes ~50% of screen, bottom content max 50%
-    final gradientHeight = screenHeight * 0.50;
-    final maxBottomHeight = screenHeight * 0.50;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        message: _showMagicLink ? 'Sending magic link...' : 'Signing in...',
-        child: Stack(
-          children: [
-            // Gradient background with doodles (like onboarding)
-            _GradientBackgroundWithDoodles(
-              height: gradientHeight,
+      body: SafeArea(
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          message: _showMagicLink ? 'Sending magic link...' : 'Signing in...',
+          child: Stack(
+            children: [
+            // Mesh gradient background (Dashboard-style)
+            _MeshGradientBackground(
+              height: screenHeight,
+              colors: const [
+                Color(0xFFFBE8E8), // Soft pink (creamy)
+                Color(0xFFFCEDE8), // Soft peach (orangish)
+                Color(0xFFF0E8F8), // Soft purple
+              ],
             ),
 
-            // Lottie animation in gradient area - centered in larger space
+            // Lottie animation in gradient area
             Positioned(
-              top: MediaQuery.of(context).padding.top + 60,
+              top: 60,
               left: 0,
               right: 0,
               child: _LottieHero(
@@ -290,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
             // App name at top
             Positioned(
-              top: MediaQuery.of(context).padding.top + 12,
+              top: 12,
               left: 0,
               right: 0,
               child: Center(
@@ -327,7 +313,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
             ),
 
-            // Bottom content section - anchored to bottom using Column alignment
+            // Bottom content section with glass morphism
             Positioned.fill(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -390,7 +376,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ],
         ),
       ),
+      ),
     );
+  }
+}
+
+/// Mesh gradient background widget (Dashboard-style).
+class _MeshGradientBackground extends StatelessWidget {
+  final double height;
+  final List<Color> colors;
+
+  const _MeshGradientBackground({
+    required this.height,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Radial gradient layers
+          ...List.generate(colors.length, (index) {
+            final alignment = _getAlignment(index);
+            final radius = _getRadius(index);
+            final opacity = _getOpacity(index);
+
+            return Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: alignment,
+                    radius: radius,
+                    colors: [
+                      colors[index].withValues(alpha: opacity),
+                      colors[index].withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Alignment _getAlignment(int index) {
+    switch (index) {
+      case 0:
+        return const Alignment(1.2, -0.8);
+      case 1:
+        return const Alignment(-0.8, 0.6);
+      case 2:
+        return const Alignment(0.5, 1.2);
+      default:
+        return Alignment.center;
+    }
+  }
+
+  double _getRadius(int index) {
+    switch (index) {
+      case 0:
+        return 1.5;
+      case 1:
+        return 1.2;
+      case 2:
+        return 1.0;
+      default:
+        return 1.0;
+    }
+  }
+
+  double _getOpacity(int index) {
+    switch (index) {
+      case 0:
+        return 0.4;
+      case 1:
+        return 0.35;
+      case 2:
+        return 0.3;
+      default:
+        return 0.3;
+    }
   }
 }
 
@@ -402,6 +473,10 @@ class _LottieHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Make size responsive - 40% of screen width, max 250px
+    final screenWidth = MediaQuery.of(context).size.width;
+    final size = (screenWidth * 0.4).clamp(180.0, 250.0);
+
     return AnimatedBuilder(
       animation: floatAnimation,
       builder: (context, child) {
@@ -414,12 +489,20 @@ class _LottieHero extends StatelessWidget {
         );
       },
       child: SizedBox(
-        height: 200,
+        height: size,
         child: Lottie.asset(
           'assets/animations/computer.json',
           fit: BoxFit.contain,
           animate: true,
           repeat: true,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback if Lottie fails to load
+            return Icon(
+              Icons.computer_rounded,
+              size: size * 0.5,
+              color: Colors.white.withValues(alpha: 0.6),
+            );
+          },
         ),
       ),
     )
@@ -435,7 +518,7 @@ class _LottieHero extends StatelessWidget {
   }
 }
 
-/// Role selection section showing the role cards.
+/// Role selection section with glass morphism card.
 class _RoleSelectionSection extends StatelessWidget {
   final ValueChanged<UserType> onRoleSelected;
 
@@ -448,88 +531,97 @@ class _RoleSelectionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFC471ED).withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, -10),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 30,
+                offset: const Offset(0, -10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle indicator
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle indicator
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                'Choose Your Path',
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+
+              const SizedBox(height: 6),
+
+              Text(
+                'Select the option that best describes you',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
+
+              const SizedBox(height: 16),
+
+              // Role cards
+              ..._roles.asMap().entries.map((entry) {
+                final index = entry.key;
+                final role = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _RoleCard(
+                    role: role,
+                    onTap: () => onRoleSelected(role.type),
+                  ).animate().fadeIn(
+                        delay: Duration(milliseconds: 200 + (index * 80)),
+                        duration: const Duration(milliseconds: 400),
+                      ),
+                );
+              }),
+
+              const SizedBox(height: 8),
+
+              Text(
+                'New user? We\'ll create your account automatically.',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+            ],
           ),
-          const SizedBox(height: 12),
-
-          // Title
-          Text(
-            'Choose Your Path',
-            style: AppTextStyles.headingSmall.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
-          ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-
-          const SizedBox(height: 6),
-
-          Text(
-            'Select the option that best describes you',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
-
-          const SizedBox(height: 16),
-
-          // Role cards
-          ..._roles.asMap().entries.map((entry) {
-            final index = entry.key;
-            final role = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _RoleCard(
-                role: role,
-                onTap: () => onRoleSelected(role.type),
-              ).animate().fadeIn(
-                    delay: Duration(milliseconds: 200 + (index * 80)),
-                    duration: const Duration(milliseconds: 400),
-                  ),
-            );
-          }),
-
-          const SizedBox(height: 8),
-
-          // Note about signing in vs signing up
-          Text(
-            'New user? We\'ll create your account automatically.',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Individual role selection card - compact version.
+/// Individual role selection card.
 class _RoleCard extends StatelessWidget {
   final _RoleData role;
   final VoidCallback onTap;
@@ -621,7 +713,7 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-/// Auth options section with Google + Magic Link - compact version.
+/// Auth options section with glass morphism.
 class _AuthOptionsSection extends StatelessWidget {
   final UserType selectedRole;
   final bool termsAccepted;
@@ -663,81 +755,91 @@ class _AuthOptionsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFC471ED).withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, -10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle indicator
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, bottomPadding + 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1,
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // Back button
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded, size: 16),
-              label: Text(
-                showMagicLink ? 'Back to options' : 'Back',
-                style: const TextStyle(fontSize: 13),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 30,
+                offset: const Offset(0, -10),
               ),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
+            ],
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle indicator
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
 
-          if (magicLinkSent)
-            _MagicLinkSentView(
-              email: emailController.text,
-              onTryDifferent: onTryDifferentEmail,
-            )
-          else if (showMagicLink)
-            _MagicLinkForm(
-              selectedRole: selectedRole,
-              emailController: emailController,
-              error: magicLinkError,
-              onSend: onSendMagicLink,
-              onEmailChanged: onEmailChanged,
-            )
-          else
-            _GoogleAndMagicLinkOptions(
-              roleData: _roleData,
-              termsAccepted: termsAccepted,
-              errorMessage: errorMessage,
-              onTermsChanged: onTermsChanged,
-              onGoogleSignIn: onGoogleSignIn,
-              onMagicLinkPressed: onMagicLinkPressed,
-            ),
-        ],
+              // Back button
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: onBack,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                  label: Text(
+                    showMagicLink ? 'Back to options' : 'Back',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+
+              if (magicLinkSent)
+                _MagicLinkSentView(
+                  email: emailController.text,
+                  onTryDifferent: onTryDifferentEmail,
+                )
+              else if (showMagicLink)
+                _MagicLinkForm(
+                  selectedRole: selectedRole,
+                  emailController: emailController,
+                  error: magicLinkError,
+                  onSend: onSendMagicLink,
+                  onEmailChanged: onEmailChanged,
+                )
+              else
+                _GoogleAndMagicLinkOptions(
+                  roleData: _roleData,
+                  termsAccepted: termsAccepted,
+                  errorMessage: errorMessage,
+                  onTermsChanged: onTermsChanged,
+                  onGoogleSignIn: onGoogleSignIn,
+                  onMagicLinkPressed: onMagicLinkPressed,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// Magic link sent success view - compact version.
+/// Magic link sent success view.
 class _MagicLinkSentView extends StatelessWidget {
   final String email;
   final VoidCallback onTryDifferent;
@@ -752,7 +854,6 @@ class _MagicLinkSentView extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 6),
-        // Success icon
         Container(
           width: 48,
           height: 48,
@@ -767,7 +868,6 @@ class _MagicLinkSentView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-
         Text(
           'Check your email',
           style: AppTextStyles.bodyMedium.copyWith(
@@ -777,7 +877,6 @@ class _MagicLinkSentView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
@@ -797,7 +896,6 @@ class _MagicLinkSentView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-
         Text(
           'Click the link in your email to sign in.\nThe link expires in 10 minutes.',
           style: AppTextStyles.caption.copyWith(
@@ -807,7 +905,6 @@ class _MagicLinkSentView extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
-
         OutlinedButton(
           onPressed: onTryDifferent,
           style: OutlinedButton.styleFrom(
@@ -826,7 +923,7 @@ class _MagicLinkSentView extends StatelessWidget {
   }
 }
 
-/// Magic link email form - compact version.
+/// Magic link email form.
 class _MagicLinkForm extends StatelessWidget {
   final UserType selectedRole;
   final TextEditingController emailController;
@@ -846,7 +943,6 @@ class _MagicLinkForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Mail icon
         Container(
           width: 40,
           height: 40,
@@ -861,7 +957,6 @@ class _MagicLinkForm extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-
         Text(
           'Sign in with email',
           style: AppTextStyles.bodyMedium.copyWith(
@@ -871,7 +966,6 @@ class _MagicLinkForm extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-
         Text(
           "We'll send you a magic link to sign in instantly",
           style: AppTextStyles.caption.copyWith(
@@ -881,8 +975,6 @@ class _MagicLinkForm extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 10),
-
-        // Student email notice - compact
         if (selectedRole == UserType.student) ...[
           Container(
             padding: const EdgeInsets.all(8),
@@ -914,8 +1006,6 @@ class _MagicLinkForm extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
-
-        // Email input - compact
         TextField(
           controller: emailController,
           onChanged: (_) => onEmailChanged(),
@@ -952,8 +1042,6 @@ class _MagicLinkForm extends StatelessWidget {
             isDense: true,
           ),
         ),
-
-        // Error message
         if (error != null) ...[
           const SizedBox(height: 4),
           Text(
@@ -964,10 +1052,7 @@ class _MagicLinkForm extends StatelessWidget {
             ),
           ),
         ],
-
         const SizedBox(height: 10),
-
-        // Send button - compact
         SizedBox(
           width: double.infinity,
           height: 44,
@@ -990,9 +1075,7 @@ class _MagicLinkForm extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(height: 6),
-
         Text(
           'We\'ll send you a secure link that expires in 10 minutes.',
           style: AppTextStyles.caption.copyWith(
@@ -1006,7 +1089,7 @@ class _MagicLinkForm extends StatelessWidget {
   }
 }
 
-/// Google sign-in and magic link options - compact version.
+/// Google sign-in and magic link options.
 class _GoogleAndMagicLinkOptions extends StatelessWidget {
   final _RoleData roleData;
   final bool termsAccepted;
@@ -1028,7 +1111,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Role icon - smaller
         Container(
           width: 44,
           height: 44,
@@ -1047,7 +1129,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-
         Text(
           'Sign up as ${roleData.title}',
           style: AppTextStyles.bodyMedium.copyWith(
@@ -1057,7 +1138,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-
         Text(
           'Choose how you want to create your account',
           style: AppTextStyles.caption.copyWith(
@@ -1066,8 +1146,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-
-        // Student email notice - compact
         if (roleData.type == UserType.student) ...[
           Container(
             padding: const EdgeInsets.all(8),
@@ -1099,8 +1177,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-
-        // Error message - compact
         if (errorMessage != null) ...[
           Container(
             padding: const EdgeInsets.all(8),
@@ -1130,8 +1206,6 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
-
-        // Terms checkbox - compact
         Row(
           children: [
             GestureDetector(
@@ -1193,18 +1267,12 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
             ),
           ],
         ),
-
         const SizedBox(height: 10),
-
-        // Google Sign-in button - compact
         _GoogleSignInButton(
           onPressed: termsAccepted ? onGoogleSignIn : null,
           enabled: termsAccepted,
         ),
-
         const SizedBox(height: 8),
-
-        // Divider
         Row(
           children: [
             Expanded(child: Divider(color: Colors.grey.shade300)),
@@ -1221,10 +1289,7 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
             Expanded(child: Divider(color: Colors.grey.shade300)),
           ],
         ),
-
         const SizedBox(height: 8),
-
-        // Magic Link button - compact
         SizedBox(
           width: double.infinity,
           height: 44,
@@ -1250,10 +1315,7 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(height: 6),
-
-        // Security note
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1277,7 +1339,7 @@ class _GoogleAndMagicLinkOptions extends StatelessWidget {
   }
 }
 
-/// Google sign-in button - compact version.
+/// Google sign-in button.
 class _GoogleSignInButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool enabled;
@@ -1318,7 +1380,6 @@ class _GoogleSignInButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Google icon
               Container(
                 width: 20,
                 height: 20,
@@ -1360,330 +1421,4 @@ class _GoogleSignInButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Gradient background with doodles (like onboarding).
-class _GradientBackgroundWithDoodles extends StatelessWidget {
-  final double height;
-
-  const _GradientBackgroundWithDoodles({
-    required this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipPath(
-      clipper: _CurvedBottomClipper(),
-      child: Container(
-        height: height + 50,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEC407A), // Pink
-              Color(0xFFF48FB1), // Light pink
-            ],
-          ),
-        ),
-        child: Stack(
-          children: _buildDoodleElements(),
-        ),
-      ),
-    );
-  }
-
-  /// Build decorative doodle elements matching onboarding style.
-  List<Widget> _buildDoodleElements() {
-    return [
-      // Large ring - top left
-      Positioned(
-        top: 30,
-        left: -25,
-        child: _DoodleRing(size: 70, strokeWidth: 2.5),
-      ),
-      // Small filled circle - top right
-      Positioned(
-        top: 50,
-        right: 35,
-        child: _DoodleCircle(size: 18),
-      ),
-      // Medium ring - right side
-      Positioned(
-        top: 120,
-        right: -15,
-        child: _DoodleRing(size: 50, strokeWidth: 2),
-      ),
-      // Dots cluster - left side
-      Positioned(
-        top: 160,
-        left: 25,
-        child: _DoodleDots(),
-      ),
-      // Squiggly line - top center
-      Positioned(
-        top: 70,
-        left: 90,
-        child: _DoodleSquiggle(),
-      ),
-      // Cross/plus - right center
-      Positioned(
-        top: 200,
-        right: 45,
-        child: _DoodleCross(size: 20),
-      ),
-      // Small ring - bottom left
-      Positioned(
-        bottom: 80,
-        left: 50,
-        child: _DoodleRing(size: 25, strokeWidth: 2),
-      ),
-      // Triangle outline - right
-      Positioned(
-        top: 240,
-        right: 100,
-        child: _DoodleTriangle(size: 22),
-      ),
-      // Tiny dots scattered
-      Positioned(
-        top: 100,
-        right: 100,
-        child: _DoodleCircle(size: 8),
-      ),
-      Positioned(
-        bottom: 100,
-        left: 100,
-        child: _DoodleCircle(size: 10),
-      ),
-      Positioned(
-        top: 180,
-        left: 80,
-        child: _DoodleCircle(size: 12),
-      ),
-    ];
-  }
-}
-
-/// Custom clipper for curved bottom edge.
-class _CurvedBottomClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 50);
-
-    // Create smooth curve
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 50,
-    );
-
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-/// Doodle ring (circle outline).
-class _DoodleRing extends StatelessWidget {
-  final double size;
-  final double strokeWidth;
-
-  const _DoodleRing({required this.size, required this.strokeWidth});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: strokeWidth,
-        ),
-      ),
-    );
-  }
-}
-
-/// Doodle filled circle.
-class _DoodleCircle extends StatelessWidget {
-  final double size;
-
-  const _DoodleCircle({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.25),
-      ),
-    );
-  }
-}
-
-/// Doodle dots cluster.
-class _DoodleDots extends StatelessWidget {
-  const _DoodleDots();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 25,
-      height: 25,
-      child: Stack(
-        children: [
-          Positioned(top: 0, left: 0, child: _dot()),
-          Positioned(top: 0, right: 0, child: _dot()),
-          Positioned(bottom: 0, left: 0, child: _dot()),
-          Positioned(bottom: 0, right: 0, child: _dot()),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dot() => Container(
-        width: 5,
-        height: 5,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.25),
-        ),
-      );
-}
-
-/// Doodle squiggle/wave line.
-class _DoodleSquiggle extends StatelessWidget {
-  const _DoodleSquiggle();
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(40, 16),
-      painter: _SquigglePainter(),
-    );
-  }
-}
-
-class _SquigglePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    path.moveTo(0, size.height / 2);
-    path.quadraticBezierTo(
-        size.width * 0.25, 0, size.width * 0.5, size.height / 2);
-    path.quadraticBezierTo(
-        size.width * 0.75, size.height, size.width, size.height / 2);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Doodle cross/plus.
-class _DoodleCross extends StatelessWidget {
-  final double size;
-
-  const _DoodleCross({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _CrossPainter(),
-    );
-  }
-}
-
-class _CrossPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    // Vertical line
-    canvas.drawLine(
-      Offset(size.width / 2, 0),
-      Offset(size.width / 2, size.height),
-      paint,
-    );
-    // Horizontal line
-    canvas.drawLine(
-      Offset(0, size.height / 2),
-      Offset(size.width, size.height / 2),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Doodle triangle outline.
-class _DoodleTriangle extends StatelessWidget {
-  final double size;
-
-  const _DoodleTriangle({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _TrianglePainter(),
-    );
-  }
-}
-
-class _TrianglePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path();
-    path.moveTo(size.width / 2, 0);
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

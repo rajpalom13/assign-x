@@ -4,11 +4,11 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../providers/home_provider.dart';
 import '../../../shared/widgets/dock_navigation.dart';
-import '../../marketplace/screens/marketplace_screen.dart';
+import '../../campus_connect/screens/campus_connect_screen.dart';
+import '../../dashboard/screens/dashboard_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../projects/screens/my_projects_screen.dart';
 import '../widgets/fab_bottom_sheet.dart';
-import 'home_screen.dart';
 
 /// Main app shell with dock navigation.
 ///
@@ -42,10 +42,10 @@ class MainShell extends ConsumerWidget {
           IndexedStack(
             index: currentIndex,
             children: const [
-              HomeScreen(),
+              DashboardScreen(),
               MyProjectsScreen(),
               SizedBox(), // FAB placeholder
-              MarketplaceScreen(),
+              CampusConnectScreen(),
               ProfileScreen(),
             ],
           ),

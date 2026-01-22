@@ -6,3 +6,4 @@
 export * from "./types"
 export { NotificationItem } from "./notification-item"
 export { NotificationList } from "./notification-list"
+export { PushNotificationSetup } from "./push-notification-setup"

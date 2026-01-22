@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { redirect } from 'next/navigation'
 
 /**
  * OAuth callback handler for Google authentication
@@ -110,8 +111,9 @@ export async function GET(request: Request) {
           }
         }
 
-        // Fully activated - go to dashboard
-        return NextResponse.redirect(`${origin}${next}`)
+        // Fully activated - go to session establishment page first
+        // This allows client to sync server session to localStorage
+        return NextResponse.redirect(`${origin}/auth/session?next=${encodeURIComponent(next)}`)
       }
     }
   }

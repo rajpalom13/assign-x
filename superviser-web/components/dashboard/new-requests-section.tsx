@@ -106,7 +106,7 @@ export function NewRequestsSection({
               </p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[400px]">
+            <ScrollArea className="h-[500px]">
               <div className="space-y-3 pr-4">
                 {requests.map((request) => (
                   <RequestCard

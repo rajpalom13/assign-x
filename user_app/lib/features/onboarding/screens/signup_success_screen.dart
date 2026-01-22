@@ -10,10 +10,14 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 
 /// Success screen shown after profile completion.
 ///
-/// Displays confetti animation and welcome message.
+/// Redesigned with gradient background, glass morphism,
+/// confetti animation, and smooth entrance animations
+/// to match Dashboard aesthetic.
 class SignupSuccessScreen extends ConsumerStatefulWidget {
   const SignupSuccessScreen({super.key});
 
@@ -29,7 +33,7 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
   void initState() {
     super.initState();
     _confettiController = ConfettiController(
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 4),
     );
     // Start confetti after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,113 +56,169 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Main content
-          SafeArea(
-            child: Padding(
-              padding: AppSpacing.screenPadding,
-              child: Column(
-                children: [
-                  const Spacer(),
+          // Gradient background
+          MeshGradientBackground(
+            position: MeshPosition.center,
+            colors: [
+              AppColors.meshBlue,
+              AppColors.meshPurple,
+              AppColors.meshPink,
+              AppColors.meshOrange,
+            ],
+            opacity: 0.5,
+            child: SafeArea(
+              child: Padding(
+                padding: AppSpacing.screenPadding,
+                child: Column(
+                  children: [
+                    const Spacer(),
 
-                  // Success icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withAlpha(25), // 0.1 opacity
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_circle,
-                      size: 80,
-                      color: AppColors.success,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 400.ms)
-                      .scale(
-                        begin: const Offset(0.5, 0.5),
-                        end: const Offset(1, 1),
-                        duration: 500.ms,
-                        curve: Curves.elasticOut,
+                    // Success icon with glass container
+                    GlassContainer(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          // Success icon
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.success,
+                                  AppColors.success.withValues(alpha: 0.7),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.success.withValues(alpha: 0.3),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_rounded,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 400.ms)
+                              .scale(
+                                begin: const Offset(0.3, 0.3),
+                                end: const Offset(1, 1),
+                                duration: 600.ms,
+                                curve: Curves.elasticOut,
+                              ),
+
+                          const SizedBox(height: 32),
+
+                          // Welcome message
+                          Text(
+                            'Welcome, $displayName! 🎉',
+                            style: AppTextStyles.displaySmall.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ).animate(delay: 300.ms).fadeIn(duration: 500.ms).slideY(
+                                begin: 0.2,
+                                end: 0,
+                                duration: 500.ms,
+                              ),
+
+                          const SizedBox(height: 12),
+
+                          Text(
+                            'Your account is ready',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ).animate(delay: 400.ms).fadeIn(duration: 500.ms),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            "You're all set to get expert help for your projects and connect with professionals.",
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ).animate(delay: 500.ms).fadeIn(duration: 500.ms),
+                        ],
                       ),
-
-                  const SizedBox(height: 32),
-
-                  // Welcome message
-                  Text(
-                    'Welcome, $displayName!',
-                    style: AppTextStyles.displaySmall.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
-
-                  const SizedBox(height: 12),
-
-                  Text(
-                    'Your account is ready',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ).animate(delay: 400.ms).fadeIn(duration: 400.ms),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    "You're all set to get expert help for your projects.",
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textTertiary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
-
-                  const Spacer(),
-
-                  // Features preview
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: AppSpacing.borderRadiusLg,
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildFeatureRow(
-                          Icons.upload_file_outlined,
-                          'Upload projects easily',
+                    ).animate(delay: 100.ms).fadeIn(duration: 600.ms).slideY(
+                          begin: 0.1,
+                          end: 0,
+                          duration: 600.ms,
+                          curve: Curves.easeOutCubic,
                         ),
-                        const SizedBox(height: 16),
-                        _buildFeatureRow(
-                          Icons.visibility_outlined,
-                          'Track progress in real-time',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFeatureRow(
-                          Icons.verified_outlined,
-                          'Get quality-assured work',
-                        ),
-                      ],
-                    ),
-                  ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideY(
-                        begin: 0.2,
-                        end: 0,
-                        duration: 400.ms,
+
+                    const SizedBox(height: 32),
+
+                    // Features preview
+                    GlassContainer(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _buildFeatureRow(
+                            Icons.upload_file_outlined,
+                            'Upload projects easily',
+                            AppColors.primary,
+                          ).animate(delay: 600.ms).fadeIn(duration: 400.ms).slideX(
+                                begin: -0.2,
+                                end: 0,
+                                duration: 400.ms,
+                              ),
+                          const SizedBox(height: 16),
+                          _buildFeatureRow(
+                            Icons.visibility_outlined,
+                            'Track progress in real-time',
+                            AppColors.success,
+                          ).animate(delay: 700.ms).fadeIn(duration: 400.ms).slideX(
+                                begin: -0.2,
+                                end: 0,
+                                duration: 400.ms,
+                              ),
+                          const SizedBox(height: 16),
+                          _buildFeatureRow(
+                            Icons.verified_outlined,
+                            'Get quality-assured work',
+                            AppColors.success,
+                          ).animate(delay: 800.ms).fadeIn(duration: 400.ms).slideX(
+                                begin: -0.2,
+                                end: 0,
+                                duration: 400.ms,
+                              ),
+                        ],
                       ),
+                    ),
 
-                  const SizedBox(height: 32),
+                    const Spacer(),
 
-                  // Go to dashboard button
-                  AppButton(
-                    label: 'Go to Dashboard',
-                    onPressed: () => context.go(RouteNames.home),
-                    icon: Icons.arrow_forward,
-                  ).animate(delay: 700.ms).fadeIn(duration: 400.ms),
+                    // Go to dashboard button with glass effect
+                    GlassContainer(
+                      padding: const EdgeInsets.all(4),
+                      child: AppButton(
+                        label: 'Go to Dashboard',
+                        onPressed: () => context.go(RouteNames.home),
+                        icon: Icons.arrow_forward,
+                      ),
+                    ).animate(delay: 900.ms).fadeIn(duration: 400.ms).slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 400.ms,
+                        ),
 
-                  const SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           ),
@@ -170,17 +230,21 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
+              colors: [
                 AppColors.primary,
+                AppColors.success,
                 AppColors.success,
                 AppColors.warning,
                 AppColors.primaryLight,
+                AppColors.meshBlue,
+                AppColors.meshPurple,
+                AppColors.meshPink,
               ],
-              numberOfParticles: 30,
-              maxBlastForce: 20,
-              minBlastForce: 5,
-              emissionFrequency: 0.05,
-              gravity: 0.3,
+              numberOfParticles: 40,
+              maxBlastForce: 25,
+              minBlastForce: 8,
+              emissionFrequency: 0.03,
+              gravity: 0.2,
             ),
           ),
         ],
@@ -188,35 +252,58 @@ class _SignupSuccessScreenState extends ConsumerState<SignupSuccessScreen> {
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String text) {
+  Widget _buildFeatureRow(IconData icon, String text, Color color) {
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: AppColors.primary.withAlpha(25), // 0.1 opacity
-            borderRadius: BorderRadius.circular(10),
+            gradient: LinearGradient(
+              colors: [
+                color,
+                color.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Icon(
             icon,
-            color: AppColors.primary,
-            size: 20,
+            color: Colors.white,
+            size: 24,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Text(
             text,
-            style: AppTextStyles.bodyMedium.copyWith(
+            style: AppTextStyles.bodyLarge.copyWith(
               color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const Icon(
-          Icons.check,
-          color: AppColors.success,
-          size: 20,
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check_rounded,
+            color: AppColors.success,
+            size: 18,
+          ),
         ),
       ],
     );

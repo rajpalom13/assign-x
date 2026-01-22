@@ -60,58 +60,72 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App Logo (Text-based)
-            const Text(
-              'AssignX',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: -1,
-              ),
-            )
-                .animate()
-                .fadeIn(duration: 500.ms)
-                .scale(
-                  begin: const Offset(0.8, 0.8),
-                  end: const Offset(1, 1),
-                  duration: 500.ms,
-                  curve: Curves.easeOut,
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary,
+              AppColors.primary.withValues(alpha: 0.85),
+              const Color(0xFF9C27B0).withValues(alpha: 0.4), // Subtle purple accent
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // App Logo (Text-based)
+                const Text(
+                  'AssignX',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -1,
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 500.ms)
+                    .scale(
+                      begin: const Offset(0.8, 0.8),
+                      end: const Offset(1, 1),
+                      duration: 500.ms,
+                      curve: Curves.easeOut,
+                    ),
 
-            const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-            // Tagline
-            Text(
-              'Your Task, Our Expertise',
-              style: AppTextStyles.bodyLarge.copyWith(
-                color: Colors.white.withAlpha(230), // 0.9 opacity
-                letterSpacing: 0.5,
-              ),
-            )
-                .animate(delay: 300.ms)
-                .fadeIn(duration: 500.ms)
-                .slideY(begin: 0.2, end: 0, duration: 500.ms),
+                // Tagline
+                Text(
+                  'Your Task, Our Expertise',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    letterSpacing: 0.5,
+                  ),
+                )
+                    .animate(delay: 300.ms)
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: 0.2, end: 0, duration: 500.ms),
 
-            const SizedBox(height: 48),
+                const SizedBox(height: 48),
 
-            // Loading indicator
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: const CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-                .animate(delay: 800.ms)
-                .fadeIn(duration: 300.ms),
-          ],
+                // Loading indicator
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                    .animate(delay: 800.ms)
+                    .fadeIn(duration: 300.ms),
+              ],
+            ),
+          ),
         ),
       ),
     );

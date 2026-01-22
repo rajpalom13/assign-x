@@ -1,201 +1,70 @@
-'use client'
-
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { TaskPoolList, AssignedTaskList } from '@/components/dashboard'
-import type { Project } from '@/components/dashboard'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants'
-import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'sonner'
-import {
-  getAssignedTasks,
-  getOpenPoolTasks,
-  acceptPoolTask,
-  isDeadlineUrgent,
-  type ProjectWithSupervisor,
-} from '@/services/project.service'
+import { DashboardClient } from './dashboard-client'
 
 /**
- * Transform database project to component project format
+ * Dashboard server component
+ * Fetches session and doer profile from server-side httpOnly cookies
+ * Passes data to client component for rendering
  */
-function transformProject(dbProject: ProjectWithSupervisor): Project {
-  return {
-    id: dbProject.id,
-    title: dbProject.title,
-    subject: dbProject.topic || dbProject.service_type || 'General',
-    description: dbProject.description || undefined,
-    price: Number(dbProject.doer_payout) || 0,
-    deadline: new Date(dbProject.deadline),
-    status: dbProject.status as Project['status'],
-    supervisorName: dbProject.supervisor?.profile?.full_name,
-    isUrgent: isDeadlineUrgent(dbProject.deadline),
-  }
-}
+export default async function DashboardPage() {
+  const supabase = await createClient()
 
-/**
- * Dashboard page
- * Shows assigned tasks and open pool tabs
- */
-export default function DashboardPage() {
-  const router = useRouter()
-  const { doer, isLoading: authLoading } = useAuth()
-  const [isLoading, setIsLoading] = useState(true)
-  const [assignedTasks, setAssignedTasks] = useState<Project[]>([])
-  const [poolTasks, setPoolTasks] = useState<Project[]>([])
-  const [activeTab, setActiveTab] = useState('assigned')
+  // Get session from server-side cookies
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-  /**
-   * Load tasks from Supabase
-   */
-  const loadTasks = useCallback(async () => {
-    console.log('[Dashboard] loadTasks called, doer:', doer?.id)
-    if (!doer?.id) {
-      console.log('[Dashboard] No doer ID, skipping load')
-      return
-    }
+  console.log('[Dashboard Server] Session check:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    error: sessionError?.message
+  })
 
-    setIsLoading(true)
-    try {
-      console.log('[Dashboard] Fetching tasks for doer:', doer.id)
-      // Fetch assigned tasks and open pool tasks in parallel
-      const [assignedData, poolData] = await Promise.all([
-        getAssignedTasks(doer.id),
-        getOpenPoolTasks(),
-      ])
-
-      console.log('[Dashboard] Assigned tasks:', assignedData.length, 'Pool tasks:', poolData.length)
-      // Transform to component format
-      setAssignedTasks(assignedData.map(transformProject))
-      setPoolTasks(poolData.map(transformProject))
-    } catch (error) {
-      console.error('[Dashboard] Error loading tasks:', error)
-      toast.error('Failed to load tasks')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [doer?.id])
-
-  /** Load tasks on mount and when doer changes */
-  useEffect(() => {
-    if (doer?.id) {
-      loadTasks()
-    }
-  }, [doer?.id, loadTasks])
-
-  /**
-   * Handle accepting a task from the pool
-   */
-  const handleAcceptTask = useCallback(async (projectId: string) => {
-    if (!doer?.id) {
-      toast.error('Please log in to accept tasks')
-      return
-    }
-
-    try {
-      await acceptPoolTask(projectId, doer.id)
-
-      // Move task from pool to assigned
-      const task = poolTasks.find(t => t.id === projectId)
-      if (task) {
-        setPoolTasks(prev => prev.filter(t => t.id !== projectId))
-        setAssignedTasks(prev => [...prev, { ...task, status: 'assigned' }])
-      }
-
-      toast.success('Task accepted successfully!')
-    } catch (error) {
-      console.error('Error accepting task:', error)
-      toast.error('Failed to accept task')
-    }
-  }, [doer?.id, poolTasks])
-
-  /** Handle project click */
-  const handleProjectClick = useCallback((projectId: string) => {
-    router.push(`${ROUTES.projects}/${projectId}`)
-  }, [router])
-
-  /** Handle refresh */
-  const handleRefresh = useCallback(async () => {
-    await loadTasks()
-  }, [loadTasks])
-
-  /** Count of tasks needing attention */
-  const urgentCount = useMemo(() =>
-    assignedTasks.filter(t => t.isUrgent || t.status === 'revision_requested').length,
-    [assignedTasks]
-  )
-
-  console.log('[Dashboard] Render state - authLoading:', authLoading, 'isLoading:', isLoading, 'doer:', doer?.id, 'tasks:', assignedTasks.length)
-
-  // Show loading state while auth is loading
-  if (authLoading || (isLoading && assignedTasks.length === 0)) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <Skeleton key={i} className="h-48 rounded-lg" />
-          ))}
-        </div>
-      </div>
-    )
+  // Redirect to login if no session
+  if (!session || sessionError) {
+    console.log('[Dashboard Server] No session, redirecting to login')
+    redirect(ROUTES.login)
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage your tasks and find new opportunities
-        </p>
-      </div>
+  // Fetch profile (user profile data)
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="assigned" className="relative">
-            Assigned to Me
-            {urgentCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {urgentCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="pool">
-            Open Pool
-            <Badge variant="secondary" className="ml-2">
-              {poolTasks.length}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+  console.log('[Dashboard Server] Profile:', {
+    found: !!profile,
+    id: profile?.id,
+    error: profileError?.message
+  })
 
-        <TabsContent value="assigned" className="mt-6">
-          <AssignedTaskList
-            projects={assignedTasks}
-            isLoading={isLoading}
-            onProjectClick={handleProjectClick}
-          />
-        </TabsContent>
+  // Redirect to login if profile not found
+  if (!profile || profileError) {
+    console.error('[Dashboard Server] Profile not found:', profileError)
+    redirect(ROUTES.login)
+  }
 
-        <TabsContent value="pool" className="mt-6">
-          <TaskPoolList
-            projects={poolTasks}
-            isLoading={isLoading}
-            onAcceptTask={handleAcceptTask}
-            onProjectClick={handleProjectClick}
-            onRefresh={handleRefresh}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+  // Fetch doer record (linked to profile)
+  const { data: doer, error: doerError } = await supabase
+    .from('doers')
+    .select('*')
+    .eq('profile_id', profile.id)
+    .single()
+
+  console.log('[Dashboard Server] Doer:', {
+    found: !!doer,
+    id: doer?.id,
+    profileId: doer?.profile_id,
+    error: doerError?.message
+  })
+
+  // Redirect to login if doer not found
+  if (!doer || doerError) {
+    console.error('[Dashboard Server] Doer not found:', doerError)
+    redirect(ROUTES.login)
+  }
+
+  // Pass doer data to client component
+  return <DashboardClient initialDoer={doer} />
 }

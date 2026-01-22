@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,12 +13,15 @@ import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_dropdown.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/step_progress_bar.dart';
 
 /// Student profile completion screen.
 ///
-/// Multi-step form to collect student-specific information.
+/// Redesigned with gradient background, glass morphism form,
+/// and smooth animations to match Dashboard aesthetic.
 class StudentProfileScreen extends ConsumerStatefulWidget {
   const StudentProfileScreen({super.key});
 
@@ -79,8 +83,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
     if (_currentStep < 2) {
       setState(() => _currentStep++);
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
       );
     } else {
       _submitForm();
@@ -91,8 +95,8 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
     if (_currentStep > 1) {
       setState(() => _currentStep--);
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
       );
     } else {
       context.pop();
@@ -104,6 +108,10 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }
@@ -149,55 +157,89 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: _previousStep,
-        ),
-        title: const Text('Complete Profile'),
-      ),
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        message: 'Saving profile...',
-        child: Column(
-          children: [
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: StepProgressBar(
-                currentStep: _currentStep,
-                totalSteps: 2,
-                labels: const ['Basic Info', 'Education'],
-              ),
+      body: MeshGradientBackground(
+        position: MeshPosition.bottomRight,
+        colors: [
+          AppColors.meshPink,
+          AppColors.meshPeach,
+          AppColors.meshOrange,
+        ],
+        opacity: 0.4,
+        child: SafeArea(
+          child: LoadingOverlay(
+            isLoading: _isLoading,
+            message: 'Saving profile...',
+            child: Column(
+              children: [
+                // App bar with glass effect
+                GlassContainer(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: _previousStep,
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Complete Profile',
+                          style: AppTextStyles.headingSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance for back button
+                    ],
+                  ),
+                ).animate().fadeIn(duration: 400.ms),
+
+                // Progress bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.all(16),
+                    child: StepProgressBar(
+                      currentStep: _currentStep,
+                      totalSteps: 2,
+                      labels: const ['Basic Info', 'Education'],
+                    ),
+                  ),
+                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
+
+                const SizedBox(height: 24),
+
+                // Form pages
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildStep1(),
+                      _buildStep2(),
+                    ],
+                  ),
+                ),
+
+                // Continue button with glass effect
+                Padding(
+                  padding: AppSpacing.screenPadding,
+                  child: GlassContainer(
+                    padding: const EdgeInsets.all(4),
+                    child: AppButton(
+                      label: _currentStep == 2 ? 'Complete' : 'Continue',
+                      onPressed: _nextStep,
+                      icon: _currentStep == 2 ? Icons.check : Icons.arrow_forward,
+                    ),
+                  ),
+                ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+
+                const SizedBox(height: 16),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Form pages
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                ],
-              ),
-            ),
-
-            // Continue button
-            Padding(
-              padding: AppSpacing.screenPadding,
-              child: AppButton(
-                label: _currentStep == 2 ? 'Complete' : 'Continue',
-                onPressed: _nextStep,
-                icon: _currentStep == 2 ? Icons.check : Icons.arrow_forward,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
@@ -209,29 +251,74 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Basic Information',
-            style: AppTextStyles.headingMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Let's start with your basic details",
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+          GlassContainer(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.person_outline,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Basic Information',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Let's start with your basic details",
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Full Name
+                AppTextField(
+                  controller: _nameController,
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                  prefixIcon: Icons.person_outline,
+                  textCapitalization: TextCapitalization.words,
+                  validator: Validators.name,
+                ),
+              ],
             ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Full Name
-          AppTextField(
-            controller: _nameController,
-            label: 'Full Name',
-            hint: 'Enter your full name',
-            prefixIcon: Icons.person_outline,
-            textCapitalization: TextCapitalization.words,
-            validator: Validators.name,
-          ),
+          ).animate().fadeIn(duration: 500.ms).slideY(
+                begin: 0.1,
+                end: 0,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
 
           const SizedBox(height: 20),
         ],
@@ -247,102 +334,165 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Education Details',
-            style: AppTextStyles.headingMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tell us about your academic background',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
+          GlassContainer(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.school_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Education Details',
+                            style: AppTextStyles.headingMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tell us about your academic background',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-          const SizedBox(height: 32),
-
-          // University
-          universities.when(
-            data: (unis) => AppDropdown<Map<String, dynamic>>(
-              label: 'University',
-              hint: 'Select your university',
-              value: unis.where((u) => u['id'] == _selectedUniversityId).firstOrNull,
-              items: unis,
-              itemLabel: (item) => item['name'] as String,
-              searchable: true,
-              onChanged: (value) {
-                setState(() {
-                  _selectedUniversityId = value?['id'] as String?;
-                  _selectedCourseId = null; // Reset course
-                });
-              },
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Text('Failed to load universities'),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Course (only show if university selected)
-          if (_selectedUniversityId != null)
-            ref.watch(coursesProvider(_selectedUniversityId!)).when(
-                  data: (courses) => AppDropdown<Map<String, dynamic>>(
-                    label: 'Course',
-                    hint: 'Select your course',
-                    value: courses
-                        .where((c) => c['id'] == _selectedCourseId)
-                        .firstOrNull,
-                    items: courses,
+                // University
+                universities.when(
+                  data: (unis) => AppDropdown<Map<String, dynamic>>(
+                    label: 'University',
+                    hint: 'Select your university',
+                    value: unis.where((u) => u['id'] == _selectedUniversityId).firstOrNull,
+                    items: unis,
                     itemLabel: (item) => item['name'] as String,
                     searchable: true,
                     onChanged: (value) {
                       setState(() {
-                        _selectedCourseId = value?['id'] as String?;
+                        _selectedUniversityId = value?['id'] as String?;
+                        _selectedCourseId = null; // Reset course
                       });
                     },
                   ),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => const Text('Failed to load courses'),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                  ),
+                  error: (_, _) => Text(
+                    'Failed to load universities',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
                 ),
 
-          const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-          // Year of Study
-          AppDropdown<int>(
-            label: 'Year of Study',
-            hint: 'Select your current year',
-            value: _selectedYearOfStudy,
-            items: List.generate(5, (i) => i + 1),
-            itemLabel: (item) => 'Year $item',
-            onChanged: (value) {
-              setState(() => _selectedYearOfStudy = value);
-            },
-          ),
+                // Course (only show if university selected)
+                if (_selectedUniversityId != null)
+                  ref.watch(coursesProvider(_selectedUniversityId!)).when(
+                        data: (courses) => AppDropdown<Map<String, dynamic>>(
+                          label: 'Course',
+                          hint: 'Select your course',
+                          value: courses
+                              .where((c) => c['id'] == _selectedCourseId)
+                              .firstOrNull,
+                          items: courses,
+                          itemLabel: (item) => item['name'] as String,
+                          searchable: true,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCourseId = value?['id'] as String?;
+                            });
+                          },
+                        ),
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          ),
+                        ),
+                        error: (_, _) => Text(
+                          'Failed to load courses',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
 
-          const SizedBox(height: 20),
+                if (_selectedUniversityId != null) const SizedBox(height: 16),
 
-          // Semester
-          AppDropdown<int>(
-            label: 'Semester (Optional)',
-            hint: 'Select your current semester',
-            value: _selectedSemester,
-            items: List.generate(8, (i) => i + 1),
-            itemLabel: (item) => 'Semester $item',
-            onChanged: (value) {
-              setState(() => _selectedSemester = value);
-            },
-          ),
+                // Year of Study
+                AppDropdown<int>(
+                  label: 'Year of Study',
+                  hint: 'Select your current year',
+                  value: _selectedYearOfStudy,
+                  items: List.generate(5, (i) => i + 1),
+                  itemLabel: (item) => 'Year $item',
+                  onChanged: (value) {
+                    setState(() => _selectedYearOfStudy = value);
+                  },
+                ),
 
-          const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-          // Student ID (optional)
-          AppTextField(
-            controller: _studentIdController,
-            label: 'Student ID (Optional)',
-            hint: 'Enter your student ID number',
-            prefixIcon: Icons.badge_outlined,
-          ),
+                // Semester
+                AppDropdown<int>(
+                  label: 'Semester (Optional)',
+                  hint: 'Select your current semester',
+                  value: _selectedSemester,
+                  items: List.generate(8, (i) => i + 1),
+                  itemLabel: (item) => 'Semester $item',
+                  onChanged: (value) {
+                    setState(() => _selectedSemester = value);
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Student ID (optional)
+                AppTextField(
+                  controller: _studentIdController,
+                  label: 'Student ID (Optional)',
+                  hint: 'Enter your student ID number',
+                  prefixIcon: Icons.badge_outlined,
+                ),
+              ],
+            ),
+          ).animate().fadeIn(duration: 500.ms).slideY(
+                begin: 0.1,
+                end: 0,
+                duration: 500.ms,
+                curve: Curves.easeOutCubic,
+              ),
 
           const SizedBox(height: 20),
         ],

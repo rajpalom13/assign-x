@@ -8,9 +8,19 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/faq_model.dart';
 import '../../../data/models/support_ticket_model.dart';
 import '../../../providers/profile_provider.dart';
+import '../../../shared/widgets/glass_container.dart';
 import '../widgets/ticket_history_section.dart';
 
 /// Help and support screen with FAQ, contact options, and ticket submission.
+///
+/// Features:
+/// - Gradient background
+/// - Glass morphism cards
+/// - Quick contact options
+/// - Raise support ticket
+/// - FAQ with search and filters
+/// - Ticket history
+/// - Pull to refresh
 class HelpSupportScreen extends ConsumerStatefulWidget {
   const HelpSupportScreen({super.key});
 
@@ -35,55 +45,69 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary.withAlpha(8),
+              AppColors.background,
+              AppColors.accent.withAlpha(6),
+            ],
+            stops: const [0.0, 0.5, 1.0],
+          ),
         ),
-        title: Text(
-          'Help & Support',
-          style: AppTextStyles.headingSmall,
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(supportTicketsProvider);
-          ref.invalidate(filteredFAQsProvider);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+        child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Quick contact options
-              _QuickContactSection(
-                onWhatsAppTap: _openWhatsApp,
-                onEmailTap: _openEmail,
-                onCallTap: _openPhone,
+              // Custom app bar
+              _buildAppBar(),
+
+              // Content
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(supportTicketsProvider);
+                    ref.invalidate(filteredFAQsProvider);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Quick contact options
+                        _QuickContactSection(
+                          onWhatsAppTap: _openWhatsApp,
+                          onEmailTap: _openEmail,
+                          onCallTap: _openPhone,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Raise a ticket
+                        _RaiseTicketSection(
+                          subjectController: _subjectController,
+                          issueController: _issueController,
+                          selectedCategory: _selectedCategory,
+                          isSubmitting: _isSubmitting,
+                          onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                          onSubmit: _submitTicket,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Ticket History Section
+                        const TicketHistorySection(),
+                        const SizedBox(height: 24),
+
+                        // FAQ Section
+                        const _FAQSection(),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 24),
-
-              // Raise a ticket
-              _RaiseTicketSection(
-                subjectController: _subjectController,
-                issueController: _issueController,
-                selectedCategory: _selectedCategory,
-                isSubmitting: _isSubmitting,
-                onCategoryChanged: (value) => setState(() => _selectedCategory = value),
-                onSubmit: _submitTicket,
-              ),
-              const SizedBox(height: 24),
-
-              // Ticket History Section
-              const TicketHistorySection(),
-              const SizedBox(height: 24),
-
-              // FAQ Section with Supabase integration
-              const _FAQSection(),
-              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -91,8 +115,42 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     );
   }
 
+  /// Builds the custom app bar.
+  Widget _buildAppBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.arrow_back, size: 22),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'Help & Support',
+            style: AppTextStyles.headingSmall,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _openWhatsApp() async {
-    const phone = '919876543210'; // Replace with actual support number
+    const phone = '919876543210';
     const message = 'Hi, I need help with AssignX app';
     final url = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(message)}');
 
@@ -143,10 +201,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Convert category string to TicketCategory enum
       final category = _getCategoryFromString(_selectedCategory!);
-
-      // Create ticket via notifier
       final notifier = ref.read(supportTicketNotifierProvider.notifier);
       final ticket = await notifier.createTicket(
         subject: subject,
@@ -162,13 +217,22 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
           _subjectController.clear();
           setState(() => _selectedCategory = null);
 
-          // Refresh tickets list
           ref.invalidate(supportTicketsProvider);
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Ticket ${ticket.displayId} submitted successfully!'),
-              backgroundColor: Colors.green,
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('Ticket ${ticket.displayId} submitted!'),
+                ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         } else {
@@ -211,7 +275,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   }
 }
 
-/// Quick contact section.
+/// Quick contact section with glass morphism.
 class _QuickContactSection extends StatelessWidget {
   final VoidCallback onWhatsAppTap;
   final VoidCallback onEmailTap;
@@ -230,7 +294,7 @@ class _QuickContactSection extends StatelessWidget {
       children: [
         Text(
           'Quick Contact',
-          style: AppTextStyles.labelLarge,
+          style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -239,7 +303,9 @@ class _QuickContactSection extends StatelessWidget {
               child: _ContactOption(
                 icon: Icons.message,
                 label: 'WhatsApp',
-                color: const Color(0xFF25D366),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                ),
                 onTap: onWhatsAppTap,
               ),
             ),
@@ -248,7 +314,9 @@ class _QuickContactSection extends StatelessWidget {
               child: _ContactOption(
                 icon: Icons.email_outlined,
                 label: 'Email',
-                color: AppColors.primary,
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withAlpha(200)],
+                ),
                 onTap: onEmailTap,
               ),
             ),
@@ -257,7 +325,9 @@ class _QuickContactSection extends StatelessWidget {
               child: _ContactOption(
                 icon: Icons.phone_outlined,
                 label: 'Call',
-                color: AppColors.success,
+                gradient: LinearGradient(
+                  colors: [AppColors.success, AppColors.success.withAlpha(200)],
+                ),
                 onTap: onCallTap,
               ),
             ),
@@ -268,17 +338,17 @@ class _QuickContactSection extends StatelessWidget {
   }
 }
 
-/// Contact option button.
+/// Contact option button with gradient.
 class _ContactOption extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final Gradient gradient;
   final VoidCallback onTap;
 
   const _ContactOption({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.gradient,
     required this.onTap,
   });
 
@@ -289,17 +359,27 @@ class _ContactOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: color.withAlpha(20),
+          gradient: gradient,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withAlpha(50)),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withAlpha(60),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: Colors.white, size: 28),
             const SizedBox(height: 8),
             Text(
               label,
-              style: AppTextStyles.labelSmall.copyWith(color: color),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -308,7 +388,7 @@ class _ContactOption extends StatelessWidget {
   }
 }
 
-/// Raise a ticket section.
+/// Raise a ticket section with glass morphism.
 class _RaiseTicketSection extends StatelessWidget {
   final TextEditingController subjectController;
   final TextEditingController issueController;
@@ -337,29 +417,38 @@ class _RaiseTicketSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
+      blur: 10,
+      opacity: 0.9,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      borderRadius: BorderRadius.circular(16),
+      elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.confirmation_number_outlined, color: AppColors.primary),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withAlpha(40),
+                      AppColors.primary.withAlpha(20),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.confirmation_number_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
               const SizedBox(width: 12),
               Text(
                 'Raise a Ticket',
-                style: AppTextStyles.labelLarge,
+                style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -370,9 +459,9 @@ class _RaiseTicketSection extends StatelessWidget {
             initialValue: selectedCategory,
             decoration: InputDecoration(
               labelText: 'Issue Category',
-              prefixIcon: Icon(Icons.category_outlined, color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.category_outlined, color: AppColors.primary),
               filled: true,
-              fillColor: AppColors.surfaceVariant,
+              fillColor: Colors.white.withAlpha(15),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -393,9 +482,9 @@ class _RaiseTicketSection extends StatelessWidget {
             decoration: InputDecoration(
               labelText: 'Subject',
               hintText: 'Brief summary of your issue',
-              prefixIcon: Icon(Icons.subject, color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.subject, color: AppColors.primary),
               filled: true,
-              fillColor: AppColors.surfaceVariant,
+              fillColor: Colors.white.withAlpha(15),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -414,7 +503,7 @@ class _RaiseTicketSection extends StatelessWidget {
               hintText: 'Provide as much detail as possible...',
               alignLabelWithHint: true,
               filled: true,
-              fillColor: AppColors.surfaceVariant,
+              fillColor: Colors.white.withAlpha(15),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -424,26 +513,40 @@ class _RaiseTicketSection extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Submit button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isSubmitting ? null : onSubmit,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withAlpha(200),
+                ],
               ),
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Submit Ticket'),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isSubmitting ? null : onSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Submit Ticket'),
+              ),
             ),
           ),
         ],
@@ -452,7 +555,7 @@ class _RaiseTicketSection extends StatelessWidget {
   }
 }
 
-/// FAQ Section with Supabase integration.
+/// FAQ Section (keeping existing implementation for brevity, but with glass styling).
 class _FAQSection extends ConsumerStatefulWidget {
   const _FAQSection();
 
@@ -485,7 +588,7 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
           children: [
             Text(
               'Frequently Asked Questions',
-              style: AppTextStyles.labelLarge,
+              style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w600),
             ),
             if (filterState.selectedCategory != null || filterState.searchQuery.isNotEmpty)
               TextButton(
@@ -494,7 +597,7 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
                   _searchController.clear();
                 },
                 child: Text(
-                  'Clear filters',
+                  'Clear',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primary,
                   ),
@@ -504,7 +607,7 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
         ),
         const SizedBox(height: 12),
 
-        // Search bar
+        // Search bar (keeping existing implementation)
         _FAQSearchBar(
           controller: _searchController,
           focusNode: _searchFocusNode,
@@ -514,7 +617,7 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
         ),
         const SizedBox(height: 12),
 
-        // Category filter chips
+        // Category filter chips (keeping existing implementation)
         _FAQCategoryChips(
           selectedCategory: filterState.selectedCategory,
           onCategorySelected: (category) {
@@ -523,7 +626,7 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
         ),
         const SizedBox(height: 16),
 
-        // FAQ list with states
+        // FAQ list
         faqsAsync.when(
           data: (faqs) {
             if (faqs.isEmpty) {
@@ -551,7 +654,9 @@ class _FAQSectionState extends ConsumerState<_FAQSection> {
   }
 }
 
-/// Search bar for FAQs.
+// Keep existing FAQ helper widgets (_FAQSearchBar, _FAQCategoryChips, _CategoryChip, etc.)
+// but update _FAQItem to use GlassCard:
+
 class _FAQSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -613,7 +718,6 @@ class _FAQSearchBar extends StatelessWidget {
   }
 }
 
-/// Category filter chips for FAQs.
 class _FAQCategoryChips extends StatelessWidget {
   final FAQCategory? selectedCategory;
   final ValueChanged<FAQCategory?> onCategorySelected;
@@ -649,7 +753,6 @@ class _FAQCategoryChips extends StatelessWidget {
   }
 }
 
-/// Individual category chip.
 class _CategoryChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -688,7 +791,6 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-/// FAQ list widget.
 class _FAQList extends StatelessWidget {
   final List<FAQ> faqs;
 
@@ -702,7 +804,6 @@ class _FAQList extends StatelessWidget {
   }
 }
 
-/// FAQ Item with expandable answer and animation.
 class _FAQItem extends StatefulWidget {
   final FAQ faq;
 
@@ -749,101 +850,96 @@ class _FAQItemState extends State<_FAQItem> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GlassCard(
+        blur: 8,
+        opacity: 0.9,
+        padding: EdgeInsets.zero,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Question header
-          InkWell(
-            onTap: _toggleExpanded,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.faq.question,
-                          style: AppTextStyles.labelMedium,
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+        elevation: 1,
+        child: Column(
+          children: [
+            // Question header
+            InkWell(
+              onTap: _toggleExpanded,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.faq.question,
+                            style: AppTextStyles.labelMedium,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withAlpha(20),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            widget.faq.category.label,
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.primary,
-                              fontSize: 10,
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withAlpha(20),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              widget.faq.category.label,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 10,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  AnimatedRotation(
-                    duration: const Duration(milliseconds: 200),
-                    turns: _isExpanded ? 0.5 : 0,
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: AppColors.textSecondary,
+                    const SizedBox(width: 8),
+                    AnimatedRotation(
+                      duration: const Duration(milliseconds: 200),
+                      turns: _isExpanded ? 0.5 : 0,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          // Animated answer
-          SizeTransition(
-            sizeFactor: _expandAnimation,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            // Animated answer
+            SizeTransition(
+              sizeFactor: _expandAnimation,
               child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  widget.faq.answer,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.5,
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    widget.faq.answer,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Loading skeleton for FAQs.
 class _FAQLoadingSkeleton extends StatelessWidget {
   const _FAQLoadingSkeleton();
 
@@ -862,7 +958,6 @@ class _FAQLoadingSkeleton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Question skeleton
               Container(
                 height: 16,
                 width: double.infinity,
@@ -881,7 +976,6 @@ class _FAQLoadingSkeleton extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              // Category chip skeleton
               Container(
                 height: 20,
                 width: 60,
@@ -898,7 +992,6 @@ class _FAQLoadingSkeleton extends StatelessWidget {
   }
 }
 
-/// Empty state for FAQs.
 class _FAQEmptyState extends StatelessWidget {
   final bool hasFilters;
   final VoidCallback onClearFilters;
@@ -946,7 +1039,6 @@ class _FAQEmptyState extends StatelessWidget {
   }
 }
 
-/// Error state for FAQs.
 class _FAQErrorState extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
