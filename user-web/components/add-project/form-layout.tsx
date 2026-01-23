@@ -61,7 +61,7 @@ const serviceDescriptions: Record<string, { tagline: string; features: string[] 
 };
 
 /**
- * Split-screen Form Layout Component
+ * Split-screen Form Layout Component - Enhanced Glassmorphic Design
  */
 export function FormLayout({
   title,
@@ -92,69 +92,82 @@ export function FormLayout({
   };
 
   return (
-    <div className="form-layout h-screen flex bg-background overflow-hidden">
+    <div className="form-layout h-screen flex overflow-hidden mesh-background mesh-gradient-bottom-right-animated">
       {/* Left Visual Panel (hidden on mobile) - Fixed height, no scroll */}
-      <div className="form-visual hidden lg:flex flex-col justify-between flex-1 max-w-[55%] bg-muted/30 border-r border-border p-12 h-screen overflow-hidden">
-        {/* Top: Logo */}
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border text-sm font-medium">
-            <Sparkles className="h-3.5 w-3.5" />
+      <div className="form-visual hidden lg:flex flex-col justify-between flex-1 max-w-[55%] border-r border-white/10 p-12 h-screen overflow-hidden relative">
+        {/* Decorative gradient orbs */}
+        <div className="absolute -top-20 -left-20 w-96 h-96 bg-gradient-to-br from-violet-500/20 to-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-gradient-to-tl from-amber-500/15 to-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Content - with z-index above decorations */}
+        <div className="relative z-10">
+          {/* Top: Logo Card */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[14px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 text-sm font-medium shadow-lg">
+            <Sparkles className="h-4 w-4 text-primary" />
             AssignX
           </div>
         </div>
 
         {/* Center: Content */}
-        <div className="max-w-md">
-          <h1 className="text-3xl font-semibold tracking-tight leading-tight mb-4">
+        <div className="max-w-md relative z-10">
+          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
             {renderTitle()}
           </h1>
-          <p className="text-muted-foreground leading-relaxed mb-8">
+          <p className="text-muted-foreground leading-relaxed mb-8 text-base">
             {subtitle}
           </p>
 
-          {/* Features list */}
-          <div className="space-y-3">
+          {/* Features list - Enhanced cards */}
+          <div className="space-y-2">
             {serviceInfo.features.map((feature, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                <span className="text-muted-foreground">{feature}</span>
+              <div
+                key={i}
+                className="flex items-center gap-3 px-4 py-3 rounded-[14px] bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-white/30 dark:border-white/10"
+              >
+                <div className="h-2 w-2 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/30" />
+                <span className="text-sm font-medium text-foreground/90">{feature}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Bottom: Step indicators */}
-        <div className="flex items-center gap-3">
+        {/* Bottom: Step indicators - Enhanced */}
+        <div className="flex items-center gap-2 relative z-10">
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div
               key={i}
               className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
-                i <= currentStep ? "bg-primary w-6" : "bg-border w-1.5"
+                "h-2 rounded-full transition-all duration-300",
+                i <= currentStep
+                  ? "bg-gradient-to-r from-primary to-primary/80 w-12 shadow-lg shadow-primary/30"
+                  : "bg-white/20 dark:bg-white/10 w-2"
               )}
             />
           ))}
-          <span className="text-xs text-muted-foreground ml-2">
+          <span className="text-xs text-muted-foreground ml-2 font-medium">
             Step {currentStep + 1} of {totalSteps}
           </span>
         </div>
       </div>
 
-      {/* Right Form Panel - Scrollable */}
-      <div className="flex-1 flex flex-col justify-start items-center p-6 md:p-12 h-screen overflow-y-auto">
-        <div className="w-full max-w-md">
+      {/* Right Form Panel - Scrollable with glassmorphic background */}
+      <div className="flex-1 flex flex-col justify-start items-center p-6 md:p-12 h-screen overflow-y-auto relative">
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/5 to-transparent pointer-events-none" />
+
+        <div className="w-full max-w-lg relative z-10">
           {/* Mobile logo */}
           <div className="flex justify-center mb-8 lg:hidden">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm font-medium">
-              <Sparkles className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[14px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 text-sm font-medium shadow-lg">
+              <Sparkles className="h-4 w-4 text-primary" />
               AssignX
             </div>
           </div>
 
-          {/* Back button */}
+          {/* Back button - Enhanced */}
           {showBack && onBack && (
             <button
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+              className="flex items-center gap-2 px-3 py-2 mb-6 rounded-xl text-sm text-muted-foreground hover:text-foreground bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-white/30 dark:border-white/10 hover:bg-white/60 dark:hover:bg-white/10 transition-all"
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -162,18 +175,18 @@ export function FormLayout({
             </button>
           )}
 
-          {/* Progress bar */}
-          <div className="mb-8">
-            <div className="h-1 bg-muted rounded-full overflow-hidden">
+          {/* Progress bar - Enhanced glassmorphic */}
+          <div className="mb-8 p-4 rounded-[16px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg">
+            <div className="h-2 bg-white/40 dark:bg-white/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500 shadow-lg shadow-primary/20"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="flex justify-between mt-3 text-xs text-muted-foreground">
-              <span>Step {currentStep + 1} of {totalSteps}</span>
+            <div className="flex justify-between mt-3 text-xs">
+              <span className="text-muted-foreground font-medium">Step {currentStep + 1} of {totalSteps}</span>
               {stepLabels && stepLabels[currentStep] && (
-                <span className="font-medium text-foreground">{stepLabels[currentStep]}</span>
+                <span className="font-semibold text-foreground">{stepLabels[currentStep]}</span>
               )}
             </div>
           </div>

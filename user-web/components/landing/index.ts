@@ -19,3 +19,10 @@ export * from "./hero-section-redesign";
 export * from "./features-bento";
 export * from "./how-it-works-redesign";
 export * from "./cta-section-redesign";
+
+// V2 - Systematic design with clear user segmentation
+export * from "./hero-section-v2";
+export * from "./user-types-section";
+export * from "./features-systematic";
+export * from "./how-it-works-v2";
+export * from "./cta-section-v2";
