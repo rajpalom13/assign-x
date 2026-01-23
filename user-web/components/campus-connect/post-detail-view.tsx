@@ -19,17 +19,19 @@ import {
   HelpCircle,
   Home,
   Briefcase,
-  GraduationCap,
   BookOpen,
   MapPin,
   Clock,
   IndianRupee,
   Building,
   Star,
-  MessageCircle,
+  ShoppingBag,
+  Search,
+  Car,
   Users,
-  ExternalLink,
-  Phone,
+  Trophy,
+  Megaphone,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,33 +70,45 @@ function getTimeBasedGradientClass(): string {
 }
 
 /**
- * Get category icon
+ * Get category icon - matches database enum values
  */
 function getCategoryIcon(category: CampusConnectCategory) {
   switch (category) {
-    case "doubts": return HelpCircle;
-    case "residentials": return Home;
-    case "jobs": return Briefcase;
-    case "teacher_reviews": return GraduationCap;
-    case "subject_tips": return BookOpen;
+    case "questions": return HelpCircle;
+    case "housing": return Home;
+    case "opportunities": return Briefcase;
+    case "resources": return BookOpen;
     case "events": return Calendar;
+    case "marketplace": return ShoppingBag;
+    case "lost_found": return Search;
+    case "rides": return Car;
+    case "study_groups": return Users;
+    case "clubs": return Trophy;
+    case "announcements": return Megaphone;
+    case "discussions": return MessageSquare;
     default: return HelpCircle;
   }
 }
 
 /**
- * Get category config
+ * Get category config - matches database enum values
  */
 function getCategoryConfig(category: CampusConnectCategory) {
   const configs: Record<CampusConnectCategory, { label: string; color: string }> = {
-    doubts: { label: "Doubt", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
-    residentials: { label: "Residential", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-    jobs: { label: "Job", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
-    teacher_reviews: { label: "Review", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
-    subject_tips: { label: "Tip", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300" },
+    questions: { label: "Question", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+    housing: { label: "Housing", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
+    opportunities: { label: "Opportunity", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300" },
+    resources: { label: "Resource", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300" },
     events: { label: "Event", color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+    marketplace: { label: "Marketplace", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+    lost_found: { label: "Lost & Found", color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" },
+    rides: { label: "Ride", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300" },
+    study_groups: { label: "Study Group", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
+    clubs: { label: "Club", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300" },
+    announcements: { label: "Announcement", color: "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300" },
+    discussions: { label: "Discussion", color: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300" },
   };
-  return configs[category] || configs.doubts;
+  return configs[category] || configs.questions;
 }
 
 interface PostDetailViewProps {
@@ -575,7 +589,7 @@ function CategorySpecificSection({
   };
 
   switch (category) {
-    case "doubts":
+    case "questions":
       return (
         <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/30 mb-4">
           <div className="flex items-center gap-2 mb-2">
@@ -588,14 +602,14 @@ function CategorySpecificSection({
         </div>
       );
 
-    case "residentials": {
+    case "housing": {
       const location = parseContentField(post.content, "Location") || parseContentField(post.content, "Area");
       const rent = parseContentField(post.content, "Rent") || parseContentField(post.content, "Price");
       return (
         <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl p-4 border border-emerald-200/50 dark:border-emerald-800/30 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <Home className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Residential Listing</span>
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Housing Listing</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {location && (
@@ -613,14 +627,14 @@ function CategorySpecificSection({
           </div>
           <div className="mt-3 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/30">
             <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70">
-              💡 Tip: Always verify the location before visiting
+              Tip: Always verify the location before visiting
             </p>
           </div>
         </div>
       );
     }
 
-    case "jobs": {
+    case "opportunities": {
       const company = parseContentField(post.content, "Company");
       const stipend = parseContentField(post.content, "Stipend") || parseContentField(post.content, "Salary");
       const jobType = parseContentField(post.content, "Type") || parseContentField(post.content, "Role");
@@ -652,54 +666,22 @@ function CategorySpecificSection({
           </div>
           <div className="mt-3 pt-3 border-t border-purple-200/50 dark:border-purple-800/30">
             <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
-              💼 Apply through official channels when possible
+              Apply through official channels when possible
             </p>
           </div>
         </div>
       );
     }
 
-    case "teacher_reviews": {
-      const subject = parseContentField(post.content, "Subject") || parseContentField(post.content, "Course");
-      const rating = parseContentField(post.content, "Rating");
-      return (
-        <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-200/50 dark:border-amber-800/30 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <GraduationCap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Teacher Review</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {subject && (
-              <div className="flex items-center gap-2 text-sm">
-                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{subject}</span>
-              </div>
-            )}
-            {rating && (
-              <div className="flex items-center gap-2 text-sm">
-                <Star className="h-3.5 w-3.5 text-amber-500" />
-                <span>{rating}</span>
-              </div>
-            )}
-          </div>
-          <div className="mt-3 pt-3 border-t border-amber-200/50 dark:border-amber-800/30">
-            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-              📚 Reviews help students make informed choices
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    case "subject_tips":
+    case "resources":
       return (
         <div className="bg-pink-50/50 dark:bg-pink-900/10 rounded-xl p-4 border border-pink-200/50 dark:border-pink-800/30 mb-4">
           <div className="flex items-center gap-2 mb-2">
             <BookOpen className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-            <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Study Tip</span>
+            <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Study Resource</span>
           </div>
           <p className="text-xs text-pink-600/70 dark:text-pink-400/70">
-            💡 Found this helpful? Save it for later and share with classmates!
+            Found this helpful? Save it for later and share with classmates!
           </p>
         </div>
       );
@@ -729,12 +711,143 @@ function CategorySpecificSection({
           </div>
           <div className="mt-3 pt-3 border-t border-cyan-200/50 dark:border-cyan-800/30">
             <p className="text-xs text-cyan-600/70 dark:text-cyan-400/70">
-              🎉 Don't miss out! Mark your calendar
+              Don&apos;t miss out! Mark your calendar
             </p>
           </div>
         </div>
       );
     }
+
+    case "marketplace": {
+      const price = parseContentField(post.content, "Price") || parseContentField(post.content, "Cost");
+      const condition = parseContentField(post.content, "Condition");
+      return (
+        <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-4 border border-amber-200/50 dark:border-amber-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ShoppingBag className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Marketplace Listing</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {price && (
+              <div className="flex items-center gap-2 text-sm">
+                <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{price}</span>
+              </div>
+            )}
+            {condition && (
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{condition}</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-3 pt-3 border-t border-amber-200/50 dark:border-amber-800/30">
+            <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
+              Always meet in a safe public place for exchanges
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    case "lost_found":
+      return (
+        <div className="bg-red-50/50 dark:bg-red-900/10 rounded-xl p-4 border border-red-200/50 dark:border-red-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Search className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <span className="text-sm font-medium text-red-700 dark:text-red-300">Lost & Found</span>
+          </div>
+          <p className="text-xs text-red-600/70 dark:text-red-400/70">
+            If you have any information, please comment below or contact the poster
+          </p>
+        </div>
+      );
+
+    case "rides": {
+      const from = parseContentField(post.content, "From");
+      const to = parseContentField(post.content, "To");
+      const date = parseContentField(post.content, "Date") || parseContentField(post.content, "When");
+      return (
+        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Car className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Ride Share</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {from && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>From: {from}</span>
+              </div>
+            )}
+            {to && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>To: {to}</span>
+              </div>
+            )}
+            {date && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{date}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    case "study_groups":
+      return (
+        <div className="bg-violet-50/50 dark:bg-violet-900/10 rounded-xl p-4 border border-violet-200/50 dark:border-violet-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">Study Group</span>
+          </div>
+          <p className="text-xs text-violet-600/70 dark:text-violet-400/70">
+            Interested in joining? Comment below to connect with the group!
+          </p>
+        </div>
+      );
+
+    case "clubs":
+      return (
+        <div className="bg-yellow-50/50 dark:bg-yellow-900/10 rounded-xl p-4 border border-yellow-200/50 dark:border-yellow-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Club Activity</span>
+          </div>
+          <p className="text-xs text-yellow-600/70 dark:text-yellow-400/70">
+            Get involved! Check out club activities and join the community
+          </p>
+        </div>
+      );
+
+    case "announcements":
+      return (
+        <div className="bg-slate-50/50 dark:bg-slate-900/10 rounded-xl p-4 border border-slate-200/50 dark:border-slate-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Megaphone className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Official Announcement</span>
+          </div>
+          <p className="text-xs text-slate-600/70 dark:text-slate-400/70">
+            This is an official announcement. Please read carefully.
+          </p>
+        </div>
+      );
+
+    case "discussions":
+      return (
+        <div className="bg-teal-50/50 dark:bg-teal-900/10 rounded-xl p-4 border border-teal-200/50 dark:border-teal-800/30 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageSquare className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+            <span className="text-sm font-medium text-teal-700 dark:text-teal-300">Discussion</span>
+          </div>
+          <p className="text-xs text-teal-600/70 dark:text-teal-400/70">
+            Share your thoughts! Join the conversation in the comments below
+          </p>
+        </div>
+      );
 
     default:
       return null;

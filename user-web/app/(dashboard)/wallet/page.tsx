@@ -150,9 +150,9 @@ function WalletContentInner({
 
   return (
     <>
-      <div className="relative min-h-full pb-32 mesh-background mesh-gradient-bottom-right">
+      <div className="relative min-h-full pb-32 mesh-background mesh-gradient-bottom-right-animated">
         {/* 2-Column Layout */}
-        <div className="container max-w-7xl mx-auto px-6 py-8">
+        <div className="container max-w-[1400px] mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
             {/* LEFT COLUMN - Credit Card & Quick Actions */}
@@ -161,48 +161,42 @@ function WalletContentInner({
               {/* Credit Card with Quick Action Buttons - Aligned */}
               <StaggerItem>
                 <div className="space-y-4">
-                  {/* Credit Card - Compact Premium Design */}
-                  <div className="relative w-full max-w-[340px] aspect-[1.7/1] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl shadow-xl p-5 overflow-hidden">
-                    {/* Card shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
-
-                    {/* Mastercard logo - smaller */}
-                    <div className="absolute top-4 right-4">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 rounded-full bg-red-500/80" />
-                        <div className="w-6 h-6 rounded-full bg-yellow-500/80 -ml-2.5" />
-                      </div>
-                    </div>
+                  {/* Wallet Card - Premium Dark Design matching Create Project */}
+                  <div className="relative w-full max-w-[340px] rounded-[20px] p-5 bg-gradient-to-br from-stone-800 via-stone-900 to-neutral-900 dark:from-stone-800 dark:via-stone-900 dark:to-neutral-950 overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-stone-900/30 transition-all duration-300">
+                    {/* Decorative gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-violet-500/5 pointer-events-none" />
+                    {/* Decorative circles */}
+                    <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full blur-2xl" />
+                    <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-gradient-to-tr from-violet-400/15 to-transparent rounded-full blur-xl" />
 
                     {/* Card Content */}
-                    <div className="relative z-10 h-full flex flex-col justify-between">
+                    <div className="relative z-10 space-y-5">
+                      {/* Header with icon and badge */}
+                      <div className="flex items-center justify-between">
+                        <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                          <Wallet className="h-5 w-5 text-white" strokeWidth={2} />
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[11px] font-medium text-white/90 border border-white/10">
+                          💳 Campus Wallet
+                        </span>
+                      </div>
+
                       {/* Balance */}
                       <div>
-                        <p className="text-white/50 text-xs mb-0.5">Balance</p>
-                        <p className="text-white text-2xl font-bold tabular-nums">
+                        <p className="text-white/50 text-xs mb-1">Available Balance</p>
+                        <p className="text-white text-3xl font-bold tabular-nums tracking-tight">
                           {formatCurrency(wallet?.balance || 0)}
                         </p>
                       </div>
 
-                      {/* Card Number */}
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm tracking-[0.25em] text-white/30">****</span>
-                        <span className="text-sm tracking-[0.25em] text-white/30">****</span>
-                        <span className="text-sm tracking-[0.25em] text-white/30">****</span>
-                        <span className="text-base tracking-[0.25em] font-semibold text-white">
-                          4567
-                        </span>
-                      </div>
-
                       {/* Card Footer */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10">
                         <div>
-                          <p className="text-white/50 text-[10px] mb-0.5">CARD HOLDER</p>
-                          <p className="text-white text-xs font-medium">{userName}</p>
+                          <p className="text-white/40 text-[10px] uppercase tracking-wide mb-0.5">Account</p>
+                          <p className="text-white/90 text-sm font-medium">{userName}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-white/50 text-[10px] mb-0.5">EXPIRES</p>
-                          <p className="text-white text-xs font-medium">08/26</p>
+                        <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                          <ChevronRight className="h-4 w-4 text-white/60" />
                         </div>
                       </div>
                     </div>
@@ -212,63 +206,72 @@ function WalletContentInner({
                   <div className="grid grid-cols-2 gap-4 max-w-[340px]">
                     <button
                       onClick={() => setTopUpOpen(true)}
-                      className="glass-card p-5 rounded-xl hover:shadow-lg transition-all duration-300 group border border-border/30 hover:border-primary/30"
+                      className="relative overflow-hidden rounded-[16px] p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:bg-white/90 dark:hover:bg-white/10 group"
                     >
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center group-hover:from-primary/20 group-hover:to-primary/10 transition-all">
-                          <Plus className="h-5 w-5 text-primary" strokeWidth={2.5} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/30 to-green-50/10 dark:from-emerald-900/10 dark:to-transparent pointer-events-none rounded-[16px]" />
+                      <div className="relative z-10 flex flex-col items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/30 transition-all">
+                          <Plus className="h-5 w-5 text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-xs font-semibold text-foreground/80">Add Balance</span>
+                        <span className="text-xs font-semibold text-foreground">Add Balance</span>
                       </div>
                     </button>
-                    <button className="glass-card p-5 rounded-xl hover:shadow-lg transition-all duration-300 group border border-border/30 hover:border-blue-500/30">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 flex items-center justify-center group-hover:from-blue-500/20 group-hover:to-blue-500/10 transition-all">
-                          <Send className="h-5 w-5 text-blue-500" strokeWidth={2.5} />
+                    <button className="relative overflow-hidden rounded-[16px] p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:bg-white/90 dark:hover:bg-white/10 group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-100/30 to-purple-50/10 dark:from-violet-900/10 dark:to-transparent pointer-events-none rounded-[16px]" />
+                      <div className="relative z-10 flex flex-col items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-all">
+                          <Send className="h-5 w-5 text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-xs font-semibold text-foreground/80">Send Money</span>
+                        <span className="text-xs font-semibold text-foreground">Send Money</span>
                       </div>
                     </button>
                   </div>
                 </div>
               </StaggerItem>
 
-              {/* Stats Cards - Minimal Grid */}
+              {/* Stats Cards - Glassmorphic Grid */}
               <StaggerItem>
                 <div className="grid grid-cols-2 gap-3">
                   {/* Rewards */}
-                  <div className="glass-card rounded-xl p-4 border border-border/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-500/5 flex items-center justify-center">
-                        <Trophy className="h-3.5 w-3.5 text-amber-600 dark:text-amber-500" strokeWidth={2.5} />
+                  <div className="relative overflow-hidden rounded-[16px] p-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-100/40 to-orange-50/20 dark:from-amber-900/10 dark:to-transparent pointer-events-none rounded-[16px]" />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                          <Trophy className="h-4 w-4 text-white" strokeWidth={2.5} />
+                        </div>
                       </div>
+                      <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Rewards</p>
+                      <p className="text-lg font-bold tabular-nums">
+                        {stats.rewardPoints.toLocaleString()}
+                      </p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Rewards</p>
-                    <p className="text-lg font-bold tabular-nums">
-                      {stats.rewardPoints.toLocaleString()}
-                    </p>
                   </div>
 
                   {/* Wallet Balance */}
-                  <div className="glass-card rounded-xl p-4 border border-border/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 flex items-center justify-center">
-                        <Wallet className="h-3.5 w-3.5 text-orange-600 dark:text-orange-500" strokeWidth={2.5} />
+                  <div className="relative overflow-hidden rounded-[16px] p-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-lg hover:shadow-black/5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 to-indigo-50/20 dark:from-blue-900/10 dark:to-transparent pointer-events-none rounded-[16px]" />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                          <Wallet className="h-4 w-4 text-white" strokeWidth={2.5} />
+                        </div>
                       </div>
+                      <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Wallet Balance</p>
+                      <p className="text-lg font-bold tabular-nums">
+                        {formatCurrency(wallet?.balance || 0)}
+                      </p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wide">Wallet Balance</p>
-                    <p className="text-lg font-bold tabular-nums">
-                      {formatCurrency(wallet?.balance || 0)}
-                    </p>
                   </div>
 
                   {/* Monthly Spend - Full Width */}
-                  <div className="glass-card rounded-xl p-4 border border-border/30 col-span-2">
-                    <div className="flex items-center justify-between">
+                  <div className="relative overflow-hidden rounded-[16px] p-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-lg hover:shadow-black/5 col-span-2">
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-100/40 to-purple-50/20 dark:from-violet-900/10 dark:to-transparent pointer-events-none rounded-[16px]" />
+                    <div className="relative z-10 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 flex items-center justify-center">
-                            <CreditCard className="h-3.5 w-3.5 text-purple-600 dark:text-purple-500" strokeWidth={2.5} />
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                            <CreditCard className="h-4 w-4 text-white" strokeWidth={2.5} />
                           </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Monthly Spend</p>
@@ -285,7 +288,7 @@ function WalletContentInner({
             {/* RIGHT COLUMN - Payment Templates & History */}
             <div className="lg:col-span-8 space-y-5">
 
-              {/* Payment Templates - Minimal Pastel Design */}
+              {/* Payment Templates - Glassmorphic Design */}
               <StaggerItem>
                 <div>
                   <div className="flex items-center justify-between mb-5">
@@ -297,54 +300,58 @@ function WalletContentInner({
                       className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
                       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                     >
-                      {/* Internet & TV - Soft Blue */}
-                      <div className="min-w-[180px] rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)' }}>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                          <div className="w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                            <Gift className="h-6 w-6 text-blue-600" strokeWidth={2} />
+                      {/* Internet & TV - Blue glassmorphic */}
+                      <div className="min-w-[180px] relative overflow-hidden rounded-[20px] p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-50/30 dark:from-blue-900/20 dark:to-indigo-900/10 pointer-events-none rounded-[20px]" />
+                        <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/30 transition-all">
+                            <Gift className="h-5 w-5 text-white" strokeWidth={2} />
                           </div>
                           <div>
-                            <h3 className="text-sm font-semibold text-blue-900 mb-0.5">Internet & TV</h3>
-                            <p className="text-xs text-blue-700/70">Airtel</p>
+                            <h3 className="text-sm font-semibold text-foreground mb-0.5">Internet & TV</h3>
+                            <p className="text-xs text-muted-foreground">Airtel</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Electricity - Soft Green */}
-                      <div className="min-w-[180px] rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)' }}>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                          <div className="w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                            <Gift className="h-6 w-6 text-green-600" strokeWidth={2} />
+                      {/* Electricity - Green glassmorphic */}
+                      <div className="min-w-[180px] relative overflow-hidden rounded-[20px] p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/50 to-green-50/30 dark:from-emerald-900/20 dark:to-green-900/10 pointer-events-none rounded-[20px]" />
+                        <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/30 transition-all">
+                            <Gift className="h-5 w-5 text-white" strokeWidth={2} />
                           </div>
                           <div>
-                            <h3 className="text-sm font-semibold text-green-900 mb-0.5">Electricity</h3>
-                            <p className="text-xs text-green-700/70">Energy Board</p>
+                            <h3 className="text-sm font-semibold text-foreground mb-0.5">Electricity</h3>
+                            <p className="text-xs text-muted-foreground">Energy Board</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Shopping - Soft Purple */}
-                      <div className="min-w-[180px] rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)' }}>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                          <div className="w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                            <Gift className="h-6 w-6 text-purple-600" strokeWidth={2} />
+                      {/* Shopping - Purple glassmorphic */}
+                      <div className="min-w-[180px] relative overflow-hidden rounded-[20px] p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-100/50 to-purple-50/30 dark:from-violet-900/20 dark:to-purple-900/10 pointer-events-none rounded-[20px]" />
+                        <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-all">
+                            <ShoppingBag className="h-5 w-5 text-white" strokeWidth={2} />
                           </div>
                           <div>
-                            <h3 className="text-sm font-semibold text-purple-900 mb-0.5">Shopping</h3>
-                            <p className="text-xs text-purple-700/70">Amazon</p>
+                            <h3 className="text-sm font-semibold text-foreground mb-0.5">Shopping</h3>
+                            <p className="text-xs text-muted-foreground">Amazon</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Food - Soft Orange */}
-                      <div className="min-w-[180px] rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)' }}>
-                        <div className="flex flex-col items-center gap-3 text-center">
-                          <div className="w-12 h-12 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                            <Gift className="h-6 w-6 text-orange-600" strokeWidth={2} />
+                      {/* Food - Orange glassmorphic */}
+                      <div className="min-w-[180px] relative overflow-hidden rounded-[20px] p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/10 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-100/50 to-orange-50/30 dark:from-amber-900/20 dark:to-orange-900/10 pointer-events-none rounded-[20px]" />
+                        <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/30 transition-all">
+                            <Utensils className="h-5 w-5 text-white" strokeWidth={2} />
                           </div>
                           <div>
-                            <h3 className="text-sm font-semibold text-orange-900 mb-0.5">Food & Dining</h3>
-                            <p className="text-xs text-orange-700/70">Cafeteria</p>
+                            <h3 className="text-sm font-semibold text-foreground mb-0.5">Food & Dining</h3>
+                            <p className="text-xs text-muted-foreground">Cafeteria</p>
                           </div>
                         </div>
                       </div>
@@ -353,29 +360,33 @@ function WalletContentInner({
                 </div>
               </StaggerItem>
 
-              {/* Payment History - Premium Minimal */}
+              {/* Payment History - Glassmorphic Design */}
               <StaggerItem>
                 <div>
                   <div className="flex items-center justify-between mb-5">
                     <h2 className="text-base font-bold tracking-tight">Payment History</h2>
-                    <button className="w-9 h-9 rounded-xl hover:bg-muted/30 flex items-center justify-center transition-all duration-200">
+                    <button className="w-9 h-9 rounded-xl bg-white/50 dark:bg-white/5 border border-white/50 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 flex items-center justify-center transition-all duration-200">
                       <Search className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                     </button>
                   </div>
 
                   {lastMonthTransactions.length === 0 ? (
-                    <div className="glass-card rounded-2xl p-16 text-center border border-border/20">
-                      <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-muted/30 to-muted/10 flex items-center justify-center mx-auto mb-5">
-                        <CreditCard className="h-7 w-7 text-muted-foreground/50" strokeWidth={1.5} />
+                    <div className="relative overflow-hidden rounded-[20px] p-16 text-center bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 to-purple-50/10 dark:from-violet-900/5 dark:to-transparent pointer-events-none rounded-[20px]" />
+                      <div className="relative z-10">
+                        <div className="h-16 w-16 rounded-[20px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 flex items-center justify-center mx-auto mb-5 shadow-lg">
+                          <CreditCard className="h-7 w-7 text-muted-foreground" strokeWidth={1.5} />
+                        </div>
+                        <p className="text-sm font-semibold mb-1.5">No transactions yet</p>
+                        <p className="text-xs text-muted-foreground max-w-[220px] mx-auto leading-relaxed">
+                          Your transaction history will appear here
+                        </p>
                       </div>
-                      <p className="text-sm font-semibold mb-1.5">No transactions yet</p>
-                      <p className="text-xs text-muted-foreground max-w-[220px] mx-auto leading-relaxed">
-                        Your transaction history will appear here
-                      </p>
                     </div>
                   ) : (
-                    <div className="glass-card rounded-2xl p-2 border border-border/20">
-                      <div className="space-y-0.5">
+                    <div className="relative overflow-hidden rounded-[20px] p-2 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-100/20 to-purple-50/10 dark:from-violet-900/5 dark:to-transparent pointer-events-none rounded-[20px]" />
+                      <div className="relative z-10 space-y-0.5">
                         {lastMonthTransactions.map((tx, index) => {
                           const isIncoming = isIncomingTransaction(tx.transaction_type);
                           const CustomIcon = getTransactionIcon(tx.description);
@@ -383,23 +394,23 @@ function WalletContentInner({
                           return (
                             <div
                               key={tx.id}
-                              className="flex items-center gap-4 p-4 rounded-xl hover:bg-muted/20 transition-all duration-200 cursor-pointer group"
+                              className="flex items-center gap-4 p-4 rounded-[16px] hover:bg-white/50 dark:hover:bg-white/5 transition-all duration-200 cursor-pointer group"
                             >
                               {/* Icon */}
                               <div
                                 className={cn(
-                                  "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
+                                  "w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm",
                                   isIncoming
-                                    ? "bg-emerald-500/8 group-hover:bg-emerald-500/12"
-                                    : "bg-muted/50 group-hover:bg-muted/70"
+                                    ? "bg-gradient-to-br from-emerald-500 to-green-600 shadow-emerald-500/20"
+                                    : "bg-gradient-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 shadow-gray-400/20"
                                 )}
                               >
                                 {CustomIcon ? (
-                                  <CustomIcon className="h-5 w-5 text-foreground/60" strokeWidth={2} />
+                                  <CustomIcon className="h-5 w-5 text-white" strokeWidth={2} />
                                 ) : isIncoming ? (
-                                  <ArrowDownLeft className="h-5 w-5 text-emerald-600" strokeWidth={2} />
+                                  <ArrowDownLeft className="h-5 w-5 text-white" strokeWidth={2} />
                                 ) : (
-                                  <ArrowUpRight className="h-5 w-5 text-foreground/50" strokeWidth={2} />
+                                  <ArrowUpRight className="h-5 w-5 text-white" strokeWidth={2} />
                                 )}
                               </div>
 

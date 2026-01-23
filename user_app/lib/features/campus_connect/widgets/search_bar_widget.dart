@@ -1,22 +1,22 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 
-/// Glass-style search bar widget for Campus Connect.
+/// Search bar widget for Campus Connect.
 ///
-/// Features a frosted glass effect with search functionality
-/// and clear button when text is present.
+/// Features a white background with search icon on left and filter icon on right.
+/// Height: ~52-56px, rounded corners (~14px), subtle shadow.
 class SearchBarWidget extends StatefulWidget {
   final Function(String)? onChanged;
   final String? initialValue;
+  final VoidCallback? onFilterTap;
 
   const SearchBarWidget({
     super.key,
     this.onChanged,
     this.initialValue,
+    this.onFilterTap,
   });
 
   @override
@@ -47,83 +47,98 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(_isFocused ? 230 : 204),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isFocused
-                    ? AppColors.primary.withAlpha(128)
-                    : AppColors.border.withAlpha(77),
-                width: 1.5,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(10),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: _isFocused
+              ? Border.all(
+                  color: AppColors.primary.withAlpha(100),
+                  width: 1.5,
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Search icon (left)
+            const Icon(
+              Icons.search,
+              color: Color(0xFF9B9B9B),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+
+            // Text field
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search campus posts...',
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: const Color(0xFF9B9B9B),
+                    fontSize: 15,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                ),
+                onChanged: (value) {
+                  widget.onChanged?.call(value);
+                  setState(() {});
+                },
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(10),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search,
-                  color: AppColors.textSecondary,
-                  size: 22,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
+
+            // Clear button when text is present
+            if (_controller.text.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  _controller.clear();
+                  widget.onChanged?.call('');
+                  setState(() {});
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F0F0),
+                      shape: BoxShape.circle,
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Search posts, events, products...',
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textTertiary,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    child: const Icon(
+                      Icons.close,
+                      color: Color(0xFF9B9B9B),
+                      size: 14,
                     ),
-                    onChanged: (value) {
-                      widget.onChanged?.call(value);
-                      setState(() {});
-                    },
                   ),
                 ),
-                if (_controller.text.isNotEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      _controller.clear();
-                      widget.onChanged?.call('');
-                      setState(() {});
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.border.withAlpha(77),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        color: AppColors.textSecondary,
-                        size: 14,
-                      ),
-                    ),
-                  ),
-              ],
+              ),
+
+            // Filter icon (right)
+            GestureDetector(
+              onTap: widget.onFilterTap,
+              child: const Icon(
+                Icons.tune_rounded,
+                color: Color(0xFF9B9B9B),
+                size: 22,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

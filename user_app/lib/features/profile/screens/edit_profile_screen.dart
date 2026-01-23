@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Edit profile screen for personal and college details with modern UI.
 ///
@@ -67,190 +68,175 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary.withAlpha(10),
-              AppColors.background,
-              AppColors.accent.withAlpha(8),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom app bar
-              _buildAppBar(),
+    return SubtleGradientScaffold.standard(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom app bar
+            _buildAppBar(),
 
-              // Form content
-              Expanded(
-                child: Form(
-                  key: _formKey,
-                  onChanged: () => setState(() => _hasChanges = true),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
+            // Form content
+            Expanded(
+              child: Form(
+                key: _formKey,
+                onChanged: () => setState(() => _hasChanges = true),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
 
-                        // Personal Details Section
-                        _buildSectionHeader('Personal Details', Icons.person_outline),
-                        const SizedBox(height: 16),
+                      // Personal Details Section
+                      _buildSectionHeader('Personal Details', Icons.person_outline),
+                      const SizedBox(height: 16),
 
-                        GlassCard(
-                          blur: 10,
-                          opacity: 0.9,
-                          padding: const EdgeInsets.all(20),
-                          borderRadius: BorderRadius.circular(16),
-                          elevation: 2,
-                          child: Column(
-                            children: [
-                              _buildTextField(
-                                controller: _nameController,
-                                label: 'Full Name',
-                                icon: Icons.person_outline,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                controller: _phoneController,
-                                label: 'Phone Number',
-                                icon: Icons.phone_outlined,
-                                keyboardType: TextInputType.phone,
-                                prefixText: '+91 ',
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                controller: _emailController,
-                                label: 'Email Address',
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                                enabled: false,
-                                helperText: 'Email cannot be changed',
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // College Details Section
-                        _buildSectionHeader('College & Course', Icons.school_outlined),
-                        const SizedBox(height: 16),
-
-                        GlassCard(
-                          blur: 10,
-                          opacity: 0.9,
-                          padding: const EdgeInsets.all(20),
-                          borderRadius: BorderRadius.circular(16),
-                          elevation: 2,
-                          child: Column(
-                            children: [
-                              _buildTextField(
-                                controller: _universityController,
-                                label: 'University / College',
-                                icon: Icons.account_balance,
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                controller: _courseController,
-                                label: 'Course',
-                                icon: Icons.menu_book_outlined,
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildDropdownField(
-                                controller: _yearController,
-                                label: 'Year',
-                                icon: Icons.calendar_today_outlined,
-                                items: const ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                controller: _cityController,
-                                label: 'City',
-                                icon: Icons.location_city_outlined,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // Save button
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primary.withAlpha(200),
-                              ],
+                      GlassCard(
+                        blur: 10,
+                        opacity: 0.9,
+                        padding: const EdgeInsets.all(20),
+                        borderRadius: BorderRadius.circular(16),
+                        elevation: 2,
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _nameController,
+                              label: 'Full Name',
+                              icon: Icons.person_outline,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your name';
+                                }
+                                return null;
+                              },
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withAlpha(60),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
+                            const SizedBox(height: 16),
+
+                            _buildTextField(
+                              controller: _phoneController,
+                              label: 'Phone Number',
+                              icon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              prefixText: '+91 ',
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildTextField(
+                              controller: _emailController,
+                              label: 'Email Address',
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              enabled: false,
+                              helperText: 'Email cannot be changed',
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // College Details Section
+                      _buildSectionHeader('College & Course', Icons.school_outlined),
+                      const SizedBox(height: 16),
+
+                      GlassCard(
+                        blur: 10,
+                        opacity: 0.9,
+                        padding: const EdgeInsets.all(20),
+                        borderRadius: BorderRadius.circular(16),
+                        elevation: 2,
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _universityController,
+                              label: 'University / College',
+                              icon: Icons.account_balance,
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildTextField(
+                              controller: _courseController,
+                              label: 'Course',
+                              icon: Icons.menu_book_outlined,
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildDropdownField(
+                              controller: _yearController,
+                              label: 'Year',
+                              icon: Icons.calendar_today_outlined,
+                              items: const ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildTextField(
+                              controller: _cityController,
+                              label: 'City',
+                              icon: Icons.location_city_outlined,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Save button
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primary.withAlpha(200),
                             ],
                           ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _saveProfile,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withAlpha(60),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _saveProfile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Save Changes',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
                                     ),
-                            ),
+                                  )
+                                : const Text(
+                                    'Save Changes',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                           ),
                         ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

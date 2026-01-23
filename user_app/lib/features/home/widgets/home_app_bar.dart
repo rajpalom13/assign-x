@@ -3,82 +3,83 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../providers/auth_provider.dart';
 import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
 
 /// Custom app bar for home screen.
 ///
-/// Shows greeting, wallet balance, and notification bell.
+/// Shows app logo + name on left, wallet balance chip + notification bell on right.
+/// Transparent background with no elevation per design spec.
 class HomeAppBar extends ConsumerWidget {
   const HomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(currentProfileProvider);
     final wallet = ref.watch(walletProvider);
     final unreadCount = ref.watch(unreadCountProvider);
 
-    final firstName = profile?.fullName?.split(' ').first ?? 'there';
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          // Greeting section
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hi, $firstName!',
-                  style: AppTextStyles.headingMedium,
+          // Left side: App logo + name
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Sparkle/stars icon
+              Icon(
+                Icons.auto_awesome,
+                size: 24,
+                color: const Color(0xFF2D2D2D),
+              ),
+              const SizedBox(width: 8),
+              // App name
+              Text(
+                'AssignX',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF2D2D2D),
+                  letterSpacing: -0.3,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _getGreetingTime(),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          // Wallet pill
-          wallet.when(
-            data: (w) => _WalletPill(
-              balance: w.formattedBalance,
-              onTap: () => context.push('/wallet'),
-            ),
-            loading: () => _WalletPill(
-              balance: '...',
-              onTap: () {},
-            ),
-            error: (_, _) => _WalletPill(
-              balance: '\u20B90',
-              onTap: () => context.push('/wallet'),
-            ),
-          ),
+          const Spacer(),
 
-          const SizedBox(width: 12),
+          // Right side: Wallet pill + Notification bell
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Wallet pill
+              wallet.when(
+                data: (w) => _WalletPill(
+                  balance: w.formattedBalance,
+                  onTap: () => context.push('/wallet'),
+                ),
+                loading: () => _WalletPill(
+                  balance: '...',
+                  onTap: () {},
+                ),
+                error: (_, _) => _WalletPill(
+                  balance: '\u20B90',
+                  onTap: () => context.push('/wallet'),
+                ),
+              ),
 
-          // Notification bell
-          _NotificationBell(
-            count: unreadCount.valueOrNull ?? 0,
-            onTap: () => context.push('/notifications'),
+              const SizedBox(width: 12),
+
+              // Notification bell
+              _NotificationBell(
+                count: unreadCount.valueOrNull ?? 0,
+                onTap: () => context.push('/notifications'),
+              ),
+            ],
           ),
         ],
       ),
     );
-  }
-
-  String _getGreetingTime() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
   }
 }
 
@@ -96,25 +97,26 @@ class _WalletPill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.primary.withAlpha(25),
+          color: const Color(0xFFF0F0F0), // Light gray background
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.account_balance_wallet_outlined,
               size: 18,
-              color: AppColors.primary,
+              color: const Color(0xFF2D2D2D),
             ),
             const SizedBox(width: 6),
             Text(
               balance,
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.primary,
+              style: TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: const Color(0xFF2D2D2D),
               ),
             ),
           ],
@@ -138,38 +140,33 @@ class _NotificationBell extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.notifications_outlined,
-              color: AppColors.textPrimary,
-            ),
+          // Simple outlined bell icon - no background container
+          Icon(
+            Icons.notifications_none_outlined,
+            size: 26,
+            color: const Color(0xFF2D2D2D),
           ),
           if (count > 0)
             Positioned(
-              right: 0,
-              top: 0,
+              right: -4,
+              top: -4,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.error,
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
+                  minWidth: 16,
+                  minHeight: 16,
                 ),
                 child: Text(
                   count > 9 ? '9+' : '$count',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,

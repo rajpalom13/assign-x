@@ -11,9 +11,15 @@ import {
   HelpCircle,
   Home,
   Briefcase,
-  GraduationCap,
   BookOpen,
   Calendar,
+  ShoppingBag,
+  Search,
+  Car,
+  Users,
+  Trophy,
+  Megaphone,
+  MessageSquare,
   AlertCircle,
   Check,
 } from "lucide-react";
@@ -36,6 +42,7 @@ import type { CampusConnectCategory } from "@/types/campus-connect";
 
 /**
  * Category configuration
+ * Must match database enum values exactly
  */
 const categories: Array<{
   id: CampusConnectCategory;
@@ -45,46 +52,88 @@ const categories: Array<{
   color: string;
 }> = [
   {
-    id: "doubts",
-    label: "Doubts",
-    description: "Ask academic questions",
+    id: "questions",
+    label: "Questions",
+    description: "Academic Q&A & doubts",
     icon: HelpCircle,
     color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   },
   {
-    id: "residentials",
-    label: "Residentials",
+    id: "housing",
+    label: "Housing",
     description: "PG, hostel, flat listings",
     icon: Home,
     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
   {
-    id: "jobs",
-    label: "Jobs",
-    description: "Internships & part-time",
+    id: "opportunities",
+    label: "Opportunities",
+    description: "Jobs, internships & gigs",
     icon: Briefcase,
     color: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   },
   {
-    id: "teacher_reviews",
-    label: "Teacher Reviews",
-    description: "Rate your professors",
-    icon: GraduationCap,
-    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  },
-  {
-    id: "subject_tips",
-    label: "Subject Tips",
-    description: "Study tips & resources",
+    id: "resources",
+    label: "Resources",
+    description: "Study tips & materials",
     icon: BookOpen,
     color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
   },
   {
     id: "events",
     label: "Events",
-    description: "College events & fests",
+    description: "Campus events & fests",
     icon: Calendar,
     color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+  {
+    id: "marketplace",
+    label: "Marketplace",
+    description: "Buy & sell items",
+    icon: ShoppingBag,
+    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  },
+  {
+    id: "lost_found",
+    label: "Lost & Found",
+    description: "Lost or found items",
+    icon: Search,
+    color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  },
+  {
+    id: "rides",
+    label: "Rides",
+    description: "Carpool & ride sharing",
+    icon: Car,
+    color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+  },
+  {
+    id: "study_groups",
+    label: "Study Groups",
+    description: "Study groups & teams",
+    icon: Users,
+    color: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+  },
+  {
+    id: "clubs",
+    label: "Clubs",
+    description: "Club activities & societies",
+    icon: Trophy,
+    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+  },
+  {
+    id: "announcements",
+    label: "Announcements",
+    description: "Official announcements",
+    icon: Megaphone,
+    color: "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
+  },
+  {
+    id: "discussions",
+    label: "Discussions",
+    description: "General discussions",
+    icon: MessageSquare,
+    color: "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   },
 ];
 

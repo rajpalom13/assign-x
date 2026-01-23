@@ -8,7 +8,7 @@ interface SkeletonBoxProps {
   height?: string | number;
   className?: string;
   rounded?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
-  animate?: "shimmer" | "pulse" | "wave";
+  animate?: "shimmer" | "pulse" | "wave" | "none";
   delay?: number;
 }
 

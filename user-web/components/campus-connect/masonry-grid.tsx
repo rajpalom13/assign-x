@@ -1,9 +1,20 @@
 "use client";
 
+/**
+ * CampusConnectMasonryGrid - Premium Masonry Layout
+ *
+ * Pinterest-style masonry grid with:
+ * - Premium loading states
+ * - Glassmorphic empty states
+ * - Infinite scroll support
+ */
+
 import { useCallback, useEffect, useRef } from "react";
 import Masonry from "react-masonry-css";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users, Plus } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { PostCard } from "./post-card";
 import type { CampusConnectPost } from "@/types/campus-connect";
 
@@ -22,7 +33,6 @@ interface MasonryGridProps {
 
 /**
  * Breakpoint configuration for Masonry columns
- * 1 column mobile, 2 tablet, 3-4 desktop
  */
 const breakpointColumns = {
   default: 4,
@@ -34,8 +44,6 @@ const breakpointColumns = {
 
 /**
  * CampusConnectMasonryGrid - Pinterest-style masonry layout
- * Renders post cards in a responsive masonry grid
- * Supports infinite scroll loading
  */
 export function CampusConnectMasonryGrid({
   posts,
@@ -90,26 +98,23 @@ export function CampusConnectMasonryGrid({
   // Empty state
   if (posts.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="h-16 w-16 rounded-2xl bg-muted/60 flex items-center justify-center mb-4">
-          <svg
-            className="h-8 w-8 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="relative mb-5">
+          <div className="h-16 w-16 rounded-[20px] bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg">
+            <Users className="h-7 w-7 text-white" />
+          </div>
+          <div className="absolute -inset-4 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-xl pointer-events-none" />
         </div>
-        <h3 className="font-medium text-foreground mb-1">No posts found</h3>
-        <p className="text-sm text-muted-foreground max-w-xs">
+        <h3 className="text-xl font-semibold mb-2">No posts found</h3>
+        <p className="text-sm text-muted-foreground max-w-xs mb-6">
           Be the first to share something with your campus community!
         </p>
+        <Button asChild className="gap-2 rounded-xl h-11 px-6">
+          <Link href="/campus-connect/create">
+            <Plus className="h-4 w-4" />
+            Create Post
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -131,15 +136,24 @@ export function CampusConnectMasonryGrid({
           className="flex items-center justify-center py-8"
         >
           {isLoading && (
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Loading more...</span>
+            </div>
           )}
         </div>
       )}
 
       {/* Loading State - Initial Load */}
       {isLoading && posts.length === 0 && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="relative mb-5">
+            <div className="h-16 w-16 rounded-[20px] bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg animate-pulse">
+              <Users className="h-7 w-7 text-white" />
+            </div>
+            <div className="absolute -inset-4 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-xl pointer-events-none animate-pulse" />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading posts...</p>
         </div>
       )}
     </div>

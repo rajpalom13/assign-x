@@ -5,9 +5,16 @@ import {
   HelpCircle,
   Home,
   Briefcase,
-  GraduationCap,
   BookOpen,
   Calendar,
+  ShoppingBag,
+  Search,
+  Car,
+  Users,
+  Trophy,
+  Megaphone,
+  MessageSquare,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,6 +22,7 @@ import type { CampusConnectCategory } from "@/types/campus-connect";
 
 /**
  * Category configuration with icons
+ * Must match database enum values exactly
  */
 interface CategoryConfig {
   id: CampusConnectCategory | "all";
@@ -23,13 +31,19 @@ interface CategoryConfig {
 }
 
 const categories: CategoryConfig[] = [
-  { id: "all", label: "All", icon: HelpCircle },
-  { id: "doubts", label: "Doubts", icon: HelpCircle },
-  { id: "residentials", label: "Residentials", icon: Home },
-  { id: "jobs", label: "Jobs", icon: Briefcase },
-  { id: "teacher_reviews", label: "Reviews", icon: GraduationCap },
-  { id: "subject_tips", label: "Tips", icon: BookOpen },
+  { id: "all", label: "All", icon: Sparkles },
+  { id: "questions", label: "Questions", icon: HelpCircle },
+  { id: "housing", label: "Housing", icon: Home },
+  { id: "opportunities", label: "Opportunities", icon: Briefcase },
+  { id: "resources", label: "Resources", icon: BookOpen },
   { id: "events", label: "Events", icon: Calendar },
+  { id: "marketplace", label: "Marketplace", icon: ShoppingBag },
+  { id: "lost_found", label: "Lost & Found", icon: Search },
+  { id: "rides", label: "Rides", icon: Car },
+  { id: "study_groups", label: "Study Groups", icon: Users },
+  { id: "clubs", label: "Clubs", icon: Trophy },
+  { id: "announcements", label: "Announcements", icon: Megaphone },
+  { id: "discussions", label: "Discussions", icon: MessageSquare },
 ];
 
 interface CategoryFilterProps {

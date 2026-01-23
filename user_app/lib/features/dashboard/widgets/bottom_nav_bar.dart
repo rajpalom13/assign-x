@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 
-/// Custom bottom navigation bar with fixed positioning.
+/// Custom bottom navigation bar with floating pill design.
 ///
 /// Features:
-/// - Fixed 30-50px from bottom of screen
-/// - Glass morphism effect
-/// - Active state indicators
-/// - Smooth animations
+/// - Floating pill-shaped bar (not docked to edge)
+/// - Light cream/off-white background with subtle shadow
+/// - 6 navigation items: Home, Projects, Community, Orders, Profile, Settings
+/// - Active state: filled icon, Inactive: outlined gray icon
 ///
 /// Example:
 /// ```dart
@@ -24,18 +24,22 @@ class BottomNavBar extends StatelessWidget {
   /// Callback when navigation item is tapped.
   final ValueChanged<int> onTap;
 
-  /// Bottom offset from screen edge. Defaults to 40px.
+  /// Profile avatar URL (optional).
+  final String? profileImageUrl;
+
+  /// Bottom offset from screen edge. Defaults to 20px.
   final double bottomOffset;
 
-  /// Horizontal padding. Defaults to 20px.
+  /// Horizontal padding. Defaults to 24px.
   final double horizontalPadding;
 
   const BottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    this.bottomOffset = 40,
-    this.horizontalPadding = 20,
+    this.profileImageUrl,
+    this.bottomOffset = 20,
+    this.horizontalPadding = 24,
   });
 
   @override
@@ -45,98 +49,130 @@ class BottomNavBar extends StatelessWidget {
       right: horizontalPadding,
       bottom: bottomOffset,
       child: Container(
-        height: 64,
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.3),
-            width: 1,
-          ),
+          // Light cream/off-white background
+          color: const Color(0xFFFAF8F5),
+          borderRadius: BorderRadius.circular(30), // Stadium shape
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 48,
-              offset: const Offset(0, 16),
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 32,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Row(
-            children: [
-              _buildNavItem(
-                icon: Icons.home_rounded,
-                label: 'Home',
-                index: 0,
-              ),
-              _buildNavItem(
-                icon: Icons.folder_outlined,
-                label: 'Projects',
-                index: 1,
-              ),
-              _buildNavItem(
-                icon: Icons.account_balance_wallet_outlined,
-                label: 'Wallet',
-                index: 2,
-              ),
-              _buildNavItem(
-                icon: Icons.person_outline_rounded,
-                label: 'Profile',
-                index: 3,
-              ),
-            ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(
+              activeIcon: Icons.home_rounded,
+              inactiveIcon: Icons.home_outlined,
+              index: 0,
+            ),
+            _buildNavItem(
+              activeIcon: Icons.folder_rounded,
+              inactiveIcon: Icons.folder_outlined,
+              index: 1,
+            ),
+            _buildNavItem(
+              activeIcon: Icons.people_rounded,
+              inactiveIcon: Icons.people_outline_rounded,
+              index: 2,
+            ),
+            _buildNavItem(
+              activeIcon: Icons.work_rounded,
+              inactiveIcon: Icons.work_outline_rounded,
+              index: 3,
+            ),
+            _buildProfileItem(index: 4),
+            _buildNavItem(
+              activeIcon: Icons.settings_rounded,
+              inactiveIcon: Icons.settings_outlined,
+              index: 5,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a single navigation item with icon only.
+  Widget _buildNavItem({
+    required IconData activeIcon,
+    required IconData inactiveIcon,
+    required int index,
+  }) {
+    final isActive = currentIndex == index;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          child: Icon(
+            isActive ? activeIcon : inactiveIcon,
+            size: 26,
+            color: isActive
+                ? const Color(0xFF2D2D2D) // Dark/filled for active
+                : const Color(0xFF8B8B8B), // Gray for inactive
           ),
         ),
       ),
     );
   }
 
-  /// Builds a single navigation item.
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
+  /// Builds the profile avatar item.
+  Widget _buildProfileItem({required int index}) {
     final isActive = currentIndex == index;
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTap(index),
-          borderRadius: BorderRadius.circular(24),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icon
-                Icon(
-                  icon,
-                  size: 24,
-                  color: isActive ? AppColors.primary : AppColors.textTertiary,
-                ),
-                const SizedBox(height: 4),
-                // Label
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    color:
-                        isActive ? AppColors.primary : AppColors.textTertiary,
-                  ),
-                ),
-              ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isActive
+                    ? const Color(0xFF2D2D2D)
+                    : const Color(0xFFE0E0E0),
+                width: isActive ? 2 : 1.5,
+              ),
+              image: profileImageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(profileImageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              color: profileImageUrl == null
+                  ? const Color(0xFFE8E8E8)
+                  : null,
             ),
+            child: profileImageUrl == null
+                ? Icon(
+                    Icons.person,
+                    size: 18,
+                    color: const Color(0xFF8B8B8B),
+                  )
+                : null,
           ),
         ),
       ),

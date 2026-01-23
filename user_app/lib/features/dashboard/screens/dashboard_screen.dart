@@ -8,11 +8,8 @@ import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/project_provider.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../home/widgets/home_app_bar.dart';
-import '../widgets/bottom_nav_bar.dart';
-import '../widgets/dashboard_action_card.dart';
 import '../widgets/greeting_section.dart';
 import '../widgets/needs_attention_card.dart';
 
@@ -35,9 +32,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _hasError = false;
-  int _currentNavIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     // Watch providers for data
@@ -49,8 +43,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Determine loading state
     final isLoading = walletAsync.isLoading || projectsAsync.isLoading;
 
-    // Check for errors
-    _hasError = walletAsync.hasError || projectsAsync.hasError;
+    // Check for errors (local variable, not state mutation in build)
+    final hasError = walletAsync.hasError || projectsAsync.hasError;
 
     // Get projects that need attention (payment_pending, quoted, delivered)
     final needsAttentionProjects = projectsAsync.valueOrNull
@@ -61,211 +55,130 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             .toList() ??
         [];
 
-    // Get active projects count
-    final activeProjectsCount = projectsAsync.valueOrNull
-            ?.where((p) =>
-                p.status == ProjectStatus.inProgress ||
-                p.status == ProjectStatus.assigned ||
-                p.status == ProjectStatus.paid)
-            .length ??
-        0;
-
-    // Get wallet balance
-    final walletBalance = walletAsync.valueOrNull?.balance ?? 0;
-
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Gradient background with creamy, orangish, purplish colors
-          MeshGradientBackground(
-            position: MeshPosition.bottomRight,
-            colors: const [
-              Color(0xFFFBE8E8), // Soft pink (creamy)
-              Color(0xFFFCEDE8), // Soft peach (orangish)
-              Color(0xFFF0E8F8), // Soft purple
-            ],
-            opacity: 0.5,
-            child: SafeArea(
-              bottom: false, // Don't apply SafeArea to bottom (for fixed navbar)
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(walletProvider);
-                  ref.invalidate(projectsProvider);
-                  ref.invalidate(unreadCountProvider);
-                  setState(() => _hasError = false);
-                },
-                color: AppColors.primary,
-                backgroundColor: AppColors.surface,
-                child: _hasError
-                    ? _buildErrorState()
-                    : CustomScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          // App Bar
-                          const SliverToBoxAdapter(
-                            child: HomeAppBar(),
-                          ),
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 24),
-                          ),
+      // Transparent to show SubtleGradientScaffold from MainShell
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false, // Don't apply SafeArea to bottom (for fixed navbar)
+        child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(walletProvider);
+                ref.invalidate(projectsProvider);
+                ref.invalidate(unreadCountProvider);
+              },
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              child: hasError
+                  ? _buildErrorState()
+                  : CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        // App Bar
+                        const SliverToBoxAdapter(
+                          child: HomeAppBar(),
+                        ),
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 24),
+                        ),
 
-                          // Greeting Section
+                        // Greeting Section
+                        SliverToBoxAdapter(
+                          child: GreetingSection(
+                            userName: profile?.fullName,
+                            isLoading: isLoading,
+                            animationDelay:
+                                const Duration(milliseconds: 50),
+                          ),
+                        ),
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 28),
+                        ),
+
+                        // Quick Actions Grid (2x2) - comes before Needs Attention
+                        SliverToBoxAdapter(
+                          child: isLoading
+                              ? _buildActionGridSkeleton()
+                              : _buildActionGrid(),
+                        ),
+
+                        // Needs Attention Section
+                        if (needsAttentionProjects.isNotEmpty)
+                          const SliverToBoxAdapter(
+                            child: SizedBox(height: 28),
+                          ),
+                        if (needsAttentionProjects.isNotEmpty)
                           SliverToBoxAdapter(
-                            child: GreetingSection(
-                              userName: profile?.fullName,
-                              isLoading: isLoading,
-                              animationDelay:
-                                  const Duration(milliseconds: 50),
+                            child: NeedsAttentionSection(
+                              projects: needsAttentionProjects,
+                              onProjectTap: (project) =>
+                                  context.push('/projects/${project.id}'),
                             ),
                           ),
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 24),
-                          ),
 
-                          // Needs Attention Section
-                          if (needsAttentionProjects.isNotEmpty)
-                            SliverToBoxAdapter(
-                              child: NeedsAttentionSection(
-                                projects: needsAttentionProjects,
-                                onProjectTap: (project) =>
-                                    context.push('/projects/${project.id}'),
-                              ),
-                            ),
-                          if (needsAttentionProjects.isNotEmpty)
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 24),
-                            ),
-
-                          // Quick Actions Grid (2x2)
-                          SliverToBoxAdapter(
-                            child: isLoading
-                                ? _buildActionGridSkeleton()
-                                : _buildActionGrid(
-                                    activeProjectsCount: activeProjectsCount,
-                                    walletBalance: walletBalance,
-                                  ),
-                          ),
-
-                          // Bottom padding for fixed navbar
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 140),
-                          ),
-                        ],
-                      ),
-              ),
+                        // Bottom padding for fixed navbar
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 120),
+                        ),
+                      ],
+                    ),
             ),
-          ),
-
-          // Fixed Bottom Navigation Bar
-          BottomNavBar(
-            currentIndex: _currentNavIndex,
-            onTap: _handleNavigation,
-          ),
-        ],
       ),
     );
   }
 
-  /// Builds the 2x2 action grid with cards.
-  Widget _buildActionGrid({
-    required int activeProjectsCount,
-    required double walletBalance,
-  }) {
+  /// Builds the 2x2 action grid with cards per design spec.
+  Widget _buildActionGrid() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // First row: New Project (large gradient) + Plagiarism Check
+          // First row: New Project + Plagiarism Check
           Row(
             children: [
               Expanded(
-                flex: 3,
-                child: DashboardActionCardVariants.primary(
-                  icon: Icons.add_circle_outline_rounded,
+                child: _buildActionCard(
+                  icon: Icons.add,
                   title: 'New Project',
-                  subtitle: 'Create assignment',
+                  subtitle: 'Start a new AI-driven initiative.',
                   onTap: () => context.push('/new-project'),
                   animationDelay: const Duration(milliseconds: 150),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
-                flex: 2,
-                child: DashboardActionCard(
-                  icon: Icons.plagiarism_outlined,
-                  title: 'Plagiarism',
-                  subtitle: 'Check work',
+                child: _buildActionCard(
+                  icon: Icons.verified_user_outlined,
+                  title: 'Plagiarism Check',
+                  subtitle: 'Ensure content originality.',
                   onTap: () => context.push('/plagiarism-check'),
                   animationDelay: const Duration(milliseconds: 200),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Second row: Generate Content + Active Projects Stats
+          // Second row: Generate Content + Insights
           Row(
             children: [
               Expanded(
-                child: DashboardActionCard(
-                  icon: Icons.auto_awesome_outlined,
-                  title: 'Generate',
-                  subtitle: 'AI Content',
+                child: _buildActionCard(
+                  icon: Icons.auto_fix_high,
+                  title: 'Generate Content',
+                  subtitle: 'Create high-quality text.',
                   onTap: () => context.push('/generate-content'),
                   animationDelay: const Duration(milliseconds: 250),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
-                child: DashboardActionCardVariants.stats(
-                  icon: Icons.folder_open_rounded,
-                  value: activeProjectsCount.toString(),
-                  label: 'Active Projects',
-                  iconColor: AppColors.info,
-                  onTap: () {
-                    ref.read(selectedProjectTabProvider.notifier).state = 1;
-                    context.push('/my-projects');
-                  },
-                  animationDelay: const Duration(milliseconds: 300),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Third row: Insights + Wallet Balance
-          Row(
-            children: [
-              Expanded(
-                child: DashboardActionCard(
-                  icon: Icons.insights_outlined,
+                child: _buildActionCard(
+                  icon: Icons.bar_chart_rounded,
                   title: 'Insights',
-                  subtitle: 'Analytics',
+                  subtitle: 'Analyze key metrics.',
                   onTap: () => context.push('/insights'),
-                  animationDelay: const Duration(milliseconds: 350),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DashboardActionCardVariants.stats(
-                  icon: Icons.account_balance_wallet_rounded,
-                  value: '\u20B9${walletBalance.toStringAsFixed(0)}',
-                  label: 'Wallet Balance',
-                  iconColor: AppColors.success,
-                  onTap: () => context.push('/wallet'),
-                  animationDelay: const Duration(milliseconds: 400),
+                  animationDelay: const Duration(milliseconds: 300),
                 ),
               ),
             ],
@@ -275,76 +188,138 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Builds skeleton loader for action grid.
+  /// Builds a single action card matching design spec.
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Duration? animationDelay,
+  }) {
+    Widget card = Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon
+                Icon(
+                  icon,
+                  size: 26,
+                  color: AppColors.textPrimary,
+                ),
+                const SizedBox(height: 16),
+                // Title
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Subtitle
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (animationDelay != null) {
+      return TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: child,
+            ),
+          );
+        },
+        child: card,
+      );
+    }
+
+    return card;
+  }
+
+  /// Builds skeleton loader for action grid (2x2).
   Widget _buildActionGridSkeleton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SkeletonLoader(width: 100, height: 16, borderRadius: 4),
-          const SizedBox(height: 12),
+          // First row
           Row(
             children: [
               Expanded(
-                flex: 3,
                 child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
+                  height: 120,
+                  borderRadius: 18,
                   showImage: false,
                   textLines: 2,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
-                flex: 2,
                 child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
+                  height: 120,
+                  borderRadius: 18,
                   showImage: false,
                   textLines: 2,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // Second row
           Row(
             children: [
               Expanded(
                 child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
+                  height: 120,
+                  borderRadius: 18,
                   showImage: false,
                   textLines: 2,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
-                  showImage: false,
-                  textLines: 2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
-                  showImage: false,
-                  textLines: 2,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CardSkeleton(
-                  height: 140,
-                  borderRadius: 16,
+                  height: 120,
+                  borderRadius: 18,
                   showImage: false,
                   textLines: 2,
                 ),
@@ -364,29 +339,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ref.invalidate(walletProvider);
           ref.invalidate(projectsProvider);
           ref.invalidate(unreadCountProvider);
-          setState(() => _hasError = false);
         },
       ),
     );
   }
 
-  /// Handles bottom navigation tap.
-  void _handleNavigation(int index) {
-    setState(() => _currentNavIndex = index);
-
-    switch (index) {
-      case 0:
-        // Home - already here
-        break;
-      case 1:
-        context.push('/my-projects');
-        break;
-      case 2:
-        context.push('/wallet');
-        break;
-      case 3:
-        context.push('/profile');
-        break;
-    }
-  }
 }

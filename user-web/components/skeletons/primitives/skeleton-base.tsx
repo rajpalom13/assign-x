@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface SkeletonBaseProps {
   className?: string;
-  animate?: "shimmer" | "pulse" | "wave";
+  animate?: "shimmer" | "pulse" | "wave" | "none";
   delay?: number;
   style?: React.CSSProperties;
   children?: React.ReactNode;
@@ -29,6 +29,7 @@ export function SkeletonBase({
     shimmer: "skeleton-shimmer",
     pulse: "animate-pulse",
     wave: "skeleton-wave",
+    none: "",
   }[animate];
 
   return (

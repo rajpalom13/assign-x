@@ -29,8 +29,8 @@ class ProjectRepository {
   ///
   /// Tab indices (new design):
   /// - 0: All projects
-  /// - 1: Active projects (not completed, auto_approved, cancelled, refunded)
-  /// - 2: Completed projects (completed, auto_approved, cancelled, refunded)
+  /// - 1: Active projects (in_progress, assigned, assigning, paid, analyzing)
+  /// - 2: Review projects (delivered, submitted_for_qc, qc_in_progress, qc_approved)
   Future<List<Project>> getProjectsByTab(int tabIndex) async {
     final allProjects = await getProjects();
 
@@ -39,14 +39,40 @@ class ProjectRepository {
         // All projects
         return allProjects;
       case 1:
-        // Active projects
-        return allProjects.where((p) => p.status.isActive).toList();
+        // Active projects - currently being worked on
+        return allProjects.where((p) => _isActiveStatus(p.status)).toList();
       case 2:
-        // Completed projects
-        return allProjects.where((p) => !p.status.isActive).toList();
+        // Review projects - awaiting user review or in QC
+        return allProjects.where((p) => _isReviewStatus(p.status)).toList();
       default:
         return allProjects;
     }
+  }
+
+  /// Check if status is considered "active" (work in progress).
+  bool _isActiveStatus(ProjectStatus status) {
+    return [
+      ProjectStatus.submitted,
+      ProjectStatus.analyzing,
+      ProjectStatus.quoted,
+      ProjectStatus.paymentPending,
+      ProjectStatus.paid,
+      ProjectStatus.assigning,
+      ProjectStatus.assigned,
+      ProjectStatus.inProgress,
+      ProjectStatus.revisionRequested,
+      ProjectStatus.inRevision,
+    ].contains(status);
+  }
+
+  /// Check if status is considered "review" (awaiting review).
+  bool _isReviewStatus(ProjectStatus status) {
+    return [
+      ProjectStatus.delivered,
+      ProjectStatus.submittedForQc,
+      ProjectStatus.qcInProgress,
+      ProjectStatus.qcApproved,
+    ].contains(status);
   }
 
   /// Fetches projects with pending payments.
@@ -263,13 +289,23 @@ class ProjectRepository {
     final projects = await getProjects();
 
     final allCount = projects.length;
-    final activeCount = projects.where((p) => p.status.isActive).length;
-    final completedCount = projects.where((p) => !p.status.isActive).length;
+    final activeCount = projects.where((p) => _isActiveStatus(p.status)).length;
+    final reviewCount = projects.where((p) => _isReviewStatus(p.status)).length;
+    final completedCount = projects.where((p) => _isCompletedStatus(p.status)).length;
 
     return {
-      0: allCount,
-      1: activeCount,
-      2: completedCount,
+      0: allCount,       // Total (for tab 0 - All)
+      1: activeCount,    // Active (for tab 1 - Active)
+      2: reviewCount,    // Review (for tab 2 - Review)
+      3: completedCount, // Completed (for stats display - Done)
     };
+  }
+
+  /// Check if status is considered "completed".
+  bool _isCompletedStatus(ProjectStatus status) {
+    return [
+      ProjectStatus.completed,
+      ProjectStatus.autoApproved,
+    ].contains(status);
   }
 }

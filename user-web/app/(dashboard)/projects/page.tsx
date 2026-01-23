@@ -6,18 +6,11 @@ import { RazorpayCheckout } from "@/components/payments/razorpay-checkout";
 import { createClient } from "@/lib/supabase/client";
 import { walletService } from "@/services";
 import { useProjectStore, type Project } from "@/stores";
-import { PageSkeletonProvider, ProjectsSkeleton } from "@/components/skeletons";
-import { ProjectsDashboard } from "./projects-dashboard";
+import { ProjectsPro } from "./projects-pro";
 
 /**
- * My Projects page
- * Smart Dashboard Hybrid design with:
- * - Animated circular stat rings
- * - Smart auto-grouping by urgency
- * - Adaptive card sizes based on importance
- * - Inline actions without navigation
- * - Activity insights and heatmap
- * - Beautiful glassmorphism design
+ * My Projects Page
+ * Clean, premium design with no unnecessary animations
  */
 export default function ProjectsPage() {
   const [showPayment, setShowPayment] = useState(false);
@@ -26,16 +19,13 @@ export default function ProjectsPage() {
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [userName, setUserName] = useState<string | undefined>();
   const [walletBalance, setWalletBalance] = useState(0);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Track if initial fetch has been done to prevent re-fetches
   const hasFetched = useRef(false);
 
-  // Get loading state and fetch function from project store
-  const { isLoading: projectsLoading, fetchProjects } = useProjectStore();
-
-  // Determine overall loading state - only for initial load
-  const isLoading = !initialLoadComplete;
+  // Get fetch function from project store
+  const { fetchProjects } = useProjectStore();
 
   // Fetch projects and user data on mount (ONCE)
   useEffect(() => {
@@ -65,7 +55,7 @@ export default function ProjectsPage() {
         }
       }
 
-      setInitialLoadComplete(true);
+      setIsLoading(false);
     };
 
     loadData();
@@ -86,17 +76,19 @@ export default function ProjectsPage() {
     ? (selectedProject.quoteAmount || selectedProject.final_quote || selectedProject.user_quote || 0)
     : 0;
 
+  // Simple loading state - no animations
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-muted-foreground">Loading projects...</div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Page Skeleton Provider - shows skeleton for minimum 1000ms */}
-      <PageSkeletonProvider
-        isLoading={isLoading}
-        skeleton={<ProjectsSkeleton />}
-        minimumDuration={1000}
-      >
-        {/* Smart Dashboard Hybrid View */}
-        <ProjectsDashboard onPayNow={handlePayNow} />
-      </PageSkeletonProvider>
+      {/* Projects View - Clean Design */}
+      <ProjectsPro onPayNow={handlePayNow} />
 
       {/* Payment Prompt Modal */}
       <PaymentPromptModal onPay={handlePayNow} />

@@ -85,65 +85,69 @@ class ProfileHero extends StatelessWidget {
               button: onAvatarTap != null,
               label: 'Profile avatar for ${profile.name ?? 'User'}',
               hint: onAvatarTap != null ? 'Double tap to change profile picture' : null,
-              child: GestureDetector(
-                onTap: onAvatarTap,
-                child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(30),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: profile.avatarUrl != null
-                        ? ClipOval(
-                            child: CachedNetworkImage(
-                              imageUrl: profile.avatarUrl!,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => _buildInitialsAvatar(),
-                              errorWidget: (context, url, error) =>
-                                  _buildInitialsAvatar(),
-                            ),
-                          )
-                        : _buildInitialsAvatar(),
-                  ),
-                  if (onAvatarTap != null)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onAvatarTap,
+                  customBorder: const CircleBorder(),
+                  child: Stack(
+                    children: [
+                      Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 3,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(20),
-                              blurRadius: 6,
+                              color: Colors.black.withAlpha(30),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
+                        child: profile.avatarUrl != null
+                            ? ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: profile.avatarUrl!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => _buildInitialsAvatar(),
+                                  errorWidget: (context, url, error) =>
+                                      _buildInitialsAvatar(),
+                                ),
+                              )
+                            : _buildInitialsAvatar(),
                       ),
-                    ),
-                ],
+                      if (onAvatarTap != null)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(20),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.camera_alt,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
             ),
 
             const SizedBox(height: 16),
@@ -247,10 +251,11 @@ class CompactProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 0,
+      child: Ink(
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
@@ -262,56 +267,63 @@ class CompactProfileHeader extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.primaryLight,
-              child: profile.avatarUrl != null
-                  ? ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: profile.avatarUrl!,
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Text(
-                      profile.initials,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Avatar
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.primaryLight,
+                  child: profile.avatarUrl != null
+                      ? ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: profile.avatarUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Text(
+                          profile.initials,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 12),
 
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.name ?? 'User',
-                    style: AppTextStyles.labelLarge,
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.name ?? 'User',
+                        style: AppTextStyles.labelLarge,
+                      ),
+                      if (profile.email.isNotEmpty)
+                        Text(
+                          profile.email,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                    ],
                   ),
-                  if (profile.email.isNotEmpty)
-                    Text(
-                      profile.email,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
+                ),
 
-            // Arrow
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.textSecondary,
+                // Arrow
+                Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textSecondary,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

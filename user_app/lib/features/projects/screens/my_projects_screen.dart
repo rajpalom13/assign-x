@@ -7,14 +7,15 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/router/route_names.dart';
 import '../../../data/models/project_model.dart';
+import '../../../providers/profile_provider.dart';
 import '../../../providers/project_provider.dart';
-import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 import '../widgets/payment_prompt_modal.dart';
 import '../widgets/progress_indicator.dart';
 import '../widgets/review_actions.dart';
 
-/// My Projects screen with tab navigation and new glass design system.
+// Note: scaffoldBackground removed - now using transparent for gradient from MainShell
+
+/// My Projects screen with updated design matching specification.
 class MyProjectsScreen extends ConsumerStatefulWidget {
   const MyProjectsScreen({super.key});
 
@@ -24,20 +25,24 @@ class MyProjectsScreen extends ConsumerStatefulWidget {
 
 class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
   int _selectedTabIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
-  final _tabs = const [
-    _TabInfo('All', Icons.folder_outlined),
-    _TabInfo('Active', Icons.play_circle_outline),
-    _TabInfo('Completed', Icons.check_circle_outline),
-  ];
+  /// Filter tabs: All, Active, Review
+  final _tabs = const ['All', 'Active', 'Review'];
 
   @override
   void initState() {
     super.initState();
-    // Check for pending payments on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPendingPayments();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkPendingPayments() async {
@@ -53,13 +58,11 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
     }
   }
 
-  /// Navigates to the payment screen for the given project.
   void _handlePayNow(Project project) {
     if (!mounted) return;
     context.push(RouteNames.projectPayPath(project.id));
   }
 
-  /// Handles the "Remind Later" action by showing feedback.
   void _handleRemindLater(Project project) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -78,58 +81,291 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: MeshGradientBackground(
-        position: MeshPosition.topRight,
-        colors: [MeshColors.meshPeach, MeshColors.meshOrange, MeshColors.meshYellow],
-        opacity: 0.5,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(),
+      // Transparent to show SubtleGradientScaffold from MainShell
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Bar
+            _buildHeaderBar(),
 
-              const SizedBox(height: 16),
+            // Scrollable Content with Pull-to-Refresh
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(projectsProvider);
+                  ref.invalidate(projectCountsProvider);
+                  ref.invalidate(walletProvider);
+                },
+                color: AppColors.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Projects Overview Card
+                      _buildProjectsOverviewCard(),
 
-              // Glass Tab Bar
-              _buildGlassTabBar(),
+                      const SizedBox(height: 20),
 
-              const SizedBox(height: 16),
+                      // Filter Tabs
+                      _buildFilterTabs(),
 
-              // Projects List
-              Expanded(
-                child: _ProjectTabContent(
-                  tabIndex: _selectedTabIndex,
-                  onApprove: _handleApprove,
-                  onRequestChanges: _handleRequestChanges,
+                      const SizedBox(height: 16),
+
+                      // Search Bar
+                      _buildSearchBar(),
+
+                      const SizedBox(height: 20),
+
+                      // Projects List
+                      _ProjectsList(
+                        tabIndex: _selectedTabIndex,
+                        searchQuery: _searchQuery,
+                        onApprove: _handleApprove,
+                        onRequestChanges: _handleRequestChanges,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+  /// Header Bar: Transparent, "AssignX | Projects", wallet chip, notification bell.
+  Widget _buildHeaderBar() {
+    final walletAsync = ref.watch(walletProvider);
+    final balance = walletAsync.valueOrNull?.balance ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Row(
+        children: [
+          // Left: AssignX | Projects
+          Row(
+            children: [
+              Text(
+                'AssignX',
+                style: AppTextStyles.headingSmall.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Container(
+                height: 20,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+                color: AppColors.border,
+              ),
+              Text(
+                'Projects',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+
+          const Spacer(),
+
+          // Right: Wallet balance chip + Notification bell
+          Row(
+            children: [
+              // Wallet balance chip
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '₹${balance.toStringAsFixed(0)}',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Notification bell
+              GestureDetector(
+                onTap: () => context.push('/notifications'),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    size: 20,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Projects Overview Card with stats and New Project button.
+  Widget _buildProjectsOverviewCard() {
+    final countsAsync = ref.watch(projectCountsProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'My Projects',
-            style: AppTextStyles.headingLarge.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
+          // Title row with sparkle icon
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.auto_awesome,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Projects Overview',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Track your assignment progress',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Stats row
+          countsAsync.when(
+            data: (counts) {
+              final total = counts[0] ?? 0;
+              final active = counts[1] ?? 0;
+              final done = counts[3] ?? 0; // Completed projects (index 3)
+              final successRate = total > 0 ? ((done / total) * 100).round() : 0;
+
+              return Row(
+                children: [
+                  _buildStatItem('Total', total.toString(), AppColors.textPrimary),
+                  _buildStatDivider(),
+                  _buildStatItem('Active', active.toString(), AppColors.primary),
+                  _buildStatDivider(),
+                  _buildStatItem('Done', done.toString(), AppColors.success),
+                  _buildStatDivider(),
+                  _buildStatItem('Success', '$successRate%', AppColors.info),
+                ],
+              );
+            },
+            loading: () => Row(
+              children: [
+                _buildStatItem('Total', '-', AppColors.textPrimary),
+                _buildStatDivider(),
+                _buildStatItem('Active', '-', AppColors.primary),
+                _buildStatDivider(),
+                _buildStatItem('Done', '-', AppColors.success),
+                _buildStatDivider(),
+                _buildStatItem('Success', '-', AppColors.info),
+              ],
+            ),
+            error: (_, __) => Row(
+              children: [
+                _buildStatItem('Total', '0', AppColors.textPrimary),
+                _buildStatDivider(),
+                _buildStatItem('Active', '0', AppColors.primary),
+                _buildStatDivider(),
+                _buildStatItem('Done', '0', AppColors.success),
+                _buildStatDivider(),
+                _buildStatItem('Success', '0%', AppColors.info),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Track and manage your assignments',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+
+          const SizedBox(height: 20),
+
+          // New Project button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => context.push('/projects/new'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkBrown,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'New Project',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -137,58 +373,122 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
     );
   }
 
-  Widget _buildGlassTabBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GlassContainer(
-        blur: 12,
-        opacity: 0.6,
-        borderRadius: BorderRadius.circular(20),
-        padding: const EdgeInsets.all(6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(_tabs.length, (index) {
-            final tab = _tabs[index];
-            final isSelected = _selectedTabIndex == index;
-            return _buildTab(tab.label, index, isSelected);
-          }),
-        ),
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: AppTextStyles.headingSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTab(String label, int index, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-        ref.read(selectedProjectTabProvider.notifier).state = index;
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(13),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+  Widget _buildStatDivider() {
+    return Container(
+      height: 30,
+      width: 1,
+      color: AppColors.border,
+    );
+  }
+
+  /// Filter Tabs: Horizontal scrollable chips.
+  Widget _buildFilterTabs() {
+    final countsAsync = ref.watch(projectCountsProvider);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(_tabs.length, (index) {
+          final isSelected = _selectedTabIndex == index;
+          final label = _tabs[index];
+
+          // Get count for this tab
+          String countText = '';
+          countsAsync.whenData((counts) {
+            final count = index == 0
+                ? counts.values.fold(0, (a, b) => a + b)
+                : (counts[index] ?? 0);
+            countText = ' ($count)';
+          });
+
+          return Padding(
+            padding: EdgeInsets.only(right: index < _tabs.length - 1 ? 10 : 0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedTabIndex = index;
+                });
+                ref.read(selectedProjectTabProvider.notifier).state = index;
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.darkBrown : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? AppColors.darkBrown : AppColors.border,
+                    width: 1,
                   ),
-                ]
-              : null,
+                ),
+                child: Text(
+                  '$label$countText',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  /// Search Bar with magnifying glass icon.
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textPrimary,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+        decoration: InputDecoration(
+          hintText: 'Search projects...',
+          hintStyle: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textTertiary,
           ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: AppColors.textTertiary,
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -235,20 +535,16 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
   }
 }
 
-class _TabInfo {
-  final String label;
-  final IconData icon;
-
-  const _TabInfo(this.label, this.icon);
-}
-
-class _ProjectTabContent extends ConsumerWidget {
+/// Projects List widget that displays filtered projects.
+class _ProjectsList extends ConsumerWidget {
   final int tabIndex;
+  final String searchQuery;
   final Future<void> Function(Project) onApprove;
   final Future<void> Function(Project) onRequestChanges;
 
-  const _ProjectTabContent({
+  const _ProjectsList({
     required this.tabIndex,
+    required this.searchQuery,
     required this.onApprove,
     required this.onRequestChanges,
   });
@@ -259,68 +555,82 @@ class _ProjectTabContent extends ConsumerWidget {
 
     return projectsAsync.when(
       data: (projects) {
-        if (projects.isEmpty) {
-          return _EmptyState(tabIndex: tabIndex);
+        // Apply search filter
+        var filteredProjects = projects;
+        if (searchQuery.isNotEmpty) {
+          filteredProjects = projects.where((p) {
+            return p.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                p.projectNumber.toLowerCase().contains(searchQuery.toLowerCase());
+          }).toList();
         }
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(projectsProvider);
-            ref.invalidate(projectCountsProvider);
-          },
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-            itemCount: projects.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final project = projects[index];
-              return _GlassProjectCard(
+        if (filteredProjects.isEmpty) {
+          return _EmptyState(
+            tabIndex: tabIndex,
+            isSearchResult: searchQuery.isNotEmpty,
+          );
+        }
+
+        return Column(
+          children: List.generate(filteredProjects.length, (index) {
+            final project = filteredProjects[index];
+            return Padding(
+              padding: EdgeInsets.only(bottom: index < filteredProjects.length - 1 ? 12 : 0),
+              child: _ProjectCard(
                 project: project,
                 onTap: () => context.push('/projects/${project.id}'),
                 onApprove: () => onApprove(project),
                 onRequestChanges: () => onRequestChanges(project),
-              );
-            },
-          ),
+              ),
+            );
+          }),
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(),
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(),
+        ),
       ),
       error: (error, _) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load projects',
-              style: AppTextStyles.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => ref.invalidate(projectsByTabProvider(tabIndex)),
-              child: const Text('Retry'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load projects',
+                style: AppTextStyles.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => ref.invalidate(projectsByTabProvider(tabIndex)),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Glass-styled project card with status dot and progress indicator.
-class _GlassProjectCard extends StatelessWidget {
+/// Project card with status-based styling.
+/// - Completed: green checkmark, no border
+/// - Submitted/Under Review: dashed yellow/orange border, orange text
+/// - Pending/Other: dashed yellow border, brown icon
+class _ProjectCard extends StatelessWidget {
   final Project project;
   final VoidCallback onTap;
   final VoidCallback? onApprove;
   final VoidCallback? onRequestChanges;
 
-  const _GlassProjectCard({
+  const _ProjectCard({
     required this.project,
     required this.onTap,
     this.onApprove,
@@ -329,136 +639,262 @@ class _GlassProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    final cardStyle = _getCardStyle();
+
+    return GestureDetector(
       onTap: onTap,
-      blur: 15,
-      opacity: 0.75,
-      elevation: 2,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row: Title, service type, status badge
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Service type icon
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary.withAlpha(30),
-                      AppColors.accent.withAlpha(15),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: cardStyle.hasDashedBorder
+              ? null
+              : Border.all(color: AppColors.border, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(6),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        foregroundDecoration: cardStyle.hasDashedBorder
+            ? _DashedBorderDecoration(
+                color: cardStyle.borderColor,
+                borderRadius: BorderRadius.circular(16),
+              )
+            : null,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left: Status icon
+            _buildStatusIcon(cardStyle),
+
+            const SizedBox(width: 14),
+
+            // Right: Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title and status badge row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          project.title,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatusBadge(cardStyle),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  project.serviceType.icon,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
 
-              // Title and service type
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      project.title,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
+                  const SizedBox(height: 6),
+
+                  // Project number and service type
+                  Row(
+                    children: [
+                      Text(
+                        '#${project.projectNumber}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textTertiary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      project.serviceType.displayName,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.textTertiary,
+                          shape: BoxShape.circle,
+                        ),
                       ),
+                      Text(
+                        project.serviceType.displayName,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Progress bar (only for in_progress)
+                  if (project.status == ProjectStatus.inProgress) ...[
+                    ProjectProgressIndicator(
+                      percent: project.progressPercentage,
+                      showLabel: true,
                     ),
+                    const SizedBox(height: 10),
                   ],
-                ),
-              ),
 
-              const SizedBox(width: 12),
-
-              // Status badge with colored dot
-              _StatusBadgeWithDot(status: project.status),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Progress indicator (only for in_progress)
-          if (project.status == ProjectStatus.inProgress) ...[
-            ProjectProgressIndicator(
-              percent: project.progressPercentage,
-              showLabel: true,
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Bottom row: Last updated and action
-          Row(
-            children: [
-              // Last updated with clock icon
-              Icon(
-                Icons.access_time_outlined,
-                size: 14,
-                color: AppColors.textTertiary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                _formatLastUpdated(project.updatedAt ?? project.createdAt),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-
-              const Spacer(),
-
-              // Action buttons based on status
-              _buildActionButtons(context),
-            ],
-          ),
-
-          // Owner avatar section (if applicable)
-          if (project.doerId != null) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: AppColors.divider),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.primary.withAlpha(30),
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 16,
-                    color: AppColors.primary,
+                  // Bottom row: Last updated and action
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatLastUpdated(project.updatedAt ?? project.createdAt),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildActionButton(context),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Expert assigned',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
-        ],
+        ),
+      ),
+    );
+  }
+
+  _CardStyle _getCardStyle() {
+    switch (project.status) {
+      // Completed states - green checkmark, no special border
+      case ProjectStatus.completed:
+      case ProjectStatus.autoApproved:
+        return _CardStyle(
+          iconBgColor: AppColors.success.withAlpha(20),
+          iconColor: AppColors.success,
+          icon: Icons.check_circle,
+          statusText: 'Completed',
+          statusColor: AppColors.success,
+          hasDashedBorder: false,
+          borderColor: Colors.transparent,
+        );
+
+      // Submitted/Under Review - dashed orange border
+      case ProjectStatus.delivered:
+      case ProjectStatus.submittedForQc:
+      case ProjectStatus.qcInProgress:
+      case ProjectStatus.qcApproved:
+        return _CardStyle(
+          iconBgColor: AppColors.warning.withAlpha(20),
+          iconColor: AppColors.warning,
+          icon: Icons.hourglass_top_rounded,
+          statusText: 'Under Review',
+          statusColor: AppColors.warning,
+          hasDashedBorder: true,
+          borderColor: AppColors.warning,
+        );
+
+      // Pending payment
+      case ProjectStatus.quoted:
+      case ProjectStatus.paymentPending:
+        return _CardStyle(
+          iconBgColor: AppColors.warning.withAlpha(20),
+          iconColor: AppColors.warning,
+          icon: Icons.payment_rounded,
+          statusText: 'Payment Pending',
+          statusColor: AppColors.warning,
+          hasDashedBorder: true,
+          borderColor: AppColors.warning,
+        );
+
+      // In Progress
+      case ProjectStatus.inProgress:
+      case ProjectStatus.assigned:
+      case ProjectStatus.assigning:
+        return _CardStyle(
+          iconBgColor: AppColors.primary.withAlpha(20),
+          iconColor: AppColors.primary,
+          icon: Icons.trending_up_rounded,
+          statusText: 'In Progress',
+          statusColor: AppColors.primary,
+          hasDashedBorder: true,
+          borderColor: AppColors.primary.withAlpha(100),
+        );
+
+      // Revision states
+      case ProjectStatus.revisionRequested:
+      case ProjectStatus.inRevision:
+        return _CardStyle(
+          iconBgColor: AppColors.error.withAlpha(20),
+          iconColor: AppColors.error,
+          icon: Icons.edit_note_rounded,
+          statusText: 'Revision',
+          statusColor: AppColors.error,
+          hasDashedBorder: true,
+          borderColor: AppColors.error,
+        );
+
+      // Cancelled/Refunded
+      case ProjectStatus.cancelled:
+      case ProjectStatus.refunded:
+      case ProjectStatus.qcRejected:
+        return _CardStyle(
+          iconBgColor: AppColors.error.withAlpha(20),
+          iconColor: AppColors.error,
+          icon: Icons.cancel_rounded,
+          statusText: project.status.displayName,
+          statusColor: AppColors.error,
+          hasDashedBorder: false,
+          borderColor: Colors.transparent,
+        );
+
+      // Default/Pending states
+      default:
+        return _CardStyle(
+          iconBgColor: AppColors.primary.withAlpha(20),
+          iconColor: AppColors.primary,
+          icon: Icons.description_outlined,
+          statusText: project.status.displayName,
+          statusColor: AppColors.textSecondary,
+          hasDashedBorder: true,
+          borderColor: AppColors.border,
+        );
+    }
+  }
+
+  Widget _buildStatusIcon(_CardStyle style) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: style.iconBgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        style.icon,
+        color: style.iconColor,
+        size: 22,
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(_CardStyle style) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: style.statusColor.withAlpha(15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        style.statusText,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: style.statusColor,
+        ),
       ),
     );
   }
@@ -478,7 +914,7 @@ class _GlassProjectCard extends StatelessWidget {
     }
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButton(BuildContext context) {
     switch (project.status) {
       case ProjectStatus.quoted:
       case ProjectStatus.paymentPending:
@@ -522,93 +958,96 @@ class _GlassProjectCard extends StatelessWidget {
   }
 }
 
-/// Status badge with colored dot indicator.
-class _StatusBadgeWithDot extends StatelessWidget {
-  final ProjectStatus status;
+/// Card style configuration.
+class _CardStyle {
+  final Color iconBgColor;
+  final Color iconColor;
+  final IconData icon;
+  final String statusText;
+  final Color statusColor;
+  final bool hasDashedBorder;
+  final Color borderColor;
 
-  const _StatusBadgeWithDot({required this.status});
+  const _CardStyle({
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.icon,
+    required this.statusText,
+    required this.statusColor,
+    required this.hasDashedBorder,
+    required this.borderColor,
+  });
+}
+
+/// Custom dashed border decoration.
+class _DashedBorderDecoration extends Decoration {
+  final Color color;
+  final BorderRadius borderRadius;
+  final double dashWidth;
+  final double dashSpace;
+
+  const _DashedBorderDecoration({
+    required this.color,
+    required this.borderRadius,
+    this.dashWidth = 5,
+    this.dashSpace = 3,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: _getDotColor().withAlpha(20),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _getDotColor().withAlpha(40),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Colored dot
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: _getDotColor(),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Status text
-          Text(
-            status.displayName,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: _getDotColor(),
-            ),
-          ),
-        ],
-      ),
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) {
+    return _DashedBorderPainter(
+      color: color,
+      borderRadius: borderRadius,
+      dashWidth: dashWidth,
+      dashSpace: dashSpace,
     );
   }
+}
 
-  /// Get dot color based on status.
-  ///
-  /// Status dot colors:
-  /// - submitted: gray
-  /// - quoted: primary (coffee bean)
-  /// - payment_pending: primary
-  /// - paid: foreground
-  /// - in_progress: primary
-  /// - completed: foreground/success
-  /// - revision_requested: warning
-  /// - cancelled: error
-  Color _getDotColor() {
-    switch (status) {
-      case ProjectStatus.draft:
-      case ProjectStatus.submitted:
-        return AppColors.textTertiary;
-      case ProjectStatus.quoted:
-      case ProjectStatus.paymentPending:
-      case ProjectStatus.inProgress:
-      case ProjectStatus.assigned:
-      case ProjectStatus.assigning:
-        return AppColors.primary;
-      case ProjectStatus.paid:
-      case ProjectStatus.analyzing:
-        return AppColors.textPrimary;
-      case ProjectStatus.completed:
-      case ProjectStatus.autoApproved:
-      case ProjectStatus.delivered:
-      case ProjectStatus.qcApproved:
-        return AppColors.success;
-      case ProjectStatus.revisionRequested:
-      case ProjectStatus.inRevision:
-      case ProjectStatus.submittedForQc:
-      case ProjectStatus.qcInProgress:
-        return AppColors.warning;
-      case ProjectStatus.cancelled:
-      case ProjectStatus.refunded:
-      case ProjectStatus.qcRejected:
-        return AppColors.error;
+class _DashedBorderPainter extends BoxPainter {
+  final Color color;
+  final BorderRadius borderRadius;
+  final double dashWidth;
+  final double dashSpace;
+
+  _DashedBorderPainter({
+    required this.color,
+    required this.borderRadius,
+    required this.dashWidth,
+    required this.dashSpace,
+  });
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final rect = offset & configuration.size!;
+    final rrect = borderRadius.toRRect(rect);
+    final path = Path()..addRRect(rrect);
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final dashPath = _createDashedPath(path);
+    canvas.drawPath(dashPath, paint);
+  }
+
+  Path _createDashedPath(Path source) {
+    final dest = Path();
+    for (final metric in source.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        dest.addPath(
+          metric.extractPath(distance, distance + dashWidth),
+          Offset.zero,
+        );
+        distance += dashWidth + dashSpace;
+      }
     }
+    return dest;
   }
 }
+
 
 /// Compact action chip button.
 class _ActionChip extends StatelessWidget {
@@ -663,12 +1102,18 @@ class _ActionChip extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final int tabIndex;
+  final bool isSearchResult;
 
-  const _EmptyState({required this.tabIndex});
+  const _EmptyState({
+    required this.tabIndex,
+    this.isSearchResult = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final (icon, title, subtitle) = _getEmptyStateContent();
+    final (icon, title, subtitle) = isSearchResult
+        ? (Icons.search_off, 'No Results Found', 'Try a different search term')
+        : _getEmptyStateContent();
 
     return Center(
       child: Padding(
@@ -676,11 +1121,12 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            GlassContainer(
-              blur: 15,
-              opacity: 0.6,
-              borderRadius: BorderRadius.circular(40),
+            Container(
               padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withAlpha(15),
+                borderRadius: BorderRadius.circular(40),
+              ),
               child: Icon(
                 icon,
                 size: 40,
@@ -725,9 +1171,9 @@ class _EmptyState extends StatelessWidget {
         );
       case 2:
         return (
-          Icons.check_circle_outline,
-          'No Completed Projects',
-          'Your completed projects will appear here',
+          Icons.rate_review_outlined,
+          'No Projects for Review',
+          'Projects awaiting your review will appear here',
         );
       default:
         return (

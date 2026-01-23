@@ -129,9 +129,10 @@ class NeedsAttentionCard extends StatelessWidget {
   }
 }
 
-/// Needs attention section widget.
+/// Needs attention section widget per design spec.
 ///
-/// Displays a header with count and horizontal scrollable list of attention cards.
+/// Displays "NEEDS ATTENTION" header with count badge and vertical list of items.
+/// Each item shows: colored dot, title, subtitle, and chevron arrow.
 ///
 /// Example:
 /// ```dart
@@ -153,6 +154,34 @@ class NeedsAttentionSection extends StatelessWidget {
     this.onProjectTap,
   });
 
+  /// Returns subtitle text based on project status.
+  String _getSubtitle(Project project) {
+    switch (project.status) {
+      case ProjectStatus.paymentPending:
+        return 'Payment Due';
+      case ProjectStatus.delivered:
+        return 'Delivered';
+      case ProjectStatus.quoted:
+        return 'Quote Ready';
+      default:
+        return project.status.displayName;
+    }
+  }
+
+  /// Returns dot color based on project status.
+  Color _getDotColor(Project project) {
+    switch (project.status) {
+      case ProjectStatus.paymentPending:
+        return const Color(0xFFDDB8D8); // Pink/Mauve
+      case ProjectStatus.delivered:
+        return const Color(0xFF2D2D2D); // Dark/Black
+      case ProjectStatus.quoted:
+        return const Color(0xFF9D7B65); // Warm brown
+      default:
+        return project.status.color;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (projects.isEmpty) {
@@ -162,59 +191,152 @@ class NeedsAttentionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with count
+        // Header with count badge
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: AppColors.warning,
-                  shape: BoxShape.circle,
+              // "NEEDS ATTENTION" in all caps
+              Text(
+                'NEEDS ATTENTION',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2D2D2D),
+                  letterSpacing: 1.0,
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Needs Attention',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              // Count badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F0F0),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '${projects.length} item${projects.length > 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textTertiary,
+                child: Text(
+                  '${projects.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D2D2D),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        // Horizontal scrolling list
-        SizedBox(
-          height: 90,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: projects.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final project = projects[index];
-              return NeedsAttentionCard(
-                project: project,
-                onTap: () => onProjectTap?.call(project),
-                animationDelay: Duration(milliseconds: 50 * index),
+        const SizedBox(height: 16),
+        // Vertical list of items
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: projects.asMap().entries.map((entry) {
+              final index = entry.key;
+              final project = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(bottom: index < projects.length - 1 ? 12 : 0),
+                child: _NeedsAttentionListItem(
+                  project: project,
+                  subtitle: _getSubtitle(project),
+                  dotColor: _getDotColor(project),
+                  onTap: () => onProjectTap?.call(project),
+                ),
               );
-            },
+            }).toList(),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Single list item for needs attention section.
+class _NeedsAttentionListItem extends StatelessWidget {
+  final Project project;
+  final String subtitle;
+  final Color dotColor;
+  final VoidCallback? onTap;
+
+  const _NeedsAttentionListItem({
+    required this.project,
+    required this.subtitle,
+    required this.dotColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 0,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Colored dot indicator
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Title and subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        project.title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Chevron arrow
+                Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

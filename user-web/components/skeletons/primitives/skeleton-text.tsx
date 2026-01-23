@@ -9,7 +9,7 @@ interface SkeletonTextProps {
   className?: string;
   lineHeight?: number;
   gap?: number;
-  animate?: "shimmer" | "pulse" | "wave";
+  animate?: "shimmer" | "pulse" | "wave" | "none";
   delay?: number;
 }
 

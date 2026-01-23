@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 
 /// Filter categories for Campus Connect.
 enum CampusConnectCategory {
-  community('Community', Icons.groups_rounded),
-  opportunities('Opportunities', Icons.work_outline_rounded),
-  products('Products', Icons.shopping_bag_outlined),
-  housing('Housing', Icons.home_outlined);
+  community('Community'),
+  opportunities('Opportunities'),
+  products('Products'),
+  housing('Housing');
 
   final String label;
-  final IconData icon;
 
-  const CampusConnectCategory(this.label, this.icon);
+  const CampusConnectCategory(this.label);
 }
 
 /// Horizontal filter tabs bar for Campus Connect categories.
 ///
-/// Features glass-style filter pills with icons and labels
-/// for filtering content by category.
+/// Features text-only pill chips that scroll horizontally.
+/// Selected: Dark fill (#2D2D2D), white text
+/// Unselected: White/transparent background, dark border, dark text
 class FilterTabsBar extends StatelessWidget {
   final CampusConnectCategory? selectedCategory;
   final Function(CampusConnectCategory?) onCategoryChanged;
@@ -34,31 +33,20 @@ class FilterTabsBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
-        children: [
-          // All filter pill
-          _FilterPill(
-            label: 'All',
-            icon: Icons.apps_rounded,
-            isSelected: selectedCategory == null,
-            onTap: () => onCategoryChanged(null),
-          ),
-          const SizedBox(width: 8),
-
-          // Category pills
-          ...CampusConnectCategory.values.map(
-            (category) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _FilterPill(
-                label: category.label,
-                icon: category.icon,
-                isSelected: selectedCategory == category,
-                onTap: () => onCategoryChanged(category),
+        children: CampusConnectCategory.values.map(
+          (category) => Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: _FilterPill(
+              label: category.label,
+              isSelected: selectedCategory == category,
+              onTap: () => onCategoryChanged(
+                selectedCategory == category ? null : category,
               ),
             ),
           ),
-        ],
+        ).toList(),
       ),
     );
   }
@@ -67,13 +55,11 @@ class FilterTabsBar extends StatelessWidget {
 /// Individual filter pill widget.
 class _FilterPill extends StatelessWidget {
   final String label;
-  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _FilterPill({
     required this.label,
-    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
@@ -85,51 +71,24 @@ class _FilterPill extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : Colors.white.withAlpha(179),
+          color: isSelected ? const Color(0xFF2D2D2D) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.border.withAlpha(128),
-            width: 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withAlpha(60),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: const Color(0xFFE0E0E0),
+                  width: 1,
+                ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: AppTextStyles.labelMedium.copyWith(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: AppTextStyles.labelMedium.copyWith(
+            color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
         ),
       ),
     );

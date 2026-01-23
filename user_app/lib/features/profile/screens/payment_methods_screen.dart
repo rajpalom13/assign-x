@@ -19,6 +19,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 
 /// Payment method type
 enum PaymentMethodType { card, upi }
@@ -114,70 +115,55 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary.withAlpha(8),
-              AppColors.background,
-              AppColors.accent.withAlpha(6),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom app bar
-              _buildAppBar(),
+    return SubtleGradientScaffold.standard(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom app bar
+            _buildAppBar(),
 
-              // Content
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : RefreshIndicator(
-                        onRefresh: _loadPaymentMethods,
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Info text
-                              Text(
-                                'Manage your saved cards and UPI IDs for faster checkout',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+            // Content
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _loadPaymentMethods,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Info text
+                            Text(
+                              'Manage your saved cards and UPI IDs for faster checkout',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
                               ),
-                              const SizedBox(height: 24),
+                            ),
+                            const SizedBox(height: 24),
 
-                              // Saved methods
-                              if (_methods.isEmpty)
-                                _buildEmptyState()
-                              else
-                                ..._methods.map((method) => _buildMethodCard(method)),
+                            // Saved methods
+                            if (_methods.isEmpty)
+                              _buildEmptyState()
+                            else
+                              ..._methods.map((method) => _buildMethodCard(method)),
 
-                              const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                              // Add buttons
-                              _buildAddButtons(),
+                            // Add buttons
+                            _buildAddButtons(),
 
-                              const SizedBox(height: 32),
+                            const SizedBox(height: 32),
 
-                              // Security note
-                              _buildSecurityNote(),
-                            ],
-                          ),
+                            // Security note
+                            _buildSecurityNote(),
+                          ],
                         ),
                       ),
-              ),
-            ],
-          ),
+                    ),
+            ),
+          ],
         ),
       ),
     );

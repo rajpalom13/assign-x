@@ -9,6 +9,7 @@ import '../../../data/models/faq_model.dart';
 import '../../../data/models/support_ticket_model.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../shared/widgets/glass_container.dart';
+import '../../../shared/widgets/subtle_gradient_scaffold.dart';
 import '../widgets/ticket_history_section.dart';
 
 /// Help and support screen with FAQ, contact options, and ticket submission.
@@ -43,73 +44,58 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary.withAlpha(8),
-              AppColors.background,
-              AppColors.accent.withAlpha(6),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom app bar
-              _buildAppBar(),
+    return SubtleGradientScaffold.standard(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom app bar
+            _buildAppBar(),
 
-              // Content
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(supportTicketsProvider);
-                    ref.invalidate(filteredFAQsProvider);
-                  },
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Quick contact options
-                        _QuickContactSection(
-                          onWhatsAppTap: _openWhatsApp,
-                          onEmailTap: _openEmail,
-                          onCallTap: _openPhone,
-                        ),
-                        const SizedBox(height: 24),
+            // Content
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(supportTicketsProvider);
+                  ref.invalidate(filteredFAQsProvider);
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Quick contact options
+                      _QuickContactSection(
+                        onWhatsAppTap: _openWhatsApp,
+                        onEmailTap: _openEmail,
+                        onCallTap: _openPhone,
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Raise a ticket
-                        _RaiseTicketSection(
-                          subjectController: _subjectController,
-                          issueController: _issueController,
-                          selectedCategory: _selectedCategory,
-                          isSubmitting: _isSubmitting,
-                          onCategoryChanged: (value) => setState(() => _selectedCategory = value),
-                          onSubmit: _submitTicket,
-                        ),
-                        const SizedBox(height: 24),
+                      // Raise a ticket
+                      _RaiseTicketSection(
+                        subjectController: _subjectController,
+                        issueController: _issueController,
+                        selectedCategory: _selectedCategory,
+                        isSubmitting: _isSubmitting,
+                        onCategoryChanged: (value) => setState(() => _selectedCategory = value),
+                        onSubmit: _submitTicket,
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Ticket History Section
-                        const TicketHistorySection(),
-                        const SizedBox(height: 24),
+                      // Ticket History Section
+                      const TicketHistorySection(),
+                      const SizedBox(height: 24),
 
-                        // FAQ Section
-                        const _FAQSection(),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                      // FAQ Section
+                      const _FAQSection(),
+                      const SizedBox(height: 40),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

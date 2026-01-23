@@ -29,6 +29,15 @@ import {
   ChevronRight,
   ArrowRight,
   Timer,
+  Sparkles,
+  Target,
+  Rocket,
+  BookOpen,
+  HelpCircle,
+  Lightbulb,
+  Award,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import { StaggerItem } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -200,9 +209,17 @@ function CircularProgress({
 }
 
 // ============================================================================
-// STATS HEADER COMPONENT
+// BENTO STATS GRID COMPONENT
 // ============================================================================
 
+/**
+ * Asymmetric Bento Grid Stats Header
+ * Features:
+ * - Hero card with main CTA and overview
+ * - Large success rate card with animated ring
+ * - Stats cards with contextual info
+ * - Quick actions/tips card
+ */
 function StatsHeader({
   stats,
   onNewProject,
@@ -216,145 +233,433 @@ function StatsHeader({
   };
   onNewProject: () => void;
 }) {
+  const router = useRouter();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={smoothSpring}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
       className="mb-6"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        {/* Title */}
-        <div className="flex items-center gap-3">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, ...springTransition }}
-            className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"
-          >
-            <FolderKanban className="h-5 w-5 text-primary" />
-          </motion.div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Projects</h1>
-            <p className="text-sm text-muted-foreground">Track and manage your work</p>
-          </div>
-        </div>
-
-        {/* New Project Button */}
+      {/* Bento Grid - Asymmetric Layout */}
+      <div className="grid grid-cols-12 gap-3 md:gap-4">
+        {/* ============================================ */}
+        {/* HERO CARD - Create New Project (Large) */}
+        {/* ============================================ */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.05, ...smoothSpring }}
+          whileHover={{ y: -3, scale: 1.01 }}
+          onClick={onNewProject}
+          className="col-span-12 md:col-span-5 lg:col-span-4 row-span-2 cursor-pointer group"
         >
-          <Button onClick={onNewProject} className="gap-2 shadow-lg shadow-primary/20">
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
-        </motion.div>
-      </div>
+          <div className="relative h-full min-h-[200px] p-5 rounded-2xl bg-gradient-to-br from-primary/90 via-primary to-primary/80 text-primary-foreground overflow-hidden">
+            {/* Decorative Elements */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-white/10 rounded-full blur-xl" />
+            <motion.div
+              className="absolute top-4 right-4 w-16 h-16 bg-white/5 rounded-full"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard
-          label="Total"
-          value={stats.total}
-          icon={FolderKanban}
-          delay={0.1}
-        />
-        <StatCard
-          label="Active"
-          value={stats.active}
-          icon={Zap}
-          accent
-          pulse
-          delay={0.15}
-        />
-        <StatCard
-          label="Completed"
-          value={stats.completed}
-          icon={CheckCircle2}
-          delay={0.2}
-        />
-        <StatCard
-          label="Success"
-          value={stats.successRate}
-          suffix="%"
-          icon={TrendingUp}
-          showRing
-          delay={0.25}
-        />
+            {/* Content */}
+            <div className="relative z-10 h-full flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <motion.div
+                  className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm"
+                  whileHover={{ rotate: 90 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Plus className="h-5 w-5" />
+                </motion.div>
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                >
+                  <Sparkles className="h-5 w-5 text-white/70" />
+                </motion.div>
+              </div>
+
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Start New Project</h2>
+              <p className="text-sm text-white/80 mb-4 flex-1">
+                Get expert help with your assignments, essays, and research work
+              </p>
+
+              {/* Quick Stats Row */}
+              <div className="flex items-center gap-4 pt-3 border-t border-white/20">
+                <div>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-xs text-white/70">Total Projects</p>
+                </div>
+                <div className="h-8 w-px bg-white/20" />
+                <div>
+                  <p className="text-2xl font-bold">{stats.needsAttention}</p>
+                  <p className="text-xs text-white/70">Need Action</p>
+                </div>
+              </div>
+
+              {/* Hover Arrow */}
+              <motion.div
+                initial={{ x: -10, opacity: 0 }}
+                whileHover={{ x: 0, opacity: 1 }}
+                className="absolute bottom-5 right-5"
+              >
+                <ArrowRight className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* SUCCESS RATE CARD (Medium - Tall) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.1, ...smoothSpring }}
+          whileHover={{ y: -2, scale: 1.01 }}
+          className="col-span-6 md:col-span-3 lg:col-span-2 row-span-2"
+        >
+          <div className="h-full min-h-[200px] p-4 rounded-2xl bg-background/70 backdrop-blur-sm border border-border/40 flex flex-col items-center justify-center text-center">
+            {/* Large Progress Ring */}
+            <CircularProgress value={stats.successRate} size={90} strokeWidth={6}>
+              <div className="text-center">
+                <motion.span
+                  className="text-2xl font-bold text-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <AnimatedCounter value={stats.successRate} suffix="%" />
+                </motion.span>
+              </div>
+            </CircularProgress>
+
+            <p className="text-sm font-medium text-foreground mt-3">Success Rate</p>
+            <p className="text-xs text-muted-foreground mt-1">Project completion</p>
+
+            {/* Trend Indicator */}
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex items-center gap-1 mt-3 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30"
+            >
+              <TrendingUp className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+                On track
+              </span>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* ACTIVE PROJECTS CARD (Small) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.15, ...smoothSpring }}
+          whileHover={{ y: -2, scale: 1.02 }}
+          onClick={() => router.push("/projects?tab=in_progress")}
+          className="col-span-6 md:col-span-4 lg:col-span-3 cursor-pointer group"
+        >
+          <div className="relative h-full p-4 rounded-2xl bg-violet-50/80 dark:bg-violet-950/30 border border-violet-200/50 dark:border-violet-800/50 overflow-hidden">
+            {/* Animated Background Pulse */}
+            <motion.div
+              className="absolute inset-0 bg-violet-400/10"
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <motion.div
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="h-2 w-2 rounded-full bg-violet-500"
+                  />
+                  <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">
+                    In Progress
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-violet-700 dark:text-violet-300">
+                  <AnimatedCounter value={stats.active} />
+                </p>
+                <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">
+                  Active now
+                </p>
+              </div>
+              <motion.div
+                className="h-10 w-10 rounded-xl bg-violet-200/50 dark:bg-violet-800/50 flex items-center justify-center"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                <Zap className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+              </motion.div>
+            </div>
+
+            {/* Progress Mini-bars */}
+            <div className="mt-3 flex gap-1">
+              {[75, 50, 90, 30].slice(0, Math.min(stats.active, 4)).map((p, i) => (
+                <motion.div
+                  key={i}
+                  className="flex-1 h-1 bg-violet-200 dark:bg-violet-800 rounded-full overflow-hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                >
+                  <motion.div
+                    className="h-full bg-violet-500 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${p}%` }}
+                    transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* COMPLETED PROJECTS CARD (Small) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.2, ...smoothSpring }}
+          whileHover={{ y: -2, scale: 1.02 }}
+          onClick={() => router.push("/projects?tab=history")}
+          className="col-span-6 md:col-span-4 lg:col-span-3 cursor-pointer group"
+        >
+          <div className="relative h-full p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/50">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                    Completed
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">
+                  <AnimatedCounter value={stats.completed} />
+                </p>
+                <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+                  Successfully done
+                </p>
+              </div>
+              <motion.div
+                className="h-10 w-10 rounded-xl bg-emerald-200/50 dark:bg-emerald-800/50 flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+              >
+                <Award className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </motion.div>
+            </div>
+
+            {/* Mini Achievement Badges */}
+            <div className="mt-3 flex items-center gap-1">
+              {[...Array(Math.min(stats.completed, 5))].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4 + i * 0.05 }}
+                  className="h-5 w-5 rounded-full bg-emerald-200 dark:bg-emerald-800 flex items-center justify-center"
+                >
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                </motion.div>
+              ))}
+              {stats.completed > 5 && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 ml-1">
+                  +{stats.completed - 5}
+                </span>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* QUICK ACTIONS CARD (Medium) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.25, ...smoothSpring }}
+          className="col-span-12 md:col-span-8 lg:col-span-6"
+        >
+          <div className="h-full p-4 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/40">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
+            </div>
+
+            {/* Action Buttons Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <QuickActionButton
+                icon={Plus}
+                label="New Project"
+                onClick={onNewProject}
+                color="primary"
+                delay={0.3}
+              />
+              <QuickActionButton
+                icon={BookOpen}
+                label="Browse Experts"
+                onClick={() => router.push("/experts")}
+                color="violet"
+                delay={0.35}
+              />
+              <QuickActionButton
+                icon={BarChart3}
+                label="View Analytics"
+                onClick={() => {}}
+                color="blue"
+                delay={0.4}
+                disabled
+                tooltip="Coming soon"
+              />
+              <QuickActionButton
+                icon={HelpCircle}
+                label="Get Help"
+                onClick={() => router.push("/support")}
+                color="emerald"
+                delay={0.45}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* ACTIVITY SPARKLINE CARD (Small) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.3, ...smoothSpring }}
+          className="col-span-6 lg:col-span-3 hidden lg:block"
+        >
+          <div className="h-full p-4 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/40">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">This Week</span>
+              </div>
+            </div>
+
+            {/* Activity Bars */}
+            <div className="flex items-end justify-between gap-1 h-12">
+              {[40, 65, 30, 80, 55, 90, 45].map((height, i) => (
+                <motion.div
+                  key={i}
+                  className="flex-1 bg-primary/20 rounded-t"
+                  initial={{ height: 0 }}
+                  animate={{ height: `${height}%` }}
+                  transition={{ delay: 0.5 + i * 0.05, duration: 0.5 }}
+                >
+                  <motion.div
+                    className="w-full bg-primary rounded-t"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.random() * 60 + 40}%` }}
+                    transition={{ delay: 0.6 + i * 0.05, duration: 0.5 }}
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Day Labels */}
+            <div className="flex justify-between mt-2">
+              {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
+                <span key={i} className="text-[9px] text-muted-foreground flex-1 text-center">
+                  {day}
+                </span>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============================================ */}
+        {/* TOTAL OVERVIEW CARD (Small - Mobile Only) */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.25, ...smoothSpring }}
+          className="col-span-6 md:hidden"
+        >
+          <div className="h-full p-4 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/40">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Total
+                </span>
+                <p className="text-3xl font-bold text-foreground">
+                  <AnimatedCounter value={stats.total} />
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">All projects</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                <FolderKanban className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  suffix = "",
+/**
+ * Quick Action Button Component
+ */
+function QuickActionButton({
   icon: Icon,
-  accent,
-  pulse,
-  showRing,
+  label,
+  onClick,
+  color,
   delay,
+  disabled,
+  tooltip,
 }: {
-  label: string;
-  value: number;
-  suffix?: string;
   icon: React.ElementType;
-  accent?: boolean;
-  pulse?: boolean;
-  showRing?: boolean;
+  label: string;
+  onClick: () => void;
+  color: "primary" | "violet" | "blue" | "emerald";
   delay: number;
+  disabled?: boolean;
+  tooltip?: string;
 }) {
+  const colorClasses = {
+    primary: "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20",
+    violet: "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 border-violet-200 dark:border-violet-800",
+    blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800",
+    emerald: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border-emerald-200 dark:border-emerald-800",
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <motion.button
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ delay, ...smoothSpring }}
-      whileHover={{ y: -2, scale: 1.02 }}
+      whileHover={!disabled ? { y: -2, scale: 1.03 } : undefined}
+      whileTap={!disabled ? { scale: 0.97 } : undefined}
+      onClick={onClick}
+      disabled={disabled}
+      title={tooltip}
       className={cn(
-        "relative p-4 rounded-xl backdrop-blur-sm border transition-all",
-        "bg-background/60 border-border/40 hover:border-border/60",
-        accent && "border-primary/30 bg-primary/5"
+        "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all",
+        colorClasses[color],
+        disabled && "opacity-50 cursor-not-allowed"
       )}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-          <p className={cn("text-2xl font-semibold", accent && "text-primary")}>
-            <AnimatedCounter value={value} suffix={suffix} />
-          </p>
-        </div>
-        <div className="relative">
-          {showRing ? (
-            <CircularProgress value={value} size={40} strokeWidth={3}>
-              <Icon className="h-4 w-4 text-primary" />
-            </CircularProgress>
-          ) : (
-            <motion.div
-              className={cn(
-                "h-10 w-10 rounded-lg flex items-center justify-center",
-                accent ? "bg-primary/15 text-primary" : "bg-muted/50 text-muted-foreground"
-              )}
-              whileHover={{ rotate: [0, -5, 5, 0] }}
-              transition={{ duration: 0.4 }}
-            >
-              <Icon className="h-5 w-5" />
-            </motion.div>
-          )}
-          {pulse && (
-            <motion.div
-              className="absolute inset-0 rounded-lg bg-primary/20"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          )}
-        </div>
-      </div>
-    </motion.div>
+      <Icon className="h-4 w-4" />
+      <span className="text-[10px] font-medium">{label}</span>
+    </motion.button>
   );
 }
 

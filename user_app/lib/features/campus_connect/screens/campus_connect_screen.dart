@@ -7,7 +7,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
 import '../../../providers/marketplace_provider.dart';
-import '../../../shared/widgets/glass_container.dart';
 import '../widgets/campus_connect_hero.dart';
 import '../widgets/filter_tabs_bar.dart';
 import '../widgets/post_card.dart';
@@ -15,8 +14,8 @@ import '../widgets/search_bar_widget.dart';
 
 /// Campus Connect screen with staggered feed of community content.
 ///
-/// Features a gradient hero section with chat icon, search functionality,
-/// filter tabs, and a Pinterest-style staggered grid of various post types.
+/// Features a header bar, gradient hero section with chat icon, search functionality,
+/// filter tabs, listings count, and a Pinterest-style staggered grid of various post types.
 class CampusConnectScreen extends ConsumerStatefulWidget {
   const CampusConnectScreen({super.key});
 
@@ -34,87 +33,133 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(marketplaceListingsProvider);
-        },
-        child: CustomScrollView(
-          slivers: [
-            // Gradient hero section with chat icon
-            const SliverToBoxAdapter(
-              child: CampusConnectHero(),
-            ),
-
-            // Search bar
-            SliverToBoxAdapter(
-              child: SearchBarWidget(
-                initialValue: _searchQuery,
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-
-            // Filter tabs
-            SliverToBoxAdapter(
-              child: FilterTabsBar(
-                selectedCategory: _selectedCategory,
-                onCategoryChanged: (category) {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                },
-              ),
-            ),
-
-            // Staggered posts grid
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: listingsAsync.when(
-                data: (listings) {
-                  // Filter listings based on selected category and search
-                  final filteredListings = _filterListings(listings);
-
-                  if (filteredListings.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: _EmptyState(
-                        hasFilters: _selectedCategory != null ||
-                            _searchQuery.isNotEmpty,
-                        onClearFilters: () {
-                          setState(() {
-                            _selectedCategory = null;
-                            _searchQuery = '';
-                          });
-                        },
-                      ),
-                    );
-                  }
-
-                  return _StaggeredPostsGrid(listings: filteredListings);
-                },
-                loading: () => const SliverToBoxAdapter(
-                  child: _LoadingGrid(),
-                ),
-                error: (error, stack) => SliverToBoxAdapter(
-                  child: _ErrorState(
-                    error: error.toString(),
-                    onRetry: () {
-                      ref.invalidate(marketplaceListingsProvider);
+      // Transparent to show SubtleGradientScaffold from MainShell
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(marketplaceListingsProvider);
+            },
+            child: CustomScrollView(
+              slivers: [
+                // Header bar
+                SliverToBoxAdapter(
+                  child: CampusConnectHeader(
+                    walletBalance: 10100,
+                    onNotificationTap: () {
+                      // Handle notification tap
+                    },
+                    onWalletTap: () {
+                      // Handle wallet tap
                     },
                   ),
                 ),
-              ),
-            ),
 
-            // Bottom padding for navigation
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 120),
+                // Gradient hero section with chat icon
+                const SliverToBoxAdapter(
+                  child: CampusConnectHero(),
+                ),
+
+                // Search bar
+                SliverToBoxAdapter(
+                  child: SearchBarWidget(
+                    initialValue: _searchQuery,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    onFilterTap: () {
+                      // Show filter bottom sheet
+                      _showFilterSheet(context);
+                    },
+                  ),
+                ),
+
+                // Filter tabs
+                SliverToBoxAdapter(
+                  child: FilterTabsBar(
+                    selectedCategory: _selectedCategory,
+                    onCategoryChanged: (category) {
+                      setState(() {
+                        _selectedCategory = category;
+                      });
+                    },
+                  ),
+                ),
+
+                // Listings count
+                SliverToBoxAdapter(
+                  child: listingsAsync.when(
+                    data: (listings) {
+                      final filteredCount = _filterListings(listings).length;
+                      return _ListingsCount(count: filteredCount);
+                    },
+                    loading: () => const _ListingsCount(count: 0),
+                    error: (error, stackTrace) => const SizedBox.shrink(),
+                  ),
+                ),
+
+                // Staggered posts grid
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: listingsAsync.when(
+                    data: (listings) {
+                      // Filter listings based on selected category and search
+                      final filteredListings = _filterListings(listings);
+
+                      if (filteredListings.isEmpty) {
+                        return SliverToBoxAdapter(
+                          child: _EmptyState(
+                            hasFilters: _selectedCategory != null ||
+                                _searchQuery.isNotEmpty,
+                            onClearFilters: () {
+                              setState(() {
+                                _selectedCategory = null;
+                                _searchQuery = '';
+                              });
+                            },
+                          ),
+                        );
+                      }
+
+                      return _StaggeredPostsGrid(listings: filteredListings);
+                    },
+                    loading: () => const SliverToBoxAdapter(
+                      child: _LoadingGrid(),
+                    ),
+                    error: (error, stack) => SliverToBoxAdapter(
+                      child: _ErrorState(
+                        error: error.toString(),
+                        onRetry: () {
+                          ref.invalidate(marketplaceListingsProvider);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom padding for navigation
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 120),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Floating Action Button
+          Positioned(
+            bottom: 100,
+            right: 20,
+            child: _FloatingActionButton(
+              onTap: () {
+                // Handle FAB tap - create new post
+                context.push('/marketplace/create');
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -156,6 +201,133 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
 
     return filtered;
   }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Filter Posts',
+              style: AppTextStyles.headingSmall.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: CampusConnectCategory.values.map((category) {
+                final isSelected = _selectedCategory == category;
+                return Material(
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory =
+                            isSelected ? null : category;
+                      });
+                      Navigator.pop(context);
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.textPrimary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: Text(
+                        category.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Listings count display.
+class _ListingsCount extends StatelessWidget {
+  final int count;
+
+  const _ListingsCount({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 16),
+      child: Center(
+        child: Text(
+          'Showing $count listings',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: const Color(0xFF8B8B8B),
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating action button.
+class _FloatingActionButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _FloatingActionButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.darkBrown,
+      shape: const CircleBorder(),
+      elevation: 6,
+      shadowColor: Colors.black.withAlpha(40),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 56,
+          height: 56,
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Staggered grid of post cards.
@@ -179,12 +351,13 @@ class _StaggeredPostsGrid extends StatelessWidget {
   }
 
   /// Build appropriate post card based on listing type.
-  Widget _buildPostCard(BuildContext context, MarketplaceListing listing, int index) {
+  Widget _buildPostCard(
+      BuildContext context, MarketplaceListing listing, int index) {
     switch (listing.type) {
       case ListingType.communityPost:
       case ListingType.poll:
-        // Randomly show help posts vs discussion posts for variety
-        if (index.isEven && listing.commentCount < 3) {
+        // Show help posts for some community posts based on certain criteria
+        if (_shouldShowAsHelpPost(listing, index)) {
           return HelpPostCard(
             listing: listing,
             onTap: () => _navigateToDetail(context, listing),
@@ -201,7 +374,6 @@ class _StaggeredPostsGrid extends StatelessWidget {
         );
 
       case ListingType.event:
-      case ListingType.opportunity:
         return EventPostCard(
           listing: listing,
           onTap: () => _navigateToDetail(context, listing),
@@ -213,6 +385,12 @@ class _StaggeredPostsGrid extends StatelessWidget {
               ),
             );
           },
+        );
+
+      case ListingType.opportunity:
+        return OpportunityPostCard(
+          listing: listing,
+          onTap: () => _navigateToDetail(context, listing),
         );
 
       case ListingType.product:
@@ -239,6 +417,18 @@ class _StaggeredPostsGrid extends StatelessWidget {
     }
   }
 
+  /// Determine if a community post should be shown as a help post.
+  bool _shouldShowAsHelpPost(MarketplaceListing listing, int index) {
+    final title = listing.title.toLowerCase();
+    // Show as help post if title contains help-related keywords
+    return title.contains('struggling') ||
+        title.contains('help') ||
+        title.contains('difficult') ||
+        title.contains('problem') ||
+        title.contains('issue') ||
+        (index % 5 == 1 && listing.commentCount < 3);
+  }
+
   void _navigateToDetail(BuildContext context, MarketplaceListing listing) {
     context.push('/marketplace/${listing.id}');
   }
@@ -258,38 +448,57 @@ class _LoadingGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 6,
       itemBuilder: (context, index) {
-        return GlassCard(
-          blur: 8,
-          opacity: 0.6,
-          padding: const EdgeInsets.all(14),
+        // Varying heights for masonry effect
+        final height = index.isEven ? 160.0 : 200.0;
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Skeleton content
+              // Icon area skeleton
               Container(
-                height: 12,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(6),
+                height: index.isEven ? 80 : 100,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Container(
-                height: 12,
-                width: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 8,
-                width: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(4),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8E8E8),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8E8E8),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -312,30 +521,40 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 15,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(32),
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF5F5F5),
               shape: BoxShape.circle,
             ),
             child: Icon(
               hasFilters ? Icons.filter_list_off : Icons.inbox_outlined,
               size: 48,
-              color: AppColors.textTertiary,
+              color: const Color(0xFF9B9B9B),
             ),
           ),
           const SizedBox(height: 20),
           Text(
             hasFilters ? 'No posts found' : 'No posts yet',
             style: AppTextStyles.headingSmall.copyWith(
-              color: AppColors.textSecondary,
+              color: const Color(0xFF6B6B6B),
             ),
           ),
           const SizedBox(height: 8),
@@ -344,47 +563,41 @@ class _EmptyState extends StatelessWidget {
                 ? 'Try adjusting your filters or search'
                 : 'Be the first to post!',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textTertiary,
+              color: const Color(0xFF9B9B9B),
             ),
             textAlign: TextAlign.center,
           ),
           if (hasFilters) ...[
             const SizedBox(height: 24),
-            GestureDetector(
-              onTap: onClearFilters,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withAlpha(60),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.filter_alt_off,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Clear Filters',
-                      style: AppTextStyles.labelMedium.copyWith(
+            Material(
+              color: AppColors.darkBrown,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: onClearFilters,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.filter_alt_off,
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        size: 18,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Clear Filters',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -407,10 +620,20 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      blur: 15,
-      opacity: 0.7,
+    return Container(
       padding: const EdgeInsets.all(32),
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -430,55 +653,49 @@ class _ErrorState extends StatelessWidget {
           Text(
             'Something went wrong',
             style: AppTextStyles.headingSmall.copyWith(
-              color: AppColors.textSecondary,
+              color: const Color(0xFF6B6B6B),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             error,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textTertiary,
+              color: const Color(0xFF9B9B9B),
             ),
             textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 24),
-          GestureDetector(
-            onTap: onRetry,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withAlpha(60),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Try Again',
-                    style: AppTextStyles.labelMedium.copyWith(
+          Material(
+            color: AppColors.darkBrown,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: onRetry,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh_rounded,
                       color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                      size: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(
+                      'Try Again',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

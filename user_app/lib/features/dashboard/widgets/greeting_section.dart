@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -67,33 +66,34 @@ class GreetingSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Time-based greeting
+          // Time-based greeting - normal weight, dark gray
           Text(
             _getGreeting(),
             style: const TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.w300,
-              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF2D2D2D), // Dark gray
               height: 1.2,
             ),
           ),
-          // User's first name
+          // User's first name - bold, larger, near-black
           Text(
             _getFirstName(userName),
             style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A), // Near-black
               height: 1.2,
             ),
           ),
           const SizedBox(height: 8),
-          // Subtitle
+          // Subtitle - medium gray
           Text(
-            subtitle ?? 'Ready to tackle your assignments?',
+            subtitle ?? 'Ready to optimize your workflow and generate insights.',
             style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textTertiary,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF6B6B6B), // Medium gray
             ),
           ),
         ],
