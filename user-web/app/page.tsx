@@ -1,28 +1,39 @@
 "use client";
 
 /**
- * Home page - Landing page for AssignX
- * Clean, modern design inspired by Canva/Linear
+ * Home Page REDESIGN - Premium Bento Grid Landing
+ *
+ * Inspired by:
+ * - Dashboard: Warm brown/stone theme with bento cards & orange accents
+ * - Projects: Glassmorphic premium design with dark hero cards
+ * - Campus Connect: Vibrant gradients, feature carousels & community focus
+ * - Experts: Mesh gradient backgrounds & proper spacing
+ * - Wallet: 2-column layouts, glassmorphic cards, credit card style
+ *
+ * Design Features:
+ * - Mesh gradient backgrounds with time-based classes
+ * - Glassmorphic bento grid cards
+ * - Dark hero cards with gradient overlays & decorative circles
+ * - 2-column layouts (greeting + bento grid)
+ * - Premium hover states with shadows
+ * - Warm peach/pink/brown gradient palette
  *
  * Sections:
- * 1. Hero - Clean headline with CTA
- * 2. User Type Cards - Students, Professionals, Business Owners
- * 3. Trust Stats - Animated counters for key metrics
- * 4. Value Proposition - End-to-end expert handling banner
- * 5. Horizontal Scroll - Feature showcase
- * 6. CTA - Final call to action
+ * 1. Hero - 2-column with greeting + premium bento grid
+ * 2. Features - Glassmorphic service bento cards
+ * 3. How It Works - 4-step process with wallet-inspired layout
+ * 4. CTA - Dark hero conversion section
+ * 5. Footer - Minimal clean footer
  */
 
 import "./landing.css";
 import { LenisProvider } from "@/components/providers/lenis-provider";
 import {
   Navigation,
-  HeroSection,
-  UserTypeCards,
-  TrustStats,
-  ValueProposition,
-  HorizontalScroll,
-  CTASection,
+  HeroSectionRedesign,
+  FeaturesBento,
+  HowItWorksRedesign,
+  CTASectionRedesign,
   Footer,
 } from "@/components/landing";
 
@@ -35,26 +46,20 @@ export default function Home() {
 
         {/* Main content */}
         <main>
-          {/* Hero Section - Clean, centered layout */}
-          <HeroSection />
+          {/* Hero Section - Premium 2-column with bento grid */}
+          <HeroSectionRedesign />
 
-          {/* User Type Cards - Students, Professionals, Business Owners */}
-          <UserTypeCards />
+          {/* Features Bento - Service showcase with glassmorphic cards */}
+          <FeaturesBento />
 
-          {/* Trust Stats - Animated counters */}
-          <TrustStats />
+          {/* How It Works - 4-step process with premium cards */}
+          <HowItWorksRedesign />
 
-          {/* Value Proposition Banner - End-to-end handling */}
-          <ValueProposition />
-
-          {/* Horizontal Scroll - Feature showcase */}
-          <HorizontalScroll />
-
-          {/* CTA Section - Final call to action */}
-          <CTASection />
+          {/* CTA Section - Dark hero conversion with stats */}
+          <CTASectionRedesign />
         </main>
 
-        {/* Footer - Dark with ghost text animation */}
+        {/* Footer - Minimal clean design */}
         <Footer />
       </div>
     </LenisProvider>
