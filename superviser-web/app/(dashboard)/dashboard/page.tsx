@@ -140,13 +140,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-7 pb-8">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between border-b pb-5">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Monitor your projects and track your performance
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Here&apos;s an overview of your supervisor activity.
           </p>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
       />
 
       {/* Request Sections */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         {/* New Requests */}
         <NewRequestsSection
           requests={newRequests}
@@ -186,61 +186,55 @@ export default function DashboardPage() {
       </div>
 
       {/* Active Projects */}
-      <Card className="border-0 shadow-sm bg-card/50">
-        <CardHeader className="pb-4 border-b">
+      <Card>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <FolderKanban className="h-5 w-5 text-blue-600" strokeWidth={2} />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-semibold">Active Projects</CardTitle>
-                {activeProjects.length > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {activeProjects.length} {activeProjects.length === 1 ? 'project' : 'projects'} in progress
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Active Projects</CardTitle>
+              {activeProjects.length > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  ({activeProjects.length})
+                </span>
+              )}
             </div>
-            <Button variant="ghost" size="sm" className="gap-1" asChild>
+            <Button variant="ghost" size="sm" asChild>
               <Link href="/projects">
                 View All
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Link>
             </Button>
           </div>
+          <CardDescription>
+            Projects currently being worked on by doers
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent>
           {isLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-5 rounded-xl border bg-card/30"
+                  className="flex items-center justify-between p-4 rounded-lg border"
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    <Skeleton className="h-11 w-11 rounded-full bg-muted/20" />
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-20 bg-muted/20" />
-                        <Skeleton className="h-4 w-48 bg-muted/20" />
-                      </div>
-                      <Skeleton className="h-3 w-64 bg-muted/20" />
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-3 w-[180px]" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-6 w-20 rounded-full bg-muted/20" />
-                    <Skeleton className="h-9 w-9 rounded-lg bg-muted/20" />
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-6 w-[80px]" />
+                    <Skeleton className="h-8 w-8" />
                   </div>
                 </div>
               ))}
             </div>
           ) : activeProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="p-4 rounded-2xl bg-muted/20 mb-4">
-                <FolderKanban className="h-10 w-10 text-muted-foreground/60" strokeWidth={1.5} />
-              </div>
-              <p className="text-base font-medium text-foreground mb-1">No active projects</p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground">No active projects</p>
               <p className="text-sm text-muted-foreground">
                 Assigned projects will appear here
               </p>
@@ -250,11 +244,11 @@ export default function DashboardPage() {
               {activeProjects.map((project) => (
                 <div
                   key={project.id}
-                  className="group flex items-center justify-between p-5 rounded-xl border bg-card/30 hover:bg-card hover:shadow-md transition-all duration-200"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-lg border"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="h-11 w-11 rounded-full bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-foreground">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-primary">
                         {project.doer_name
                           .split(" ")
                           .map((n) => n[0])
@@ -264,17 +258,17 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-xs font-mono bg-muted/50">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs font-mono">
                           {project.project_number}
                         </Badge>
                         <span className="font-medium truncate">{project.title}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="truncate">{project.doer_name}</span>
-                        <span className="text-muted-foreground/50">•</span>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="truncate">Doer: {project.doer_name}</span>
+                        <span className="hidden sm:inline">|</span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
                           <span className="whitespace-nowrap">
                             Due {formatDistanceToNow(new Date(project.deadline), { addSuffix: true })}
                           </span>
@@ -282,18 +276,13 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-3 sm:flex-shrink-0">
                     {getStatusBadge(project.status)}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative h-9 w-9 rounded-lg hover:bg-muted/50"
-                      asChild
-                    >
+                    <Button variant="ghost" size="icon" className="relative" asChild>
                       <Link href={`/chat/${project.id}`}>
                         <MessageSquare className="h-4 w-4" />
                         {project.last_message_at && (
-                          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
+                          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
                         )}
                       </Link>
                     </Button>

@@ -7,17 +7,17 @@ import { createClient } from "@/lib/supabase/client";
 import { walletService } from "@/services";
 import { useProjectStore, type Project } from "@/stores";
 import { PageSkeletonProvider, ProjectsSkeleton } from "@/components/skeletons";
-import { ProjectsPro } from "./projects-pro";
+import { ProjectsDashboard } from "./projects-dashboard";
 
 /**
  * My Projects page
- * Premium SAAS-style design with glassmorphism
- * Header is now rendered by the dashboard layout
- *
- * Uses PageSkeletonProvider for unified skeleton loading:
- * - Shows ProjectsSkeleton while loading
- * - Minimum 1000ms display time
- * - Staggered reveal animations on content
+ * Smart Dashboard Hybrid design with:
+ * - Animated circular stat rings
+ * - Smart auto-grouping by urgency
+ * - Adaptive card sizes based on importance
+ * - Inline actions without navigation
+ * - Activity insights and heatmap
+ * - Beautiful glassmorphism design
  */
 export default function ProjectsPage() {
   const [showPayment, setShowPayment] = useState(false);
@@ -48,7 +48,7 @@ export default function ProjectsPage() {
       // Fetch user data and projects in parallel
       const [userResult] = await Promise.all([
         supabase.auth.getUser(),
-        fetchProjects(), // Fetch projects here, not in ProjectsPro
+        fetchProjects(),
       ]);
 
       if (userResult.data.user) {
@@ -94,8 +94,8 @@ export default function ProjectsPage() {
         skeleton={<ProjectsSkeleton />}
         minimumDuration={1000}
       >
-        {/* Premium Projects View */}
-        <ProjectsPro onPayNow={handlePayNow} />
+        {/* Smart Dashboard Hybrid View */}
+        <ProjectsDashboard onPayNow={handlePayNow} />
       </PageSkeletonProvider>
 
       {/* Payment Prompt Modal */}
