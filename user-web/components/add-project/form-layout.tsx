@@ -1,15 +1,16 @@
 "use client";
 
 /**
- * @fileoverview Split-screen Form Layout - Minimalist Design
+ * @fileoverview Dynamic Step Context Form Layout
  *
- * Clean Notion/Linear inspired layout with:
- * - Simple left visual panel with typography focus
- * - Subtle step indicators
- * - Right form panel (unchanged as per user request)
+ * Two-column layout with:
+ * - Dynamic left panel that changes with each step
+ * - Clean white right panel for form content
+ * - Professional, context-aware design
  */
 
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Lightbulb, FileText, Clock, CheckCircle, Star, Zap, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import "./form-layout.css";
 
@@ -39,160 +40,269 @@ interface FormLayoutProps {
 }
 
 /**
- * Service type descriptions
+ * Step context data - changes per step
  */
-const serviceDescriptions: Record<string, { tagline: string; features: string[] }> = {
-  project: {
-    tagline: "Get expert help with your academic work",
-    features: ["Expert matching", "Quality assured", "On-time delivery"],
+const stepContextData = [
+  {
+    icon: Lightbulb,
+    heading: "Choose Your Focus",
+    message: "Select the subject area that matches your project. Our experts cover 50+ academic fields.",
+    tip: "💡 Pro tip: Not sure? Start broad - you can refine details later.",
+    nextLabel: "Set requirements",
   },
-  proofreading: {
-    tagline: "Professional editing for polished documents",
-    features: ["Grammar & spelling", "Style improvements", "Clarity focus"],
+  {
+    icon: FileText,
+    heading: "Set Your Scope",
+    message: "Define the length and citation style. We handle everything from 250 to 50,000 words.",
+    tip: "📊 Pro tip: Average project is 2,500 words with APA7 citations",
+    nextLabel: "Choose timeline",
   },
-  report: {
-    tagline: "Verify originality and authenticity",
-    features: ["AI detection", "Plagiarism check", "Detailed reports"],
+  {
+    icon: Clock,
+    heading: "When Do You Need It?",
+    message: "Choose your deadline and urgency. We've delivered 10,000+ projects on time.",
+    tip: "⚡ Pro tip: Standard delivery gives you the best value",
+    nextLabel: "Add details",
   },
-  consultation: {
-    tagline: "Get personalized guidance from experts",
-    features: ["1-on-1 sessions", "Subject experts", "Quick responses"],
+  {
+    icon: CheckCircle,
+    heading: "Final Touches",
+    message: "Add any specific instructions or reference materials. The more details, the better we can help.",
+    tip: "📎 Pro tip: Attach style guides, rubrics, or sample papers for best results",
+    nextLabel: "Review & submit",
   },
-};
+];
 
 /**
- * Split-screen Form Layout Component - Enhanced Glassmorphic Design
+ * Circular Progress Ring Component
  */
-export function FormLayout({
-  title,
-  subtitle,
-  accentWord,
-  currentStep,
-  totalSteps,
-  stepLabels,
-  children,
-  onBack,
-  showBack = true,
-  serviceType = "project",
-}: FormLayoutProps) {
-  const progress = ((currentStep + 1) / totalSteps) * 100;
-  const serviceInfo = serviceDescriptions[serviceType];
-
-  // Parse title to highlight accent word
-  const renderTitle = () => {
-    if (!accentWord) return title;
-    const parts = title.split(accentWord);
-    return (
-      <>
-        {parts[0]}
-        <span className="text-primary">{accentWord}</span>
-        {parts[1] || ""}
-      </>
-    );
-  };
+function ProgressRing({ progress }: { progress: number }) {
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="form-layout h-screen flex overflow-hidden mesh-background mesh-gradient-bottom-right-animated">
-      {/* Left Visual Panel (hidden on mobile) - Fixed height, no scroll */}
-      <div className="form-visual hidden lg:flex flex-col justify-between flex-1 max-w-[55%] border-r border-white/10 p-12 h-screen overflow-hidden relative">
-        {/* Decorative gradient orbs */}
-        <div className="absolute -top-20 -left-20 w-96 h-96 bg-gradient-to-br from-violet-500/20 to-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-gradient-to-tl from-amber-500/15 to-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative w-20 h-20">
+      <svg className="transform -rotate-90 w-20 h-20">
+        {/* Background circle */}
+        <circle
+          cx="40"
+          cy="40"
+          r={radius}
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="3"
+          fill="none"
+        />
+        {/* Progress circle */}
+        <motion.circle
+          cx="40"
+          cy="40"
+          r={radius}
+          stroke="rgba(255,255,255,0.9)"
+          strokeWidth="3"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+        />
+      </svg>
+      {/* Percentage text */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs font-medium text-white/80">{Math.round(progress)}%</span>
+      </div>
+    </div>
+  );
+}
 
-        {/* Content - with z-index above decorations */}
-        <div className="relative z-10">
-          {/* Top: Logo Card */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[14px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 text-sm font-medium shadow-lg">
-            <Sparkles className="h-4 w-4 text-primary" />
+/**
+ * Dynamic Step Context - Left Panel
+ */
+function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+  const stepData = stepContextData[currentStep];
+  const Icon = stepData.icon;
+  const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  return (
+    <div className="relative hidden flex-1 max-w-[55%] flex-col justify-between overflow-hidden bg-[#14110F] p-12 lg:flex xl:p-14">
+      {/* Animated gradient background */}
+      <div className="absolute inset-[-50%] z-0 animate-gradient-rotate">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(118,83,65,0.12)_0%,transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(52,49,45,0.10)_0%,transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(160,122,101,0.08)_0%,transparent_40%)]" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none opacity-50"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px)
+          `,
+          backgroundSize: "60px 60px",
+        }}
+      />
+
+      {/* Logo Badge */}
+      <div className="relative z-10">
+        <div className="mb-12">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[13px] font-medium text-white/90">
+            <Sparkles className="h-4 w-4" />
             AssignX
-          </div>
-        </div>
-
-        {/* Center: Content */}
-        <div className="max-w-md relative z-10">
-          <h1 className="text-4xl font-semibold tracking-tight leading-tight mb-4">
-            {renderTitle()}
-          </h1>
-          <p className="text-muted-foreground leading-relaxed mb-8 text-base">
-            {subtitle}
-          </p>
-
-          {/* Features list - Enhanced cards */}
-          <div className="space-y-2">
-            {serviceInfo.features.map((feature, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 px-4 py-3 rounded-[14px] bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-white/30 dark:border-white/10"
-              >
-                <div className="h-2 w-2 rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/30" />
-                <span className="text-sm font-medium text-foreground/90">{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom: Step indicators - Enhanced */}
-        <div className="flex items-center gap-2 relative z-10">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "h-2 rounded-full transition-all duration-300",
-                i <= currentStep
-                  ? "bg-gradient-to-r from-primary to-primary/80 w-12 shadow-lg shadow-primary/30"
-                  : "bg-white/20 dark:bg-white/10 w-2"
-              )}
-            />
-          ))}
-          <span className="text-xs text-muted-foreground ml-2 font-medium">
-            Step {currentStep + 1} of {totalSteps}
           </span>
         </div>
       </div>
 
-      {/* Right Form Panel - Scrollable with glassmorphic background */}
-      <div className="flex-1 flex flex-col justify-start items-center p-6 md:p-12 h-screen overflow-y-auto relative">
-        {/* Subtle gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/5 to-transparent pointer-events-none" />
+      {/* Main Content - Giant Step Number + Context */}
+      <div className="relative z-10 flex flex-1 flex-col justify-center max-w-[480px]">
+        {/* Giant Step Number with Progress Ring */}
+        <div className="relative mb-12">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="relative inline-block"
+            >
+              <h2
+                className="text-[180px] xl:text-[220px] font-light leading-none tracking-tighter"
+                style={{
+                  WebkitTextStroke: "2px rgba(255,255,255,0.2)",
+                  color: "transparent",
+                  fontFamily: "system-ui, -apple-system, sans-serif",
+                }}
+              >
+                {currentStep + 1}
+              </h2>
+              {/* Progress Ring - positioned at top-right of number */}
+              <div className="absolute -top-4 -right-4">
+                <ProgressRing progress={progress} />
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-        <div className="w-full max-w-lg relative z-10">
-          {/* Mobile logo */}
-          <div className="flex justify-center mb-8 lg:hidden">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-[14px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 text-sm font-medium shadow-lg">
-              <Sparkles className="h-4 w-4 text-primary" />
-              AssignX
+        {/* Step-Specific Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
+            {/* Icon */}
+            <motion.div
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10"
+            >
+              <Icon className="h-6 w-6 text-white/80" strokeWidth={1.5} />
+            </motion.div>
+
+            {/* Heading */}
+            <h3 className="text-[28px] font-semibold leading-tight text-white">
+              {stepData.heading}
+            </h3>
+
+            {/* Message */}
+            <p className="text-[15px] leading-relaxed text-white/70 max-w-[400px]">
+              {stepData.message}
+            </p>
+
+            {/* Tip */}
+            <div className="inline-flex items-start gap-2 rounded-lg bg-white/[0.05] px-4 py-3 border border-white/10">
+              <span className="text-[13px] leading-relaxed text-white/50">
+                {stepData.tip}
+              </span>
             </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Bottom Section - Trust Signals + What's Next */}
+      <div className="relative z-10 space-y-4">
+        {/* Trust Signals */}
+        <div className="flex items-center gap-6 text-[13px] text-white/50 border-t border-white/[0.06] pt-5">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-3.5 w-3.5 text-white/40" />
+            <span>15,234 projects</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Star className="h-3.5 w-3.5 text-white/40" />
+            <span>4.9/5 rating</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap className="h-3.5 w-3.5 text-white/40" />
+            <span>98% on-time</span>
+          </div>
+        </div>
+
+        {/* What's Next */}
+        <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
+          <span className="text-[14px] font-medium text-white/60">
+            Next: {stepData.nextLabel}
+          </span>
+          <ArrowRight className="h-4 w-4 text-white/40" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Split-screen Form Layout - Dynamic Step Context
+ */
+export function FormLayout({
+  currentStep,
+  totalSteps,
+  stepLabels,
+  children,
+}: FormLayoutProps) {
+  const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  return (
+    <div className="flex min-h-screen bg-background font-sans">
+      {/* Left Panel - Dynamic Step Context */}
+      <DynamicStepContext currentStep={currentStep} totalSteps={totalSteps} />
+
+      {/* Right Panel - Clean Form Side */}
+      <div className="flex min-h-screen flex-1 flex-col items-center justify-start bg-background p-6 md:p-8 lg:min-w-[45%] lg:p-12 xl:p-16">
+        <div className="w-full max-w-[480px] pt-8">
+          {/* Mobile logo */}
+          <div className="mb-10 flex justify-center lg:hidden">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#14110F] px-4 py-2 text-[13px] font-medium text-white">
+              <Sparkles className="h-4 w-4" />
+              AssignX
+            </span>
           </div>
 
-          {/* Back button - Enhanced */}
-          {showBack && onBack && (
-            <button
-              className="flex items-center gap-2 px-3 py-2 mb-6 rounded-xl text-sm text-muted-foreground hover:text-foreground bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-white/30 dark:border-white/10 hover:bg-white/60 dark:hover:bg-white/10 transition-all"
-              onClick={onBack}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-          )}
-
-          {/* Progress bar - Enhanced glassmorphic */}
-          <div className="mb-8 p-4 rounded-[16px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg">
-            <div className="h-2 bg-white/40 dark:bg-white/10 rounded-full overflow-hidden">
+          {/* Progress indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                Step {currentStep + 1} of {totalSteps}
+              </span>
+              {stepLabels && stepLabels[currentStep] && (
+                <span className="text-sm font-semibold text-foreground">{stepLabels[currentStep]}</span>
+              )}
+            </div>
+            <div className="h-1 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500 shadow-lg shadow-primary/20"
+                className="h-full bg-foreground rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
-            </div>
-            <div className="flex justify-between mt-3 text-xs">
-              <span className="text-muted-foreground font-medium">Step {currentStep + 1} of {totalSteps}</span>
-              {stepLabels && stepLabels[currentStep] && (
-                <span className="font-semibold text-foreground">{stepLabels[currentStep]}</span>
-              )}
             </div>
           </div>
 
           {/* Form content */}
-          <div className="min-h-[300px]">
+          <div className="min-h-[400px]">
             {children}
           </div>
         </div>

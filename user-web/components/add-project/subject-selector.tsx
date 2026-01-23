@@ -48,7 +48,7 @@ export function SubjectSelector({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full h-11 justify-between bg-white/60 dark:bg-white/5 border-white/50 dark:border-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/10 transition-all",
+              "w-full h-11 justify-between",
               error && "border-red-500",
               !value && "text-muted-foreground"
             )}
@@ -71,8 +71,8 @@ export function SubjectSelector({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-white/50 dark:border-white/20" align="start">
-          <Command className="bg-transparent">
+        <PopoverContent className="w-full p-0" align="start">
+          <Command>
             <CommandInput placeholder="Search subjects..." className="h-10" />
             <CommandList>
               <CommandEmpty>No subject found.</CommandEmpty>
