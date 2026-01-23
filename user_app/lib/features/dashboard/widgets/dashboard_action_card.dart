@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -137,7 +138,7 @@ class DashboardActionCard extends StatelessWidget {
               // Title
               Text(
                 title,
-                style: TextStyle(
+                style: AppTextStyles.labelLarge.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: effectiveTitleColor,
@@ -150,7 +151,7 @@ class DashboardActionCard extends StatelessWidget {
                 // Subtitle
                 Text(
                   subtitle!,
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     color: effectiveSubtitleColor,
                   ),
@@ -248,7 +249,7 @@ class DashboardActionCardVariants {
           // Value
           Text(
             value,
-            style: const TextStyle(
+            style: AppTextStyles.displayLarge.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -259,7 +260,7 @@ class DashboardActionCardVariants {
           // Label
           Text(
             label,
-            style: const TextStyle(
+            style: AppTextStyles.bodySmall.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),

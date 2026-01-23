@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
-
-/// Category tag color reference
-class CategoryColors {
-  static const Color community = Color(0xFFE07B4C); // Orange/Coral
-  static const Color help = Color(0xFF2196F3); // Blue
-  static const Color event = Color(0xFF5C6BC0); // Indigo/Purple
-  static const Color product = Color(0xFF4CAF50); // Green
-  static const Color housing = Color(0xFFF5A623); // Amber
-  static const Color opportunities = Color(0xFF009688); // Teal
-}
 
 /// Base card wrapper with consistent styling.
 class _BasePostCard extends StatelessWidget {
@@ -25,9 +16,11 @@ class _BasePostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 0,
+      child: Ink(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -39,8 +32,14 @@ class _BasePostCard extends StatelessWidget {
             ),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: child,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -75,12 +74,12 @@ class DiscussionPostCard extends StatelessWidget {
           Container(
             height: 100,
             width: double.infinity,
-            color: const Color(0xFFF5F5F5),
+            color: AppColors.neutralLight,
             child: Center(
               child: Icon(
                 _getIconForTitle(listing.title),
                 size: 32,
-                color: const Color(0xFFBDBDBD),
+                color: AppColors.neutralGray,
               ),
             ),
           ),
@@ -97,7 +96,7 @@ class DiscussionPostCard extends StatelessWidget {
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: const Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -107,7 +106,7 @@ class DiscussionPostCard extends StatelessWidget {
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: const Color(0xFF6B6B6B),
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                     maxLines: 1,
@@ -121,7 +120,7 @@ class DiscussionPostCard extends StatelessWidget {
                 _PostFooter(
                   userName: listing.userName,
                   categoryLabel: 'Community',
-                  categoryColor: CategoryColors.community,
+                  categoryColor: AppColors.categoryOrange,
                 ),
               ],
             ),
@@ -186,7 +185,7 @@ class HelpPostCard extends StatelessWidget {
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
-                          color: const Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -197,7 +196,7 @@ class HelpPostCard extends StatelessWidget {
                       Text(
                         listing.description!,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: const Color(0xFF6B6B6B),
+                          color: AppColors.textSecondary,
                           fontSize: 13,
                           height: 1.4,
                         ),
@@ -215,14 +214,14 @@ class HelpPostCard extends StatelessWidget {
                   child: Container(
                     width: 24,
                     height: 24,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF6B6B),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         '!',
-                        style: TextStyle(
+                        style: AppTextStyles.labelMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -240,7 +239,7 @@ class HelpPostCard extends StatelessWidget {
             _PostFooter(
               userName: listing.userName,
               categoryLabel: 'Help',
-              categoryColor: CategoryColors.help,
+              categoryColor: AppColors.categoryBlue,
             ),
           ],
         ),
@@ -276,12 +275,12 @@ class EventPostCard extends StatelessWidget {
           Container(
             height: 100,
             width: double.infinity,
-            color: const Color(0xFFF5F5F5),
+            color: AppColors.neutralLight,
             child: Center(
               child: Icon(
                 _getIconForEvent(listing.title),
                 size: 32,
-                color: const Color(0xFFBDBDBD),
+                color: AppColors.neutralGray,
               ),
             ),
           ),
@@ -298,7 +297,7 @@ class EventPostCard extends StatelessWidget {
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: const Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -308,7 +307,7 @@ class EventPostCard extends StatelessWidget {
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: const Color(0xFF6B6B6B),
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                     maxLines: 2,
@@ -322,7 +321,7 @@ class EventPostCard extends StatelessWidget {
                 _PostFooter(
                   userName: listing.userName,
                   categoryLabel: 'Event',
-                  categoryColor: CategoryColors.event,
+                  categoryColor: AppColors.categoryIndigo,
                 ),
               ],
             ),
@@ -371,12 +370,12 @@ class ProductPostCard extends StatelessWidget {
           Container(
             height: 100,
             width: double.infinity,
-            color: const Color(0xFFF5F5F5),
+            color: AppColors.neutralLight,
             child: Center(
               child: Icon(
                 _getIconForProduct(listing.title),
                 size: 32,
-                color: const Color(0xFFBDBDBD),
+                color: AppColors.neutralGray,
               ),
             ),
           ),
@@ -393,7 +392,7 @@ class ProductPostCard extends StatelessWidget {
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: const Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -403,7 +402,7 @@ class ProductPostCard extends StatelessWidget {
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: const Color(0xFF6B6B6B),
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                     maxLines: 2,
@@ -417,7 +416,7 @@ class ProductPostCard extends StatelessWidget {
                 _PostFooter(
                   userName: listing.userName,
                   categoryLabel: 'Product',
-                  categoryColor: CategoryColors.product,
+                  categoryColor: AppColors.categoryGreen,
                 ),
               ],
             ),
@@ -474,7 +473,7 @@ class HousingPostCard extends StatelessWidget {
               style: AppTextStyles.labelLarge.copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -484,7 +483,7 @@ class HousingPostCard extends StatelessWidget {
               Text(
                 listing.description!,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: const Color(0xFF6B6B6B),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                 ),
                 maxLines: 2,
@@ -498,7 +497,7 @@ class HousingPostCard extends StatelessWidget {
             _PostFooter(
               userName: listing.userName,
               categoryLabel: 'Housing',
-              categoryColor: CategoryColors.housing,
+              categoryColor: AppColors.categoryAmber,
             ),
           ],
         ),
@@ -531,12 +530,12 @@ class OpportunityPostCard extends StatelessWidget {
           Container(
             height: 100,
             width: double.infinity,
-            color: const Color(0xFFF5F5F5),
-            child: const Center(
+            color: AppColors.neutralLight,
+            child: Center(
               child: Icon(
                 Icons.work_outline_rounded,
                 size: 32,
-                color: Color(0xFFBDBDBD),
+                color: AppColors.neutralGray,
               ),
             ),
           ),
@@ -553,7 +552,7 @@ class OpportunityPostCard extends StatelessWidget {
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: const Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -563,7 +562,7 @@ class OpportunityPostCard extends StatelessWidget {
                   Text(
                     listing.description!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: const Color(0xFF6B6B6B),
+                      color: AppColors.textSecondary,
                       fontSize: 13,
                     ),
                     maxLines: 2,
@@ -577,7 +576,7 @@ class OpportunityPostCard extends StatelessWidget {
                 _PostFooter(
                   userName: listing.userName,
                   categoryLabel: 'Opportunities',
-                  categoryColor: CategoryColors.opportunities,
+                  categoryColor: AppColors.categoryTeal,
                 ),
               ],
             ),
@@ -610,20 +609,20 @@ class _PostFooter extends StatelessWidget {
         CircleAvatar(
           radius: 12,
           backgroundColor: isUnknown
-              ? const Color(0xFFE0E0E0)
-              : const Color(0xFFE8E0D8),
+              ? AppColors.avatarGray
+              : AppColors.avatarWarm,
           child: isUnknown
-              ? const Icon(
+              ? Icon(
                   Icons.person_outline,
                   size: 14,
-                  color: Color(0xFF9B9B9B),
+                  color: AppColors.neutralMuted,
                 )
               : Text(
                   userName[0].toUpperCase(),
-                  style: const TextStyle(
+                  style: AppTextStyles.labelSmall.copyWith(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B5D4D),
+                    color: AppColors.textSecondary,
                   ),
                 ),
         ),
@@ -634,7 +633,7 @@ class _PostFooter extends StatelessWidget {
           child: Text(
             isUnknown ? 'Unknown' : userName,
             style: AppTextStyles.caption.copyWith(
-              color: const Color(0xFF6B6B6B),
+              color: AppColors.textSecondary,
               fontSize: 12,
             ),
             maxLines: 1,

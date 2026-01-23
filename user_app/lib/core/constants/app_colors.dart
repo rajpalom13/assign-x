@@ -346,6 +346,53 @@ class AppColors {
   static const Color inputBackgroundDark = Color(0xFF2D261F);
 
   // ============================================================
+  // CATEGORY COLORS - For Campus Connect and post types
+  // ============================================================
+
+  /// Community category - Orange/Coral
+  static const Color categoryOrange = Color(0xFFE07B4C);
+
+  /// Help category - Blue
+  static const Color categoryBlue = Color(0xFF2196F3);
+
+  /// Event category - Indigo/Purple
+  static const Color categoryIndigo = Color(0xFF5C6BC0);
+
+  /// Product category - Green
+  static const Color categoryGreen = Color(0xFF4CAF50);
+
+  /// Housing category - Amber
+  static const Color categoryAmber = Color(0xFFF5A623);
+
+  /// Opportunities category - Teal
+  static const Color categoryTeal = Color(0xFF009688);
+
+  // ============================================================
+  // NEUTRAL COLORS - Grays for UI elements
+  // ============================================================
+
+  /// Light gray background for icon areas
+  static const Color neutralLight = Color(0xFFF5F5F5);
+
+  /// Gray for disabled icons/placeholders
+  static const Color neutralGray = Color(0xFFBDBDBD);
+
+  /// Muted gray for secondary icons
+  static const Color neutralMuted = Color(0xFF9B9B9B);
+
+  /// Light gray for avatar backgrounds
+  static const Color avatarGray = Color(0xFFE0E0E0);
+
+  /// Warm avatar background
+  static const Color avatarWarm = Color(0xFFE8E0D8);
+
+  /// Pink/Mauve for status indicators
+  static const Color statusPink = Color(0xFFDDB8D8);
+
+  /// Badge background - Light gray
+  static const Color badgeBackground = Color(0xFFF0F0F0);
+
+  // ============================================================
   // CHART COLORS - Earthy palette for data visualization
   // ============================================================
 

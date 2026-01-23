@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 import '../../../providers/home_provider.dart';
 import '../../../providers/profile_provider.dart';
@@ -230,7 +231,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 // Title
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -240,7 +241,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 // Subtitle
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: AppColors.textTertiary,

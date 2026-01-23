@@ -432,43 +432,47 @@ class _ActionButtonState extends State<_ActionButton> {
       button: true,
       label: widget.label,
       hint: 'Double tap to ${widget.label}',
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          transform: Matrix4.diagonal3Values(_isPressed ? 0.95 : 1.0, _isPressed ? 0.95 : 1.0, 1.0),
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.compact ? 10 : 14,
-            vertical: widget.compact ? 6 : 8,
-          ),
-          decoration: BoxDecoration(
-            color: widget.outlined ? Colors.transparent : null,
-            gradient: widget.outlined ? null : (widget.gradient ?? LinearGradient(colors: [widget.color, widget.color])),
-            borderRadius: BorderRadius.circular(8),
-            border: widget.outlined ? Border.all(color: widget.color) : null,
-            boxShadow: widget.outlined ? null : AppShadows.xs,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                size: widget.compact ? 14 : 16,
-                color: widget.outlined ? widget.color : Colors.white,
-              ),
-              SizedBox(width: widget.compact ? 4 : 6),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: widget.compact ? 11 : 12,
-                  fontWeight: FontWeight.w600,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            transform: Matrix4.diagonal3Values(_isPressed ? 0.95 : 1.0, _isPressed ? 0.95 : 1.0, 1.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.compact ? 10 : 14,
+              vertical: widget.compact ? 6 : 8,
+            ),
+            decoration: BoxDecoration(
+              color: widget.outlined ? Colors.transparent : null,
+              gradient: widget.outlined ? null : (widget.gradient ?? LinearGradient(colors: [widget.color, widget.color])),
+              borderRadius: BorderRadius.circular(8),
+              border: widget.outlined ? Border.all(color: widget.color) : null,
+              boxShadow: widget.outlined ? null : AppShadows.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: widget.compact ? 14 : 16,
                   color: widget.outlined ? widget.color : Colors.white,
                 ),
-              ),
-            ],
+                SizedBox(width: widget.compact ? 4 : 6),
+                Text(
+                  widget.label,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: widget.compact ? 11 : 12,
+                    fontWeight: FontWeight.w600,
+                    color: widget.outlined ? widget.color : Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -560,7 +564,7 @@ class _AutoApprovalCountdownState extends State<_AutoApprovalCountdown> {
           const SizedBox(width: 6),
           Text(
             'Auto-approves in ${hours}h ${minutes}m',
-            style: TextStyle(
+            style: AppTextStyles.labelSmall.copyWith(
               fontSize: 11,
               color: AppColors.primary,
               fontWeight: FontWeight.w500,

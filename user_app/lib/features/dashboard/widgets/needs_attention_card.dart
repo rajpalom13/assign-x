@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/glass_container.dart';
@@ -78,7 +79,7 @@ class NeedsAttentionCard extends StatelessWidget {
                   project.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: AppTextStyles.labelMedium.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -97,7 +98,7 @@ class NeedsAttentionCard extends StatelessWidget {
                   ),
                   child: Text(
                     project.status.displayName,
-                    style: TextStyle(
+                    style: AppTextStyles.labelSmall.copyWith(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: project.status.color,
@@ -172,11 +173,11 @@ class NeedsAttentionSection extends StatelessWidget {
   Color _getDotColor(Project project) {
     switch (project.status) {
       case ProjectStatus.paymentPending:
-        return const Color(0xFFDDB8D8); // Pink/Mauve
+        return AppColors.statusPink; // Pink/Mauve
       case ProjectStatus.delivered:
-        return const Color(0xFF2D2D2D); // Dark/Black
+        return AppColors.textPrimary; // Dark/Black
       case ProjectStatus.quoted:
-        return const Color(0xFF9D7B65); // Warm brown
+        return AppColors.accent; // Warm brown
       default:
         return project.status.color;
     }
@@ -199,10 +200,10 @@ class NeedsAttentionSection extends StatelessWidget {
               // "NEEDS ATTENTION" in all caps
               Text(
                 'NEEDS ATTENTION',
-                style: TextStyle(
+                style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF2D2D2D),
+                  color: AppColors.textPrimary,
                   letterSpacing: 1.0,
                 ),
               ),
@@ -211,15 +212,15 @@ class NeedsAttentionSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
+                  color: AppColors.badgeBackground,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '${projects.length}',
-                  style: const TextStyle(
+                  style: AppTextStyles.labelMedium.copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D2D2D),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -307,7 +308,7 @@ class _NeedsAttentionListItem extends StatelessWidget {
                     children: [
                       Text(
                         project.title,
-                        style: const TextStyle(
+                        style: AppTextStyles.labelLarge.copyWith(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                           color: AppColors.textPrimary,
@@ -318,7 +319,7 @@ class _NeedsAttentionListItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: const TextStyle(
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontSize: 14,
                           color: AppColors.textTertiary,
                         ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
+
 /// Grade entry dialog widget
 /// Allows users to enter their received grade after project completion
 /// Implements U38 from feature spec
@@ -151,9 +154,9 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
         ),
         child: Text(
           grade,
-          style: TextStyle(
+          style: AppTextStyles.labelMedium.copyWith(
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? Colors.white : AppColors.textPrimary,
           ),
         ),
       ),
@@ -191,17 +194,17 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Enter Your Grade',
-                          style: TextStyle(
+                          style: AppTextStyles.headingSmall.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           widget.projectNumber,
-                          style: TextStyle(
-                            color: Colors.grey[600],
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
                             fontSize: 14,
                           ),
                         ),
@@ -219,9 +222,9 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
               // Grade Selection
               Text(
                 'What grade did you receive?',
-                style: TextStyle(
+                style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -235,9 +238,9 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
               // Rating
               Text(
                 'Rate your experience',
-                style: TextStyle(
+                style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -246,8 +249,8 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
               Center(
                 child: Text(
                   _getRatingLabel(),
-                  style: TextStyle(
-                    color: Colors.grey[600],
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                   ),
                 ),
@@ -257,9 +260,9 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
               // Feedback (optional)
               Text(
                 'Feedback (optional)',
-                style: TextStyle(
+                style: AppTextStyles.labelMedium.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -277,9 +280,9 @@ class _GradeEntryDialogState extends ConsumerState<GradeEntryDialog> {
               const SizedBox(height: 8),
               Text(
                 'Your grade and feedback help improve our services',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: AppColors.textTertiary,
                 ),
               ),
               const SizedBox(height: 24),

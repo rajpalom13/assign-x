@@ -53,7 +53,7 @@ class BottomNavBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           // Light cream/off-white background
-          color: const Color(0xFFFAF8F5),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(30), // Stadium shape
           boxShadow: [
             BoxShadow(
@@ -124,8 +124,8 @@ class BottomNavBar extends StatelessWidget {
             isActive ? activeIcon : inactiveIcon,
             size: 26,
             color: isActive
-                ? const Color(0xFF2D2D2D) // Dark/filled for active
-                : const Color(0xFF8B8B8B), // Gray for inactive
+                ? AppColors.textPrimary // Dark/filled for active
+                : AppColors.textTertiary, // Gray for inactive
           ),
         ),
       ),
@@ -152,8 +152,8 @@ class BottomNavBar extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive
-                    ? const Color(0xFF2D2D2D)
-                    : const Color(0xFFE0E0E0),
+                    ? AppColors.textPrimary
+                    : AppColors.avatarGray,
                 width: isActive ? 2 : 1.5,
               ),
               image: profileImageUrl != null
@@ -163,14 +163,14 @@ class BottomNavBar extends StatelessWidget {
                     )
                   : null,
               color: profileImageUrl == null
-                  ? const Color(0xFFE8E8E8)
+                  ? AppColors.avatarGray
                   : null,
             ),
             child: profileImageUrl == null
                 ? Icon(
                     Icons.person,
                     size: 18,
-                    color: const Color(0xFF8B8B8B),
+                    color: AppColors.textTertiary,
                   )
                 : null,
           ),

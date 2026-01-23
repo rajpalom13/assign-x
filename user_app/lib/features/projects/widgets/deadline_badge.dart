@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 
 /// Deadline badge with color coding based on urgency.
 class DeadlineBadge extends StatelessWidget {
@@ -46,7 +47,7 @@ class DeadlineBadge extends StatelessWidget {
         ],
         Text(
           _formatDeadline(deadline, isPassed),
-          style: TextStyle(
+          style: AppTextStyles.bodySmall.copyWith(
             fontSize: compact ? 11 : 12,
             fontWeight: isUrgent ? FontWeight.w600 : FontWeight.normal,
             color: color,
@@ -146,7 +147,7 @@ class _DeadlineTimerState extends State<DeadlineTimer> {
       return Text(
         'Deadline passed',
         style: widget.style?.copyWith(color: AppColors.error) ??
-            TextStyle(color: AppColors.error),
+            AppTextStyles.bodySmall.copyWith(color: AppColors.error),
       );
     }
 
@@ -171,7 +172,7 @@ class _DeadlineTimerState extends State<DeadlineTimer> {
     return Text(
       text,
       style: widget.style?.copyWith(color: color) ??
-          TextStyle(
+          AppTextStyles.bodySmall.copyWith(
             color: color,
             fontWeight: isUrgent ? FontWeight.w600 : FontWeight.normal,
           ),

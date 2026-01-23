@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 
 /// Thin colored status banner strip.
@@ -30,7 +31,7 @@ class StatusBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             customText ?? _getStatusText(),
-            style: const TextStyle(
+            style: AppTextStyles.labelMedium.copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Colors.white,

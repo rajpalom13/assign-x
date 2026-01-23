@@ -172,7 +172,7 @@ class _AutoApprovalInfoState extends State<_AutoApprovalInfo> {
           Expanded(
             child: Text(
               'Auto-approves in ${hours}h ${minutes}m if no action taken',
-              style: TextStyle(
+              style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 12,
                 color: AppColors.warning,
               ),

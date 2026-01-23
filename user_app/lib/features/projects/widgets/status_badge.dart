@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 
 /// Color-coded status badge pill.
@@ -47,7 +48,7 @@ class StatusBadge extends StatelessWidget {
             ],
             Text(
               status.displayName,
-              style: TextStyle(
+              style: AppTextStyles.labelSmall.copyWith(
                 fontSize: compact ? 10 : 12,
                 fontWeight: FontWeight.w600,
                 color: status.color,
@@ -107,7 +108,7 @@ class StatusBadgeLarge extends StatelessWidget {
                 children: [
                   Text(
                     status.displayName,
-                    style: TextStyle(
+                    style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: status.color,
@@ -116,7 +117,7 @@ class StatusBadgeLarge extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     customDescription ?? status.description,
-                    style: TextStyle(
+                    style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 12,
                       color: status.color.withAlpha(180),
                     ),

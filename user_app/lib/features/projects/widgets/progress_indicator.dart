@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 
 /// Progress bar showing completion percentage.
 class ProjectProgressIndicator extends StatelessWidget {
@@ -35,14 +36,14 @@ class ProjectProgressIndicator extends StatelessWidget {
             children: [
               Text(
                 'Progress',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 12,
                   color: AppColors.textSecondary,
                 ),
               ),
               Text(
                 '$clampedPercent%',
-                style: TextStyle(
+                style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: fgColor,
@@ -150,7 +151,7 @@ class CircularProgressWithLabel extends StatelessWidget {
           // Percentage text
           Text(
             '$clampedPercent%',
-            style: TextStyle(
+            style: AppTextStyles.labelMedium.copyWith(
               fontSize: size * 0.22,
               fontWeight: FontWeight.bold,
               color: fgColor,

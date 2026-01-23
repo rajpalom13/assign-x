@@ -120,7 +120,7 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
   // User's first name
   const firstName = useMemo(() => {
     if (!user) return "there";
-    const fullName = user.user_metadata?.full_name || user.fullName || user.full_name || user.email?.split("@")[0] || "";
+    const fullName = user.fullName || user.full_name || user.email?.split("@")[0] || "";
     return fullName.split(" ")[0] || "there";
   }, [user]);
 

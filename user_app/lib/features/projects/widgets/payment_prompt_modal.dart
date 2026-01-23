@@ -131,7 +131,7 @@ class PaymentPromptModal extends StatelessWidget {
                           ),
                           Text(
                             project.userQuote?.toStringAsFixed(0) ?? '0',
-                            style: TextStyle(
+                            style: AppTextStyles.displayLarge.copyWith(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                               color: AppColors.warning,

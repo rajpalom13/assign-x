@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/animations/common_animations.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -69,20 +71,20 @@ class GreetingSection extends StatelessWidget {
           // Time-based greeting - normal weight, dark gray
           Text(
             _getGreeting(),
-            style: const TextStyle(
+            style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF2D2D2D), // Dark gray
+              color: AppColors.textPrimary,
               height: 1.2,
             ),
           ),
           // User's first name - bold, larger, near-black
           Text(
             _getFirstName(userName),
-            style: const TextStyle(
+            style: AppTextStyles.displayLarge.copyWith(
               fontSize: 34,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A), // Near-black
+              color: AppColors.textPrimary,
               height: 1.2,
             ),
           ),
@@ -90,10 +92,10 @@ class GreetingSection extends StatelessWidget {
           // Subtitle - medium gray
           Text(
             subtitle ?? 'Ready to optimize your workflow and generate insights.',
-            style: const TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 15,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF6B6B6B), // Medium gray
+              color: AppColors.textSecondary,
             ),
           ),
         ],

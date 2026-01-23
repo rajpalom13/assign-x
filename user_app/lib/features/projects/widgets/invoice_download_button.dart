@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../core/services/invoice_service.dart';
 import '../../../data/models/invoice_model.dart';
 import '../../../data/models/project.dart';
@@ -316,9 +318,9 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Invoice',
-                      style: TextStyle(
+                      style: AppTextStyles.headingSmall.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -326,8 +328,8 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
                     if (_invoice != null)
                       Text(
                         _invoice!.invoiceNumber,
-                        style: TextStyle(
-                          color: Colors.grey[600],
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
                       ),
@@ -349,10 +351,10 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
                   ),
                   child: Text(
                     _invoice!.paymentStatus.toUpperCase(),
-                    style: TextStyle(
+                    style: AppTextStyles.labelSmall.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: _invoice!.isPaid ? Colors.green[700] : Colors.orange[700],
+                      color: _invoice!.isPaid ? AppColors.success : AppColors.warning,
                     ),
                   ),
                 ),
@@ -462,18 +464,18 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: isTotal ? Colors.black : Colors.grey[600],
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isTotal ? AppColors.textPrimary : AppColors.textSecondary,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
               fontSize: isTotal ? 15 : 14,
             ),
           ),
           Text(
             value,
-            style: TextStyle(
+            style: AppTextStyles.labelMedium.copyWith(
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
               fontSize: isTotal ? 16 : 14,
-              color: isTotal ? Theme.of(context).primaryColor : null,
+              color: isTotal ? AppColors.primary : AppColors.textPrimary,
             ),
           ),
         ],

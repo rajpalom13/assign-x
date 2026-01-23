@@ -132,7 +132,7 @@ class _AutoApprovalTimerState extends State<AutoApprovalTimer> {
               children: [
                 TextSpan(
                   text: _formatDuration(_timeLeft),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),

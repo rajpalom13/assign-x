@@ -223,7 +223,7 @@ class _ServiceCardState extends State<_ServiceCard> {
                     ),
                     child: Text(
                       service.badge!,
-                      style: const TextStyle(
+                      style: AppTextStyles.labelSmall.copyWith(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
