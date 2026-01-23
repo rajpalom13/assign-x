@@ -3,13 +3,14 @@
 import { TourOverlay } from "./tour-overlay";
 import { TourTooltip } from "./tour-tooltip";
 import { TourStep } from "./tour-step";
+import { TourSkipFAB } from "./tour-skip-fab";
 
 /**
  * Tour Component
  * Main component that combines all tour elements
  * Place this once in your layout to enable the tour
  *
- * @returns Complete tour UI (overlay, tooltip, and step animations)
+ * @returns Complete tour UI (overlay, tooltip, step animations, and skip button)
  *
  * @example
  * ```tsx
@@ -32,6 +33,7 @@ export function Tour() {
       <TourOverlay />
       <TourTooltip />
       <TourStep />
+      <TourSkipFAB />
     </>
   );
 }

@@ -11,7 +11,7 @@ import type { TargetRect } from "./tour-types";
 /**
  * Default padding around spotlight element
  */
-const SPOTLIGHT_PADDING = 8;
+const SPOTLIGHT_PADDING = 12;
 
 /**
  * Overlay animation variants
@@ -116,14 +116,21 @@ export function TourOverlay() {
           animate="visible"
           exit="exit"
           className={cn(
-            "fixed inset-0 z-[9998] pointer-events-none",
+            "fixed inset-0 z-[100] pointer-events-auto cursor-pointer",
             "tour-overlay"
           )}
           aria-hidden="true"
+          onClick={() => {
+            // Allow clicking overlay to skip tour
+            const tourContext = document.querySelector('[data-tour-skip]') as HTMLElement;
+            if (tourContext) {
+              tourContext.click();
+            }
+          }}
         >
           {/* SVG Mask for spotlight effect */}
           <svg
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full pointer-events-none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <defs>
@@ -140,25 +147,25 @@ export function TourOverlay() {
                     y={targetRect.top}
                     width={targetRect.width}
                     height={targetRect.height}
-                    rx="12"
-                    ry="12"
+                    rx="16"
+                    ry="16"
                     fill="black"
                   />
                 )}
               </mask>
             </defs>
-            {/* Semi-transparent overlay with mask cutout */}
+            {/* Semi-transparent overlay with mask cutout - Much lighter for better visibility */}
             <rect
               x="0"
               y="0"
               width="100%"
               height="100%"
-              fill="rgba(0, 0, 0, 0.75)"
+              fill="rgba(0, 0, 0, 0.40)"
               mask="url(#tour-spotlight-mask)"
             />
           </svg>
 
-          {/* Animated ring around spotlight */}
+          {/* Animated ring around spotlight - More visible with glow effect */}
           {shouldShowSpotlight && targetRect && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -170,19 +177,22 @@ export function TourOverlay() {
               }}
               className="absolute pointer-events-none"
               style={{
-                top: targetRect.top - 2,
-                left: targetRect.left - 2,
-                width: targetRect.width + 4,
-                height: targetRect.height + 4,
+                top: targetRect.top - 3,
+                left: targetRect.left - 3,
+                width: targetRect.width + 6,
+                height: targetRect.height + 6,
               }}
             >
-              <div className="absolute inset-0 rounded-xl ring-2 ring-primary ring-offset-2 ring-offset-transparent" />
+              {/* Solid ring */}
+              <div className="absolute inset-0 rounded-2xl ring-3 ring-primary shadow-lg shadow-primary/30" />
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-2xl ring-1 ring-primary/60 blur-sm" />
               {/* Pulsing animation */}
               <motion.div
-                className="absolute inset-0 rounded-xl ring-2 ring-primary/50"
+                className="absolute inset-0 rounded-2xl ring-2 ring-primary/40"
                 animate={{
-                  scale: [1, 1.02, 1],
-                  opacity: [0.5, 0.8, 0.5],
+                  scale: [1, 1.03, 1],
+                  opacity: [0.4, 0.7, 0.4],
                 }}
                 transition={{
                   duration: 2,

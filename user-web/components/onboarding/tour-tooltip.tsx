@@ -179,7 +179,12 @@ export function TourTooltip() {
       window.innerHeight
     );
 
-    setPosition({ top, left });
+    // Ensure tooltip is never hidden behind fixed headers (navbar at top)
+    // Keep at least 80px from top for navbar clearance
+    const minTopOffset = 80;
+    const adjustedTop = Math.max(minTopOffset, top);
+
+    setPosition({ top: adjustedTop, left });
     setActualPosition(pos);
   }, [currentStepConfig]);
 
@@ -221,10 +226,10 @@ export function TourTooltip() {
           animate="visible"
           exit="exit"
           className={cn(
-            "fixed z-[9999] w-[340px]",
-            "bg-card/95 backdrop-blur-xl",
+            "fixed z-[200] w-[360px] pointer-events-auto",
+            "bg-card/98 backdrop-blur-2xl",
             "rounded-2xl shadow-2xl",
-            "border border-border/50",
+            "border-2 border-primary/20",
             "overflow-hidden",
             "tour-tooltip"
           )}
@@ -235,30 +240,47 @@ export function TourTooltip() {
           role="dialog"
           aria-labelledby="tour-step-title"
           aria-describedby="tour-step-description"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
+          {/* Header with prominent skip button */}
           <div className="flex items-center justify-between px-5 pt-5 pb-2">
             <TourProgress />
-            <button
-              onClick={skipTour}
-              className={cn(
-                "p-1.5 rounded-lg",
-                "text-muted-foreground hover:text-foreground",
-                "hover:bg-muted/50",
-                "transition-colors duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              )}
-              aria-label="Skip tour"
-            >
-              <X className="size-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={skipTour}
+                data-tour-skip
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium",
+                  "text-muted-foreground hover:text-foreground",
+                  "hover:bg-muted/70 border border-border/50",
+                  "transition-all duration-200",
+                  "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                )}
+                aria-label="Skip tour"
+              >
+                Skip Tour
+              </button>
+              <button
+                onClick={skipTour}
+                className={cn(
+                  "p-1.5 rounded-lg",
+                  "text-muted-foreground hover:text-foreground",
+                  "hover:bg-muted/50",
+                  "transition-colors duration-200",
+                  "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                )}
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
           </div>
 
           {/* Content */}
           <div className="px-5 pb-4">
             <h3
               id="tour-step-title"
-              className="text-lg font-semibold text-foreground mb-2"
+              className="text-lg font-semibold text-foreground mb-2.5"
             >
               {currentStepConfig.title}
             </h3>
@@ -268,6 +290,13 @@ export function TourTooltip() {
             >
               {currentStepConfig.description}
             </p>
+            {/* Helpful hint */}
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <p className="text-xs text-muted-foreground/80 flex items-center gap-1.5">
+                <span className="inline-block px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">ESC</span>
+                to skip anytime
+              </p>
+            </div>
           </div>
 
           {/* Don't show again checkbox (on last step) */}
@@ -296,11 +325,11 @@ export function TourTooltip() {
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 rounded-lg",
                 "text-sm font-medium",
-                "transition-colors duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                "transition-all duration-200",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
                 isFirstStep
-                  ? "text-muted-foreground/50 cursor-not-allowed"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "text-muted-foreground/40 cursor-not-allowed opacity-50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               )}
               aria-label="Previous step"
             >
@@ -311,16 +340,17 @@ export function TourTooltip() {
             <button
               onClick={nextStep}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg",
+                "flex items-center gap-1.5 px-5 py-2.5 rounded-lg",
                 "bg-primary text-primary-foreground",
-                "text-sm font-medium",
-                "hover:bg-primary/90",
-                "transition-colors duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                "text-sm font-semibold",
+                "hover:bg-primary/90 active:scale-95",
+                "transition-all duration-200",
+                "shadow-lg shadow-primary/25",
+                "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               )}
               aria-label={isLastStep ? "Finish tour" : "Next step"}
             >
-              {currentStepConfig.actionText || (isLastStep ? "Finish" : "Next")}
+              {currentStepConfig.actionText || (isLastStep ? "Finish Tour" : "Next")}
               {!isLastStep && <ChevronRight className="size-4" />}
             </button>
           </div>
@@ -336,12 +366,12 @@ export function TourTooltip() {
 }
 
 /**
- * Arrow component for tooltip
+ * Arrow component for tooltip - Enhanced with glow
  */
 function TooltipArrow({ position }: { position: TooltipPosition }) {
   const arrowClasses = cn(
     "absolute w-3 h-3",
-    "bg-card/95 border-border/50",
+    "bg-card/98 border-primary/20 border-2",
     "transform rotate-45"
   );
 

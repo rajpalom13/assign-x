@@ -18,6 +18,7 @@ import {
   TOUR_STORAGE_KEY,
   TOUR_DONT_SHOW_KEY,
 } from "./tour-types";
+import { getTourCompletionStatus } from "@/lib/actions/data";
 
 /**
  * Default tour state
@@ -66,20 +67,36 @@ export function TourProvider({
   const [state, setState] = useState<TourState>(defaultState);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize from local storage
+  // Initialize from database AND local storage
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const hasCompleted = localStorage.getItem(TOUR_STORAGE_KEY) === "true";
-    const dontShow = localStorage.getItem(TOUR_DONT_SHOW_KEY) === "true";
+    const initializeTourState = async () => {
+      // Check database first (source of truth)
+      const dbStatus = await getTourCompletionStatus();
 
-    setState((prev) => ({
-      ...prev,
-      hasCompleted,
-      dontShowAgain: dontShow,
-    }));
+      // Check local storage as fallback
+      const localCompleted = localStorage.getItem(TOUR_STORAGE_KEY) === "true";
+      const dontShow = localStorage.getItem(TOUR_DONT_SHOW_KEY) === "true";
 
-    setIsInitialized(true);
+      // Database takes precedence
+      const hasCompleted = dbStatus.completed || localCompleted;
+
+      // If DB says completed but local storage doesn't, sync it
+      if (dbStatus.completed && !localCompleted) {
+        localStorage.setItem(TOUR_STORAGE_KEY, "true");
+      }
+
+      setState((prev) => ({
+        ...prev,
+        hasCompleted,
+        dontShowAgain: dontShow,
+      }));
+
+      setIsInitialized(true);
+    };
+
+    initializeTourState();
   }, []);
 
   // Auto-start tour for new users

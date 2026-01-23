@@ -10,6 +10,7 @@ export { TourOverlay } from "./tour-overlay";
 export { TourTooltip } from "./tour-tooltip";
 export { TourProgress, TourProgressBar } from "./tour-progress";
 export { TourStep, TourTarget } from "./tour-step";
+export { TourSkipFAB } from "./tour-skip-fab";
 
 // Types and configuration
 export {
