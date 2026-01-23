@@ -45,7 +45,8 @@ const itemVariants = {
 };
 
 /**
- * DoctorsGrid component
+ * DoctorsGrid component - Uniform card layout
+ * All cards are the same size for consistent, professional appearance
  */
 export function DoctorsGrid({
   doctors,
@@ -83,9 +84,6 @@ export function DoctorsGrid({
     );
   }
 
-  const featuredDoctor = doctors[0];
-  const otherDoctors = doctors.slice(1);
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -94,30 +92,10 @@ export function DoctorsGrid({
         initial="hidden"
         animate="visible"
         exit={{ opacity: 0 }}
-        className={cn("grid gap-4", className)}
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        }}
+        className={cn("space-y-4", className)}
       >
-        {/* Featured Doctor - Spans 2 columns on larger screens */}
-        <motion.div
-          variants={itemVariants}
-          className="md:col-span-2 lg:row-span-2"
-          style={{
-            gridColumn: doctors.length > 2 ? "span 2" : "span 1",
-          }}
-        >
-          <DoctorCard
-            doctor={featuredDoctor}
-            variant="featured"
-            onClick={() => onDoctorClick?.(featuredDoctor)}
-            onBookClick={() => onBookClick?.(featuredDoctor)}
-            className="h-full"
-          />
-        </motion.div>
-
-        {/* Other Doctors */}
-        {otherDoctors.map((doctor) => (
+        {/* All Doctors - Uniform horizontal cards */}
+        {doctors.map((doctor) => (
           <motion.div key={doctor.id} variants={itemVariants}>
             <DoctorCard
               doctor={doctor}
