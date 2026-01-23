@@ -74,44 +74,52 @@ const stepContextData = [
 ];
 
 /**
- * Circular Progress Ring Component
+ * Circular Progress Ring Component - Enhanced and Larger
  */
 function ProgressRing({ progress }: { progress: number }) {
-  const radius = 36;
+  const radius = 70;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="relative w-20 h-20">
-      <svg className="transform -rotate-90 w-20 h-20">
+    <div className="relative w-44 h-44">
+      <svg className="transform -rotate-90 w-44 h-44">
         {/* Background circle */}
         <circle
-          cx="40"
-          cy="40"
+          cx="88"
+          cy="88"
           r={radius}
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="3"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="4"
           fill="none"
         />
-        {/* Progress circle */}
+        {/* Progress circle with gradient */}
         <motion.circle
-          cx="40"
-          cy="40"
+          cx="88"
+          cy="88"
           r={radius}
-          stroke="rgba(255,255,255,0.9)"
-          strokeWidth="3"
+          stroke="url(#progressGradient)"
+          strokeWidth="4"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
         />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,107,53,0.9)" />
+            <stop offset="100%" stopColor="rgba(160,122,101,0.9)" />
+          </linearGradient>
+        </defs>
       </svg>
-      {/* Percentage text */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-medium text-white/80">{Math.round(progress)}%</span>
+      {/* Percentage text - Larger */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-semibold text-white">{Math.round(progress)}%</span>
+        <span className="text-xs text-white/60 mt-1">Complete</span>
       </div>
     </div>
   );
@@ -126,21 +134,21 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
-    <div className="relative hidden flex-1 max-w-[55%] flex-col justify-between overflow-hidden bg-[#14110F] p-12 lg:flex xl:p-14">
-      {/* Animated gradient background */}
+    <div className="relative hidden flex-1 max-w-[55%] flex-col justify-between overflow-hidden bg-[#14110F] p-12 lg:flex xl:p-14 h-screen">
+      {/* Animated gradient background - Enhanced for landing page consistency */}
       <div className="absolute inset-[-50%] z-0 animate-gradient-rotate">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(118,83,65,0.12)_0%,transparent_40%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(52,49,45,0.10)_0%,transparent_40%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(160,122,101,0.08)_0%,transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,107,53,0.08)_0%,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(160,122,101,0.10)_0%,transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(118,83,65,0.12)_0%,transparent_50%)]" />
       </div>
 
-      {/* Grid pattern overlay */}
+      {/* Grid pattern overlay - Enhanced mesh effect */}
       <div
-        className="absolute inset-0 z-[1] pointer-events-none opacity-50"
+        className="absolute inset-0 z-[1] pointer-events-none opacity-40"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px)
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
         }}
@@ -149,17 +157,17 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
       {/* Logo Badge */}
       <div className="relative z-10">
         <div className="mb-12">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[13px] font-medium text-white/90">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[13px] font-medium text-white/90 backdrop-blur-sm">
             <Sparkles className="h-4 w-4" />
             AssignX
           </span>
         </div>
       </div>
 
-      {/* Main Content - Giant Step Number + Context */}
+      {/* Main Content - Centered Progress Ring + Context */}
       <div className="relative z-10 flex flex-1 flex-col justify-center max-w-[480px]">
-        {/* Giant Step Number with Progress Ring */}
-        <div className="relative mb-12">
+        {/* Centered Progress Ring */}
+        <div className="relative mb-12 flex justify-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -167,22 +175,9 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="relative inline-block"
+              className="relative"
             >
-              <h2
-                className="text-[180px] xl:text-[220px] font-light leading-none tracking-tighter"
-                style={{
-                  WebkitTextStroke: "2px rgba(255,255,255,0.2)",
-                  color: "transparent",
-                  fontFamily: "system-ui, -apple-system, sans-serif",
-                }}
-              >
-                {currentStep + 1}
-              </h2>
-              {/* Progress Ring - positioned at top-right of number */}
-              <div className="absolute -top-4 -right-4">
-                <ProgressRing progress={progress} />
-              </div>
+              <ProgressRing progress={progress} />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -194,31 +189,31 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.3, delay: 0.15, ease: [0.4, 0, 0.2, 1] }}
             className="space-y-6"
           >
-            {/* Icon */}
+            {/* Icon with enhanced glow */}
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10"
+              className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-sm border border-white/10"
             >
-              <Icon className="h-6 w-6 text-white/80" strokeWidth={1.5} />
+              <Icon className="h-7 w-7 text-white/90" strokeWidth={1.5} />
             </motion.div>
 
-            {/* Heading */}
-            <h3 className="text-[28px] font-semibold leading-tight text-white">
+            {/* Heading - Enhanced typography */}
+            <h3 className="text-[32px] font-bold leading-tight text-white tracking-tight">
               {stepData.heading}
             </h3>
 
-            {/* Message */}
-            <p className="text-[15px] leading-relaxed text-white/70 max-w-[400px]">
+            {/* Message - Better readability */}
+            <p className="text-[16px] leading-relaxed text-white/75 max-w-[420px]">
               {stepData.message}
             </p>
 
-            {/* Tip */}
-            <div className="inline-flex items-start gap-2 rounded-lg bg-white/[0.05] px-4 py-3 border border-white/10">
-              <span className="text-[13px] leading-relaxed text-white/50">
+            {/* Tip - Enhanced card style */}
+            <div className="inline-flex items-start gap-2 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] px-5 py-3.5 border border-white/10 backdrop-blur-sm">
+              <span className="text-[14px] leading-relaxed text-white/60">
                 {stepData.tip}
               </span>
             </div>
@@ -227,29 +222,29 @@ function DynamicStepContext({ currentStep, totalSteps }: { currentStep: number; 
       </div>
 
       {/* Bottom Section - Trust Signals + What's Next */}
-      <div className="relative z-10 space-y-4">
-        {/* Trust Signals */}
-        <div className="flex items-center gap-6 text-[13px] text-white/50 border-t border-white/[0.06] pt-5">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3.5 w-3.5 text-white/40" />
-            <span>15,234 projects</span>
+      <div className="relative z-10 space-y-5">
+        {/* Trust Signals - Enhanced with glassmorphic cards */}
+        <div className="flex items-center gap-4 text-[13px] text-white/60 border-t border-white/[0.08] pt-6">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <CheckCircle className="h-4 w-4 text-emerald-400/70" />
+            <span className="font-medium">15,234 projects</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Star className="h-3.5 w-3.5 text-white/40" />
-            <span>4.9/5 rating</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <Star className="h-4 w-4 text-amber-400/70" />
+            <span className="font-medium">4.9/5 rating</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5 text-white/40" />
-            <span>98% on-time</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <Zap className="h-4 w-4 text-orange-400/70" />
+            <span className="font-medium">98% on-time</span>
           </div>
         </div>
 
-        {/* What's Next */}
-        <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
-          <span className="text-[14px] font-medium text-white/60">
+        {/* What's Next - Enhanced styling */}
+        <div className="flex items-center justify-between border-t border-white/[0.08] pt-5 px-4 py-3 rounded-xl bg-gradient-to-r from-white/[0.04] to-transparent">
+          <span className="text-[15px] font-semibold text-white/70">
             Next: {stepData.nextLabel}
           </span>
-          <ArrowRight className="h-4 w-4 text-white/40" />
+          <ArrowRight className="h-5 w-5 text-white/50" />
         </div>
       </div>
     </div>
@@ -268,12 +263,12 @@ export function FormLayout({
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
-    <div className="flex min-h-screen bg-background font-sans">
+    <div className="flex h-screen bg-background font-sans overflow-hidden">
       {/* Left Panel - Dynamic Step Context */}
       <DynamicStepContext currentStep={currentStep} totalSteps={totalSteps} />
 
-      {/* Right Panel - Clean Form Side */}
-      <div className="flex min-h-screen flex-1 flex-col items-center justify-start bg-background p-6 md:p-8 lg:min-w-[45%] lg:p-12 xl:p-16">
+      {/* Right Panel - Clean Form Side with scroll */}
+      <div className="flex h-screen flex-1 flex-col items-center justify-start bg-background p-6 md:p-8 lg:min-w-[45%] lg:p-12 xl:p-16 overflow-y-auto">
         <div className="w-full max-w-[480px] pt-8">
           {/* Mobile logo */}
           <div className="mb-10 flex justify-center lg:hidden">
@@ -283,19 +278,11 @@ export function FormLayout({
             </span>
           </div>
 
-          {/* Progress indicator */}
+          {/* Progress indicator - Bar only */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">
-                Step {currentStep + 1} of {totalSteps}
-              </span>
-              {stepLabels && stepLabels[currentStep] && (
-                <span className="text-sm font-semibold text-foreground">{stepLabels[currentStep]}</span>
-              )}
-            </div>
-            <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-foreground rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[#FF6B35] to-[#A07A65] rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
