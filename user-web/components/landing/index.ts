@@ -23,3 +23,16 @@ export * from "./how-it-works";
 export * from "./device-frame";
 export * from "./preview-dashboard";
 export * from "./platform-preview";
+
+// Redesign components
+export * from "./hero-section-redesign";
+export * from "./features-bento";
+export * from "./how-it-works-redesign";
+export * from "./cta-section-redesign";
+export * from "./user-types-section";
+
+// V2 components
+export * from "./hero-section-v2";
+export * from "./how-it-works-v2";
+export * from "./cta-section-v2";
+export * from "./features-systematic";
