@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
               // Styles: self + unsafe-inline (required for CSS-in-JS and Tailwind)
               "style-src 'self' 'unsafe-inline'",
               // Images: self + data URIs + blob + trusted domains
-              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.razorpay.com",
+              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.razorpay.com https://i.pravatar.cc https://api.qrserver.com",
               // Fonts: self + data URIs + Google Fonts
               "font-src 'self' data: https://fonts.gstatic.com",
               // API connections: self + Supabase + Razorpay

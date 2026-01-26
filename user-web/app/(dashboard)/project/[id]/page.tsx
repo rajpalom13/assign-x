@@ -1,13 +1,13 @@
-import { notFound, redirect } from "next/navigation";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { getProjectById } from "@/lib/actions/data";
-import { getUser } from "@/lib/actions/auth";
 import { ProjectDetailClient } from "./project-detail-client";
 import type { ProjectDetail } from "@/types/project";
 import type { ProjectStatus } from "@/types/project";
-
-interface ProjectDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import { Loader2 } from "lucide-react";
 
 /**
  * Transform database project to component-friendly format
@@ -109,28 +109,108 @@ function getFileType(mimeType: string): "pdf" | "doc" | "docx" | "image" {
 }
 
 /**
- * Project Detail Page - Server Component
- * Fetches project data from Supabase and renders client components
+ * Loading skeleton for project detail
  */
-export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  const { id } = await params;
+function LoadingSkeleton() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading project...</p>
+      </div>
+    </div>
+  );
+}
 
-  // Get current user - redirect to login if not authenticated
-  const user = await getUser();
-  if (!user) {
-    redirect("/login");
+/**
+ * Not found state
+ */
+function NotFoundState() {
+  const router = useRouter();
+
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+          <span className="text-2xl">🔍</span>
+        </div>
+        <h2 className="text-xl font-semibold">Project Not Found</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
+        </p>
+        <button
+          onClick={() => router.push("/projects")}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          Back to Projects
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Project Detail Page - Client Component
+ * Uses client-side auth for consistent session handling
+ */
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
+
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [userId, setUserId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  // Track if initial fetch has been done
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current || !id) return;
+    hasFetched.current = true;
+
+    const loadData = async () => {
+      const supabase = createClient();
+
+      // Check auth first
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setUserId(user.id);
+
+      // Fetch project
+      try {
+        const dbProject = await getProjectById(id);
+        const transformedProject = transformProjectToDetail(dbProject);
+
+        if (!transformedProject) {
+          setNotFound(true);
+        } else {
+          setProject(transformedProject);
+        }
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        setNotFound(true);
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [id, router]);
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
   }
 
-  // Fetch project from database
-  const dbProject = await getProjectById(id);
-
-  // Transform to component-friendly format
-  const project = transformProjectToDetail(dbProject);
-
-  // 404 if project not found
-  if (!project) {
-    notFound();
+  if (notFound || !project) {
+    return <NotFoundState />;
   }
 
-  return <ProjectDetailClient project={project} userId={user.id} />;
+  return <ProjectDetailClient project={project} userId={userId} />;
 }
