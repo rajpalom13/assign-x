@@ -32,7 +32,7 @@ class SuccessPopup extends StatefulWidget {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withAlpha(200),
+      barrierColor: Colors.black.withValues(alpha: 0.78),
       builder: (context) => SuccessPopup(
         title: title,
         message: message,
@@ -118,7 +118,7 @@ class _SuccessPopupState extends State<SuccessPopup>
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withAlpha(30),
+                    color: AppColors.primary.withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: const Offset(0, 8),
                   ),
@@ -139,14 +139,14 @@ class _SuccessPopupState extends State<SuccessPopup>
                           gradient: LinearGradient(
                             colors: [
                               AppColors.success,
-                              AppColors.success.withAlpha(200),
+                              AppColors.success.withValues(alpha: 0.78),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.success.withAlpha(80),
+                              color: AppColors.success.withValues(alpha: 0.31),
                               blurRadius: 20,
                               spreadRadius: 4,
                             ),
@@ -251,9 +251,9 @@ class _SuccessPopupState extends State<SuccessPopup>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'View Project',
-                            style: TextStyle(
+                            style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),

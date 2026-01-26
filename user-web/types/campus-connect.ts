@@ -331,6 +331,11 @@ export interface CampusConnectFilters {
   sortBy?: "recent" | "popular" | "most_comments";
   limit?: number;
   offset?: number;
+  /**
+   * If true, exclude housing posts from results.
+   * Used for non-student users who should not see housing listings.
+   */
+  excludeHousing?: boolean;
 }
 
 /**

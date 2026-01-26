@@ -187,12 +187,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
-                              AppColors.primary.withAlpha(200),
+                              AppColors.primary.withValues(alpha: 0.78),
                             ],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withAlpha(60),
+                              color: AppColors.primary.withValues(alpha: 0.24),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -220,9 +220,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     'Save Changes',
-                                    style: TextStyle(
+                                    style: AppTextStyles.labelLarge.copyWith(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,
                                     ),
@@ -263,7 +263,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(10),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -283,7 +283,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.warning.withAlpha(25),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -319,8 +319,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primary.withAlpha(40),
-                AppColors.primary.withAlpha(20),
+                AppColors.primary.withValues(alpha: 0.16),
+                AppColors.primary.withValues(alpha: 0.08),
               ],
             ),
             borderRadius: BorderRadius.circular(8),
@@ -365,7 +365,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         prefixText: prefixText,
         filled: true,
-        fillColor: enabled ? Colors.white.withAlpha(15) : Colors.white.withAlpha(8),
+        fillColor: enabled ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
@@ -380,7 +380,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border.withAlpha(30)),
+          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.12)),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -407,14 +407,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         labelText: label,
         prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         filled: true,
-        fillColor: Colors.white.withAlpha(15),
+        fillColor: Colors.white.withValues(alpha: 0.06),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
+          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border.withAlpha(50)),
+          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

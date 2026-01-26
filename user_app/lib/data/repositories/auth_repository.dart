@@ -98,9 +98,14 @@ class AuthRepository {
     return success;
   }
 
+  /// Deep link scheme for auth callback.
+  /// Pattern: assignx://auth-callback
+  static const String _authCallbackScheme = 'assignx://auth-callback';
+
   /// Sign in with magic link (passwordless email authentication).
   ///
   /// Sends a magic link to the provided email address.
+  /// The magic link will redirect to the app via deep link.
   /// Returns true if the link was sent successfully.
   Future<bool> signInWithMagicLink({
     required String email,
@@ -109,11 +114,12 @@ class AuthRepository {
   }) async {
     debugPrint('🔐 [AUTH] Sending magic link to: $email');
     debugPrint('🔐 [AUTH] User type: ${userType?.toDbString() ?? 'not set'}');
+    debugPrint('🔐 [AUTH] Redirect URL: ${redirectTo ?? _authCallbackScheme}');
 
     try {
       await _client.auth.signInWithOtp(
         email: email,
-        emailRedirectTo: redirectTo,
+        emailRedirectTo: redirectTo ?? _authCallbackScheme,
         data: userType != null ? {'user_type': userType.toDbString()} : null,
       );
       debugPrint('✅ [AUTH] Magic link sent successfully');

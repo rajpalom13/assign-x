@@ -81,13 +81,13 @@ export function EarningsGraph() {
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-muted-foreground mb-1">
               {viewMode === "monthly" ? "6-Month" : "4-Week"} Total
             </p>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold tracking-tight">
               {totalEarnings.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -96,10 +96,10 @@ export function EarningsGraph() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Commission</p>
-            <p className="text-2xl font-bold text-blue-600">
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-muted-foreground mb-1">Total Commission</p>
+            <p className="text-3xl font-bold text-blue-600 tracking-tight">
               {totalCommission.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -108,18 +108,18 @@ export function EarningsGraph() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Projects Completed</p>
-            <p className="text-2xl font-bold">{totalProjects}</p>
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-muted-foreground mb-1">Projects Completed</p>
+            <p className="text-3xl font-bold tracking-tight">{totalProjects}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <p className="text-sm font-medium text-muted-foreground mb-1">
               Avg {viewMode === "monthly" ? "Monthly" : "Weekly"}
             </p>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold tracking-tight">
               {avgMonthlyEarnings.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -131,11 +131,11 @@ export function EarningsGraph() {
       </div>
 
       {/* Main Chart */}
-      <Card>
-        <CardHeader>
+      <Card className="rounded-xl">
+        <CardHeader className="pb-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 Earnings Overview
               </CardTitle>
@@ -189,7 +189,7 @@ export function EarningsGraph() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6 pt-4">
           <ChartContainer config={chartConfig} className="h-[350px] w-full">
             {chartType === "area" ? (
               <AreaChart
@@ -367,22 +367,22 @@ export function EarningsGraph() {
           </ChartContainer>
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center justify-center gap-8 mt-6 pt-4 border-t">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-[hsl(142,76%,36%)]" />
-              <span className="text-sm text-muted-foreground">Earnings</span>
+              <span className="text-sm font-medium text-muted-foreground">Earnings</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-[hsl(221,83%,53%)]" />
-              <span className="text-sm text-muted-foreground">Commission</span>
+              <span className="text-sm font-medium text-muted-foreground">Commission</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Growth Insight */}
-      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900">
-        <CardContent className="pt-6">
+      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900 rounded-xl">
+        <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
               <TrendingUp className="h-5 w-5 text-green-600" />

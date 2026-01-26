@@ -70,17 +70,17 @@ export function StatsCards({
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <Skeleton className="h-4 w-[100px]" />
-              <Skeleton className="h-10 w-10 rounded-lg" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-[80px] mb-1" />
-              <Skeleton className="h-3 w-[120px]" />
-            </CardContent>
+          <Card key={i} className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-8 w-[80px]" />
+                <Skeleton className="h-3 w-[120px]" />
+              </div>
+              <Skeleton className="h-12 w-12 rounded-xl" />
+            </div>
           </Card>
         ))}
       </div>
@@ -88,21 +88,24 @@ export function StatsCards({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
-        <Card key={stat.title}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {stat.title}
-            </CardTitle>
-            <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+        <Card
+          key={stat.title}
+          className="p-6 hover:shadow-md hover:border-primary/20 transition-all duration-200"
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </p>
+              <div className="text-3xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
-            <p className="text-xs text-muted-foreground">{stat.description}</p>
-          </CardContent>
+            <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${stat.bgColor}`}>
+              <stat.icon className={`h-6 w-6 ${stat.color}`} />
+            </div>
+          </div>
         </Card>
       ))}
     </div>

@@ -1,8 +1,14 @@
 "use client";
 
+/**
+ * ProjectDetailClient - Clean, modern project detail with navigable timeline
+ * Features clickable steps to view historical information
+ */
+
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Clock,
@@ -29,6 +35,13 @@ import {
   Zap,
   CheckCircle2,
   Timer,
+  X,
+  ClipboardList,
+  Search,
+  MessageSquare,
+  UserCheck,
+  FileCheck,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +59,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DeliverablesSection,
   QualityReportBadge,
@@ -66,43 +86,105 @@ import { STATUS_CONFIG } from "@/types/project";
 import { projectService, type TimelineEvent } from "@/services";
 
 /**
- * Get time-based gradient class for dynamic theming
+ * Step configuration with emojis and details
  */
-function getTimeBasedGradientClass(): string {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
-  if (hour >= 12 && hour < 18) return "mesh-gradient-afternoon";
-  return "mesh-gradient-evening";
-}
-
-interface ProjectDetailClientProps {
-  project: ProjectDetail;
-  userId: string;
-}
-
-// Step configuration
 const STEPS = [
-  { id: "submitted", label: "Submitted" },
-  { id: "analyzing", label: "Under Review" },
-  { id: "quoted", label: "Quote Ready" },
-  { id: "paid", label: "Paid" },
-  { id: "assigned", label: "Assigned" },
-  { id: "in_progress", label: "In Progress" },
-  { id: "qc", label: "Quality Check" },
-  { id: "delivered", label: "Delivered" },
+  {
+    id: "submitted",
+    label: "Submitted",
+    emoji: "📤",
+    icon: FileText,
+    description: "Your project has been submitted for review",
+    details: "We've received your project requirements and attached files.",
+  },
+  {
+    id: "analyzing",
+    label: "Under Review",
+    emoji: "🔍",
+    icon: Search,
+    description: "Our team is reviewing your requirements",
+    details: "An expert is analyzing your project to prepare an accurate quote.",
+  },
+  {
+    id: "quoted",
+    label: "Quote Ready",
+    emoji: "💰",
+    icon: CreditCard,
+    description: "Your quote is ready for review",
+    details: "Review the quote and proceed with payment to start work.",
+  },
+  {
+    id: "paid",
+    label: "Paid",
+    emoji: "✅",
+    icon: CheckCircle2,
+    description: "Payment received successfully",
+    details: "Your payment has been confirmed. We're assigning an expert.",
+  },
+  {
+    id: "assigned",
+    label: "Assigned",
+    emoji: "👨‍💻",
+    icon: UserCheck,
+    description: "Expert assigned to your project",
+    details: "A qualified expert has been assigned and will begin work soon.",
+  },
+  {
+    id: "in_progress",
+    label: "In Progress",
+    emoji: "⚡",
+    icon: Zap,
+    description: "Your expert is actively working",
+    details: "Track real-time progress through the live document link.",
+  },
+  {
+    id: "qc",
+    label: "Quality Check",
+    emoji: "🔬",
+    icon: ShieldCheck,
+    description: "Work is being reviewed for quality",
+    details: "Our QC team ensures your work meets quality standards.",
+  },
+  {
+    id: "delivered",
+    label: "Delivered",
+    emoji: "🎉",
+    icon: Truck,
+    description: "Your project is complete",
+    details: "Review the deliverables and mark as complete or request revisions.",
+  },
 ];
 
+/**
+ * Get step index from status
+ */
 function getStepIndex(status: ProjectStatus): number {
   const map: Record<string, number> = {
-    draft: 0, submitted: 0, analyzing: 1, quoted: 2, payment_pending: 2,
-    paid: 3, assigning: 4, assigned: 4, in_progress: 5, submitted_for_qc: 6,
-    qc_in_progress: 6, qc_approved: 6, qc_rejected: 5, delivered: 7,
-    revision_requested: 7, in_revision: 5, completed: 8, auto_approved: 8,
+    draft: 0,
+    submitted: 0,
+    analyzing: 1,
+    quoted: 2,
+    payment_pending: 2,
+    paid: 3,
+    assigning: 4,
+    assigned: 4,
+    in_progress: 5,
+    submitted_for_qc: 6,
+    qc_in_progress: 6,
+    qc_approved: 6,
+    qc_rejected: 5,
+    delivered: 7,
+    revision_requested: 7,
+    in_revision: 5,
+    completed: 8,
+    auto_approved: 8,
   };
   return map[status] ?? 0;
 }
 
-// Format time helper
+/**
+ * Format time helper
+ */
 function formatTime(timestamp: string): string {
   const date = new Date(timestamp);
   const now = new Date();
@@ -112,18 +194,14 @@ function formatTime(timestamp: string): string {
   return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-// Status explanations
-const statusExplanations: Record<number, { title: string; description: string }> = {
-  0: { title: "In Queue", description: "Your project is being reviewed. You'll be notified when the quote is ready." },
-  1: { title: "Under Review", description: "An expert is analyzing your requirements to prepare an accurate quote." },
-  3: { title: "Payment Received", description: "We're assigning the best expert for your project." },
-  4: { title: "Expert Assigned", description: "Your expert is preparing to start work on your project." },
-  5: { title: "Work in Progress", description: "Your expert is actively working on your project." },
-  6: { title: "Quality Check", description: "Our QC team is reviewing your work to ensure quality standards." },
-  7: { title: "Delivered", description: "Your project is complete. Review the deliverables below." },
-};
+interface ProjectDetailClientProps {
+  project: ProjectDetail;
+  userId: string;
+}
 
-// Main Component
+/**
+ * Main Component
+ */
 export function ProjectDetailClient({ project, userId }: ProjectDetailClientProps) {
   const router = useRouter();
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
@@ -134,17 +212,14 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
 
   const config = STATUS_CONFIG[project.status];
   const stepIndex = getStepIndex(project.status);
   const showInvoice = stepIndex >= 3;
-
-  // Memoize time-based gradient class
-  const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
   const isQuoted = project.status === "quoted" || project.status === "payment_pending";
   const isDelivered = stepIndex >= 7;
   const isCompleted = project.status === "completed" || project.status === "auto_approved";
-
   const paymentAmount = project.budget ? parseInt(project.budget.replace(/[^0-9]/g, "")) : 0;
 
   // Handlers
@@ -220,17 +295,16 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   };
 
   const timeInfo = getTimeRemaining();
-  const explanation = statusExplanations[stepIndex];
 
   return (
-    <div className={cn("h-screen flex overflow-hidden mesh-background mesh-gradient-bottom-right-animated", gradientClass)}>
+    <div className="h-screen flex overflow-hidden bg-stone-50 dark:bg-stone-950">
       {/* Left Panel - Project Info */}
-      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-border/50 h-screen backdrop-blur-sm bg-background/80">
+      <div className="hidden lg:flex flex-col w-[55%] max-w-2xl border-r border-stone-200 dark:border-stone-800 h-screen bg-white dark:bg-stone-900">
         {/* Header */}
-        <div className="flex items-center gap-4 p-4 border-b border-border/50 bg-background/60 backdrop-blur-sm">
+        <div className="flex items-center gap-4 p-4 border-b border-stone-100 dark:border-stone-800">
           <button
             onClick={() => router.push("/projects")}
-            className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="h-9 w-9 rounded-xl border border-stone-200 dark:border-stone-700 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -240,7 +314,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+              <button className="h-9 w-9 rounded-xl border border-stone-200 dark:border-stone-700 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -266,59 +340,110 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             <span className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-              stepIndex >= 7 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-              stepIndex >= 5 ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" :
-              "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+              stepIndex >= 7
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : stepIndex >= 5
+                  ? "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
             )}>
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               {config.label}
             </span>
           </div>
 
-          {/* Step Progress */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              {STEPS.map((step, i) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "h-1 rounded-full flex-1 transition-colors",
-                    i < stepIndex ? "bg-emerald-500" :
-                    i === stepIndex ? "bg-primary" : "bg-muted"
-                  )}
-                />
-              ))}
+          {/* Interactive Step Progress */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Progress Timeline
+              </p>
+              <span className="text-xs text-muted-foreground">
+                Step {Math.min(stepIndex + 1, STEPS.length)} of {STEPS.length}
+              </span>
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Step {stepIndex + 1} of {STEPS.length}</span>
-              <span className="font-medium text-foreground">{STEPS[stepIndex]?.label}</span>
+
+            {/* Clickable Steps */}
+            <div className="flex items-center gap-1">
+              {STEPS.map((step, i) => {
+                const isCompleted = i < stepIndex;
+                const isCurrent = i === stepIndex;
+                const isClickable = i <= stepIndex;
+
+                return (
+                  <motion.button
+                    key={step.id}
+                    whileHover={isClickable ? { scale: 1.1 } : {}}
+                    whileTap={isClickable ? { scale: 0.95 } : {}}
+                    onClick={() => isClickable && setSelectedStepIndex(i)}
+                    disabled={!isClickable}
+                    className={cn(
+                      "h-2 rounded-full flex-1 transition-all duration-200",
+                      isCompleted && "bg-emerald-500 cursor-pointer hover:bg-emerald-600",
+                      isCurrent && "bg-violet-500 cursor-pointer hover:bg-violet-600",
+                      !isCompleted && !isCurrent && "bg-stone-200 dark:bg-stone-700 cursor-not-allowed"
+                    )}
+                    title={isClickable ? `View: ${step.label}` : step.label}
+                  />
+                );
+              })}
             </div>
+
+            {/* Current Step Info */}
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
+              <div className={cn(
+                "h-10 w-10 rounded-xl flex items-center justify-center text-lg",
+                stepIndex >= 7
+                  ? "bg-emerald-100 dark:bg-emerald-900/30"
+                  : stepIndex >= 5
+                    ? "bg-violet-100 dark:bg-violet-900/30"
+                    : "bg-amber-100 dark:bg-amber-900/30"
+              )}>
+                {STEPS[Math.min(stepIndex, STEPS.length - 1)]?.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{STEPS[Math.min(stepIndex, STEPS.length - 1)]?.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {STEPS[Math.min(stepIndex, STEPS.length - 1)]?.description}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedStepIndex(stepIndex)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Details
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+
+            {/* Tap to view hint */}
+            <p className="text-[10px] text-center text-muted-foreground">
+              Tap any completed step to view its history
+            </p>
           </div>
 
           {/* Quote Payment Card */}
           {isQuoted && paymentAmount > 0 && (
-            <div className="action-card-glass p-5 rounded-xl">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800">
+              <div className="flex items-center gap-2 text-xs text-violet-600 dark:text-violet-400 mb-3">
                 <CreditCard className="h-3.5 w-3.5" />
                 Payment Required
               </div>
-              <p className="text-3xl font-semibold mb-4">₹{paymentAmount.toLocaleString()}</p>
-              <Button onClick={() => setIsPaymentOpen(true)} className="w-full">
+              <p className="text-3xl font-bold text-violet-700 dark:text-violet-300 mb-4">
+                ₹{paymentAmount.toLocaleString()}
+              </p>
+              <Button
+                onClick={() => setIsPaymentOpen(true)}
+                className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+              >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pay Now
               </Button>
-              <p className="text-[10px] text-muted-foreground text-center mt-3">
+              <p className="text-[10px] text-violet-600/70 dark:text-violet-400/70 text-center mt-3">
                 Quote valid for 24 hours
               </p>
-            </div>
-          )}
-
-          {/* Status Explanation */}
-          {!isQuoted && explanation && (
-            <div className="action-card-glass p-4 rounded-xl">
-              <p className="text-sm font-medium mb-1">{explanation.title}</p>
-              <p className="text-xs text-muted-foreground">{explanation.description}</p>
             </div>
           )}
 
@@ -328,9 +453,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               href={project.liveDocUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
+              className="flex items-center gap-3 p-4 rounded-2xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors"
             >
-              <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center text-white">
+              <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center text-white">
                 <Eye className="h-5 w-5" />
               </div>
               <div className="flex-1">
@@ -344,7 +469,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
           {/* Timeline Info */}
           {stepIndex >= 3 && stepIndex < 7 && project.deadline && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="action-card-glass p-3 rounded-xl">
+              <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <Calendar className="h-3 w-3" />
                   Deadline
@@ -355,8 +480,10 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               </div>
               {timeInfo && (
                 <div className={cn(
-                  "p-3 rounded-xl",
-                  timeInfo.urgent ? "border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30" : "action-card-glass"
+                  "p-4 rounded-2xl",
+                  timeInfo.urgent
+                    ? "border-2 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
+                    : "bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800"
                 )}>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                     <Timer className="h-3 w-3" />
@@ -372,8 +499,8 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
           {/* Expert Info */}
           {stepIndex >= 4 && stepIndex < 7 && project.supervisorName && (
-            <div className="action-card-glass flex items-center gap-3 p-3 rounded-xl">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-medium">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
+              <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium">
                 {project.supervisorName.charAt(0)}
               </div>
               <div>
@@ -391,7 +518,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               <div className="space-y-3">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Details</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="action-card-glass p-3 rounded-xl">
+                  <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                       <BookOpen className="h-3 w-3" />
                       Subject
@@ -399,7 +526,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     <p className="text-sm font-medium">{project.subjectName || "Not specified"}</p>
                   </div>
                   {project.wordCount && (
-                    <div className="action-card-glass p-3 rounded-xl">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Hash className="h-3 w-3" />
                         Word Count
@@ -408,7 +535,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                     </div>
                   )}
                   {project.deadline && (
-                    <div className="action-card-glass p-3 rounded-xl">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <Calendar className="h-3 w-3" />
                         Deadline
@@ -422,7 +549,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               </div>
 
               {project.instructions && (
-                <div className="action-card-glass p-4 rounded-xl">
+                <div className="p-4 rounded-2xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
                 </div>
@@ -441,9 +568,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="action-card-glass flex items-center gap-3 p-3 rounded-xl hover:border-foreground/20 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800 hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
                       >
-                        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+                        <div className="h-9 w-9 rounded-lg bg-stone-100 dark:bg-stone-700 flex items-center justify-center text-muted-foreground">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -465,15 +592,23 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               <DeliverablesSection status={project.status} deliverables={project.deliverables} />
               <QualityReportBadge reports={project.qualityReports} />
 
-              {/* Only show action buttons if project is not completed */}
               {!isCompleted && (
                 <div className="space-y-3">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</p>
                   <div className="flex gap-3">
-                    <Button variant="outline" size="sm" onClick={() => setIsRevisionDialogOpen(true)} className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsRevisionDialogOpen(true)}
+                      className="flex-1 border-stone-200 dark:border-stone-700"
+                    >
                       Request Revision
                     </Button>
-                    <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)} className="flex-1">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsCompleteDialogOpen(true)}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
                       <Check className="h-4 w-4 mr-1" />
                       Complete
                     </Button>
@@ -493,9 +628,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
       </div>
 
       {/* Right Panel - Chat */}
-      <div className="flex-1 flex flex-col h-screen backdrop-blur-sm bg-background/50">
+      <div className="flex-1 flex flex-col h-screen bg-white dark:bg-stone-900">
         {/* Mobile Header */}
-        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-border/50 bg-background/60 backdrop-blur-sm">
+        <div className="lg:hidden flex items-center gap-3 p-3 border-b border-stone-200 dark:border-stone-800">
           <button onClick={() => router.push("/projects")} className="p-2 -ml-1">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -517,15 +652,21 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
         </div>
 
         {/* Mobile Tabs */}
-        <div className="lg:hidden flex border-b border-border/50 bg-background/60 backdrop-blur-sm">
+        <div className="lg:hidden flex border-b border-stone-200 dark:border-stone-800">
           <button
-            className={cn("flex-1 py-3 text-sm font-medium border-b-2 transition-colors", mobileTab === "info" ? "border-primary text-foreground" : "border-transparent text-muted-foreground")}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium border-b-2 transition-colors",
+              mobileTab === "info" ? "border-violet-600 text-foreground" : "border-transparent text-muted-foreground"
+            )}
             onClick={() => setMobileTab("info")}
           >
             Project Info
           </button>
           <button
-            className={cn("flex-1 py-3 text-sm font-medium border-b-2 transition-colors", mobileTab === "chat" ? "border-primary text-foreground" : "border-transparent text-muted-foreground")}
+            className={cn(
+              "flex-1 py-3 text-sm font-medium border-b-2 transition-colors",
+              mobileTab === "chat" ? "border-violet-600 text-foreground" : "border-transparent text-muted-foreground"
+            )}
             onClick={() => setMobileTab("chat")}
           >
             Chat
@@ -535,21 +676,38 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
         {/* Mobile Info Content */}
         {mobileTab === "info" && (
           <div className="lg:hidden flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Mobile Step Progress */}
+            <div className="flex items-center gap-1 mb-4">
+              {STEPS.map((step, i) => (
+                <button
+                  key={step.id}
+                  onClick={() => i <= stepIndex && setSelectedStepIndex(i)}
+                  disabled={i > stepIndex}
+                  className={cn(
+                    "h-2 rounded-full flex-1 transition-all",
+                    i < stepIndex && "bg-emerald-500",
+                    i === stepIndex && "bg-violet-500",
+                    i > stepIndex && "bg-stone-200 dark:bg-stone-700"
+                  )}
+                />
+              ))}
+            </div>
+
             <div className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-              stepIndex >= 7 ? "bg-emerald-100 text-emerald-700" : stepIndex >= 5 ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+              stepIndex >= 7 ? "bg-emerald-100 text-emerald-700" : stepIndex >= 5 ? "bg-violet-100 text-violet-700" : "bg-amber-100 text-amber-700"
             )}>
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
               {config.label}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="action-card-glass p-3 rounded-xl">
+              <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800">
                 <p className="text-xs text-muted-foreground mb-1">Subject</p>
                 <p className="text-sm font-medium">{project.subjectName || "N/A"}</p>
               </div>
               {project.deadline && (
-                <div className="action-card-glass p-3 rounded-xl">
+                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800">
                   <p className="text-xs text-muted-foreground mb-1">Deadline</p>
                   <p className="text-sm font-medium">
                     {new Date(project.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
@@ -559,7 +717,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             </div>
 
             {project.instructions && (
-              <div className="action-card-glass p-4 rounded-xl">
+              <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800">
                 <p className="text-xs font-medium text-muted-foreground mb-2">Instructions</p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.instructions}</p>
               </div>
@@ -582,6 +740,112 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
         </div>
       </div>
 
+      {/* Step Details Dialog */}
+      <Dialog open={selectedStepIndex !== null} onOpenChange={() => setSelectedStepIndex(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={cn(
+                "h-12 w-12 rounded-xl flex items-center justify-center text-xl",
+                selectedStepIndex !== null && selectedStepIndex < stepIndex
+                  ? "bg-emerald-100 dark:bg-emerald-900/30"
+                  : "bg-violet-100 dark:bg-violet-900/30"
+              )}>
+                {selectedStepIndex !== null && STEPS[selectedStepIndex]?.emoji}
+              </div>
+              <div>
+                <DialogTitle className="text-left">
+                  {selectedStepIndex !== null && STEPS[selectedStepIndex]?.label}
+                </DialogTitle>
+                <DialogDescription className="text-left">
+                  {selectedStepIndex !== null && (
+                    selectedStepIndex < stepIndex ? "Completed" : "Current Step"
+                  )}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              {selectedStepIndex !== null && STEPS[selectedStepIndex]?.details}
+            </p>
+
+            {/* Step-specific content */}
+            {selectedStepIndex === 0 && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+                  <p className="text-xs text-muted-foreground mb-1">Submitted</p>
+                  <p className="text-sm font-medium">
+                    {project.createdAt
+                      ? new Date(project.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "N/A"}
+                  </p>
+                </div>
+                {project.attachedFiles.length > 0 && (
+                  <div className="p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+                    <p className="text-xs text-muted-foreground mb-1">Files Attached</p>
+                    <p className="text-sm font-medium">{project.attachedFiles.length} files</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedStepIndex === 2 && project.budget && (
+              <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 text-center">
+                <p className="text-xs text-violet-600 dark:text-violet-400 mb-1">Quote Amount</p>
+                <p className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                  ₹{paymentAmount.toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {selectedStepIndex === 3 && (
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  Payment Confirmed
+                </p>
+              </div>
+            )}
+
+            {selectedStepIndex === 4 && project.supervisorName && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-100 dark:bg-stone-800">
+                <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium">
+                  {project.supervisorName.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{project.supervisorName}</p>
+                  <p className="text-xs text-muted-foreground">Assigned Expert</p>
+                </div>
+              </div>
+            )}
+
+            {selectedStepIndex === 7 && isDelivered && (
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-center">
+                <Package className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  Project Delivered
+                </p>
+                <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+                  Review deliverables in the main view
+                </p>
+              </div>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setSelectedStepIndex(null)}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Razorpay Payment Dialog */}
       <RazorpayCheckout
         open={isPaymentOpen}
@@ -596,7 +860,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
       {/* Revision Dialog */}
       <AlertDialog open={isRevisionDialogOpen} onOpenChange={setIsRevisionDialogOpen}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Request Revision</AlertDialogTitle>
             <AlertDialogDescription>
@@ -612,15 +876,26 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
               placeholder="Describe the changes..."
               value={revisionFeedback}
               onChange={(e) => setRevisionFeedback(e.target.value)}
-              className="mt-2 min-h-[120px]"
+              className="mt-2 min-h-[120px] rounded-xl"
             />
           </div>
           <AlertDialogFooter>
             <Button variant="outline" onClick={() => setIsRevisionDialogOpen(false)} disabled={isSubmittingRevision}>
               Cancel
             </Button>
-            <Button onClick={handleRequestRevision} disabled={isSubmittingRevision || !revisionFeedback.trim()}>
-              {isSubmittingRevision ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting...</> : "Submit"}
+            <Button
+              onClick={handleRequestRevision}
+              disabled={isSubmittingRevision || !revisionFeedback.trim()}
+              className="bg-violet-600 hover:bg-violet-700"
+            >
+              {isSubmittingRevision ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -628,7 +903,7 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
 
       {/* Complete Dialog */}
       <AlertDialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -642,8 +917,22 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)} disabled={isMarkingComplete}>
               Cancel
             </Button>
-            <Button onClick={handleMarkComplete} disabled={isMarkingComplete} className="bg-emerald-500 hover:bg-emerald-600">
-              {isMarkingComplete ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Completing...</> : <><Check className="h-4 w-4 mr-2" />Complete</>}
+            <Button
+              onClick={handleMarkComplete}
+              disabled={isMarkingComplete}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isMarkingComplete ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Completing...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Complete
+                </>
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -652,7 +941,9 @@ export function ProjectDetailClient({ project, userId }: ProjectDetailClientProp
   );
 }
 
-// Chat Panel Component
+/**
+ * Chat Panel Component
+ */
 interface ChatPanelProps {
   projectId: string;
   userId: string;
@@ -669,7 +960,6 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
   const { messages, isLoading, isSending, hasMore, sendMessage, sendMessageWithAttachment, loadMore } = useChat(projectId, userId);
 
-  // Fetch timeline events (quotes and status changes)
   useEffect(() => {
     const fetchTimeline = async () => {
       try {
@@ -684,7 +974,9 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
   useEffect(() => {
     if (scrollRef.current && messages.length > 0) {
-      setTimeout(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, 100);
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
     }
   }, [messages]);
 
@@ -699,7 +991,12 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
     if (!inputValue.trim() || isSending) return;
     const validation = validateChatContent(inputValue);
     if (!validation.isValid) {
-      const reasonMap: Record<string, FlagReason> = { phone: "phone_sharing", email: "email_sharing", link: "link_sharing", address: "address_sharing" };
+      const reasonMap: Record<string, FlagReason> = {
+        phone: "phone_sharing",
+        email: "email_sharing",
+        link: "link_sharing",
+        address: "address_sharing",
+      };
       await handleViolation(reasonMap[validation.reason || ""] || "link_sharing", getValidationErrorMessage(validation));
       return;
     }
@@ -708,13 +1005,19 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   }, [inputValue, isSending, sendMessage, handleViolation]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { toast.error("Max 10MB"); return; }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Max 10MB");
+        return;
+      }
       await sendMessageWithAttachment("", file);
       e.target.value = "";
     }
@@ -725,7 +1028,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
   return (
     <>
       {/* Chat Header */}
-      <div className="p-4 border-b border-border/50 bg-background/60 backdrop-blur-sm">
+      <div className="p-4 border-b border-stone-200 dark:border-stone-800">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold">Chat</h2>
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -733,10 +1036,10 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
             Online
           </span>
         </div>
-        <div className="action-card-glass flex items-center gap-3 p-3 rounded-xl">
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-medium relative">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
+          <div className="h-10 w-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-medium relative">
             {supervisor.charAt(0)}
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-stone-900" />
           </div>
           <div>
             <p className="text-sm font-medium">{supervisor}</p>
@@ -748,7 +1051,10 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
         {hasMore && !isLoading && messages.length > 0 && (
-          <button onClick={loadMore} className="w-full py-2 text-xs text-primary hover:underline flex items-center justify-center gap-1 mb-4">
+          <button
+            onClick={loadMore}
+            className="w-full py-2 text-xs text-violet-600 hover:underline flex items-center justify-center gap-1 mb-4"
+          >
             <ChevronUp className="h-3 w-3" /> Load earlier
           </button>
         )}
@@ -761,22 +1067,33 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
         {!isLoading && messages.length === 0 && timelineEvents.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+            <div className="h-12 w-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-3">
               <Send className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium mb-1">Start the conversation</p>
-            <p className="text-xs text-muted-foreground max-w-[200px]">Ask questions or share details about your project</p>
+            <p className="text-xs text-muted-foreground max-w-[200px]">
+              Ask questions or share details about your project
+            </p>
+          </div>
+        )}
+
+        {/* Project Activity Header - shown when there are timeline events */}
+        {timelineEvents.length > 0 && messages.length === 0 && !isLoading && (
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
+              <ClipboardList className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Project Activity</span>
+            </div>
           </div>
         )}
 
         {/* Timeline Events & Messages Combined */}
         {(() => {
-          // Combine messages and timeline events
-          const combined: Array<{ type: 'message' | 'event'; timestamp: string; data: any }> = [];
+          const combined: Array<{ type: "message" | "event"; timestamp: string; data: any }> = [];
 
           messages.forEach((msg) => {
             combined.push({
-              type: 'message',
+              type: "message",
               timestamp: msg.created_at || new Date().toISOString(),
               data: msg,
             });
@@ -784,17 +1101,16 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
           timelineEvents.forEach((event) => {
             combined.push({
-              type: 'event',
+              type: "event",
               timestamp: event.timestamp,
               data: event,
             });
           });
 
-          // Sort by timestamp
           combined.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
           return combined.map((item, index) => {
-            if (item.type === 'event') {
+            if (item.type === "event") {
               const event = item.data as TimelineEvent;
               return <TimelineEventCard key={`event-${event.id}`} event={event} supervisorName={supervisor} />;
             }
@@ -805,20 +1121,33 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 
             return (
               <div key={msg.id} className={cn("flex gap-2 mb-3", isUser && "flex-row-reverse")}>
-                <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0",
-                  isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground border border-border"
-                )}>
+                <div
+                  className={cn(
+                    "h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0",
+                    isUser
+                      ? "bg-violet-600 text-white"
+                      : "bg-stone-100 dark:bg-stone-800 text-muted-foreground border border-stone-200 dark:border-stone-700"
+                  )}
+                >
                   {isUser ? <User className="h-4 w-4" /> : senderName.charAt(0)}
                 </div>
                 <div className={cn("max-w-[75%]", isUser && "items-end")}>
-                  <div className={cn(
-                    "px-3 py-2 rounded-xl text-sm",
-                    isUser ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card border border-border rounded-bl-sm"
-                  )}>
+                  <div
+                    className={cn(
+                      "px-4 py-2.5 rounded-2xl text-sm",
+                      isUser
+                        ? "bg-violet-600 text-white rounded-br-md"
+                        : "bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-bl-md"
+                    )}
+                  >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                     {msg.file_url && (
-                      <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 mt-1 text-xs underline opacity-80">
+                      <a
+                        href={msg.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 mt-1 text-xs underline opacity-80"
+                      >
                         <Paperclip className="h-3 w-3" /> Attachment
                       </a>
                     )}
@@ -834,9 +1163,15 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border/50 bg-background/60 backdrop-blur-sm">
-        <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-border bg-muted/30 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-          <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg" />
+      <div className="p-4 border-t border-stone-200 dark:border-stone-800">
+        <div className="flex items-center gap-2 p-1.5 pl-4 rounded-full border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 focus-within:border-violet-500 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+          />
           <input
             type="text"
             placeholder="Type a message..."
@@ -849,14 +1184,14 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
           >
             <Paperclip className="h-4 w-4" />
           </button>
           <button
             onClick={handleSend}
             disabled={!inputValue.trim() || isSending}
-            className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-50 transition-colors"
+            className="h-9 w-9 rounded-full bg-violet-600 flex items-center justify-center text-white disabled:opacity-50 hover:bg-violet-700 transition-colors"
           >
             {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
@@ -864,15 +1199,17 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
       </div>
 
       <AlertDialog open={showViolationAlert} onOpenChange={setShowViolationAlert}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" /> Policy Violation
             </AlertDialogTitle>
             <AlertDialogDescription>{violationMessage}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button onClick={() => setShowViolationAlert(false)} variant="destructive">I Understand</Button>
+            <Button onClick={() => setShowViolationAlert(false)} variant="destructive">
+              I Understand
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -881,88 +1218,121 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
 }
 
 /**
- * Timeline Event Card - Message-style cards for quotes and status updates
- * Quotes appear from supervisor (left), payments appear from user (right)
+ * WhatsApp-style System Message - Centered notification
+ */
+function SystemMessage({ emoji, text, timestamp }: { emoji: string; text: string; timestamp: string }) {
+  return (
+    <div className="flex justify-center my-4">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+        <span className="text-sm">{emoji}</span>
+        <span className="text-xs text-muted-foreground">{text}</span>
+        <span className="text-[10px] text-muted-foreground/70">{formatTime(timestamp)}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Timeline Event Card - WhatsApp-style status messages
+ * Shows ALL project events including supervisor/doer assignments, payments, completions
  */
 function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; supervisorName?: string }) {
   const supervisor = supervisorName || "Supervisor";
+  const notes = event.data.notes;
 
-  // User-initiated actions (show on right side like user messages)
+  // User-initiated actions (show on right side)
   const userActions = ["paid", "completed", "revision_requested", "submitted"];
-  // Supervisor/system actions (show on left side like supervisor messages)
   const isUserAction = event.type === "status_change" && userActions.includes(event.data.to_status || "");
 
-  const statusConfig: Record<string, { label: string; description: string; icon: React.ReactNode }> = {
-    submitted: { label: "Project Submitted", description: "Your project has been submitted for review", icon: <FileText className="h-4 w-4" /> },
-    analyzing: { label: "Under Review", description: "Our team is reviewing your requirements", icon: <Clock className="h-4 w-4" /> },
-    quoted: { label: "Quote Prepared", description: "Your quote is ready for review", icon: <CreditCard className="h-4 w-4" /> },
-    payment_pending: { label: "Awaiting Payment", description: "Please complete the payment to proceed", icon: <CreditCard className="h-4 w-4" /> },
-    paid: { label: "Payment Successful", description: "Your payment has been received", icon: <CheckCircle2 className="h-4 w-4" /> },
-    assigned: { label: "Expert Assigned", description: "An expert has been assigned to your project", icon: <User className="h-4 w-4" /> },
-    in_progress: { label: "Work Started", description: "Your expert has started working", icon: <Zap className="h-4 w-4" /> },
-    qc: { label: "Quality Check", description: "Your work is being reviewed for quality", icon: <ShieldCheck className="h-4 w-4" /> },
-    delivered: { label: "Delivered", description: "Your project has been delivered", icon: <Package className="h-4 w-4" /> },
-    completed: { label: "Marked Complete", description: "You marked this project as complete", icon: <CheckCircle2 className="h-4 w-4" /> },
-    revision_requested: { label: "Revision Requested", description: "You requested changes to the delivery", icon: <ArrowLeft className="h-4 w-4" /> },
-    in_revision: { label: "In Revision", description: "Your expert is making the requested changes", icon: <Clock className="h-4 w-4" /> },
+  // Comprehensive status configuration for ALL possible statuses
+  const statusConfig: Record<string, { label: string; description: string; emoji: string; isSystem?: boolean }> = {
+    // Initial stages
+    draft: { label: "Draft Created", description: "Project draft has been created", emoji: "📝", isSystem: true },
+    submitted: { label: "Project Submitted", description: "Your project has been submitted for review", emoji: "📤" },
+
+    // Review & Quote stages
+    analyzing: { label: "Under Review", description: "Our team is reviewing your requirements", emoji: "🔍", isSystem: true },
+    quoted: { label: "Quote Prepared", description: "Your quote is ready for review", emoji: "💰", isSystem: true },
+    payment_pending: { label: "Awaiting Payment", description: "Please complete the payment to proceed", emoji: "⏳", isSystem: true },
+
+    // Payment
+    paid: { label: "Payment Successful", description: "Your payment has been received", emoji: "✅" },
+
+    // Assignment stages - IMPORTANT for "supervisor came in" & "doer assigned"
+    assigning: { label: "Finding Expert", description: "We're finding the best expert for your project", emoji: "🔎", isSystem: true },
+    assigned: { label: "Expert Assigned", description: notes || "An expert has been assigned to your project", emoji: "👨‍💻", isSystem: true },
+    supervisor_assigned: { label: "Supervisor Joined", description: notes || `${supervisor} is now managing your project`, emoji: "👤", isSystem: true },
+    doer_assigned: { label: "Doer Assigned", description: notes || "A specialist has been assigned to work on your project", emoji: "👷", isSystem: true },
+    expert_joined: { label: "Expert Joined", description: notes || "Expert has joined the project", emoji: "🤝", isSystem: true },
+
+    // Work stages
+    in_progress: { label: "Work Started", description: notes || "Your expert has started working on your project", emoji: "⚡", isSystem: true },
+
+    // QC stages
+    submitted_for_qc: { label: "Submitted for QC", description: "Work has been submitted for quality review", emoji: "📋", isSystem: true },
+    qc_in_progress: { label: "QC In Progress", description: "Quality check is underway", emoji: "🔬", isSystem: true },
+    qc_approved: { label: "QC Approved", description: "Work has passed quality checks", emoji: "✓", isSystem: true },
+    qc_rejected: { label: "QC Rejected", description: "Work needs improvements before delivery", emoji: "⚠️", isSystem: true },
+
+    // Delivery stages
+    delivered: { label: "Delivered", description: notes || "Your project has been delivered", emoji: "🎉", isSystem: true },
+
+    // Revision stages
+    revision_requested: { label: "Revision Requested", description: notes || "You requested changes to the delivery", emoji: "🔄" },
+    in_revision: { label: "In Revision", description: notes || "Your expert is making the requested changes", emoji: "📝", isSystem: true },
+
+    // Completion stages
+    completed: { label: "Marked Complete", description: "You marked this project as complete", emoji: "✅" },
+    auto_approved: { label: "Auto-Approved", description: "Project was automatically approved", emoji: "🤖", isSystem: true },
+
+    // Cancellation
+    cancelled: { label: "Project Cancelled", description: notes || "This project has been cancelled", emoji: "❌", isSystem: true },
+    refunded: { label: "Refund Processed", description: notes || "Your payment has been refunded", emoji: "💸", isSystem: true },
   };
 
-  // Quote card - appears from supervisor side
+  // Quote card - Special styled card for quotes
   if (event.type === "quote") {
     return (
       <div className="flex gap-2 mb-4">
-        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground border border-border">
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-stone-100 dark:bg-stone-800 text-muted-foreground border border-stone-200 dark:border-stone-700">
           {supervisor.charAt(0)}
         </div>
         <div className="max-w-[80%]">
-          <div className="rounded-2xl rounded-tl-sm overflow-hidden border border-border bg-card">
-            {/* Quote Header */}
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-border">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <CreditCard className="h-4 w-4 text-primary" />
-              </div>
+          <div className="rounded-2xl rounded-tl-md overflow-hidden border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-100/50 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800">
+              <span className="text-lg">💰</span>
               <div>
-                <p className="text-sm font-medium">Quote Ready</p>
-                <p className="text-[10px] text-muted-foreground">Project quotation</p>
+                <p className="text-sm font-medium text-violet-700 dark:text-violet-300">Quote Ready</p>
+                <p className="text-[10px] text-violet-600/70 dark:text-violet-400/70">Project quotation</p>
               </div>
             </div>
-            {/* Quote Amount */}
             <div className="p-4 text-center">
-              <p className="text-3xl font-bold tracking-tight">
+              <p className="text-3xl font-bold text-violet-700 dark:text-violet-300">
                 ₹{(event.data.amount || 0).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Total Amount</p>
-              {event.data.valid_until && (
-                <p className="text-[10px] text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                  <Timer className="h-3 w-3" />
-                  Valid until {new Date(event.data.valid_until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                </p>
-              )}
+              <p className="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">Total Amount</p>
             </div>
           </div>
-          <span className="text-[10px] text-muted-foreground mt-1 px-1">
-            {formatTime(event.timestamp)}
-          </span>
+          <span className="text-[10px] text-muted-foreground mt-1 px-1">{formatTime(event.timestamp)}</span>
         </div>
       </div>
     );
   }
 
-  // Status change events
   const status = event.data.to_status || "";
-  const config = statusConfig[status] || { label: status, description: "Status updated", icon: <ChevronRight className="h-4 w-4" /> };
+  const config = statusConfig[status] || { label: status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()), description: notes || "Status updated", emoji: "📋", isSystem: true };
 
-  // Payment successful - special card from user side (like Google Pay success)
+  // Special card for Payment success
   if (status === "paid") {
     return (
       <div className="flex gap-2 mb-4 flex-row-reverse">
-        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-primary text-primary-foreground">
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-violet-600 text-white">
           <User className="h-4 w-4" />
         </div>
         <div className="max-w-[80%]">
-          <div className="rounded-2xl rounded-tr-sm overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/50 dark:to-emerald-900/30">
+          <div className="rounded-2xl rounded-tr-md overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
             <div className="p-4 text-center">
-              <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-3">
+              <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-2">
                 <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
               <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Payment Successful</p>
@@ -970,57 +1340,173 @@ function TimelineEventCard({ event, supervisorName }: { event: TimelineEvent; su
             </div>
           </div>
           <div className="flex justify-end">
-            <span className="text-[10px] text-muted-foreground mt-1 px-1">
-              {formatTime(event.timestamp)}
-            </span>
+            <span className="text-[10px] text-muted-foreground mt-1 px-1">{formatTime(event.timestamp)}</span>
           </div>
         </div>
       </div>
     );
   }
 
-  // User-initiated status changes (right side)
+  // Special card for Project Completed
+  if (status === "completed" || status === "auto_approved") {
+    return (
+      <div className="flex gap-2 mb-4 flex-row-reverse">
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-violet-600 text-white">
+          <User className="h-4 w-4" />
+        </div>
+        <div className="max-w-[80%]">
+          <div className="rounded-2xl rounded-tr-md overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
+            <div className="p-4 text-center">
+              <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-2">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                {status === "auto_approved" ? "Project Auto-Approved" : "Project Completed"}
+              </p>
+              <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+                {status === "auto_approved" ? "Project was automatically approved" : "You marked this project as complete"}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <span className="text-[10px] text-muted-foreground mt-1 px-1">{formatTime(event.timestamp)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special card for Supervisor/Expert Assignment (WhatsApp-style "joined" message)
+  if (status === "assigned" || status === "assigning" || status === "supervisor_assigned" || status === "doer_assigned" || status === "expert_joined") {
+    const assignmentLabel = status === "assigning"
+      ? "Finding the best expert for your project..."
+      : status === "supervisor_assigned"
+        ? `${supervisor} joined as supervisor`
+        : status === "doer_assigned"
+          ? notes || "A specialist was assigned to your project"
+          : notes || `${supervisor} was assigned to your project`;
+
+    return (
+      <div className="flex justify-center my-4">
+        <div className="inline-flex flex-col items-center gap-1 px-5 py-3 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border border-violet-200 dark:border-violet-800 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-violet-600 flex items-center justify-center text-white">
+              <UserCheck className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-violet-700 dark:text-violet-300">{config.emoji} {config.label}</p>
+              <p className="text-[11px] text-violet-600/70 dark:text-violet-400/70">{assignmentLabel}</p>
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground/70 mt-1">{formatTime(event.timestamp)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Special card for Delivered (celebration style)
+  if (status === "delivered") {
+    return (
+      <div className="flex justify-center my-4">
+        <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border border-emerald-200 dark:border-emerald-800 shadow-sm">
+          <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center">
+            <Package className="h-6 w-6 text-white" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">🎉 Project Delivered!</p>
+            <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
+              {notes || "Your project has been delivered. Please review the deliverables."}
+            </p>
+          </div>
+          <span className="text-[10px] text-muted-foreground/70">{formatTime(event.timestamp)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Special card for QC stages (system notification style)
+  if (status.startsWith("qc") || status === "submitted_for_qc") {
+    const qcColors = status === "qc_approved"
+      ? "from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800"
+      : status === "qc_rejected"
+        ? "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border-amber-200 dark:border-amber-800"
+        : "from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800";
+
+    const qcTextColor = status === "qc_approved"
+      ? "text-emerald-700 dark:text-emerald-300"
+      : status === "qc_rejected"
+        ? "text-amber-700 dark:text-amber-300"
+        : "text-blue-700 dark:text-blue-300";
+
+    return (
+      <div className="flex justify-center my-4">
+        <div className={cn("inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-br border shadow-sm", qcColors)}>
+          <div className={cn("h-8 w-8 rounded-full flex items-center justify-center",
+            status === "qc_approved" ? "bg-emerald-500" : status === "qc_rejected" ? "bg-amber-500" : "bg-blue-500"
+          )}>
+            <ShieldCheck className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <p className={cn("text-sm font-medium", qcTextColor)}>{config.emoji} {config.label}</p>
+            <p className="text-[11px] text-muted-foreground">{config.description}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground/70">{formatTime(event.timestamp)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Special card for Work Started
+  if (status === "in_progress") {
+    return (
+      <div className="flex justify-center my-4">
+        <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 shadow-sm">
+          <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center animate-pulse">
+            <Zap className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">⚡ Work Started</p>
+            <p className="text-[11px] text-amber-600/70 dark:text-amber-400/70">
+              {notes || "Your expert has started working on your project"}
+            </p>
+          </div>
+          <span className="text-[10px] text-muted-foreground/70">{formatTime(event.timestamp)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // User-initiated status changes (right-aligned bubble)
   if (isUserAction) {
     return (
       <div className="flex gap-2 mb-3 flex-row-reverse">
-        <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-primary text-primary-foreground">
+        <div className="h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0 bg-violet-600 text-white">
           <User className="h-4 w-4" />
         </div>
         <div className="max-w-[75%]">
-          <div className="px-4 py-3 rounded-2xl rounded-tr-sm bg-primary text-primary-foreground">
+          <div className="px-4 py-3 rounded-2xl rounded-tr-md bg-violet-600 text-white">
             <div className="flex items-center gap-2 mb-1">
-              {config.icon}
+              <span>{config.emoji}</span>
               <span className="text-sm font-medium">{config.label}</span>
             </div>
-            <p className="text-xs opacity-80">{config.description}</p>
+            <p className="text-xs opacity-80">{notes || config.description}</p>
           </div>
           <div className="flex justify-end">
-            <span className="text-[10px] text-muted-foreground mt-1 px-1">
-              {formatTime(event.timestamp)}
-            </span>
+            <span className="text-[10px] text-muted-foreground mt-1 px-1">{formatTime(event.timestamp)}</span>
           </div>
         </div>
       </div>
     );
   }
 
-  // System/supervisor status changes (left side)
+  // Default: System/supervisor status changes (WhatsApp-style centered notification)
   return (
-    <div className="flex gap-2 mb-3">
-      <div className="h-8 w-8 rounded-lg flex items-center justify-center text-xs font-medium shrink-0 bg-muted text-muted-foreground border border-border">
-        {supervisor.charAt(0)}
-      </div>
-      <div className="max-w-[75%]">
-        <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-card border border-border">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-muted-foreground">{config.icon}</span>
-            <span className="text-sm font-medium">{config.label}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">{config.description}</p>
-        </div>
-        <span className="text-[10px] text-muted-foreground mt-1 px-1">
-          {formatTime(event.timestamp)}
-        </span>
+    <div className="flex justify-center my-3">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-sm">
+        <span className="text-sm">{config.emoji}</span>
+        <span className="text-xs text-muted-foreground">{config.label}</span>
+        {notes && <span className="text-[10px] text-muted-foreground/70">• {notes}</span>}
+        <span className="text-[10px] text-muted-foreground/70">{formatTime(event.timestamp)}</span>
       </div>
     </div>
   );

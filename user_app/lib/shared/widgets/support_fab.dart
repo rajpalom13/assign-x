@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/config/app_config.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Launches WhatsApp support with the given phone number and message.
 ///
@@ -71,9 +72,9 @@ class SupportFAB extends StatelessWidget {
       backgroundColor: AppColors.success,
       foregroundColor: Colors.white,
       icon: const Icon(Icons.support_agent_outlined),
-      label: const Text(
+      label: Text(
         'Get Support',
-        style: TextStyle(fontWeight: FontWeight.w600),
+        style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

@@ -143,6 +143,16 @@ class AppTextStyles {
     height: 1.4,
   );
 
+  // Title Styles (aliases for consistency with Material Design naming)
+  static const TextStyle titleLarge = headingLarge;
+  static const TextStyle titleMedium = headingMedium;
+  static const TextStyle titleSmall = headingSmall;
+
+  // Headline Styles (aliases for consistency with Material Design naming)
+  static const TextStyle headlineLarge = displayMedium;
+  static const TextStyle headlineMedium = displaySmall;
+  static const TextStyle headlineSmall = headingLarge;
+
   // Link Style
   static const TextStyle link = TextStyle(
     fontFamily: _fontFamily,

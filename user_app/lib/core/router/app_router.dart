@@ -7,24 +7,40 @@ import '../../features/add_project/screens/new_project_form.dart';
 import '../../features/add_project/screens/proofreading_form.dart';
 import '../../features/add_project/screens/report_request_form.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/magic_link_screen.dart';
 import '../../features/auth/screens/signin_screen.dart';
 import '../../features/chat/screens/project_chat_screen.dart';
+import '../../features/experts/screens/booking_screen.dart';
+import '../../features/experts/screens/expert_detail_screen.dart';
+import '../../features/experts/screens/experts_screen.dart';
+import '../../features/experts/screens/my_bookings_screen.dart';
 import '../../features/home/screens/main_shell.dart';
+import '../../features/campus_connect/screens/create_post_screen.dart';
+import '../../features/campus_connect/screens/post_detail_screen.dart';
+import '../../features/campus_connect/screens/saved_listings_screen.dart';
 import '../../features/marketplace/screens/create_listing_screen.dart';
 import '../../features/marketplace/screens/item_detail_screen.dart';
 import '../../features/marketplace/screens/marketplace_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/onboarding/screens/professional_profile_screen.dart';
 import '../../features/onboarding/screens/role_selection_screen.dart';
 import '../../features/onboarding/screens/signup_success_screen.dart';
 import '../../features/onboarding/screens/student_profile_screen.dart';
+import '../../features/profile/screens/account_upgrade_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/help_support_screen.dart';
 import '../../features/profile/screens/payment_methods_screen.dart';
 import '../../features/profile/screens/wallet_screen.dart';
+import '../../features/profile/widgets/account_upgrade_card.dart';
 import '../../features/projects/screens/live_draft_webview.dart';
 import '../../features/projects/screens/project_detail_screen.dart';
 import '../../features/projects/screens/project_timeline_screen.dart';
+import '../../features/profile/screens/security_screen.dart';
+import '../../features/auth/screens/college_verification_screen.dart';
+import '../../features/connect/screens/connect_screen.dart';
+import '../../features/connect/screens/study_groups_screen.dart';
+import '../../features/projects/screens/project_payment_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/animations/page_transitions.dart';
@@ -57,6 +73,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         RouteNames.onboarding,
         RouteNames.login,
         RouteNames.signin,
+        RouteNames.magicLink,
+        RouteNames.authCallback,
       ];
 
       // Profile completion routes
@@ -129,6 +147,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const SignInScreen(),
           state: state,
         ),
+      ),
+
+      // Magic Link confirmation screen
+      GoRoute(
+        path: RouteNames.magicLink,
+        name: 'magicLink',
+        pageBuilder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return AppPageTransitions.fadeScale(
+            child: MagicLinkScreen(email: email),
+            state: state,
+          );
+        },
+      ),
+
+      // Auth callback - handles deep link from magic link email
+      // Pattern: assignx://auth-callback?access_token=...&refresh_token=...
+      GoRoute(
+        path: RouteNames.authCallback,
+        name: 'authCallback',
+        redirect: (context, state) {
+          // The Supabase auth listener will handle the session
+          // Just redirect to home - if not authenticated, the main redirect will handle it
+          return RouteNames.home;
+        },
       ),
 
       // Role Selection - fade scale transition
@@ -246,15 +289,92 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Experts/Consultations routes
+      GoRoute(
+        path: '/experts',
+        name: 'experts',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ExpertsScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'my-bookings',
+            name: 'myBookings',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const MyBookingsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: ':id',
+            name: 'expertDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: ExpertDetailScreen(expertId: id),
+                state: state,
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'book',
+                name: 'expertBook',
+                pageBuilder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return AppPageTransitions.slideUp(
+                    child: BookingScreen(expertId: id),
+                    state: state,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      // Campus Connect routes - for post details, create, and saved listings
+      GoRoute(
+        path: '/campus-connect',
+        name: 'campusConnect',
+        redirect: (context, state) => RouteNames.home, // Redirect to main shell
+        routes: [
+          GoRoute(
+            path: 'create',
+            name: 'createPost',
+            pageBuilder: (context, state) => AppPageTransitions.slideUp(
+              child: const CreatePostScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'saved',
+            name: 'savedListings',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const SavedListingsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'post/:id',
+            name: 'postDetail',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppPageTransitions.slideRight(
+                child: PostDetailScreen(postId: id),
+                state: state,
+            );
+            },
+          ),
+        ],
+      ),
+
       // Notifications - slide right transition
       GoRoute(
         path: '/notifications',
         name: 'notifications',
         pageBuilder: (context, state) => AppPageTransitions.slideRight(
-          child: const Scaffold(
-            appBar: null,
-            body: Center(child: Text('Notifications - Coming in Batch 2')),
-          ),
+          child: const NotificationsScreen(),
           state: state,
         ),
       ),
@@ -294,6 +414,78 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state: state,
         ),
       ),
+      GoRoute(
+        path: '/profile/upgrade',
+        name: 'accountUpgrade',
+        pageBuilder: (context, state) {
+          // Get the current account type from query params or default to student
+          final typeStr = state.uri.queryParameters['type'] ?? 'student';
+          final currentType = AccountType.fromDbString(typeStr);
+          return AppPageTransitions.slideUp(
+            child: AccountUpgradeScreen(currentType: currentType),
+            state: state,
+          );
+        },
+      ),
+
+      // Security Settings
+      GoRoute(
+        path: '/profile/security',
+        name: 'security',
+        pageBuilder: (context, state) => AppPageTransitions.slideRight(
+          child: const SecurityScreen(),
+          state: state,
+        ),
+      ),
+
+      // College Email Verification
+      GoRoute(
+        path: '/verify-college',
+        name: 'verifyCollege',
+        pageBuilder: (context, state) => AppPageTransitions.slideUp(
+          child: const CollegeVerificationScreen(),
+          state: state,
+        ),
+      ),
+
+      // Connect - Peer-to-peer features (tutors, study groups, resources)
+      GoRoute(
+        path: '/connect',
+        name: 'connect',
+        pageBuilder: (context, state) => AppPageTransitions.fadeScale(
+          child: const ConnectScreen(),
+          state: state,
+        ),
+        routes: [
+          GoRoute(
+            path: 'groups',
+            name: 'studyGroups',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const StudyGroupsScreen(),
+              state: state,
+            ),
+          ),
+          GoRoute(
+            path: 'groups/:id',
+            name: 'studyGroupDetail',
+            pageBuilder: (context, state) {
+              // TODO: Create dedicated detail screen using state.pathParameters['id']
+              return AppPageTransitions.slideRight(
+                child: const StudyGroupsScreen(),
+                state: state,
+              );
+            },
+          ),
+          GoRoute(
+            path: 'resources',
+            name: 'resources',
+            pageBuilder: (context, state) => AppPageTransitions.slideRight(
+              child: const ConnectScreen(), // TODO: Create dedicated resources screen
+              state: state,
+            ),
+          ),
+        ],
+      ),
 
       // Projects - slide right for detail, sub-routes
       GoRoute(
@@ -313,11 +505,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) {
               final id = state.pathParameters['id']!;
               return AppPageTransitions.slideUp(
-                child: Scaffold(
-                  appBar: AppBar(title: const Text('Payment')),
-                  body:
-                      Center(child: Text('Pay for Project $id - Coming soon')),
-                ),
+                child: ProjectPaymentScreen(projectId: id),
                 state: state,
               );
             },

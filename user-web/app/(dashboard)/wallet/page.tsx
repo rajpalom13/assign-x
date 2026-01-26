@@ -161,44 +161,115 @@ function WalletContentInner({
               {/* Credit Card with Quick Action Buttons - Aligned */}
               <StaggerItem>
                 <div className="space-y-4">
-                  {/* Wallet Card - Premium Dark Design matching Create Project */}
-                  <div className="relative w-full max-w-[340px] rounded-[20px] p-5 bg-gradient-to-br from-stone-800 via-stone-900 to-neutral-900 dark:from-stone-800 dark:via-stone-900 dark:to-neutral-950 overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-stone-900/30 transition-all duration-300">
-                    {/* Decorative gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-violet-500/5 pointer-events-none" />
-                    {/* Decorative circles */}
-                    <div className="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-amber-400/20 to-orange-500/10 rounded-full blur-2xl" />
-                    <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-gradient-to-tr from-violet-400/15 to-transparent rounded-full blur-xl" />
+                  {/* Wallet Card - Premium Credit Card Design with assignX Branding */}
+                  <div className="relative w-full max-w-[380px] h-[270px] rounded-[24px] bg-gradient-to-br from-stone-700 via-stone-800 to-stone-900 overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] hover:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] transition-all duration-500 group">
+                    {/* Premium gradient mesh overlays */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-orange-600/15 via-transparent to-transparent" />
+                    <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-gradient-to-br from-amber-400/10 to-transparent rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-[160px] h-[160px] bg-gradient-to-tr from-violet-500/8 to-transparent rounded-full blur-2xl" />
 
-                    {/* Card Content */}
-                    <div className="relative z-10 space-y-5">
-                      {/* Header with icon and badge */}
-                      <div className="flex items-center justify-between">
-                        <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
-                          <Wallet className="h-5 w-5 text-white" strokeWidth={2} />
+                    {/* Subtle texture overlay */}
+                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                      backgroundImage: 'url("data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.4"/%3E%3C/svg%3E")'
+                    }} />
+
+                    {/* Card Content - Proper Spacing */}
+                    <div className="relative z-10 h-full px-7 py-6 flex flex-col">
+                      {/* Top Row: EMV Chip & Contactless Icon */}
+                      <div className="flex items-start justify-between mb-8">
+                        {/* Premium EMV Chip with realistic shadow */}
+                        <div className="relative">
+                          <div className="w-[52px] h-[40px] rounded-[8px] bg-gradient-to-br from-[#E5C158] via-[#D4AF37] to-[#B8941F] shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.3)] border border-[#C5A028]/40">
+                            {/* Chip realistic pattern */}
+                            <div className="absolute inset-[3px] grid grid-cols-4 grid-rows-3 gap-[1px]">
+                              {Array.from({ length: 12 }).map((_, i) => (
+                                <div key={i} className="bg-[#9D8420]/40 rounded-[1px]" />
+                              ))}
+                            </div>
+                            {/* Shine effect */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-[8px]" />
+                          </div>
                         </div>
-                        <span className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[11px] font-medium text-white/90 border border-white/10">
-                          💳 Campus Wallet
-                        </span>
+
+                        {/* Contactless Icon - Enhanced */}
+                        <div className="flex items-center gap-1">
+                          <div className="rotate-90">
+                            <svg className="w-6 h-6 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <path d="M5 12h.01M10 12h.01M15 12h.01M20 12h.01" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Balance */}
-                      <div>
-                        <p className="text-white/50 text-xs mb-1">Available Balance</p>
-                        <p className="text-white text-3xl font-bold tabular-nums tracking-tight">
+                      {/* Middle: Card Number Dots */}
+                      <div className="mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex gap-1">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                            ))}
+                          </div>
+                          <div className="flex gap-1">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                            ))}
+                          </div>
+                          <div className="flex gap-1">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                            ))}
+                          </div>
+                          <span className="text-white/50 text-sm font-mono tracking-wider">4242</span>
+                        </div>
+                      </div>
+
+                      {/* Balance Section */}
+                      <div className="mb-auto">
+                        <p className="text-white/50 text-[11px] mb-2 uppercase tracking-[0.1em] font-semibold">Available Balance</p>
+                        <p className="text-white text-[36px] leading-none font-bold tabular-nums tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                           {formatCurrency(wallet?.balance || 0)}
                         </p>
                       </div>
 
-                      {/* Card Footer */}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                        <div>
-                          <p className="text-white/40 text-[10px] uppercase tracking-wide mb-0.5">Account</p>
-                          <p className="text-white/90 text-sm font-medium">{userName}</p>
+                      {/* Bottom Row: Card Holder, Valid Thru & assignX Logo */}
+                      <div className="flex items-end justify-between mt-auto">
+                        {/* Left: Card Holder */}
+                        <div className="flex items-end gap-6">
+                          <div>
+                            <p className="text-white/40 text-[9px] uppercase tracking-[0.15em] font-bold mb-1.5">Card Holder</p>
+                            <p className="text-white/95 text-[15px] font-bold uppercase tracking-[0.08em] drop-shadow-sm">
+                              {userName}
+                            </p>
+                          </div>
+
+                          {/* Valid Thru */}
+                          <div>
+                            <p className="text-white/40 text-[9px] uppercase tracking-[0.15em] font-bold mb-1.5">Valid Thru</p>
+                            <p className="text-white/60 text-[13px] font-mono tracking-wide">
+                              {String(new Date().getMonth() + 1).padStart(2, '0')}/{String(new Date().getFullYear() % 100 + 5).padStart(2, '0')}
+                            </p>
+                          </div>
                         </div>
-                        <div className="h-10 w-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/10">
-                          <ChevronRight className="h-4 w-4 text-white/60" />
+
+                        {/* Right: assignX Logo */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-600/20 blur-xl rounded-xl" />
+                          <div className="relative px-4 py-2.5 rounded-xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                              <span className="text-white text-[17px] font-black tracking-[0.12em] bg-gradient-to-r from-white via-amber-100 to-white bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(245,158,11,0.4)]">
+                                assignX
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Hover glow effect */}
+                    <div className="absolute inset-0 rounded-[24px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                      <div className="absolute inset-0 rounded-[24px] bg-gradient-to-tr from-amber-500/5 via-transparent to-violet-500/5" />
                     </div>
                   </div>
 

@@ -172,7 +172,7 @@ export function PaymentLedger() {
   return (
     <div className="space-y-6">
       {/* Header with Balance Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {isLoading ? (
           <>
             <BalanceCardSkeleton />
@@ -181,13 +181,15 @@ export function PaymentLedger() {
           </>
         ) : (
           <>
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 dark:text-green-300">Total Credited</span>
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900 rounded-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-9 w-9 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                    <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium text-green-700 dark:text-green-300">Total Credited</span>
                 </div>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                <p className="text-3xl font-bold text-green-700 dark:text-green-300 tracking-tight">
                   {summaryStats.totalCredited.toLocaleString("en-IN", {
                     style: "currency",
                     currency: "INR",
@@ -196,13 +198,15 @@ export function PaymentLedger() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-200 dark:border-orange-900">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <ArrowUpRight className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-700 dark:text-orange-300">Total Withdrawn</span>
+            <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-200 dark:border-orange-900 rounded-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-9 w-9 rounded-lg bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                    <ArrowUpRight className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Total Withdrawn</span>
                 </div>
-                <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                <p className="text-3xl font-bold text-orange-700 dark:text-orange-300 tracking-tight">
                   {summaryStats.totalWithdrawn.toLocaleString("en-IN", {
                     style: "currency",
                     currency: "INR",
@@ -211,13 +215,15 @@ export function PaymentLedger() {
                 </p>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-900">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <Calendar className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-blue-700 dark:text-blue-300">Pending</span>
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-900 rounded-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-9 w-9 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Pending</span>
                 </div>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                <p className="text-3xl font-bold text-blue-700 dark:text-blue-300 tracking-tight">
                   {summaryStats.pending.toLocaleString("en-IN", {
                     style: "currency",
                     currency: "INR",
@@ -231,8 +237,8 @@ export function PaymentLedger() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="rounded-xl">
+        <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -281,9 +287,9 @@ export function PaymentLedger() {
       </Card>
 
       {/* Transactions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Transaction History</CardTitle>
+      <Card className="rounded-xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold">Transaction History</CardTitle>
           <CardDescription>
             {isLoading ? (
               "Loading transactions..."
@@ -296,13 +302,13 @@ export function PaymentLedger() {
           <ScrollArea className="h-[calc(100vh-34rem)]">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-medium px-4 py-3">Date</TableHead>
+                  <TableHead className="font-medium px-4 py-3">Description</TableHead>
+                  <TableHead className="font-medium px-4 py-3">Type</TableHead>
+                  <TableHead className="font-medium px-4 py-3">Reference</TableHead>
+                  <TableHead className="font-medium px-4 py-3">Status</TableHead>
+                  <TableHead className="font-medium px-4 py-3 text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -321,8 +327,8 @@ export function PaymentLedger() {
                     const credit = isCreditType(transaction.transaction_type || "")
                     const status = transaction.status || "pending"
                     return (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="whitespace-nowrap">
+                      <TableRow key={transaction.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="whitespace-nowrap px-4 py-3">
                           {transaction.created_at && (
                             <>
                               {format(new Date(transaction.created_at), "dd MMM yyyy")}
@@ -332,20 +338,20 @@ export function PaymentLedger() {
                             </>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <p className="font-medium">{transaction.description || "Transaction"}</p>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge variant="outline" className={cn("font-normal", config.color)}>
                             {config.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <span className="text-xs font-mono text-muted-foreground">
                             {transaction.reference_id || "-"}
                           </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge
                             variant={
                               status === "completed"
@@ -354,11 +360,16 @@ export function PaymentLedger() {
                                   ? "secondary"
                                   : "destructive"
                             }
+                            className={cn(
+                              status === "completed" && "bg-green-600 hover:bg-green-700",
+                              status === "pending" && "bg-amber-100 text-amber-700 hover:bg-amber-200",
+                              status === "failed" && "bg-red-100 text-red-700 hover:bg-red-200"
+                            )}
                           >
                             {status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right px-4 py-3">
                           <span
                             className={cn(
                               "font-semibold",

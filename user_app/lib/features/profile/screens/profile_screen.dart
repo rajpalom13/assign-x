@@ -9,7 +9,11 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../providers/profile_provider.dart';
+import '../../../shared/widgets/dashboard_app_bar.dart';
+import '../widgets/account_upgrade_card.dart';
 import '../widgets/avatar_upload_dialog.dart';
+import '../widgets/preferences_section.dart';
+import '../widgets/subscription_card.dart';
 
 /// Profile screen colors matching the design specification.
 class _ProfileColors {
@@ -45,80 +49,95 @@ class ProfileScreen extends ConsumerWidget {
       // Transparent to show SubtleGradientScaffold from MainShell
       backgroundColor: Colors.transparent,
       body: profileAsync.when(
-        data: (profile) => SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Bar
-                _buildHeaderBar(context),
+        data: (profile) => Column(
+          children: [
+            // Unified Dashboard App Bar (dark theme)
+            const DashboardAppBar(),
 
-                const SizedBox(height: 16),
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
 
-                // Profile Card
-                _buildProfileCard(
-                  context,
-                  ref,
-                  profile: profile,
+                    // Profile Card
+                    _buildProfileCard(
+                      context,
+                      ref,
+                      profile: profile,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Stats Grid (2×2)
+                    walletAsync.when(
+                      data: (wallet) => _buildStatsGrid(
+                        context,
+                        ref,
+                        balance: wallet.balance,
+                        projects: projectsAsync.valueOrNull ?? 0,
+                        referrals: referralAsync.valueOrNull?.totalReferrals ?? 0,
+                        earned: referralAsync.valueOrNull?.totalEarnings ?? 0,
+                      ),
+                      loading: () => _buildStatsGrid(
+                        context,
+                        ref,
+                        balance: 0,
+                        projects: 0,
+                        referrals: 0,
+                        earned: 0,
+                      ),
+                      error: (_, __) => _buildStatsGrid(
+                        context,
+                        ref,
+                        balance: 0,
+                        projects: 0,
+                        referrals: 0,
+                        earned: 0,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Subscription Card
+                    const SubscriptionCard(),
+
+                    const SizedBox(height: 16),
+
+                    // Add Money Banner
+                    _buildAddMoneyBanner(context, ref),
+
+                    const SizedBox(height: 16),
+
+                    // Refer & Earn Card
+                    referralAsync.when(
+                      data: (referral) => _buildReferralCard(
+                        context,
+                        code: referral.code,
+                        referrals: referral.totalReferrals,
+                        earned: referral.totalEarnings,
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Preferences Section
+                    const PreferencesSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Settings Section
+                    _buildSettingsSection(context, ref, profile),
+                  ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Stats Grid (2×2)
-                walletAsync.when(
-                  data: (wallet) => _buildStatsGrid(
-                    context,
-                    ref,
-                    balance: wallet.balance,
-                    projects: projectsAsync.valueOrNull ?? 0,
-                    referrals: referralAsync.valueOrNull?.totalReferrals ?? 0,
-                    earned: referralAsync.valueOrNull?.totalEarnings ?? 0,
-                  ),
-                  loading: () => _buildStatsGrid(
-                    context,
-                    ref,
-                    balance: 0,
-                    projects: 0,
-                    referrals: 0,
-                    earned: 0,
-                  ),
-                  error: (_, __) => _buildStatsGrid(
-                    context,
-                    ref,
-                    balance: 0,
-                    projects: 0,
-                    referrals: 0,
-                    earned: 0,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Add Money Banner
-                _buildAddMoneyBanner(context, ref),
-
-                const SizedBox(height: 16),
-
-                // Refer & Earn Card
-                referralAsync.when(
-                  data: (referral) => _buildReferralCard(
-                    context,
-                    code: referral.code,
-                    referrals: referral.totalReferrals,
-                    earned: referral.totalEarnings,
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Settings Section
-                _buildSettingsSection(context, ref, profile),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -253,7 +272,7 @@ class ProfileScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // Name row with Free badge
+          // Name row with account type badge
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -261,7 +280,7 @@ class ProfileScreen extends ConsumerWidget {
               Flexible(
                 child: Text(
                   (profile.fullName ?? 'User').toUpperCase(),
-                  style: const TextStyle(
+                  style: AppTextStyles.headingMedium.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: _ProfileColors.primaryText,
@@ -272,27 +291,16 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _ProfileColors.badgeBackground,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'Free',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: _ProfileColors.secondaryText,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              // Account type badge (Student/Professional/Business)
+              _buildAccountTypeBadge(
+                AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
               ),
             ],
           ),
 
           const SizedBox(height: 8),
 
-          // Email row
+          // Email row with verification badge
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
@@ -306,13 +314,22 @@ class ProfileScreen extends ConsumerWidget {
               Flexible(
                 child: Text(
                   profile.email,
-                  style: const TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     fontSize: 14,
                     color: _ProfileColors.secondaryText,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // Email verification badge (OAuth users are verified)
+              if (profile.isVerified) ...[
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: AppColors.success,
+                ),
+              ],
             ],
           ),
 
@@ -331,7 +348,7 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(width: 6),
               Text(
                 'Joined $joinDate',
-                style: const TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 13,
                   color: _ProfileColors.mutedText,
                 ),
@@ -363,9 +380,9 @@ class ProfileScreen extends ConsumerWidget {
                   color: _ProfileColors.primaryText,
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Edit Profile',
-                  style: TextStyle(
+                  style: AppTextStyles.labelMedium.copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: _ProfileColors.primaryText,
@@ -384,11 +401,46 @@ class ProfileScreen extends ConsumerWidget {
     return Center(
       child: Text(
         initials,
-        style: const TextStyle(
+        style: AppTextStyles.displayMedium.copyWith(
           fontSize: 32,
           fontWeight: FontWeight.w500,
           color: _ProfileColors.avatarInitials,
         ),
+      ),
+    );
+  }
+
+  /// Builds the account type badge matching web design.
+  /// Shows Student (blue), Professional (purple), or Business (amber) badge.
+  Widget _buildAccountTypeBadge(AccountType accountType) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: accountType.backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: accountType.color.withAlpha(50),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            accountType.icon,
+            size: 12,
+            color: accountType.color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            accountType.displayName,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 11,
+              color: accountType.color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -519,7 +571,7 @@ class ProfileScreen extends ConsumerWidget {
             // Value
             Text(
               value,
-              style: const TextStyle(
+              style: AppTextStyles.headingMedium.copyWith(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: _ProfileColors.primaryText,
@@ -529,7 +581,7 @@ class ProfileScreen extends ConsumerWidget {
             // Label
             Text(
               label,
-              style: const TextStyle(
+              style: AppTextStyles.caption.copyWith(
                 fontSize: 12,
                 color: _ProfileColors.mutedText,
               ),
@@ -571,18 +623,18 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Add Money to Wallet',
-                  style: TextStyle(
+                  style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: _ProfileColors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                   'Top-up for quick payments',
-                  style: TextStyle(
+                  style: AppTextStyles.caption.copyWith(
                     fontSize: 12,
                     color: _ProfileColors.tealAccent,
                   ),
@@ -602,9 +654,9 @@ class ProfileScreen extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Top Up',
-                    style: TextStyle(
+                    style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
@@ -670,17 +722,17 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Refer & Earn',
-                      style: TextStyle(
+                      style: AppTextStyles.headingSmall.copyWith(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: _ProfileColors.primaryText,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Earn ₹50 per referral',
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontSize: 13,
                         color: _ProfileColors.secondaryText,
                       ),
@@ -706,7 +758,7 @@ class ProfileScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     code,
-                    style: const TextStyle(
+                    style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: _ProfileColors.primaryText,
@@ -767,9 +819,9 @@ class ProfileScreen extends ConsumerWidget {
                     size: 16,
                     color: _ProfileColors.primaryText,
                   ),
-                  label: const Text(
+                  label: Text(
                     'Copy Code',
-                    style: TextStyle(
+                    style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: _ProfileColors.primaryText,
@@ -797,9 +849,9 @@ class ProfileScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   icon: const Icon(Icons.share, size: 16),
-                  label: const Text(
+                  label: Text(
                     'Share',
-                    style: TextStyle(
+                    style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -832,16 +884,16 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         referrals.toString(),
-                        style: const TextStyle(
+                        style: AppTextStyles.headingSmall.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: _ProfileColors.primaryText,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         'Referrals',
-                        style: TextStyle(
+                        style: AppTextStyles.caption.copyWith(
                           fontSize: 12,
                           color: _ProfileColors.mutedText,
                         ),
@@ -869,16 +921,16 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         '₹${earned.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: AppTextStyles.headingSmall.copyWith(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: _ProfileColors.primaryText,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         'Earned',
-                        style: TextStyle(
+                        style: AppTextStyles.caption.copyWith(
                           fontSize: 12,
                           color: _ProfileColors.mutedText,
                         ),
@@ -901,9 +953,9 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Settings',
-            style: TextStyle(
+            style: AppTextStyles.headingSmall.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: _ProfileColors.primaryText,
@@ -924,6 +976,28 @@ class ProfileScreen extends ConsumerWidget {
             title: 'Academic Details',
             subtitle: 'University and course info',
             onTap: () => context.push('/profile/edit'),
+          ),
+          const SizedBox(height: 10),
+          // Upgrade Account - uses actual account type from profile
+          _buildUpgradeSettingsItem(
+            context: context,
+            currentType: AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
+          ),
+          const SizedBox(height: 10),
+          // Security Settings
+          _buildSettingsItem(
+            icon: Icons.security_outlined,
+            title: 'Security',
+            subtitle: 'Password, 2FA, sessions',
+            onTap: () => context.push('/profile/security'),
+          ),
+          const SizedBox(height: 10),
+          // App Settings
+          _buildSettingsItem(
+            icon: Icons.settings_outlined,
+            title: 'App Settings',
+            subtitle: 'Notifications, theme, language',
+            onTap: () => context.push('/settings'),
           ),
           const SizedBox(height: 24),
           // Additional settings
@@ -1010,7 +1084,7 @@ class ProfileScreen extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
+                    style: AppTextStyles.labelLarge.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: isDestructive
@@ -1021,7 +1095,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 13,
                       color: _ProfileColors.mutedText,
                     ),
@@ -1033,6 +1107,97 @@ class ProfileScreen extends ConsumerWidget {
               Icons.chevron_right,
               color: _ProfileColors.mutedText,
               size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the upgrade account settings item with special styling.
+  Widget _buildUpgradeSettingsItem({
+    required BuildContext context,
+    required AccountType currentType,
+  }) {
+    // Don't show if user is already at highest tier
+    if (currentType.canUpgradeTo.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final nextTier = currentType.canUpgradeTo.first;
+
+    return GestureDetector(
+      onTap: () => context.push('/profile/upgrade?type=${currentType.toDbString()}'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              nextTier.backgroundColor,
+              nextTier.backgroundColor.withAlpha(180),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: nextTier.color.withAlpha(60),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.auto_awesome,
+                size: 20,
+                color: nextTier.color,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Upgrade Account',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _ProfileColors.primaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Unlock ${nextTier.displayName} features',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: 13,
+                      color: _ProfileColors.secondaryText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: nextTier.color,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Upgrade',
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         ),
@@ -1081,9 +1246,12 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Add Money to Wallet',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: AppTextStyles.headingSmall.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 20),
               Wrap(
@@ -1107,7 +1275,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       child: Text(
                         '₹$amount',
-                        style: TextStyle(
+                        style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isSelected ? Colors.white : AppColors.textPrimary,
                         ),
@@ -1167,7 +1335,7 @@ class ProfileScreen extends ConsumerWidget {
             },
             child: Text(
               'Log Out',
-              style: TextStyle(color: AppColors.error),
+              style: AppTextStyles.labelMedium.copyWith(color: AppColors.error),
             ),
           ),
         ],

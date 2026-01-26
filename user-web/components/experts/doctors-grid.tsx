@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * DoctorsGrid - Bento-style asymmetric grid for doctors
- * First doctor spans 2x2, remaining doctors in standard cards
+ * DoctorsGrid - Clean uniform grid for doctors
+ * Responsive card grid with consistent sizing
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DoctorCard } from "./doctor-card";
 import type { Expert } from "@/types/expert";
@@ -18,34 +19,30 @@ interface DoctorsGridProps {
 }
 
 /**
- * Stagger animation variants
+ * Empty state component
  */
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 24,
-    },
-  },
-};
+function EmptyState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-20 text-center"
+    >
+      <div className="h-14 w-14 rounded-2xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-4">
+        <UserX className="h-6 w-6 text-stone-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-1">
+        No doctors found
+      </h3>
+      <p className="text-sm text-muted-foreground max-w-xs">
+        Try adjusting your search or filters to find what you&apos;re looking for
+      </p>
+    </motion.div>
+  );
+}
 
 /**
- * DoctorsGrid component
+ * DoctorsGrid component - Uniform responsive grid
  */
 export function DoctorsGrid({
   doctors,
@@ -54,74 +51,34 @@ export function DoctorsGrid({
   className,
 }: DoctorsGridProps) {
   if (doctors.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <div className="h-16 w-16 rounded-[20px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 flex items-center justify-center mb-5 shadow-lg">
-          <svg
-            className="h-7 w-7 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">No doctors found</h3>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Try adjusting your search or filters
-        </p>
-      </motion.div>
-    );
+    return <EmptyState />;
   }
-
-  const featuredDoctor = doctors[0];
-  const otherDoctors = doctors.slice(1);
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key={doctors.map((d) => d.id).join("-")}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={cn("grid gap-4", className)}
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        }}
+        className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4",
+          className
+        )}
       >
-        {/* Featured Doctor - Spans 2 columns on larger screens */}
-        <motion.div
-          variants={itemVariants}
-          className="md:col-span-2 lg:row-span-2"
-          style={{
-            gridColumn: doctors.length > 2 ? "span 2" : "span 1",
-          }}
-        >
-          <DoctorCard
-            doctor={featuredDoctor}
-            variant="featured"
-            onClick={() => onDoctorClick?.(featuredDoctor)}
-            onBookClick={() => onBookClick?.(featuredDoctor)}
-            className="h-full"
-          />
-        </motion.div>
-
-        {/* Other Doctors */}
-        {otherDoctors.map((doctor) => (
-          <motion.div key={doctor.id} variants={itemVariants}>
+        {doctors.map((doctor, index) => (
+          <motion.div
+            key={doctor.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              delay: index * 0.04,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
+          >
             <DoctorCard
               doctor={doctor}
-              variant="default"
               onClick={() => onDoctorClick?.(doctor)}
               onBookClick={() => onBookClick?.(doctor)}
             />
@@ -133,7 +90,7 @@ export function DoctorsGrid({
 }
 
 /**
- * Alternative simple grid layout
+ * Alternative list layout for doctors
  */
 export function DoctorsSimpleGrid({
   doctors,
@@ -142,50 +99,32 @@ export function DoctorsSimpleGrid({
   className,
 }: DoctorsGridProps) {
   if (doctors.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <div className="h-16 w-16 rounded-[20px] bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 flex items-center justify-center mb-5 shadow-lg">
-          <svg
-            className="h-7 w-7 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">No doctors found</h3>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Try adjusting your search or filters
-        </p>
-      </motion.div>
-    );
+    return <EmptyState />;
   }
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key={doctors.map((d) => d.id).join("-")}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className={cn("space-y-4", className)}
+        className={cn("space-y-3", className)}
       >
-        {doctors.map((doctor) => (
-          <motion.div key={doctor.id} variants={itemVariants}>
+        {doctors.map((doctor, index) => (
+          <motion.div
+            key={doctor.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              delay: index * 0.03,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
+          >
             <DoctorCard
               doctor={doctor}
-              variant="default"
+              variant="list"
               onClick={() => onDoctorClick?.(doctor)}
               onBookClick={() => onBookClick?.(doctor)}
             />

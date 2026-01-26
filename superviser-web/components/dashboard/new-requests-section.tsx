@@ -43,8 +43,8 @@ export function NewRequestsSection({
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="p-6">
+        <CardHeader className="p-0 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
@@ -66,11 +66,11 @@ export function NewRequestsSection({
               </Button>
             )}
           </div>
-          <CardDescription>
+          <CardDescription className="mt-1">
             Projects awaiting your analysis and quote
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 pt-4">
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -98,7 +98,7 @@ export function NewRequestsSection({
               ))}
             </div>
           ) : requests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
               <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-muted-foreground">No new requests</p>
               <p className="text-sm text-muted-foreground">

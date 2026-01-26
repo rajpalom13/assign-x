@@ -9,6 +9,7 @@ import '../../../core/router/route_names.dart';
 import '../../../data/models/project_model.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/project_provider.dart';
+import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/payment_prompt_modal.dart';
 import '../widgets/progress_indicator.dart';
 import '../widgets/review_actions.dart';
@@ -28,8 +29,17 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  /// Filter tabs: All, Active, Review
-  final _tabs = const ['All', 'Active', 'Review'];
+  /// Filter tabs matching web: In Review, In Progress, For Review, History
+  /// - In Review: submitted, analyzing, quoted, payment_pending (being reviewed by AssignX)
+  /// - In Progress: paid, assigning, assigned, in_progress, qc states (expert working)
+  /// - For Review: delivered (awaiting user approval)
+  /// - History: completed, auto_approved, cancelled, refunded
+  final _tabs = const ['In Review', 'In Progress', 'For Review', 'History'];
+
+  /// Static flag to prevent duplicate payment modal from showing.
+  /// This is needed because MyProjectsScreen is used twice in IndexedStack
+  /// (for both Projects and Orders tabs), and both instances call initState.
+  static bool _isPaymentModalShowing = false;
 
   @override
   void initState() {
@@ -46,14 +56,24 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
   }
 
   Future<void> _checkPendingPayments() async {
+    // Prevent duplicate modals when screen is used multiple times in IndexedStack
+    if (_isPaymentModalShowing) return;
+
     final pendingProjects = await ref.read(pendingPaymentProjectsProvider.future);
     if (pendingProjects.isNotEmpty && mounted) {
       final project = pendingProjects.first;
+      _isPaymentModalShowing = true;
       PaymentPromptModal.show(
         context,
         project: project,
-        onPayNow: () => _handlePayNow(project),
-        onRemindLater: () => _handleRemindLater(project),
+        onPayNow: () {
+          _isPaymentModalShowing = false;
+          _handlePayNow(project);
+        },
+        onRemindLater: () {
+          _isPaymentModalShowing = false;
+          _handleRemindLater(project);
+        },
       );
     }
   }
@@ -83,15 +103,14 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
     return Scaffold(
       // Transparent to show SubtleGradientScaffold from MainShell
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Bar
-            _buildHeaderBar(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Unified Dashboard App Bar (dark theme)
+          const DashboardAppBar(),
 
-            // Scrollable Content with Pull-to-Refresh
-            Expanded(
+          // Scrollable Content with Pull-to-Refresh
+          Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(projectsProvider);
@@ -131,101 +150,6 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Header Bar: Transparent, "AssignX | Projects", wallet chip, notification bell.
-  Widget _buildHeaderBar() {
-    final walletAsync = ref.watch(walletProvider);
-    final balance = walletAsync.valueOrNull?.balance ?? 0;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      child: Row(
-        children: [
-          // Left: AssignX | Projects
-          Row(
-            children: [
-              Text(
-                'AssignX',
-                style: AppTextStyles.headingSmall.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Container(
-                height: 20,
-                width: 1,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                color: AppColors.border,
-              ),
-              Text(
-                'Projects',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-
-          const Spacer(),
-
-          // Right: Wallet balance chip + Notification bell
-          Row(
-            children: [
-              // Wallet balance chip
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '₹${balance.toStringAsFixed(0)}',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Notification bell
-              GestureDetector(
-                onTap: () => context.push('/notifications'),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.border, width: 1),
-                  ),
-                  child: Icon(
-                    Icons.notifications_outlined,
-                    size: 20,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -295,10 +219,10 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
           // Stats row
           countsAsync.when(
             data: (counts) {
-              final total = counts[0] ?? 0;
-              final active = counts[1] ?? 0;
-              final done = counts[3] ?? 0; // Completed projects (index 3)
-              final successRate = total > 0 ? ((done / total) * 100).round() : 0;
+              final total = counts[5] ?? 0;  // Total projects
+              final active = counts[1] ?? 0; // In Progress
+              final done = counts[4] ?? 0;   // Completed projects
+              final forReview = counts[2] ?? 0; // For Review
 
               return Row(
                 children: [
@@ -306,9 +230,9 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
                   _buildStatDivider(),
                   _buildStatItem('Active', active.toString(), AppColors.primary),
                   _buildStatDivider(),
-                  _buildStatItem('Done', done.toString(), AppColors.success),
+                  _buildStatItem('Review', forReview.toString(), AppColors.warning),
                   _buildStatDivider(),
-                  _buildStatItem('Success', '$successRate%', AppColors.info),
+                  _buildStatItem('Done', done.toString(), AppColors.success),
                 ],
               );
             },
@@ -318,9 +242,9 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
                 _buildStatDivider(),
                 _buildStatItem('Active', '-', AppColors.primary),
                 _buildStatDivider(),
-                _buildStatItem('Done', '-', AppColors.success),
+                _buildStatItem('Review', '-', AppColors.warning),
                 _buildStatDivider(),
-                _buildStatItem('Success', '-', AppColors.info),
+                _buildStatItem('Done', '-', AppColors.success),
               ],
             ),
             error: (_, __) => Row(
@@ -329,9 +253,9 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
                 _buildStatDivider(),
                 _buildStatItem('Active', '0', AppColors.primary),
                 _buildStatDivider(),
-                _buildStatItem('Done', '0', AppColors.success),
+                _buildStatItem('Review', '0', AppColors.warning),
                 _buildStatDivider(),
-                _buildStatItem('Success', '0%', AppColors.info),
+                _buildStatItem('Done', '0', AppColors.success),
               ],
             ),
           ),
@@ -415,12 +339,10 @@ class _MyProjectsScreenState extends ConsumerState<MyProjectsScreen> {
           final isSelected = _selectedTabIndex == index;
           final label = _tabs[index];
 
-          // Get count for this tab
+          // Get count for this tab (indices 0-3 match tab indices)
           String countText = '';
           countsAsync.whenData((counts) {
-            final count = index == 0
-                ? counts.values.fold(0, (a, b) => a + b)
-                : (counts[index] ?? 0);
+            final count = counts[index] ?? 0;
             countText = ' ($count)';
           });
 
@@ -890,7 +812,7 @@ class _ProjectCard extends StatelessWidget {
       ),
       child: Text(
         style.statusText,
-        style: TextStyle(
+        style: AppTextStyles.caption.copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: style.statusColor,
@@ -1087,7 +1009,7 @@ class _ActionChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(
+              style: AppTextStyles.labelSmall.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: outlined ? color : Colors.white,
@@ -1159,21 +1081,27 @@ class _EmptyState extends StatelessWidget {
     switch (tabIndex) {
       case 0:
         return (
-          Icons.folder_outlined,
-          'No Projects Yet',
-          'Your projects will appear here once you create them',
+          Icons.hourglass_empty_outlined,
+          'No Projects In Review',
+          'Projects awaiting AssignX review will appear here',
         );
       case 1:
         return (
           Icons.play_circle_outline,
-          'No Active Projects',
-          'Projects being worked on will appear here',
+          'No Projects In Progress',
+          'Projects being worked on by experts will appear here',
         );
       case 2:
         return (
           Icons.rate_review_outlined,
-          'No Projects for Review',
-          'Projects awaiting your review will appear here',
+          'No Projects For Review',
+          'Projects awaiting your approval will appear here',
+        );
+      case 3:
+        return (
+          Icons.history,
+          'No Project History',
+          'Completed and cancelled projects will appear here',
         );
       default:
         return (

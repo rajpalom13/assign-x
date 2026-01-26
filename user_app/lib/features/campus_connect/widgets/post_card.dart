@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
+import 'like_button.dart';
 
 /// Base card wrapper with consistent styling.
 class _BasePostCard extends StatelessWidget {
@@ -48,12 +49,13 @@ class _BasePostCard extends StatelessWidget {
 /// Discussion/Community post card (Type 1: Simple with icon area).
 ///
 /// Features light gray background area with centered icon,
-/// title, subtitle, and footer with avatar + category tag.
+/// title, subtitle, footer with avatar + category tag, and like/comment buttons.
 class DiscussionPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
+  final bool isLiked;
 
   const DiscussionPostCard({
     super.key,
@@ -61,6 +63,7 @@ class DiscussionPostCard extends StatelessWidget {
     this.onTap,
     this.onLike,
     this.onComment,
+    this.isLiked = false,
   });
 
   @override
@@ -116,11 +119,49 @@ class DiscussionPostCard extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Footer row
-                _PostFooter(
-                  userName: listing.userName,
-                  categoryLabel: 'Community',
-                  categoryColor: AppColors.categoryOrange,
+                // Footer row with like and comment
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PostFooter(
+                        userName: listing.userName,
+                        categoryLabel: 'Discussion',
+                        categoryColor: AppColors.categoryOrange,
+                      ),
+                    ),
+                    // Like count
+                    if (listing.likeCount > 0)
+                      CompactLikeButton(
+                        isLiked: isLiked,
+                        likeCount: listing.likeCount,
+                        onToggle: onLike,
+                      ),
+                    // Comment count
+                    if (listing.commentCount > 0) ...[
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: onComment,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 16,
+                              color: AppColors.textTertiary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              listing.commentCount.toString(),
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textTertiary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -346,17 +387,19 @@ class EventPostCard extends StatelessWidget {
 /// Product listing card (Type 4: With icon area).
 ///
 /// Features light gray background with product icon,
-/// title, description (truncated), and footer.
+/// title, description (truncated), footer, and like button.
 class ProductPostCard extends StatelessWidget {
   final MarketplaceListing listing;
   final VoidCallback? onTap;
   final VoidCallback? onLike;
+  final bool isLiked;
 
   const ProductPostCard({
     super.key,
     required this.listing,
     this.onTap,
     this.onLike,
+    this.isLiked = false,
   });
 
   @override
@@ -366,18 +409,31 @@ class ProductPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon area (light gray background)
-          Container(
-            height: 100,
-            width: double.infinity,
-            color: AppColors.neutralLight,
-            child: Center(
-              child: Icon(
-                _getIconForProduct(listing.title),
-                size: 32,
-                color: AppColors.neutralGray,
+          // Icon area with like button overlay
+          Stack(
+            children: [
+              Container(
+                height: 100,
+                width: double.infinity,
+                color: AppColors.neutralLight,
+                child: Center(
+                  child: Icon(
+                    _getIconForProduct(listing.title),
+                    size: 32,
+                    color: AppColors.neutralGray,
+                  ),
+                ),
               ),
-            ),
+              // Like button in top right corner
+              Positioned(
+                top: 8,
+                right: 8,
+                child: FloatingLikeButton(
+                  isLiked: isLiked,
+                  onToggle: onLike,
+                ),
+              ),
+            ],
           ),
 
           // Content
@@ -412,11 +468,23 @@ class ProductPostCard extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Footer row
-                _PostFooter(
-                  userName: listing.userName,
-                  categoryLabel: 'Product',
-                  categoryColor: AppColors.categoryGreen,
+                // Footer row with likes
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PostFooter(
+                        userName: listing.userName,
+                        categoryLabel: 'Product',
+                        categoryColor: AppColors.categoryGreen,
+                      ),
+                    ),
+                    if (listing.likeCount > 0)
+                      CompactLikeButton(
+                        isLiked: isLiked,
+                        likeCount: listing.likeCount,
+                        onToggle: onLike,
+                      ),
+                  ],
                 ),
               ],
             ),

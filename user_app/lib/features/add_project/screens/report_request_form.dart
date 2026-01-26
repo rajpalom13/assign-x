@@ -128,9 +128,9 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Plag/AI Report',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -483,9 +483,9 @@ class _ReportRequestFormState extends ConsumerState<ReportRequestForm> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Request Report',
-                                style: TextStyle(
+                                style: AppTextStyles.labelLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16,

@@ -40,14 +40,14 @@ export function UserCard({ user, onClick }: UserCardProps) {
 
   return (
     <Card
-      className="transition-all hover:shadow-md cursor-pointer group"
+      className="transition-all duration-200 hover:shadow-lg hover:border-primary/20 cursor-pointer group rounded-xl"
       onClick={onClick}
     >
-      <CardContent className="pt-6">
+      <CardContent className="p-5">
         <div className="flex items-start gap-4">
           {/* Avatar */}
-          <div className="relative">
-            <Avatar className="h-12 w-12">
+          <div className="relative shrink-0">
+            <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
               <AvatarImage src={user.avatar_url} alt={user.full_name} />
               <AvatarFallback>
                 {user.full_name
@@ -88,23 +88,24 @@ export function UserCard({ user, onClick }: UserCardProps) {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
-              <div className="flex items-center gap-1 text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Briefcase className="h-4 w-4" />
                 <span>{user.total_projects} projects</span>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <IndianRupee className="h-4 w-4" />
-                <span>
+                <span className="font-medium">
                   {user.total_spent.toLocaleString("en-IN", {
                     maximumFractionDigits: 0,
-                  })} spent
+                  })}
                 </span>
+                <span>spent</span>
               </div>
             </div>
 
             {/* Status Badges */}
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
               {user.active_projects > 0 ? (
                 <Badge className="bg-blue-600 hover:bg-blue-700 gap-1">
                   {user.active_projects} Active

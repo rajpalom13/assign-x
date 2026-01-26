@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/constants/app_colors.dart';
 
@@ -6,9 +7,11 @@ import '../../../core/constants/app_colors.dart';
 ///
 /// Features:
 /// - Floating pill-shaped bar (not docked to edge)
-/// - Light cream/off-white background with subtle shadow
-/// - 6 navigation items: Home, Projects, Community, Orders, Profile, Settings
-/// - Active state: filled icon, Inactive: outlined gray icon
+/// - Dark background with subtle shadow
+/// - 6 navigation items: Home, Projects, Campus Connect, Experts, Wallet, Profile
+/// - Active state: filled icon (white), Inactive: outlined icon (gray)
+/// - Profile item shows avatar
+/// - Settings accessible from Profile screen
 ///
 /// Example:
 /// ```dart
@@ -30,7 +33,7 @@ class BottomNavBar extends StatelessWidget {
   /// Bottom offset from screen edge. Defaults to 20px.
   final double bottomOffset;
 
-  /// Horizontal padding. Defaults to 24px.
+  /// Horizontal padding. Defaults to 16px.
   final double horizontalPadding;
 
   const BottomNavBar({
@@ -39,8 +42,13 @@ class BottomNavBar extends StatelessWidget {
     required this.onTap,
     this.profileImageUrl,
     this.bottomOffset = 20,
-    this.horizontalPadding = 24,
+    this.horizontalPadding = 16,
   });
+
+  // Dark/black navbar colors
+  static const Color _navBackground = Color(0xFF1A1A1A);
+  static const Color _activeIconColor = Colors.white;
+  static const Color _inactiveIconColor = Color(0xFF8A8A8A); // Light gray
 
   @override
   Widget build(BuildContext context) {
@@ -50,19 +58,19 @@ class BottomNavBar extends StatelessWidget {
       bottom: bottomOffset,
       child: Container(
         height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          // Light cream/off-white background
-          color: AppColors.surface,
+          // Dark/black background for navbar
+          color: _navBackground,
           borderRadius: BorderRadius.circular(30), // Stadium shape
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: Colors.black.withValues(alpha: 0.20),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: Colors.black.withValues(alpha: 0.10),
               blurRadius: 32,
               offset: const Offset(0, 8),
             ),
@@ -71,32 +79,38 @@ class BottomNavBar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // 0: Home (Dashboard)
             _buildNavItem(
-              activeIcon: Icons.home_rounded,
-              inactiveIcon: Icons.home_outlined,
+              activeIcon: LucideIcons.home,
+              inactiveIcon: LucideIcons.home,
               index: 0,
             ),
+            // 1: Projects
             _buildNavItem(
-              activeIcon: Icons.folder_rounded,
-              inactiveIcon: Icons.folder_outlined,
+              activeIcon: LucideIcons.folderClosed,
+              inactiveIcon: LucideIcons.folder,
               index: 1,
             ),
+            // 2: Campus Connect (Community/People)
             _buildNavItem(
-              activeIcon: Icons.people_rounded,
-              inactiveIcon: Icons.people_outline_rounded,
+              activeIcon: LucideIcons.users,
+              inactiveIcon: LucideIcons.users,
               index: 2,
             ),
+            // 3: Experts (stethoscope for doctors focus)
             _buildNavItem(
-              activeIcon: Icons.work_rounded,
-              inactiveIcon: Icons.work_outline_rounded,
+              activeIcon: LucideIcons.stethoscope,
+              inactiveIcon: LucideIcons.stethoscope,
               index: 3,
             ),
-            _buildProfileItem(index: 4),
+            // 4: Wallet
             _buildNavItem(
-              activeIcon: Icons.settings_rounded,
-              inactiveIcon: Icons.settings_outlined,
-              index: 5,
+              activeIcon: LucideIcons.wallet,
+              inactiveIcon: LucideIcons.wallet,
+              index: 4,
             ),
+            // 5: Profile (avatar) - Settings moved inside profile
+            _buildProfileItem(index: 5),
           ],
         ),
       ),
@@ -117,15 +131,15 @@ class BottomNavBar extends StatelessWidget {
         onTap: () => onTap(index),
         borderRadius: BorderRadius.circular(30),
         child: Container(
-          width: 48,
-          height: 48,
+          width: 42,
+          height: 42,
           alignment: Alignment.center,
           child: Icon(
             isActive ? activeIcon : inactiveIcon,
-            size: 26,
+            size: 24,
             color: isActive
-                ? AppColors.textPrimary // Dark/filled for active
-                : AppColors.textTertiary, // Gray for inactive
+                ? _activeIconColor // White for active
+                : _inactiveIconColor, // Light gray for inactive
           ),
         ),
       ),
@@ -142,18 +156,18 @@ class BottomNavBar extends StatelessWidget {
         onTap: () => onTap(index),
         borderRadius: BorderRadius.circular(30),
         child: Container(
-          width: 48,
-          height: 48,
+          width: 42,
+          height: 42,
           alignment: Alignment.center,
           child: Container(
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
                 color: isActive
-                    ? AppColors.textPrimary
-                    : AppColors.avatarGray,
+                    ? _activeIconColor // White border when active
+                    : _inactiveIconColor, // Gray border when inactive
                 width: isActive ? 2 : 1.5,
               ),
               image: profileImageUrl != null
@@ -163,14 +177,14 @@ class BottomNavBar extends StatelessWidget {
                     )
                   : null,
               color: profileImageUrl == null
-                  ? AppColors.avatarGray
+                  ? const Color(0xFF3A3A3A) // Dark gray placeholder
                   : null,
             ),
             child: profileImageUrl == null
                 ? Icon(
-                    Icons.person,
-                    size: 18,
-                    color: AppColors.textTertiary,
+                    LucideIcons.user,
+                    size: 16,
+                    color: _inactiveIconColor,
                   )
                 : null,
           ),
@@ -244,19 +258,19 @@ class BottomNavBarDotIndicator extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildDotNavItem(
-                icon: Icons.home_rounded,
+                icon: LucideIcons.home,
                 index: 0,
               ),
               _buildDotNavItem(
-                icon: Icons.folder_outlined,
+                icon: LucideIcons.folder,
                 index: 1,
               ),
               _buildDotNavItem(
-                icon: Icons.account_balance_wallet_outlined,
+                icon: LucideIcons.wallet,
                 index: 2,
               ),
               _buildDotNavItem(
-                icon: Icons.person_outline_rounded,
+                icon: LucideIcons.user,
                 index: 3,
               ),
             ],

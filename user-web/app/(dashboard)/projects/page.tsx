@@ -76,13 +76,11 @@ export default function ProjectsPage() {
     ? (selectedProject.quoteAmount || selectedProject.final_quote || selectedProject.user_quote || 0)
     : 0;
 
-  // Simple loading state - no animations
+  // Use the loading skeleton while data is being fetched
   if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-muted-foreground">Loading projects...</div>
-      </div>
-    );
+    // Dynamic import of loading skeleton to avoid SSR issues
+    const ProjectsLoading = require("./loading").default;
+    return <ProjectsLoading />;
   }
 
   return (

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Full-screen loading overlay.
 ///
@@ -64,7 +65,7 @@ class LoadingOverlay extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         message!,
-                        style: const TextStyle(
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontSize: 16,
                           color: AppColors.textSecondary,
                         ),
@@ -133,7 +134,7 @@ class LoadingPage extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 message!,
-                style: const TextStyle(
+                style: AppTextStyles.bodyMedium.copyWith(
                   fontSize: 16,
                   color: AppColors.textSecondary,
                 ),

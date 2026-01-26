@@ -235,6 +235,29 @@ class ChatRepository {
     }
   }
 
+  /// Approves a pending message (supervisor action).
+  Future<void> approveMessage(String messageId) async {
+    await _client
+        .from('chat_messages')
+        .update({
+          'moderation_status': 'approved',
+          'approved_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', messageId);
+  }
+
+  /// Rejects a pending message (supervisor action).
+  Future<void> rejectMessage(String messageId, String? reason) async {
+    await _client
+        .from('chat_messages')
+        .update({
+          'moderation_status': 'rejected',
+          'rejection_reason': reason,
+          'rejected_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', messageId);
+  }
+
   /// Gets total unread message count for a user.
   /// Uses chat_participants.unread_count for efficiency.
   Future<int> getTotalUnreadCount(String userId) async {

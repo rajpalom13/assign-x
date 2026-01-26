@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 import 'app_button.dart';
 
 /// Illustrated empty state widget for when content is unavailable.
@@ -154,7 +155,7 @@ class EmptyState extends StatelessWidget {
   Widget _buildTitle(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: AppTextStyles.headingSmall.copyWith(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
@@ -166,7 +167,7 @@ class EmptyState extends StatelessWidget {
   Widget _buildSubtitle(BuildContext context) {
     return Text(
       subtitle!,
-      style: const TextStyle(
+      style: AppTextStyles.bodyMedium.copyWith(
         fontSize: 14,
         color: AppColors.textSecondary,
         height: 1.5,
@@ -189,7 +190,7 @@ class EmptyState extends StatelessWidget {
       onPressed: onSecondaryAction,
       child: Text(
         secondaryActionLabel!,
-        style: const TextStyle(
+        style: AppTextStyles.labelMedium.copyWith(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.primary,
@@ -395,7 +396,7 @@ class IllustratedEmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title,
-              style: const TextStyle(
+              style: AppTextStyles.headingSmall.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
@@ -406,7 +407,7 @@ class IllustratedEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: const TextStyle(
+                style: AppTextStyles.bodyMedium.copyWith(
                   fontSize: 14,
                   color: AppColors.textSecondary,
                   height: 1.5,

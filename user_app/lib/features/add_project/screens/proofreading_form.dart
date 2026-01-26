@@ -113,9 +113,9 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Proofreading Service',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -406,9 +406,9 @@ class _ProofreadingFormState extends ConsumerState<ProofreadingForm> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Submit Request',
-                                style: TextStyle(
+                                style: AppTextStyles.labelLarge.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16,

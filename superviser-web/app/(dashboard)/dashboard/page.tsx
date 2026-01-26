@@ -140,12 +140,12 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
             Here&apos;s an overview of your supervisor activity.
           </p>
         </div>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
 
       {/* Active Projects */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-5 w-5 text-muted-foreground" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
             Projects currently being worked on by doers
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (

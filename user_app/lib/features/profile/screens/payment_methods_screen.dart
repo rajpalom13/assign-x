@@ -351,18 +351,18 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.check,
                             size: 12,
                             color: Colors.white,
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             'Default',
-                            style: TextStyle(
+                            style: AppTextStyles.labelSmall.copyWith(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
@@ -429,7 +429,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
             child: OutlinedButton.icon(
               onPressed: _showAddCardDialog,
               icon: const Icon(Icons.credit_card, size: 18, color: Colors.white),
-              label: const Text('Add Card', style: TextStyle(color: Colors.white)),
+              label: Text('Add Card', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 side: BorderSide.none,
@@ -446,7 +446,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
           child: OutlinedButton.icon(
             onPressed: _showAddUpiDialog,
             icon: Icon(Icons.smartphone, size: 18, color: AppColors.primary),
-            label: Text('Add UPI', style: TextStyle(color: AppColors.primary)),
+            label: Text('Add UPI', style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary)),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: AppColors.primary),
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -751,9 +751,9 @@ class _AddCardSheetState extends State<_AddCardSheet> {
             const SizedBox(height: 24),
 
             // Header
-            const Text(
+            Text(
               'Add Debit/Credit Card',
-              style: TextStyle(
+              style: AppTextStyles.headingSmall.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -761,7 +761,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
             const SizedBox(height: 4),
             Text(
               'Your card details are securely stored via Razorpay',
-              style: TextStyle(
+              style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
@@ -1007,9 +1007,9 @@ class _AddUpiSheetState extends State<_AddUpiSheet> {
             const SizedBox(height: 24),
 
             // Header
-            const Text(
+            Text(
               'Add UPI ID',
-              style: TextStyle(
+              style: AppTextStyles.headingSmall.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1017,7 +1017,7 @@ class _AddUpiSheetState extends State<_AddUpiSheet> {
             const SizedBox(height: 4),
             Text(
               'Link your UPI ID for quick payments',
-              style: TextStyle(
+              style: AppTextStyles.bodySmall.copyWith(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),

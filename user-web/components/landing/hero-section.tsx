@@ -5,12 +5,13 @@
  * - Clean typography
  * - Single clear CTA
  * - Subtle micro-animations
- * - Animated mesh gradient background (matching app design system)
+ * - Gradient background flows from page wrapper
+ * - Integrated workflow animation showing client -> supervisor -> expert -> delivery
  */
 
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -23,20 +24,8 @@ import { ArrowRight, Play } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ASSIGNX_EASE } from "@/lib/animations/constants";
+import { HeroAnimation } from "./hero-animation";
 import "@/app/landing.css";
-
-/**
- * Get time-based gradient class for dynamic theming
- * Morning (5-11): warm coral/orange
- * Afternoon (12-17): balanced peach
- * Evening (18-4): cool purple/pink
- */
-function getTimeBasedGradientClass(): string {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "mesh-gradient-morning";
-  if (hour >= 12 && hour < 18) return "mesh-gradient-afternoon";
-  return "mesh-gradient-evening";
-}
 
 /**
  * Clean Hero Section - Canva/Linear inspired
@@ -44,9 +33,6 @@ function getTimeBasedGradientClass(): string {
 export function HeroSection() {
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-
-  // Memoize time-based gradient class
-  const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
 
   // Parallax scroll effect
   const { scrollYProgress } = useScroll({
@@ -61,7 +47,6 @@ export function HeroSection() {
   });
 
   const y = useTransform(springScroll, [0, 1], [0, -50]);
-  const opacity = useTransform(springScroll, [0, 0.5], [1, 0]);
 
   return (
     <section
@@ -69,19 +54,14 @@ export function HeroSection() {
       id="hero"
       className={cn(
         "relative min-h-[90vh] flex items-center overflow-hidden",
-        "pt-24 pb-16 sm:pt-28 sm:pb-20 md:pt-32 md:pb-24",
-        "mesh-background mesh-gradient-bottom-right-animated",
-        gradientClass
+        "pt-24 pb-16 sm:pt-28 sm:pb-20 md:pt-32 md:pb-24"
       )}
     >
-      {/* Subtle overlay for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/20 pointer-events-none z-[1]" />
-
       {/* Minimal grid pattern - subtle overlay */}
       <div className="absolute inset-0 landing-grid-pattern opacity-20 z-[1]" />
 
       <motion.div
-        style={prefersReducedMotion ? {} : { y, opacity }}
+        style={prefersReducedMotion ? {} : { y }}
         className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 w-full text-center"
       >
         {/* Hero content - positioned above gradient */}
@@ -183,6 +163,16 @@ export function HeroSection() {
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Workflow Animation - Client -> Supervisor -> Expert -> Delivery */}
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.8, ease: ASSIGNX_EASE }}
+          className="mt-16"
+        >
+          <HeroAnimation />
         </motion.div>
       </motion.div>
 

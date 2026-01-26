@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Bottom navigation bar with central FAB notch.
 class AppBottomNavBar extends StatelessWidget {
@@ -19,12 +21,18 @@ class AppBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceVariant,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withAlpha(80),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withAlpha(40),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -35,15 +43,15 @@ class AppBottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavItem(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home,
+                icon: LucideIcons.home,
+                activeIcon: LucideIcons.home,
                 label: 'Home',
                 isSelected: currentIndex == 0,
                 onTap: () => onTap(0),
               ),
               _NavItem(
-                icon: Icons.folder_outlined,
-                activeIcon: Icons.folder,
+                icon: LucideIcons.folder,
+                activeIcon: LucideIcons.folderClosed,
                 label: 'Projects',
                 isSelected: currentIndex == 1,
                 onTap: () => onTap(1),
@@ -51,15 +59,15 @@ class AppBottomNavBar extends StatelessWidget {
               // FAB placeholder
               const SizedBox(width: 64),
               _NavItem(
-                icon: Icons.people_outline,
-                activeIcon: Icons.people,
+                icon: LucideIcons.users,
+                activeIcon: LucideIcons.users,
                 label: 'Connect',
                 isSelected: currentIndex == 3,
                 onTap: () => onTap(3),
               ),
               _NavItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
+                icon: LucideIcons.user,
+                activeIcon: LucideIcons.user,
                 label: 'Profile',
                 isSelected: currentIndex == 4,
                 onTap: () => onTap(4),
@@ -112,7 +120,7 @@ class _NavItem extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(
+                style: AppTextStyles.caption.copyWith(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected ? AppColors.primary : AppColors.textTertiary,
@@ -158,8 +166,8 @@ class CentralFAB extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.add,
+          child: Icon(
+            LucideIcons.plus,
             color: Colors.white,
             size: 28,
             semanticLabel: null, // Handled by parent Semantics

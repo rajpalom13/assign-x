@@ -63,13 +63,14 @@ class MarketplaceListing {
   final String userName;
   final String? userAvatar;
   final String? userUniversity;
+  final String? collegeName;
   final MarketplaceCategory category;
   final ListingType type;
   final String title;
   final String? description;
   final double? price;
   final bool isNegotiable;
-  final List<String> images;
+  final List<String>? images;
   final String? location;
   final double? distanceKm;
   final ListingStatus status;
@@ -79,21 +80,23 @@ class MarketplaceListing {
   final int likeCount;
   final int commentCount;
   final bool isLiked;
+  final bool isSaved;
   final Map<String, dynamic>? metadata;
 
   const MarketplaceListing({
     required this.id,
-    required this.userId,
+    this.userId = '',
     required this.userName,
     this.userAvatar,
     this.userUniversity,
-    required this.category,
+    this.collegeName,
+    this.category = MarketplaceCategory.community,
     required this.type,
     required this.title,
     this.description,
     this.price,
     this.isNegotiable = false,
-    this.images = const [],
+    this.images,
     this.location,
     this.distanceKm,
     this.status = ListingStatus.active,
@@ -103,6 +106,7 @@ class MarketplaceListing {
     this.likeCount = 0,
     this.commentCount = 0,
     this.isLiked = false,
+    this.isSaved = false,
     this.metadata,
   });
 
@@ -136,19 +140,20 @@ class MarketplaceListing {
   }
 
   /// Check if listing has images.
-  bool get hasImages => images.isNotEmpty;
+  bool get hasImages => images != null && images!.isNotEmpty;
 
   /// Get first image or null.
-  String? get primaryImage => images.isNotEmpty ? images.first : null;
+  String? get primaryImage => images != null && images!.isNotEmpty ? images!.first : null;
 
   /// Create from JSON.
   factory MarketplaceListing.fromJson(Map<String, dynamic> json) {
     return MarketplaceListing(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
+      userId: json['user_id'] as String? ?? '',
       userName: json['user_name'] as String? ?? 'Anonymous',
       userAvatar: json['user_avatar'] as String?,
       userUniversity: json['user_university'] as String?,
+      collegeName: json['college_name'] as String?,
       category: MarketplaceCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => MarketplaceCategory.hardGoods,
@@ -161,7 +166,7 @@ class MarketplaceListing {
       description: json['description'] as String?,
       price: (json['price'] as num?)?.toDouble(),
       isNegotiable: json['is_negotiable'] as bool? ?? false,
-      images: (json['images'] as List<dynamic>?)?.cast<String>() ?? [],
+      images: (json['images'] as List<dynamic>?)?.cast<String>(),
       location: json['location'] as String?,
       distanceKm: (json['distance_km'] as num?)?.toDouble(),
       status: ListingStatus.values.firstWhere(
@@ -176,6 +181,7 @@ class MarketplaceListing {
       likeCount: json['like_count'] as int? ?? 0,
       commentCount: json['comment_count'] as int? ?? 0,
       isLiked: json['is_liked'] as bool? ?? false,
+      isSaved: json['is_saved'] as bool? ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -188,6 +194,7 @@ class MarketplaceListing {
       'user_name': userName,
       'user_avatar': userAvatar,
       'user_university': userUniversity,
+      'college_name': collegeName,
       'category': category.name,
       'type': type.name,
       'title': title,
@@ -204,6 +211,7 @@ class MarketplaceListing {
       'like_count': likeCount,
       'comment_count': commentCount,
       'is_liked': isLiked,
+      'is_saved': isSaved,
       'metadata': metadata,
     };
   }
@@ -215,6 +223,7 @@ class MarketplaceListing {
     String? userName,
     String? userAvatar,
     String? userUniversity,
+    String? collegeName,
     MarketplaceCategory? category,
     ListingType? type,
     String? title,
@@ -231,6 +240,7 @@ class MarketplaceListing {
     int? likeCount,
     int? commentCount,
     bool? isLiked,
+    bool? isSaved,
     Map<String, dynamic>? metadata,
   }) {
     return MarketplaceListing(
@@ -239,6 +249,7 @@ class MarketplaceListing {
       userName: userName ?? this.userName,
       userAvatar: userAvatar ?? this.userAvatar,
       userUniversity: userUniversity ?? this.userUniversity,
+      collegeName: collegeName ?? this.collegeName,
       category: category ?? this.category,
       type: type ?? this.type,
       title: title ?? this.title,
@@ -255,6 +266,7 @@ class MarketplaceListing {
       likeCount: likeCount ?? this.likeCount,
       commentCount: commentCount ?? this.commentCount,
       isLiked: isLiked ?? this.isLiked,
+      isSaved: isSaved ?? this.isSaved,
       metadata: metadata ?? this.metadata,
     );
   }

@@ -25,53 +25,75 @@ class ProjectRepository {
         .toList();
   }
 
-  /// Fetches projects by status tab.
+  /// Fetches projects by status tab (matching web app).
   ///
-  /// Tab indices (new design):
-  /// - 0: All projects
-  /// - 1: Active projects (in_progress, assigned, assigning, paid, analyzing)
-  /// - 2: Review projects (delivered, submitted_for_qc, qc_in_progress, qc_approved)
+  /// Tab indices (matching web):
+  /// - 0: In Review (submitted, analyzing, quoted, payment_pending) - being reviewed by AssignX
+  /// - 1: In Progress (paid, assigning, assigned, in_progress, qc states, revision) - expert working
+  /// - 2: For Review (delivered) - awaiting user approval
+  /// - 3: History (completed, auto_approved, cancelled, refunded)
   Future<List<Project>> getProjectsByTab(int tabIndex) async {
     final allProjects = await getProjects();
 
     switch (tabIndex) {
       case 0:
-        // All projects
-        return allProjects;
+        // In Review - projects being reviewed by AssignX (awaiting quote/payment)
+        return allProjects.where((p) => _isInReviewStatus(p.status)).toList();
       case 1:
-        // Active projects - currently being worked on
-        return allProjects.where((p) => _isActiveStatus(p.status)).toList();
+        // In Progress - expert is working on project
+        return allProjects.where((p) => _isInProgressStatus(p.status)).toList();
       case 2:
-        // Review projects - awaiting user review or in QC
-        return allProjects.where((p) => _isReviewStatus(p.status)).toList();
+        // For Review - delivered projects awaiting user approval
+        return allProjects.where((p) => _isForReviewStatus(p.status)).toList();
+      case 3:
+        // History - completed, cancelled, refunded projects
+        return allProjects.where((p) => _isHistoryStatus(p.status)).toList();
       default:
         return allProjects;
     }
   }
 
-  /// Check if status is considered "active" (work in progress).
-  bool _isActiveStatus(ProjectStatus status) {
+  /// Check if status is "In Review" (being reviewed by AssignX).
+  bool _isInReviewStatus(ProjectStatus status) {
     return [
+      ProjectStatus.draft,
       ProjectStatus.submitted,
       ProjectStatus.analyzing,
       ProjectStatus.quoted,
       ProjectStatus.paymentPending,
+    ].contains(status);
+  }
+
+  /// Check if status is "In Progress" (expert working on project).
+  bool _isInProgressStatus(ProjectStatus status) {
+    return [
       ProjectStatus.paid,
       ProjectStatus.assigning,
       ProjectStatus.assigned,
       ProjectStatus.inProgress,
+      ProjectStatus.submittedForQc,
+      ProjectStatus.qcInProgress,
+      ProjectStatus.qcApproved,
+      ProjectStatus.qcRejected,
       ProjectStatus.revisionRequested,
       ProjectStatus.inRevision,
     ].contains(status);
   }
 
-  /// Check if status is considered "review" (awaiting review).
-  bool _isReviewStatus(ProjectStatus status) {
+  /// Check if status is "For Review" (awaiting user approval).
+  bool _isForReviewStatus(ProjectStatus status) {
     return [
       ProjectStatus.delivered,
-      ProjectStatus.submittedForQc,
-      ProjectStatus.qcInProgress,
-      ProjectStatus.qcApproved,
+    ].contains(status);
+  }
+
+  /// Check if status is "History" (completed or cancelled).
+  bool _isHistoryStatus(ProjectStatus status) {
+    return [
+      ProjectStatus.completed,
+      ProjectStatus.autoApproved,
+      ProjectStatus.cancelled,
+      ProjectStatus.refunded,
     ].contains(status);
   }
 
@@ -279,29 +301,33 @@ class ProjectRepository {
     return updateProjectStatus(projectId, ProjectStatus.cancelled);
   }
 
-  /// Gets project count by status tab.
+  /// Gets project count by status tab (matching web app).
   ///
-  /// Tab indices (new design):
-  /// - 0: All projects
-  /// - 1: Active projects
-  /// - 2: Completed projects
+  /// Tab indices:
+  /// - 0: In Review (awaiting AssignX review)
+  /// - 1: In Progress (expert working)
+  /// - 2: For Review (awaiting user approval)
+  /// - 3: History (completed/cancelled)
   Future<Map<int, int>> getProjectCounts() async {
     final projects = await getProjects();
 
-    final allCount = projects.length;
-    final activeCount = projects.where((p) => _isActiveStatus(p.status)).length;
-    final reviewCount = projects.where((p) => _isReviewStatus(p.status)).length;
+    final inReviewCount = projects.where((p) => _isInReviewStatus(p.status)).length;
+    final inProgressCount = projects.where((p) => _isInProgressStatus(p.status)).length;
+    final forReviewCount = projects.where((p) => _isForReviewStatus(p.status)).length;
+    final historyCount = projects.where((p) => _isHistoryStatus(p.status)).length;
     final completedCount = projects.where((p) => _isCompletedStatus(p.status)).length;
 
     return {
-      0: allCount,       // Total (for tab 0 - All)
-      1: activeCount,    // Active (for tab 1 - Active)
-      2: reviewCount,    // Review (for tab 2 - Review)
-      3: completedCount, // Completed (for stats display - Done)
+      0: inReviewCount,    // In Review tab
+      1: inProgressCount,  // In Progress tab
+      2: forReviewCount,   // For Review tab
+      3: historyCount,     // History tab
+      4: completedCount,   // Completed count (for stats - Done)
+      5: projects.length,  // Total count (for stats - Total)
     };
   }
 
-  /// Check if status is considered "completed".
+  /// Check if status is considered "completed" (for stats).
   bool _isCompletedStatus(ProjectStatus status) {
     return [
       ProjectStatus.completed,

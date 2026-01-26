@@ -1,3 +1,11 @@
+/// Message moderation status enum.
+enum MessageStatus {
+  pending,
+  approved,
+  rejected,
+  flagged,
+}
+
 /// Chat room model representing a conversation context.
 ///
 /// Chat-related models for real-time messaging.
@@ -59,6 +67,7 @@ class ChatMessage {
   final DateTime? deliveredAt;
   final DateTime createdAt;
   final ChatSender? sender;
+  final MessageStatus status;
 
   const ChatMessage({
     required this.id,
@@ -71,6 +80,7 @@ class ChatMessage {
     this.deliveredAt,
     required this.createdAt,
     this.sender,
+    this.status = MessageStatus.approved,
   });
 
   /// Whether this message was sent by the current user.
@@ -85,6 +95,25 @@ class ChatMessage {
     if (json['read_by'] != null) {
       if (json['read_by'] is List) {
         readByList = (json['read_by'] as List).cast<String>();
+      }
+    }
+
+    // Parse moderation status
+    MessageStatus status = MessageStatus.approved;
+    final moderationStatus = json['moderation_status'] as String?;
+    if (moderationStatus != null) {
+      switch (moderationStatus) {
+        case 'pending':
+          status = MessageStatus.pending;
+          break;
+        case 'rejected':
+          status = MessageStatus.rejected;
+          break;
+        case 'flagged':
+          status = MessageStatus.flagged;
+          break;
+        default:
+          status = MessageStatus.approved;
       }
     }
 
@@ -103,6 +132,7 @@ class ChatMessage {
       sender: json['sender'] != null
           ? ChatSender.fromJson(json['sender'] as Map<String, dynamic>)
           : null,
+      status: status,
     );
   }
 
@@ -132,6 +162,7 @@ class ChatMessage {
     DateTime? deliveredAt,
     DateTime? createdAt,
     ChatSender? sender,
+    MessageStatus? status,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -144,6 +175,7 @@ class ChatMessage {
       deliveredAt: deliveredAt ?? this.deliveredAt,
       createdAt: createdAt ?? this.createdAt,
       sender: sender ?? this.sender,
+      status: status ?? this.status,
     );
   }
 }

@@ -11,6 +11,8 @@ class RouteNames {
   // Auth
   static const String login = '/login';
   static const String signin = '/signin';
+  static const String magicLink = '/magic-link';
+  static const String authCallback = '/auth-callback';
   static const String roleSelection = '/role-selection';
   static const String studentProfile = '/student-profile';
   static const String professionalProfile = '/professional-profile';
@@ -22,6 +24,14 @@ class RouteNames {
   static const String projectDetail = '/projects/:id';
   static const String addProject = '/add-project';
   static const String marketplace = '/marketplace';
+  static const String campusConnect = '/campus-connect';
+  static const String createPost = '/campus-connect/create';
+  static const String savedListings = '/campus-connect/saved';
+  static const String experts = '/experts';
+  static const String myBookings = '/experts/my-bookings';
+  static const String connect = '/connect';
+  static const String studyGroups = '/connect/groups';
+  static const String resources = '/connect/resources';
   static const String profile = '/profile';
 
   // Profile Sub-routes (aligned with actual router paths)
@@ -29,6 +39,9 @@ class RouteNames {
   static const String wallet = '/wallet';
   static const String paymentMethods = '/profile/payment-methods';
   static const String helpSupport = '/profile/help';
+  static const String accountUpgrade = '/profile/upgrade';
+  static const String security = '/profile/security';
+  static const String verifyCollege = '/verify-college';
 
   // Notifications
   static const String notifications = '/notifications';
@@ -50,4 +63,16 @@ class RouteNames {
 
   /// Get marketplace item detail route with ID.
   static String listingDetailPath(String id) => '/marketplace/$id';
+
+  /// Get campus connect post detail route with ID.
+  static String postDetailPath(String id) => '/campus-connect/post/$id';
+
+  /// Get expert detail route with ID.
+  static String expertDetailPath(String id) => '/experts/$id';
+
+  /// Get expert booking route with ID.
+  static String expertBookPath(String id) => '/experts/$id/book';
+
+  /// Get study group detail route with ID.
+  static String studyGroupDetailPath(String id) => '/connect/groups/$id';
 }

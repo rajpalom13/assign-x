@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// A dock navigation item representing a single navigation destination.
 ///
@@ -151,7 +152,7 @@ class DockTooltip extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.labelSmall.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color:
@@ -245,6 +246,7 @@ class _DockNavigationState extends State<DockNavigation> {
   }
 
   Widget _buildDockContainer(bool isDark) {
+    // Always use dark/black navbar regardless of theme
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -255,19 +257,15 @@ class _DockNavigationState extends State<DockNavigation> {
             vertical: 6,
           ),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.black.withAlpha(150)
-                : Colors.white.withAlpha(200),
+            color: const Color(0xFF1A1A1A).withAlpha(240), // Dark/black navbar
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withAlpha(25)
-                  : Colors.black.withAlpha(15),
+              color: Colors.white.withAlpha(15),
               width: 0.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(isDark ? 50 : 30),
+                color: Colors.black.withAlpha(60),
                 blurRadius: 20,
                 spreadRadius: 0,
                 offset: const Offset(0, 4),
@@ -276,7 +274,7 @@ class _DockNavigationState extends State<DockNavigation> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: _buildDockItems(isDark),
+            children: _buildDockItems(true), // Always use dark mode styling for icons
           ),
         ),
       ),
@@ -346,7 +344,7 @@ class _DockNavigationState extends State<DockNavigation> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Active indicator background
+                    // Active indicator background - subtle white glow on dark navbar
                     AnimatedScale(
                       scale: isActive ? 1.0 : 0.85,
                       duration: const Duration(milliseconds: 250),
@@ -358,14 +356,13 @@ class _DockNavigationState extends State<DockNavigation> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: (item.activeColor ?? AppColors.primary)
-                                .withAlpha(isDark ? 60 : 40),
+                            color: Colors.white.withAlpha(30), // Subtle white glow
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
                     ),
-                    // Icon
+                    // Icon - white/light for dark navbar
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
@@ -375,10 +372,8 @@ class _DockNavigationState extends State<DockNavigation> {
                         key: ValueKey(isActive),
                         size: 24,
                         color: isActive
-                            ? (item.activeColor ?? AppColors.primary)
-                            : (isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondary),
+                            ? (item.activeColor ?? Colors.white)
+                            : Colors.white.withAlpha(150), // Light gray/white for inactive
                       ),
                     ),
                     // Badge
@@ -466,7 +461,7 @@ class _DockNavigationState extends State<DockNavigation> {
       child: Center(
         child: Text(
           count > 99 ? '99+' : count.toString(),
-          style: const TextStyle(
+          style: AppTextStyles.caption.copyWith(
             fontSize: 10,
             fontWeight: FontWeight.w600,
             color: Colors.white,

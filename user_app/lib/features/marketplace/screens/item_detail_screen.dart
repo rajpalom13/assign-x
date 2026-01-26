@@ -263,7 +263,7 @@ class _ListingDetailContent extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha(100),
+          color: Colors.black.withValues(alpha: 0.39),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -286,7 +286,7 @@ class _ListingDetailContent extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha(100),
+          color: Colors.black.withValues(alpha: 0.39),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -304,7 +304,7 @@ class _ListingDetailContent extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha(100),
+          color: Colors.black.withValues(alpha: 0.39),
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -353,7 +353,7 @@ class _ListingDetailContent extends StatelessWidget {
               leading: Icon(Icons.block, color: AppColors.error),
               title: Text(
                 'Block user',
-                style: TextStyle(color: AppColors.error),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
               ),
               onTap: () => Navigator.pop(context),
             ),
@@ -424,17 +424,22 @@ class _ImageGalleryState extends State<_ImageGallery> {
 
   @override
   Widget build(BuildContext context) {
+    final images = widget.listing.images ?? [];
+    if (images.isEmpty) {
+      return _PlaceholderImage(type: widget.listing.type);
+    }
+
     return Stack(
       children: [
         PageView.builder(
           controller: _pageController,
-          itemCount: widget.listing.images.length,
+          itemCount: images.length,
           onPageChanged: (index) {
             setState(() => _currentIndex = index);
           },
           itemBuilder: (context, index) {
             return CachedNetworkImage(
-              imageUrl: widget.listing.images[index],
+              imageUrl: images[index],
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
                 color: AppColors.shimmerBase,
@@ -452,7 +457,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
         ),
 
         // Page indicator
-        if (widget.listing.images.length > 1)
+        if (images.length > 1)
           Positioned(
             bottom: 16,
             left: 0,
@@ -460,7 +465,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                widget.listing.images.length,
+                images.length,
                 (index) => Container(
                   width: _currentIndex == index ? 20 : 8,
                   height: 8,
@@ -468,7 +473,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
                   decoration: BoxDecoration(
                     color: _currentIndex == index
                         ? Colors.white
-                        : Colors.white.withAlpha(100),
+                        : Colors.white.withValues(alpha: 0.39),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -531,7 +536,7 @@ class _TypeBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withAlpha(30),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

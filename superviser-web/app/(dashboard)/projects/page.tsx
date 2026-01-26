@@ -288,7 +288,7 @@ export default function ProjectsPage() {
   }, [])
 
   const LoadingCard = () => (
-    <div className="p-6 rounded-lg border bg-card space-y-4">
+    <div className="p-6 rounded-xl border bg-card space-y-4">
       <div className="flex items-center justify-between">
         <Skeleton className="h-5 w-24" />
         <Skeleton className="h-5 w-16" />
@@ -306,10 +306,10 @@ export default function ProjectsPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Active Projects</h2>
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">Active Projects</h1>
         <p className="text-muted-foreground">
           Manage your ongoing projects, review submissions, and track completed work.
         </p>
@@ -323,12 +323,12 @@ export default function ProjectsPage() {
             placeholder="Search projects, clients, or experts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 rounded-xl"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-4">
           <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] rounded-xl">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
@@ -342,7 +342,7 @@ export default function ProjectsPage() {
           </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="rounded-xl">
                 <SlidersHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -373,9 +373,9 @@ export default function ProjectsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="ongoing" className="gap-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid rounded-xl p-1">
+          <TabsTrigger value="ongoing" className="gap-2 rounded-lg">
             <Clock className="h-4 w-4" />
             On Going
             {ongoingProjects.length > 0 && (
@@ -384,16 +384,16 @@ export default function ProjectsPage() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="review" className="gap-2">
+          <TabsTrigger value="review" className="gap-2 rounded-lg">
             <FileSearch className="h-4 w-4" />
             For Review
             {forReviewProjects.length > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-amber-100 text-amber-700">
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                 {forReviewProjects.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="completed" className="gap-2">
+          <TabsTrigger value="completed" className="gap-2 rounded-lg">
             <CheckCircle2 className="h-4 w-4" />
             Completed
             {completedProjects.length > 0 && (
@@ -405,23 +405,25 @@ export default function ProjectsPage() {
         </TabsList>
 
         {/* On Going Tab */}
-        <TabsContent value="ongoing" className="space-y-4">
+        <TabsContent value="ongoing" className="space-y-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((i) => <LoadingCard key={i} />)}
             </div>
           ) : ongoingProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Clock className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium">No ongoing projects</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Clock className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-semibold">No ongoing projects</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                 {searchQuery || selectedSubject !== "All Subjects"
                   ? "Try adjusting your filters"
                   : "Projects will appear here once assigned to experts"}
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {ongoingProjects.map((project) => (
                 <OngoingProjectCard key={project.id} project={project} />
               ))}
@@ -430,23 +432,25 @@ export default function ProjectsPage() {
         </TabsContent>
 
         {/* For Review Tab */}
-        <TabsContent value="review" className="space-y-4">
+        <TabsContent value="review" className="space-y-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((i) => <LoadingCard key={i} />)}
             </div>
           ) : forReviewProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <FileSearch className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium">No projects for review</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <FileSearch className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-semibold">No projects for review</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                 {searchQuery || selectedSubject !== "All Subjects"
                   ? "Try adjusting your filters"
                   : "Projects awaiting QC will appear here"}
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {forReviewProjects.map((project) => (
                 <ForReviewCard
                   key={project.id}
@@ -465,23 +469,25 @@ export default function ProjectsPage() {
         </TabsContent>
 
         {/* Completed Tab */}
-        <TabsContent value="completed" className="space-y-4">
+        <TabsContent value="completed" className="space-y-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((i) => <LoadingCard key={i} />)}
             </div>
           ) : completedProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CheckCircle2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-medium">No completed projects</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-semibold">No completed projects</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                 {searchQuery || selectedSubject !== "All Subjects"
                   ? "Try adjusting your filters"
                   : "Completed projects will appear here"}
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {completedProjects.map((project) => (
                 <CompletedProjectCard
                   key={project.id}

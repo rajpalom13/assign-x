@@ -106,16 +106,18 @@ export function EarningsSummary() {
   return (
     <div className="space-y-6">
       {/* Balance Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="h-5 w-5 text-green-600" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-900 rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-green-600" />
+              </div>
               <span className="text-sm font-medium text-green-700 dark:text-green-300">
                 Available Balance
               </span>
             </div>
-            <p className="text-3xl font-bold text-green-700 dark:text-green-300">
+            <p className="text-3xl font-bold text-green-700 dark:text-green-300 tracking-tight">
               {availableBalance.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -223,13 +225,15 @@ export function EarningsSummary() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-5 w-5 text-amber-600" />
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
               <span className="text-sm font-medium text-muted-foreground">Pending</span>
             </div>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 tracking-tight">
               {pendingBalance.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -242,13 +246,15 @@ export function EarningsSummary() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowDownLeft className="h-5 w-5 text-blue-600" />
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                <ArrowDownLeft className="h-5 w-5 text-blue-600" />
+              </div>
               <span className="text-sm font-medium text-muted-foreground">Total Earnings</span>
             </div>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 tracking-tight">
               {totalEarnings.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -259,13 +265,15 @@ export function EarningsSummary() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="h-5 w-5 text-purple-600" />
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-purple-600" />
+              </div>
               <span className="text-sm font-medium text-muted-foreground">Last Payout</span>
             </div>
-            <p className="text-2xl font-bold">
+            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 tracking-tight">
               {(lastPayout?.approved_amount ?? lastPayout?.requested_amount)?.toLocaleString("en-IN", {
                 style: "currency",
                 currency: "INR",
@@ -286,9 +294,9 @@ export function EarningsSummary() {
       </div>
 
       {/* Monthly Goal Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Monthly Goal</CardTitle>
+      <Card className="rounded-xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold">Monthly Goal</CardTitle>
           <CardDescription>Track your progress towards your monthly target</CardDescription>
         </CardHeader>
         <CardContent>
@@ -313,9 +321,9 @@ export function EarningsSummary() {
       </Card>
 
       {/* Payout History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent Payouts</CardTitle>
+      <Card className="rounded-xl">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold">Recent Payouts</CardTitle>
           <CardDescription>Your recent withdrawal history</CardDescription>
         </CardHeader>
         <CardContent>

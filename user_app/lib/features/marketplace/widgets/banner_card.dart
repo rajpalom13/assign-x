@@ -36,7 +36,7 @@ class BannerCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(10),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -69,7 +69,7 @@ class BannerCard extends StatelessWidget {
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.black.withAlpha(150),
+                              Colors.black.withValues(alpha: 0.59),
                             ],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -259,7 +259,7 @@ class BannerCard extends StatelessWidget {
                           ),
                           child: Text(
                             isEvent ? 'Register Now' : 'Apply Now',
-                            style: const TextStyle(
+                            style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),

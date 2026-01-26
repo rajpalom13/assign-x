@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Reusable dropdown field with search functionality.
 ///
@@ -55,7 +56,7 @@ class AppDropdown<T> extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: const TextStyle(
+            style: AppTextStyles.labelMedium.copyWith(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
@@ -205,7 +206,7 @@ class _SearchableDropdownState<T> extends State<_SearchableDropdown<T>> {
             Expanded(
               child: Text(
                 displayText,
-                style: TextStyle(
+                style: AppTextStyles.bodyMedium.copyWith(
                   fontSize: 16,
                   color: widget.value != null
                       ? AppColors.textPrimary

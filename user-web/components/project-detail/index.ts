@@ -14,3 +14,22 @@ export { DeliverableItem } from "./deliverable-item";
 export { QualityReportBadge } from "./quality-report-badge";
 export { FloatingChatButton } from "./floating-chat-button";
 export { ChatWindow } from "./chat-window";
+
+// Message approval components
+export {
+  MessageApprovalBadge,
+  MessageApprovalBadgeInline,
+  type MessageApprovalStatus,
+} from "./message-approval-badge";
+export {
+  SupervisorMessageActions,
+  SupervisorMessageActionsCompact,
+} from "./supervisor-message-actions";
+
+// Typing and presence components
+export { TypingIndicator, useTypingIndicator } from "./typing-indicator";
+export {
+  ChatPresenceBanner,
+  OnlineUsersIndicator,
+  useChatPresence,
+} from "./chat-presence";

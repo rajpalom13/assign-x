@@ -154,6 +154,44 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
+  /// Approves a pending message (supervisor action).
+  Future<void> approveMessage(String messageId) async {
+    try {
+      await _repository.approveMessage(messageId);
+
+      // Update message status in local state
+      final updatedMessages = state.messages.map((msg) {
+        if (msg.id == messageId) {
+          return msg.copyWith(status: MessageStatus.approved);
+        }
+        return msg;
+      }).toList();
+
+      state = state.copyWith(messages: updatedMessages);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// Rejects a pending message (supervisor action).
+  Future<void> rejectMessage(String messageId, String? reason) async {
+    try {
+      await _repository.rejectMessage(messageId, reason);
+
+      // Update message status in local state
+      final updatedMessages = state.messages.map((msg) {
+        if (msg.id == messageId) {
+          return msg.copyWith(status: MessageStatus.rejected);
+        }
+        return msg;
+      }).toList();
+
+      state = state.copyWith(messages: updatedMessages);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../providers/accessibility_provider.dart';
+import '../../../providers/profile_provider.dart';
+import '../../../providers/theme_provider.dart';
+import '../../../shared/widgets/dashboard_app_bar.dart';
+import '../../profile/widgets/account_upgrade_card.dart';
 
 // ============================================================
 // DESIGN CONSTANTS
@@ -32,9 +38,6 @@ class _SettingsColors {
 // ============================================================
 // PROVIDERS
 // ============================================================
-
-/// Provider for app theme mode.
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
 
 /// Provider for notification preferences.
 final notificationPrefsProvider = FutureProvider<NotificationPrefs>((ref) async {
@@ -124,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
+    final appThemeMode = ref.watch(themeProvider);
     final notifPrefsAsync = ref.watch(notificationPrefsProvider);
     final appearancePrefsAsync = ref.watch(appearancePrefsProvider);
     final privacyPrefsAsync = ref.watch(privacyPrefsProvider);
@@ -132,55 +135,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       // Transparent to show SubtleGradientScaffold from MainShell
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header Bar
-            SliverToBoxAdapter(child: _buildHeaderBar()),
+      body: Column(
+        children: [
+          // Unified Dashboard App Bar (dark theme)
+          const DashboardAppBar(),
 
-            // Content
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
+          // Content
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const SizedBox(height: 16),
 
-                  // Page Title Section
-                  _buildPageTitle(),
-                  const SizedBox(height: 24),
+                      // Page Title Section
+                      _buildPageTitle(),
+                      const SizedBox(height: 24),
 
-                  // Notifications Section
-                  notifPrefsAsync.when(
-                    data: (prefs) => _buildNotificationsCard(prefs),
-                    loading: () => _buildLoadingCard(),
-                    error: (e, s) => const SizedBox.shrink(),
+                      // Account Upgrade Banner
+                      _buildAccountUpgradeCard(),
+                      const SizedBox(height: 16),
+
+                      // Notifications Section
+                      notifPrefsAsync.when(
+                        data: (prefs) => _buildNotificationsCard(prefs),
+                        loading: () => _buildLoadingCard(),
+                        error: (e, s) => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Appearance Section
+                      appearancePrefsAsync.when(
+                        data: (prefs) => _buildAppearanceCard(appThemeMode, prefs),
+                        loading: () => _buildLoadingCard(),
+                        error: (e, s) => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Privacy & Data Section
+                      privacyPrefsAsync.when(
+                        data: (prefs) => _buildPrivacyCard(prefs),
+                        loading: () => _buildLoadingCard(),
+                        error: (e, s) => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Feedback Section
+                      _buildFeedbackCard(),
+                      const SizedBox(height: 16),
+
+                      // About Section
+                      _buildAboutCard(),
+                      const SizedBox(height: 16),
+
+                      // Danger Zone Section
+                      _buildDangerZoneCard(),
+                      const SizedBox(height: 100), // Bottom padding for nav bar
+                    ]),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Appearance Section
-                  appearancePrefsAsync.when(
-                    data: (prefs) => _buildAppearanceCard(themeMode, prefs),
-                    loading: () => _buildLoadingCard(),
-                    error: (e, s) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Privacy & Data Section
-                  privacyPrefsAsync.when(
-                    data: (prefs) => _buildPrivacyCard(prefs),
-                    loading: () => _buildLoadingCard(),
-                    error: (e, s) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // About Section
-                  _buildAboutCard(),
-                  const SizedBox(height: 100), // Bottom padding for nav bar
-                ]),
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -203,10 +222,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               color: AppColors.primary,
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
                 'A',
-                style: TextStyle(
+                style: AppTextStyles.headingSmall.copyWith(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -289,6 +308,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   // ============================================================
+  // ACCOUNT UPGRADE CARD
+  // ============================================================
+
+  /// Builds the account upgrade banner card using actual user profile data.
+  Widget _buildAccountUpgradeCard() {
+    final profileAsync = ref.watch(userProfileProvider);
+    final currentType = profileAsync.whenOrNull(
+      data: (profile) => AccountType.fromDbString(profile.userType?.toDbString() ?? 'student'),
+    ) ?? AccountType.student;
+
+    // Only show if user can upgrade
+    if (currentType.canUpgradeTo.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return CompactUpgradeBanner(
+      currentType: currentType,
+      onUpgradeTap: () {
+        context.push('/profile/upgrade?type=${currentType.toDbString()}');
+      },
+    );
+  }
+
+  // ============================================================
   // NOTIFICATIONS CARD
   // ============================================================
 
@@ -334,8 +377,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ============================================================
 
   /// Builds the appearance settings card.
-  Widget _buildAppearanceCard(ThemeMode themeMode, AppearancePrefs prefs) {
-    final isLightSelected = themeMode == ThemeMode.light || themeMode == ThemeMode.system;
+  Widget _buildAppearanceCard(AppThemeMode appThemeMode, AppearancePrefs prefs) {
+    // Watch the accessibility provider for reduced motion state
+    final reducedMotion = ref.watch(reducedMotionProvider);
 
     return _SettingsCard(
       icon: Icons.auto_awesome_outlined,
@@ -353,34 +397,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
         ),
-        // Theme Selector
+        // Theme Selector - 3 options: System, Light, Dark
         Row(
           children: [
             Expanded(
               child: _ThemeOptionCard(
-                icon: Icons.wb_sunny_outlined,
-                label: 'Light',
-                isSelected: isLightSelected,
-                onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light,
+                icon: Icons.settings_suggest_outlined,
+                label: 'System',
+                isSelected: appThemeMode == AppThemeMode.system,
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeMode.system),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _ThemeOptionCard(
+                icon: Icons.wb_sunny_outlined,
+                label: 'Light',
+                isSelected: appThemeMode == AppThemeMode.light,
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeMode.light),
+              ),
+            ),
+            const SizedBox(width: 8),
             Expanded(
               child: _ThemeOptionCard(
                 icon: Icons.dark_mode_outlined,
                 label: 'Dark',
-                isSelected: !isLightSelected,
-                onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark,
+                isSelected: appThemeMode == AppThemeMode.dark,
+                onTap: () => ref.read(themeProvider.notifier).setTheme(AppThemeMode.dark),
               ),
             ),
           ],
         ),
         const SizedBox(height: 20),
+
+        // Accessibility Section Header
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.accessibility_new,
+                size: 18,
+                color: _SettingsColors.secondaryText,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Accessibility',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: _SettingsColors.primaryText,
+                ),
+              ),
+            ],
+          ),
+        ),
+
         _SettingsToggleItem(
-          title: 'Reduced Motion',
-          subtitle: 'Minimize animations',
-          value: prefs.reducedMotion,
-          onChanged: (value) => _updateAppearancePref('reduced_motion', value),
+          title: 'Reduce Motion',
+          subtitle: 'Use instant transitions instead of animations. Helpful for motion sensitivity or to save battery.',
+          value: reducedMotion,
+          onChanged: (value) async {
+            // Update the accessibility provider (primary)
+            await ref.read(reducedMotionProvider.notifier).setReducedMotion(value);
+            // Also sync with appearance prefs for consistency
+            _updateAppearancePref('reduced_motion', value);
+          },
         ),
         _SettingsToggleItem(
           title: 'Compact Mode',
@@ -499,6 +579,416 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           showDivider: false,
         ),
       ],
+    );
+  }
+
+  // ============================================================
+  // FEEDBACK CARD
+  // ============================================================
+
+  /// Builds the feedback section card.
+  Widget _buildFeedbackCard() {
+    return _SettingsCard(
+      icon: Icons.feedback_outlined,
+      iconBackgroundColor: const Color(0xFFE0F2FE), // Soft blue
+      title: 'Send Feedback',
+      subtitle: 'Help us improve AssignX',
+      children: [
+        _FeedbackOption(
+          icon: Icons.bug_report_outlined,
+          title: 'Report a Bug',
+          subtitle: 'Something not working right?',
+          onTap: () => _showFeedbackSheet(context, 'bug'),
+        ),
+        _FeedbackOption(
+          icon: Icons.lightbulb_outline,
+          title: 'Feature Request',
+          subtitle: 'Suggest a new feature',
+          onTap: () => _showFeedbackSheet(context, 'feature'),
+        ),
+        _FeedbackOption(
+          icon: Icons.chat_bubble_outline,
+          title: 'General Feedback',
+          subtitle: 'Share your thoughts',
+          onTap: () => _showFeedbackSheet(context, 'general'),
+          showDivider: false,
+        ),
+      ],
+    );
+  }
+
+  /// Shows the feedback bottom sheet.
+  void _showFeedbackSheet(BuildContext context, String type) {
+    final feedbackController = TextEditingController();
+    String selectedType = type;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Send Feedback',
+                style: AppTextStyles.headingSmall.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Help us improve AssignX by sharing your feedback',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: _SettingsColors.secondaryText,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Feedback type selector
+              Text(
+                'Feedback Type',
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _FeedbackTypeChip(
+                    label: 'Bug',
+                    icon: Icons.bug_report_outlined,
+                    isSelected: selectedType == 'bug',
+                    onTap: () => setState(() => selectedType = 'bug'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FeedbackTypeChip(
+                    label: 'Feature',
+                    icon: Icons.lightbulb_outline,
+                    isSelected: selectedType == 'feature',
+                    onTap: () => setState(() => selectedType = 'feature'),
+                  ),
+                  const SizedBox(width: 8),
+                  _FeedbackTypeChip(
+                    label: 'General',
+                    icon: Icons.chat_bubble_outline,
+                    isSelected: selectedType == 'general',
+                    onTap: () => setState(() => selectedType = 'general'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Feedback text field
+              Text(
+                'Your Feedback',
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: feedbackController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Tell us what you think...',
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: _SettingsColors.mutedText,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Submit button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (feedbackController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter your feedback')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Thank you for your feedback!'),
+                        backgroundColor: Color(0xFF4CAF50),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _SettingsColors.actionBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Send Feedback'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // DANGER ZONE CARD
+  // ============================================================
+
+  /// Builds the danger zone card for destructive actions.
+  Widget _buildDangerZoneCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _SettingsColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _SettingsColors.actionRed.withValues(alpha: 0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _SettingsColors.clearRedBackground,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 20,
+                    color: _SettingsColors.actionRed,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Danger Zone',
+                        style: AppTextStyles.headingSmall.copyWith(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: _SettingsColors.actionRed,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Irreversible actions',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 13,
+                          color: _SettingsColors.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Delete account option
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _SettingsColors.clearRedBackground,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _SettingsColors.actionRed.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Delete Account',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: _SettingsColors.primaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Permanently delete your account and all data',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontSize: 12,
+                            color: _SettingsColors.secondaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _showDeleteAccountDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _SettingsColors.actionRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shows the delete account confirmation dialog.
+  void _showDeleteAccountDialog() {
+    final confirmController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _SettingsColors.clearRedBackground,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: _SettingsColors.actionRed,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Delete Account'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This action is permanent and irreversible. Deleting your account will:',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: _SettingsColors.secondaryText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _DeleteWarningItem(text: 'Remove all your personal information'),
+              _DeleteWarningItem(text: 'Delete all your projects and history'),
+              _DeleteWarningItem(text: 'Cancel any active subscriptions'),
+              _DeleteWarningItem(text: 'Remove access to all connected services'),
+              const SizedBox(height: 16),
+              Text(
+                'Type DELETE to confirm',
+                style: AppTextStyles.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                decoration: InputDecoration(
+                  hintText: 'DELETE',
+                  hintStyle: TextStyle(
+                    fontFamily: 'monospace',
+                    color: _SettingsColors.mutedText,
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(fontFamily: 'monospace'),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: confirmController.text == 'DELETE'
+                  ? () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Account deletion request submitted'),
+                          backgroundColor: _SettingsColors.actionRed,
+                        ),
+                      );
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _SettingsColors.actionRed,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete Account'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -841,7 +1331,7 @@ class _CustomToggle extends StatelessWidget {
   }
 }
 
-/// Theme option card for light/dark selection.
+/// Theme option card for system/light/dark selection.
 class _ThemeOptionCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -861,7 +1351,7 @@ class _ThemeOptionCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: 80,
+        height: 72,
         decoration: BoxDecoration(
           color: isSelected
               ? _SettingsColors.selectedThemeTint
@@ -879,16 +1369,16 @@ class _ThemeOptionCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 22,
               color: isSelected
                   ? _SettingsColors.primaryText
                   : _SettingsColors.secondaryText,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               label,
               style: AppTextStyles.labelMedium.copyWith(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: isSelected
                     ? _SettingsColors.primaryText
@@ -1075,6 +1565,176 @@ class _NavigationLinkItem extends StatelessWidget {
             color: Colors.grey.withValues(alpha: 0.1),
           ),
       ],
+    );
+  }
+}
+
+/// Feedback option item widget.
+class _FeedbackOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool showDivider;
+
+  const _FeedbackOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.showDivider = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _SettingsColors.chipBackground,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: _SettingsColors.secondaryText,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: _SettingsColors.primaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontSize: 12,
+                          color: _SettingsColors.mutedText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: _SettingsColors.mutedText,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            color: Colors.grey.withValues(alpha: 0.1),
+          ),
+      ],
+    );
+  }
+}
+
+/// Feedback type selection chip.
+class _FeedbackTypeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FeedbackTypeChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? _SettingsColors.actionBlue : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? _SettingsColors.actionBlue
+                : Colors.grey.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : _SettingsColors.secondaryText,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : _SettingsColors.primaryText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Delete warning item widget.
+class _DeleteWarningItem extends StatelessWidget {
+  final String text;
+
+  const _DeleteWarningItem({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.circle,
+            size: 6,
+            color: _SettingsColors.actionRed,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontSize: 13,
+                color: _SettingsColors.secondaryText,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

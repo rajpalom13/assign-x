@@ -91,6 +91,9 @@ class AppColors {
   /// Card background
   static const Color card = Color(0xFFFEFDFB);
 
+  /// Light surface for subtle backgrounds (pills, chips)
+  static const Color surfaceLight = Color(0xFFF5F2ED);
+
   // ============================================================
   // BACKGROUND COLORS - Dark Theme
   // ============================================================

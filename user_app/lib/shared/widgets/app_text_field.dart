@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Reusable text field with consistent styling.
 ///
@@ -121,7 +122,7 @@ class AppTextField extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: const TextStyle(
+            style: AppTextStyles.labelMedium.copyWith(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
@@ -147,7 +148,7 @@ class AppTextField extends StatelessWidget {
           onFieldSubmitted: onSubmitted,
           onTap: onTap,
           textCapitalization: textCapitalization,
-          style: const TextStyle(
+          style: AppTextStyles.bodyMedium.copyWith(
             fontSize: 16,
             color: AppColors.textPrimary,
           ),

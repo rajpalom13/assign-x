@@ -119,9 +119,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
           );
 
       if (mounted) {
-        setState(() {
-          _magicLinkSent = true;
-        });
+        // Navigate to magic link confirmation screen
+        context.go('${RouteNames.magicLink}?email=${Uri.encodeComponent(email)}');
       }
     } catch (e) {
       if (mounted) {
@@ -162,136 +161,142 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Calculate responsive Lottie size - smaller on small screens
+    final lottieSize = (screenWidth * 0.35).clamp(140.0, 200.0);
+    // Header height (app name area)
+    const headerHeight = 50.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: LoadingOverlay(
-          isLoading: _isLoading,
-          message: _showMagicLink ? 'Sending magic link...' : 'Signing in...',
-          child: Stack(
-            children: [
-              // Mesh gradient background (cool blue-ish colors)
-              _MeshGradientBackground(
-                height: screenHeight,
-                colors: const [
-                  Color(0xFFE8F4FB), // Soft blue (creamy)
-                  Color(0xFFE8F0FB), // Soft lavender-blue
-                  Color(0xFFF0E8FB), // Soft purple-blue
-                ],
-              ),
-
-              // Lottie animation in gradient area
-              Positioned(
-                top: 60,
-                left: 0,
-                right: 0,
-                child: _LottieHero(
-                  floatAnimation: _floatController,
-                ),
-              ),
-
-              // App name at top
-              Positioned(
-                top: 12,
-                left: 0,
-                right: 0,
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'AssignX',
-                      style: AppTextStyles.headingSmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 600.ms).slideY(
-                      begin: -0.3,
-                      duration: 600.ms,
-                      curve: Curves.easeOutBack,
-                    ),
-              ),
+      body: LoadingOverlay(
+        isLoading: _isLoading,
+        message: _showMagicLink ? 'Sending magic link...' : 'Signing in...',
+        child: Stack(
+          children: [
+            // Mesh gradient background (cool blue-ish colors)
+            _MeshGradientBackground(
+              height: screenHeight,
+              colors: const [
+                Color(0xFFE8F4FB), // Soft blue (creamy)
+                Color(0xFFE8F0FB), // Soft lavender-blue
+                Color(0xFFF0E8FB), // Soft purple-blue
+              ],
             ),
 
-            // Bottom content section with glass morphism
-            Positioned.fill(
+            // Safe area content
+            SafeArea(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.1),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _magicLinkSent
-                        ? _MagicLinkSentView(
-                            key: const ValueKey('sent'),
-                            email: _emailController.text,
-                            onTryDifferent: _tryDifferentEmail,
-                            onBack: _goBack,
-                          )
-                        : _showMagicLink
-                            ? _MagicLinkForm(
-                                key: const ValueKey('form'),
-                                emailController: _emailController,
-                                error: _magicLinkError,
-                                onSend: _sendMagicLink,
-                                onBack: _goBack,
-                                onEmailChanged: () {
-                                  if (_magicLinkError != null) {
-                                    setState(() => _magicLinkError = null);
-                                  }
-                                },
-                              )
-                            : _SignInOptionsSection(
-                                key: const ValueKey('options'),
-                                termsAccepted: _termsAccepted,
-                                errorMessage: _errorMessage,
-                                onTermsChanged: (value) {
-                                  setState(() {
-                                    _termsAccepted = value;
-                                    if (_termsAccepted) _errorMessage = null;
-                                  });
-                                },
-                                onGoogleSignIn: _signInWithGoogle,
-                                onMagicLinkPressed: () {
-                                  setState(() => _showMagicLink = true);
-                                },
-                                onBack: _goBack,
-                              ),
+                  // App name at top - fixed height
+                  SizedBox(
+                    height: headerHeight,
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.school_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'AssignX',
+                            style: AppTextStyles.headingSmall.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 600.ms).slideY(
+                            begin: -0.3,
+                            duration: 600.ms,
+                            curve: Curves.easeOutBack,
+                          ),
+                    ),
+                  ),
+
+                  // Lottie animation - flexible space
+                  Expanded(
+                    flex: 2,
+                    child: Center(
+                      child: _LottieHero(
+                        floatAnimation: _floatController,
+                        size: lottieSize,
+                      ),
+                    ),
+                  ),
+
+                  // Bottom content section with glass morphism
+                  Flexible(
+                    flex: 3,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.1),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _magicLinkSent
+                          ? _MagicLinkSentView(
+                              key: const ValueKey('sent'),
+                              email: _emailController.text,
+                              onTryDifferent: _tryDifferentEmail,
+                              onBack: _goBack,
+                            )
+                          : _showMagicLink
+                              ? _MagicLinkForm(
+                                  key: const ValueKey('form'),
+                                  emailController: _emailController,
+                                  error: _magicLinkError,
+                                  onSend: _sendMagicLink,
+                                  onBack: _goBack,
+                                  onEmailChanged: () {
+                                    if (_magicLinkError != null) {
+                                      setState(() => _magicLinkError = null);
+                                    }
+                                  },
+                                )
+                              : _SignInOptionsSection(
+                                  key: const ValueKey('options'),
+                                  termsAccepted: _termsAccepted,
+                                  errorMessage: _errorMessage,
+                                  onTermsChanged: (value) {
+                                    setState(() {
+                                      _termsAccepted = value;
+                                      if (_termsAccepted) _errorMessage = null;
+                                    });
+                                  },
+                                  onGoogleSignIn: _signInWithGoogle,
+                                  onMagicLinkPressed: () {
+                                    setState(() => _showMagicLink = true);
+                                  },
+                                  onBack: _goBack,
+                                ),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
       ),
     );
   }
@@ -384,15 +389,15 @@ class _MeshGradientBackground extends StatelessWidget {
 /// Lottie animation hero for sign-in screen (game animation).
 class _LottieHero extends StatelessWidget {
   final AnimationController floatAnimation;
+  final double size;
 
-  const _LottieHero({required this.floatAnimation});
+  const _LottieHero({
+    required this.floatAnimation,
+    required this.size,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Make size responsive - 40% of screen width, max 250px
-    final screenWidth = MediaQuery.of(context).size.width;
-    final size = (screenWidth * 0.4).clamp(180.0, 250.0);
-
     return AnimatedBuilder(
       animation: floatAnimation,
       builder: (context, child) {
@@ -406,8 +411,9 @@ class _LottieHero extends StatelessWidget {
       },
       child: SizedBox(
         height: size,
-        child: Lottie.asset(
-          'assets/animations/game.json',
+        width: size,
+        child: Lottie.network(
+          'https://lottie.host/350df33f-fcc3-476f-9b46-475b0ab98268/u13av2s6ax.json',
           fit: BoxFit.contain,
           animate: true,
           repeat: true,
@@ -553,7 +559,7 @@ class _SignInOptionsSection extends StatelessWidget {
                       Expanded(
                         child: Text(
                           errorMessage!,
-                          style: const TextStyle(
+                          style: AppTextStyles.caption.copyWith(
                             color: AppColors.error,
                             fontSize: 12,
                           ),
@@ -605,20 +611,20 @@ class _SignInOptionsSection extends StatelessWidget {
                             color: AppColors.textSecondary,
                             fontSize: 12,
                           ),
-                          children: const [
-                            TextSpan(text: 'I agree to the '),
+                          children: [
+                            const TextSpan(text: 'I agree to the '),
                             TextSpan(
                               text: 'Terms',
-                              style: TextStyle(
-                                color: Color(0xFF42A5F5),
+                              style: AppTextStyles.caption.copyWith(
+                                color: const Color(0xFF42A5F5),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            TextSpan(text: ' and '),
+                            const TextSpan(text: ' and '),
                             TextSpan(
                               text: 'Privacy Policy',
-                              style: TextStyle(
-                                color: Color(0xFF42A5F5),
+                              style: AppTextStyles.caption.copyWith(
+                                color: const Color(0xFF42A5F5),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -666,9 +672,12 @@ class _SignInOptionsSection extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: termsAccepted ? onMagicLinkPressed : null,
                   icon: const Icon(Icons.mail_outline_rounded, size: 20),
-                  label: const Text(
+                  label: Text(
                     'Sign in with Email',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(
@@ -808,9 +817,9 @@ class _GoogleSignInButton extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'Continue with Google',
-                style: TextStyle(
+                style: AppTextStyles.labelMedium.copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -907,7 +916,7 @@ class _MagicLinkSentView extends StatelessWidget {
                     const TextSpan(text: 'We sent a magic link to\n'),
                     TextSpan(
                       text: email,
-                      style: const TextStyle(
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
@@ -935,9 +944,9 @@ class _MagicLinkSentView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Try a different email',
-                    style: TextStyle(fontSize: 14),
+                    style: AppTextStyles.labelMedium.copyWith(fontSize: 14),
                   ),
                 ),
               ),
@@ -1008,9 +1017,9 @@ class _MagicLinkForm extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                  label: const Text(
+                  label: Text(
                     'Back to options',
-                    style: TextStyle(fontSize: 14),
+                    style: AppTextStyles.labelMedium.copyWith(fontSize: 14),
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
@@ -1058,10 +1067,13 @@ class _MagicLinkForm extends StatelessWidget {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => onSend(),
-                style: const TextStyle(fontSize: 14),
+                style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Enter your email address',
-                  hintStyle: const TextStyle(fontSize: 14),
+                  hintStyle: AppTextStyles.bodySmall.copyWith(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                   prefixIcon: const Icon(Icons.email_outlined, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1110,11 +1122,12 @@ class _MagicLinkForm extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     'Send Magic Link',
-                    style: TextStyle(
+                    style: AppTextStyles.labelMedium.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),

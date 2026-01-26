@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Glass morphism container with backdrop blur effect.
 ///
@@ -619,7 +620,7 @@ class _GlassButtonState extends State<GlassButton> {
               if (widget.label != null)
                 Text(
                   widget.label!,
-                  style: TextStyle(
+                  style: AppTextStyles.labelLarge.copyWith(
                     fontSize: widget.fontSize,
                     fontWeight: widget.fontWeight,
                     color: fgColor,

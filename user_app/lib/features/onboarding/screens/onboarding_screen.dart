@@ -28,25 +28,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _userInteracted = false;
 
   /// Onboarding slides data.
-  /// Each slide has gradient colors, title, subtitle, and Lottie animation asset.
+  /// Each slide has gradient colors, title, subtitle, and Lottie animation URL.
   static const _pages = [
     {
       'gradientColors': [Color(0xFFEC407A), Color(0xFFF48FB1)], // Pink
       'title': 'Expert Help',
       'subtitle': 'Get professional assistance at your fingertips, anytime',
-      'lottieAsset': 'assets/animations/computer.json',
+      'lottieUrl': 'https://lottie.host/715ac670-afd6-4524-986e-e00f6d039876/vOvWdIeO1B.json',
     },
     {
       'gradientColors': [Color(0xFF42A5F5), Color(0xFF90CAF9)], // Blue
       'title': 'Versatile Projects',
       'subtitle': 'From essays to presentations, we handle it all for you',
-      'lottieAsset': 'assets/animations/game.json',
+      'lottieUrl': 'https://lottie.host/5533bf32-9e5e-4767-82d9-d08a4fde91b8/fHuLWM1ODi.json',
     },
     {
       'gradientColors': [Color(0xFF66BB6A), Color(0xFFA5D6A7)], // Green (changed from pink)
       'title': 'Your Journey Starts',
       'subtitle': 'Join thousands of students achieving academic success',
-      'lottieAsset': 'assets/animations/pizza.json',
+      'lottieUrl': 'https://lottie.host/f5451620-d8db-4e9d-b228-de3b65c936d7/uSnBXiDaWD.json',
     },
   ];
 
@@ -150,7 +150,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                 return _OnboardingLottieContent(
                   topSectionHeight: topSectionHeight,
-                  lottieAsset: page['lottieAsset'] as String,
+                  lottieUrl: page['lottieUrl'] as String,
                   isActive: index == _currentPage,
                 );
               },
@@ -558,12 +558,12 @@ class _TrianglePainter extends CustomPainter {
 /// Lottie animation content centered in the curved area.
 class _OnboardingLottieContent extends StatelessWidget {
   final double topSectionHeight;
-  final String lottieAsset;
+  final String lottieUrl;
   final bool isActive;
 
   const _OnboardingLottieContent({
     required this.topSectionHeight,
-    required this.lottieAsset,
+    required this.lottieUrl,
     required this.isActive,
   });
 
@@ -579,7 +579,7 @@ class _OnboardingLottieContent extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 40),
                 child: _LottieAnimation(
-                  asset: lottieAsset,
+                  url: lottieUrl,
                   isActive: isActive,
                 ),
               ),
@@ -591,13 +591,13 @@ class _OnboardingLottieContent extends StatelessWidget {
   }
 }
 
-/// Lottie animation widget without container - clean look.
+/// Lottie animation widget using network URLs.
 class _LottieAnimation extends StatelessWidget {
-  final String asset;
+  final String url;
   final bool isActive;
 
   const _LottieAnimation({
-    required this.asset,
+    required this.url,
     required this.isActive,
   });
 
@@ -610,8 +610,8 @@ class _LottieAnimation extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Lottie.asset(
-        asset,
+      child: Lottie.network(
+        url,
         fit: BoxFit.contain,
         animate: isActive,
         repeat: true,
@@ -761,9 +761,9 @@ class _NextButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Text(
+          child: Text(
             'Get Started',
-            style: TextStyle(
+            style: AppTextStyles.labelLarge.copyWith(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w600,

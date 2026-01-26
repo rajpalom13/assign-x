@@ -9,8 +9,6 @@ import { DashboardClientShell } from "@/components/dashboard/dashboard-client-sh
 import { WalletPill } from "@/components/dashboard/wallet-pill";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { DockNav } from "@/components/dock";
-import { TourProvider, Tour } from "@/components/onboarding";
-import { markTourCompleted } from "@/lib/actions/data";
 
 /**
  * Page title configuration for each route
@@ -74,21 +72,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const pageTitle = pageTitles[pathname] || "Dashboard";
 
-  /**
-   * Handle tour completion - saves to database
-   */
-  const handleTourComplete = async () => {
-    try {
-      await markTourCompleted();
-    } catch (error) {
-      // Silently fail - local storage already has the completion status
-      console.error("Failed to save tour completion to database:", error);
-    }
-  };
-
   return (
-    <TourProvider autoStart onComplete={handleTourComplete}>
-      <div className="h-screen flex flex-col bg-background" data-tour="welcome">
+    <div className="h-screen flex flex-col bg-background">
         {/* Header */}
         <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-2 dashboard-header-glass border-b border-border/30 transition-all duration-200 px-4 md:px-6">
           {/* Left: Logo + Page Title */}
@@ -135,10 +120,6 @@ export default function DashboardLayout({
 
         {/* Dock Navigation */}
         <DockNav />
-
-        {/* Onboarding Tour */}
-        <Tour />
       </div>
-    </TourProvider>
   );
 }

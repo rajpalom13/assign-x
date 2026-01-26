@@ -46,6 +46,24 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
 }
 
 :root {
@@ -835,9 +853,6 @@
     border-color: color-mix(in oklch, var(--border), transparent 20%);
   }
 
-
-
-
   /* Design System - Transaction Item */
   .transaction-item {
     display: flex;
@@ -975,7 +990,6 @@
     border-color: color-mix(in oklch, var(--border), transparent 20%);
     box-shadow: 0 4px 16px color-mix(in oklch, var(--foreground), transparent 96%);
   }
-
 
   /* ========================================
    * BENTO GRID LAYOUT
@@ -1337,4 +1351,46 @@
 
 .animate-spin-slow {
   animation: spin-slow 4s linear infinite;
+}
+
+/* Campus Connect Carousel Animations */
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 3s ease-in-out;
+}
+
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

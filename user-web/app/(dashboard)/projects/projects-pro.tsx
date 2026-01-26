@@ -66,7 +66,7 @@ const statusConfig: Record<string, { label: string; dot: string }> = {
   payment_pending: { label: "Payment Due", dot: "bg-rose-500" },
   paid: { label: "Paid", dot: "bg-blue-500" },
   assigning: { label: "Matching Expert", dot: "bg-blue-500" },
-  assigned: { label: "Expert Assigned", dot: "bg-sky-500" },
+  assigned: { label: "Expert Assigned", dot: "bg-violet-500" },
   in_progress: { label: "In Progress", dot: "bg-violet-500" },
   submitted_for_qc: { label: "Quality Check", dot: "bg-indigo-500" },
   qc_in_progress: { label: "QC Review", dot: "bg-indigo-500" },
@@ -272,48 +272,52 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
                     </div>
                   </button>
 
-                  {/* Active Projects Card */}
+                  {/* Active Projects Card - Enhanced violet styling */}
                   <button
                     onClick={() => setSelectedTab("in_progress")}
                     className={cn(
-                      "group relative overflow-hidden rounded-[20px] p-4 lg:p-5 backdrop-blur-xl border transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 text-left",
+                      "group relative overflow-hidden rounded-[20px] p-4 lg:p-5 backdrop-blur-xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 text-left",
                       selectedTab === "in_progress"
-                        ? "bg-violet-50/80 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800"
-                        : "bg-white/70 dark:bg-white/5 border-white/50 dark:border-white/10 hover:bg-white/90 dark:hover:bg-white/10"
+                        ? "bg-violet-100/90 dark:bg-violet-950/50 border-violet-300 dark:border-violet-700 shadow-lg shadow-violet-500/10"
+                        : "bg-white/80 dark:bg-violet-950/20 border-violet-200/60 dark:border-violet-800/40 hover:bg-violet-50/80 dark:hover:bg-violet-950/40 hover:border-violet-300/80 dark:hover:border-violet-700/60"
                     )}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-100/40 to-purple-50/20 dark:from-violet-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-200/50 to-purple-100/30 dark:from-violet-800/30 dark:to-purple-900/20 pointer-events-none rounded-[20px]" />
+                    {/* Subtle glow */}
+                    <div className="absolute -inset-px rounded-[20px] bg-gradient-to-br from-violet-400/10 via-transparent to-purple-400/5 pointer-events-none" />
                     <div className="relative z-10">
-                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/20">
+                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/30">
                         <Zap className="h-5 w-5 text-white" strokeWidth={1.5} />
                       </div>
                       <span className="text-3xl font-bold text-foreground">{stats.inProgress}</span>
                       <h3 className="font-medium text-foreground text-sm mt-1">Active Projects</h3>
                       <p className="text-xs text-muted-foreground/80 mt-0.5">Being worked on</p>
                     </div>
-                    <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-violet-500/60 dark:text-violet-400/60 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                   </button>
 
-                  {/* Completed Card */}
+                  {/* Completed Card - Enhanced emerald styling */}
                   <button
                     onClick={() => setSelectedTab("history")}
                     className={cn(
-                      "group relative overflow-hidden rounded-[20px] p-4 lg:p-5 backdrop-blur-xl border transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 text-left",
+                      "group relative overflow-hidden rounded-[20px] p-4 lg:p-5 backdrop-blur-xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 text-left",
                       selectedTab === "history"
-                        ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
-                        : "bg-white/70 dark:bg-white/5 border-white/50 dark:border-white/10 hover:bg-white/90 dark:hover:bg-white/10"
+                        ? "bg-emerald-100/90 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 shadow-lg shadow-emerald-500/10"
+                        : "bg-white/80 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-800/40 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 hover:border-emerald-300/80 dark:hover:border-emerald-700/60"
                     )}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-200/50 to-teal-100/30 dark:from-emerald-800/30 dark:to-teal-900/20 pointer-events-none rounded-[20px]" />
+                    {/* Subtle glow */}
+                    <div className="absolute -inset-px rounded-[20px] bg-gradient-to-br from-emerald-400/10 via-transparent to-teal-400/5 pointer-events-none" />
                     <div className="relative z-10">
-                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+                      <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
                         <CheckCircle2 className="h-5 w-5 text-white" strokeWidth={1.5} />
                       </div>
                       <span className="text-3xl font-bold text-foreground">{stats.completed}</span>
                       <h3 className="font-medium text-foreground text-sm mt-1">Completed</h3>
                       <p className="text-xs text-muted-foreground/80 mt-0.5">All done</p>
                     </div>
-                    <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                    <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-emerald-500/60 dark:text-emerald-400/60 opacity-0 group-hover:opacity-100 transition-all duration-300" />
                   </button>
                 </div>
               </div>
@@ -487,7 +491,7 @@ function PaymentCard({
 }
 
 /**
- * Project Card - Glassmorphic Style
+ * Project Card - Glassmorphic Style with Enhanced Visibility
  */
 function ProjectCard({ project, onClick }: { project: Project; onClick: () => void }) {
   const status = statusConfig[project.status] || statusConfig.submitted;
@@ -501,19 +505,30 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   const deadlineUrgency = getDeadlineUrgency(project.deadline);
   const projectNumber = project.project_number || project.projectNumber;
 
-  // Card accent color based on status
+  // Card accent color based on status - ENHANCED for better visibility
   const getAccentColor = () => {
-    if (isDelivered || isCompleted) return "from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10";
-    if (isActive) return "from-violet-100/40 to-purple-50/20 dark:from-violet-900/10";
-    if (isDraft) return "from-gray-100/40 to-slate-50/20 dark:from-gray-900/10";
-    return "from-amber-100/40 to-orange-50/20 dark:from-amber-900/10";
+    if (isDelivered || isCompleted) return "from-emerald-100/60 to-teal-50/40 dark:from-emerald-900/30 dark:to-emerald-950/20";
+    if (isActive) return "from-violet-100/70 to-purple-100/50 dark:from-violet-900/40 dark:to-purple-950/30";
+    if (isDraft) return "from-gray-100/50 to-slate-50/30 dark:from-gray-900/20 dark:to-slate-950/10";
+    return "from-amber-100/60 to-orange-50/40 dark:from-amber-900/30 dark:to-orange-950/20";
   };
 
   const getIconBg = () => {
     if (isDelivered || isCompleted) return "from-emerald-400 to-teal-500";
-    if (isActive) return "from-violet-400 to-purple-500";
+    if (isActive) return "from-violet-500 to-purple-600";
     if (isDraft) return "from-gray-400 to-slate-500";
     return "from-amber-400 to-orange-500";
+  };
+
+  // Card background and border styling based on status
+  const getCardStyle = () => {
+    if (isActive) {
+      return "bg-white/80 dark:bg-violet-950/40 border-violet-200/70 dark:border-violet-700/50 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-violet-500/10";
+    }
+    if (isDelivered || isCompleted) {
+      return "bg-white/80 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/40 hover:border-emerald-300 dark:hover:border-emerald-700";
+    }
+    return "bg-white/70 dark:bg-white/5 border-white/50 dark:border-white/10 hover:bg-white/90 dark:hover:bg-white/10";
   };
 
   const StatusIcon = isDelivered || isCompleted ? CheckCircle2 : isActive ? Zap : isDraft ? FileText : Clock;
@@ -521,10 +536,18 @@ function ProjectCard({ project, onClick }: { project: Project; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="group relative overflow-hidden rounded-[20px] p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
+      className={cn(
+        "group relative overflow-hidden rounded-[20px] p-5 backdrop-blur-xl border cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
+        getCardStyle()
+      )}
     >
       {/* Gradient overlay */}
       <div className={cn("absolute inset-0 bg-gradient-to-br pointer-events-none rounded-[20px]", getAccentColor())} />
+
+      {/* Active status glow effect */}
+      {isActive && (
+        <div className="absolute -inset-px rounded-[20px] bg-gradient-to-br from-violet-400/20 via-transparent to-purple-400/10 pointer-events-none" />
+      )}
 
       <div className="relative z-10">
         {/* Icon + Status Row */}

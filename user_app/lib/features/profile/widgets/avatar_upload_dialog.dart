@@ -308,7 +308,7 @@ class _AvatarUploadDialogState extends ConsumerState<AvatarUploadDialog> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDestructive ? AppColors.error.withAlpha(50) : AppColors.border,
+              color: isDestructive ? AppColors.error.withValues(alpha: 0.2) : AppColors.border,
             ),
           ),
           child: Row(
@@ -489,7 +489,7 @@ class _AvatarOptionsSheetState extends ConsumerState<AvatarOptionsSheet> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withAlpha(30),
+                  color: AppColors.primaryLight.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -509,7 +509,7 @@ class _AvatarOptionsSheetState extends ConsumerState<AvatarOptionsSheet> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withAlpha(30),
+                  color: AppColors.primaryLight.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -540,12 +540,12 @@ class _AvatarOptionsSheetState extends ConsumerState<AvatarOptionsSheet> {
               ),
               title: Text(
                 'Remove Photo',
-                style: TextStyle(color: AppColors.error),
+                style: AppTextStyles.labelLarge.copyWith(color: AppColors.error),
               ),
               subtitle: Text(
                 'Delete your profile picture',
                 style: AppTextStyles.caption.copyWith(
-                  color: AppColors.error.withAlpha(180),
+                  color: AppColors.error.withValues(alpha: 0.71),
                 ),
               ),
               onTap: _handleRemove,

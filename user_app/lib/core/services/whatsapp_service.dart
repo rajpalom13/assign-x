@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../constants/app_text_styles.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -220,20 +221,20 @@ class WhatsAppSupportSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'WhatsApp Support',
-                      style: TextStyle(
+                      style: AppTextStyles.headingSmall.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       'Get help instantly via WhatsApp',
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey,
                         fontSize: 14,
                       ),

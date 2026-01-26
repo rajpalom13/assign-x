@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
+import '../../core/constants/app_text_styles.dart';
 
 /// Button variant types.
 enum AppButtonVariant {
@@ -184,7 +185,7 @@ class AppButton extends StatelessWidget {
         ],
         Text(
           label,
-          style: TextStyle(
+          style: AppTextStyles.labelLarge.copyWith(
             fontSize: _getFontSize(),
             fontWeight: FontWeight.w600,
           ),

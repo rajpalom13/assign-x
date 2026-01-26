@@ -45,19 +45,19 @@ function StatCard({ label, value, color, isActive, onClick, isLoading }: {
 }) {
   return (
     <Card
-      className={`cursor-pointer hover:bg-muted/50 transition-colors ${isActive ? "ring-2 ring-primary" : ""}`}
+      className={`cursor-pointer hover:bg-muted/50 transition-all duration-200 rounded-xl ${isActive ? "ring-2 ring-primary shadow-md" : "hover:shadow-md"}`}
       onClick={onClick}
     >
-      <CardContent className="pt-6">
+      <CardContent className="p-6">
         {isLoading ? (
           <>
-            <Skeleton className="h-8 w-12 mb-1" />
-            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-9 w-14 mb-2" />
+            <Skeleton className="h-4 w-24" />
           </>
         ) : (
           <>
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">{label}</p>
           </>
         )}
       </CardContent>
@@ -186,21 +186,26 @@ export function DoerList() {
   }
 
   const LoadingCard = () => (
-    <div className="p-6 rounded-lg border bg-card space-y-4">
+    <div className="p-5 rounded-xl border bg-card space-y-4">
       <div className="flex items-center gap-4">
         <Skeleton className="h-12 w-12 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-4 w-24" />
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
         </div>
       </div>
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
+      <div className="flex gap-4">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-24" />
       </div>
       <div className="flex gap-2">
-        <Skeleton className="h-6 w-16" />
-        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+      <div className="pt-3 border-t flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-24 rounded-full" />
       </div>
     </div>
   )
@@ -208,7 +213,7 @@ export function DoerList() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-4">
         <StatCard label="Total Doers" value={stats.total} color="" isActive={statusFilter === "all"} onClick={() => setStatusFilter("all")} isLoading={isLoading} />
         <StatCard label="Available" value={stats.available} color="text-green-600" isActive={statusFilter === "available"} onClick={() => setStatusFilter("available")} isLoading={isLoading} />
         <StatCard label="Busy" value={stats.busy} color="text-amber-600" isActive={statusFilter === "busy"} onClick={() => setStatusFilter("busy")} isLoading={isLoading} />
@@ -216,8 +221,8 @@ export function DoerList() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="rounded-xl">
+        <CardContent className="p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -261,21 +266,25 @@ export function DoerList() {
 
       {/* Doer Grid */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
         </div>
       ) : filteredDoers.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium">No doers found</h3>
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold">No doers found</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                Try adjusting your filters or search criteria to find more results.
+              </p>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDoers.map((doer) => (
             <DoerCard key={doer.id} doer={doer} onClick={() => handleDoerSelect(doer)} />
           ))}

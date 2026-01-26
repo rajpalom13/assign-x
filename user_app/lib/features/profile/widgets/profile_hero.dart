@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/repositories/profile_repository.dart';
+import 'account_badge.dart';
 
 /// Hero section for profile screen with avatar, name, and university.
 class ProfileHero extends StatelessWidget {
@@ -201,21 +202,27 @@ class ProfileHero extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Role badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(50),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                profile.role,
-                style: AppTextStyles.caption.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
+            // Account type badge with glass styling
+            if (profile.userType != null)
+              AccountBadgeGlass.fromUserType(
+                userType: profile.userType,
+                isVerified: profile.isVerified,
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(50),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  profile.role,
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 40), // Space for stats card overlap
           ],
@@ -301,9 +308,24 @@ class CompactProfileHeader extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        profile.name ?? 'User',
-                        style: AppTextStyles.labelLarge,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              profile.name ?? 'User',
+                              style: AppTextStyles.labelLarge,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (profile.userType != null) ...[
+                            const SizedBox(width: 8),
+                            CompactAccountBadge.fromUserType(
+                              userType: profile.userType,
+                              isVerified: profile.isVerified,
+                              size: 20,
+                            ),
+                          ],
+                        ],
                       ),
                       if (profile.email.isNotEmpty)
                         Text(

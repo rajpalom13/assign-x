@@ -12,5 +12,6 @@ export 'empty_state.dart';
 export 'glass_container.dart';
 export 'loading_overlay.dart';
 export 'mesh_gradient_background.dart';
+export 'moderation_dialog.dart';
 export 'skeleton_loader.dart';
 export 'support_fab.dart';

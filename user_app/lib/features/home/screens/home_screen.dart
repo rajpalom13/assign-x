@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/project_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/home_provider.dart';
@@ -176,7 +177,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Text(
             _getGreeting(),
-            style: const TextStyle(
+            style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w300,
               color: AppColors.textSecondary,
@@ -185,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           Text(
             userName,
-            style: const TextStyle(
+            style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -195,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 8),
           Text(
             'Ready to tackle your assignments?',
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               fontSize: 14,
               color: AppColors.textTertiary,
             ),
@@ -240,9 +241,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Needs Attention',
-                style: TextStyle(
+                style: AppTextStyles.labelLarge.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
@@ -251,7 +252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const Spacer(),
               Text(
                 '${projects.length} item${projects.length > 1 ? 's' : ''}',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 13,
                   color: AppColors.textTertiary,
                 ),
@@ -310,7 +311,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   project.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -328,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     project.status.displayName,
-                    style: TextStyle(
+                    style: AppTextStyles.caption.copyWith(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: project.status.color,
@@ -361,9 +362,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Quick Actions',
-            style: TextStyle(
+            style: AppTextStyles.labelLarge.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -465,9 +466,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Text(
+                Text(
                   'New Assignment',
-                  style: TextStyle(
+                  style: AppTextStyles.labelLarge.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -476,7 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 2),
                 Text(
                   'Submit your work',
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.8),
                   ),
@@ -518,7 +519,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const Spacer(),
           Text(
             count.toString(),
-            style: const TextStyle(
+            style: AppTextStyles.displayMedium.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -526,9 +527,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Active Projects',
-            style: TextStyle(
+            style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -563,7 +564,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const Spacer(),
           Text(
             '\u20B9${balance.toStringAsFixed(0)}',
-            style: const TextStyle(
+            style: AppTextStyles.headingMedium.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -571,9 +572,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Wallet Balance',
-            style: TextStyle(
+            style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -606,9 +607,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const Spacer(),
-          const Text(
+          Text(
             'Quick Help',
-            style: TextStyle(
+            style: AppTextStyles.labelLarge.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -617,7 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 2),
           Text(
             'FAQs & Support',
-            style: TextStyle(
+            style: AppTextStyles.caption.copyWith(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -750,7 +751,7 @@ class HomeLoadingOverlay extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Loading...',
-                    style: TextStyle(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: AppColors.textSecondary,

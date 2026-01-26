@@ -6,11 +6,20 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/marketplace_model.dart';
+import '../../../data/models/user_type.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/marketplace_provider.dart';
+import '../../../shared/widgets/dashboard_app_bar.dart';
 import '../widgets/campus_connect_hero.dart';
+import '../widgets/college_filter.dart';
 import '../widgets/filter_tabs_bar.dart';
 import '../widgets/post_card.dart';
 import '../widgets/search_bar_widget.dart';
+import '../widgets/housing_filters.dart';
+import '../widgets/event_filters.dart';
+import '../widgets/resource_filters.dart';
+import '../widgets/housing_restricted_state.dart';
+import '../widgets/campus_connect_filter_sheet.dart';
 
 /// Campus Connect screen with staggered feed of community content.
 ///
@@ -28,9 +37,26 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
   CampusConnectCategory? _selectedCategory;
   String _searchQuery = '';
 
+  // Internal filters for each category
+  HousingFilters _housingFilters = HousingFilters.empty;
+  EventFilters _eventFilters = EventFilters.empty;
+  ResourceFilters _resourceFilters = ResourceFilters.empty;
+
+  /// Check if current user is a student.
+  bool _isStudent(WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+    final profile = authState.valueOrNull?.profile;
+    return profile?.userType == UserType.student;
+  }
+
   @override
   Widget build(BuildContext context) {
     final listingsAsync = ref.watch(marketplaceListingsProvider);
+    final isStudent = _isStudent(ref);
+
+    // Check if non-student is trying to view housing
+    final isHousingRestricted =
+        !isStudent && _selectedCategory == CampusConnectCategory.housing;
 
     return Scaffold(
       // Transparent to show SubtleGradientScaffold from MainShell
@@ -43,17 +69,9 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
             },
             child: CustomScrollView(
               slivers: [
-                // Header bar
-                SliverToBoxAdapter(
-                  child: CampusConnectHeader(
-                    walletBalance: 10100,
-                    onNotificationTap: () {
-                      // Handle notification tap
-                    },
-                    onWalletTap: () {
-                      // Handle wallet tap
-                    },
-                  ),
+                // Unified Dashboard App Bar (dark theme)
+                const SliverToBoxAdapter(
+                  child: DashboardAppBar(),
                 ),
 
                 // Gradient hero section with chat icon
@@ -71,21 +89,51 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                       });
                     },
                     onFilterTap: () {
-                      // Show filter bottom sheet
-                      _showFilterSheet(context);
+                      // Show unified filter sheet (web-style with tabs)
+                      _showUnifiedFilterSheet(context);
                     },
                   ),
                 ),
 
-                // Filter tabs
+                // Filter tabs with college filter - pass isStudent to conditionally show housing
                 SliverToBoxAdapter(
-                  child: FilterTabsBar(
-                    selectedCategory: _selectedCategory,
-                    onCategoryChanged: (category) {
-                      setState(() {
-                        _selectedCategory = category;
-                      });
-                    },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FilterTabsBar(
+                        selectedCategory: _selectedCategory,
+                        onCategoryChanged: (category) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                        },
+                        isStudent: isStudent,
+                      ),
+                      // College filter chip and internal filters row
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            CollegeFilterChip(
+                              onFilterChanged: () {
+                                // Refresh listings when filter changes
+                                setState(() {});
+                              },
+                            ),
+                            // Internal filter button for filterable categories
+                            if (_selectedCategory != null &&
+                                _hasInternalFilters(_selectedCategory!)) ...[
+                              const SizedBox(width: 8),
+                              _InternalFilterChip(
+                                category: _selectedCategory!,
+                                filterCount: _getFilterCountForCategory(_selectedCategory!),
+                                onTap: () => _showInternalFilters(context, _selectedCategory!),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -104,10 +152,27 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
                 // Staggered posts grid
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: listingsAsync.when(
+                  sliver: isHousingRestricted
+                      // Show housing restricted state for non-students
+                      ? SliverToBoxAdapter(
+                          child: HousingRestrictedState(
+                            onClearFilters: () {
+                              setState(() {
+                                _selectedCategory = null;
+                              });
+                            },
+                          ),
+                        )
+                      : listingsAsync.when(
                     data: (listings) {
                       // Filter listings based on selected category and search
-                      final filteredListings = _filterListings(listings);
+                      // Also filter out housing for non-students
+                      var filteredListings = _filterListings(listings);
+                      if (!isStudent) {
+                        filteredListings = filteredListings
+                            .where((l) => l.type != ListingType.housing)
+                            .toList();
+                      }
 
                       if (filteredListings.isEmpty) {
                         return SliverToBoxAdapter(
@@ -154,8 +219,8 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
             right: 20,
             child: _FloatingActionButton(
               onTap: () {
-                // Handle FAB tap - create new post
-                context.push('/marketplace/create');
+                // Handle FAB tap - create new Campus Connect post
+                context.push('/campus-connect/create');
               },
             ),
           ),
@@ -164,26 +229,100 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     );
   }
 
-  /// Filter listings based on category and search query.
+  /// Filter listings based on category, search query, college filter, and internal filters.
+  /// Updated to match web categories: All, Events, Housing, Resources, Discussions
   List<MarketplaceListing> _filterListings(List<MarketplaceListing> listings) {
     var filtered = listings;
 
-    // Filter by category
-    if (_selectedCategory != null) {
+    // Filter by college
+    final collegeFilter = ref.read(collegeFilterProvider);
+    final filterCollege = collegeFilter.filterCollege;
+    if (filterCollege != null) {
+      filtered = filtered.where((listing) {
+        // Match by collegeName or userUniversity field
+        final listingCollege = listing.collegeName ?? listing.userUniversity;
+        if (listingCollege == null) return false;
+        return listingCollege.toLowerCase().contains(filterCollege.toLowerCase());
+      }).toList();
+    }
+
+    // Filter by category (web-style categories)
+    if (_selectedCategory != null && _selectedCategory != CampusConnectCategory.all) {
       filtered = filtered.where((listing) {
         switch (_selectedCategory!) {
+          case CampusConnectCategory.all:
+            return true; // Show all
+          case CampusConnectCategory.questions:
+            // Questions/academic doubts
+            final title = listing.title.toLowerCase();
+            return listing.type == ListingType.communityPost &&
+                (title.contains('?') ||
+                    title.contains('help') ||
+                    title.contains('how') ||
+                    title.contains('what') ||
+                    title.contains('why'));
+          case CampusConnectCategory.housing:
+            return listing.type == ListingType.housing;
+          case CampusConnectCategory.opportunities:
+            return listing.type == ListingType.opportunity;
+          case CampusConnectCategory.events:
+            return listing.type == ListingType.event;
+          case CampusConnectCategory.marketplace:
+            return listing.type == ListingType.product;
+          case CampusConnectCategory.resources:
+            // Study materials/resources
+            return listing.type == ListingType.product &&
+                (listing.metadata?['resource_type'] != null ||
+                    listing.title.toLowerCase().contains('notes') ||
+                    listing.title.toLowerCase().contains('book'));
+          case CampusConnectCategory.lostFound:
+            // Lost & Found items
+            final title = listing.title.toLowerCase();
+            return listing.type == ListingType.communityPost &&
+                (title.contains('lost') ||
+                    title.contains('found') ||
+                    title.contains('missing'));
+          case CampusConnectCategory.rides:
+            // Carpool/rides
+            final title = listing.title.toLowerCase();
+            return listing.type == ListingType.communityPost &&
+                (title.contains('ride') ||
+                    title.contains('carpool') ||
+                    title.contains('lift'));
+          case CampusConnectCategory.studyGroups:
+            // Study groups
+            final title = listing.title.toLowerCase();
+            return listing.type == ListingType.communityPost &&
+                (title.contains('study group') ||
+                    title.contains('study buddy') ||
+                    title.contains('group study'));
+          case CampusConnectCategory.clubs:
+            // Clubs and societies
+            final title = listing.title.toLowerCase();
+            return listing.type == ListingType.communityPost &&
+                (title.contains('club') ||
+                    title.contains('society') ||
+                    title.contains('team'));
+          case CampusConnectCategory.announcements:
+            // Official announcements
+            return listing.type == ListingType.poll ||
+                (listing.metadata?['is_announcement'] == true);
+          case CampusConnectCategory.discussions:
+            return listing.type == ListingType.communityPost ||
+                listing.type == ListingType.poll;
+          // Legacy categories for backwards compatibility
           case CampusConnectCategory.community:
             return listing.type == ListingType.communityPost ||
                 listing.type == ListingType.poll;
-          case CampusConnectCategory.opportunities:
-            return listing.type == ListingType.event ||
-                listing.type == ListingType.opportunity;
           case CampusConnectCategory.products:
             return listing.type == ListingType.product;
-          case CampusConnectCategory.housing:
-            return listing.type == ListingType.housing;
+          case CampusConnectCategory.saved:
+            return false; // Saved is handled separately
         }
       }).toList();
+
+      // Apply internal filters based on category
+      filtered = _applyInternalFilters(filtered, _selectedCategory!);
     }
 
     // Filter by search query
@@ -202,81 +341,324 @@ class _CampusConnectScreenState extends ConsumerState<CampusConnectScreen> {
     return filtered;
   }
 
-  void _showFilterSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Filter Posts',
-              style: AppTextStyles.headingSmall.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: CampusConnectCategory.values.map((category) {
-                final isSelected = _selectedCategory == category;
-                return Material(
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedCategory =
-                            isSelected ? null : category;
-                      });
-                      Navigator.pop(context);
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.border,
-                        ),
-                      ),
-                      child: Text(
-                        category.label,
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+  /// Apply internal filters based on category type.
+  List<MarketplaceListing> _applyInternalFilters(
+    List<MarketplaceListing> listings,
+    CampusConnectCategory category,
+  ) {
+    switch (category) {
+      case CampusConnectCategory.housing:
+        return _applyHousingFilters(listings);
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+        return _applyEventFilters(listings);
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+      case CampusConnectCategory.marketplace:
+        return _applyResourceFilters(listings);
+      default:
+        return listings;
+    }
+  }
+
+  /// Apply housing-specific filters.
+  List<MarketplaceListing> _applyHousingFilters(List<MarketplaceListing> listings) {
+    if (!_housingFilters.hasActiveFilters) return listings;
+
+    return listings.where((listing) {
+      // Filter by price range
+      if (listing.price != null) {
+        if (listing.price! < _housingFilters.priceRange.start) return false;
+        if (listing.price! > _housingFilters.priceRange.end) return false;
+      }
+
+      // Filter by location
+      if (_housingFilters.location != null && _housingFilters.location!.isNotEmpty) {
+        if (listing.location == null) return false;
+        if (!listing.location!.toLowerCase().contains(_housingFilters.location!.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // Filter by distance from campus
+      if (_housingFilters.distanceFromCampus != null && listing.distanceKm != null) {
+        final maxDistanceKm = _getDistanceInKm(_housingFilters.distanceFromCampus!);
+        if (listing.distanceKm! > maxDistanceKm) return false;
+      }
+
+      // Filter by property type (from metadata)
+      if (_housingFilters.propertyType.isNotEmpty) {
+        final propertyType = listing.metadata?['property_type'] as String?;
+        if (propertyType == null || !_housingFilters.propertyType.contains(propertyType)) {
+          return false;
+        }
+      }
+
+      // Filter by amenities (from metadata)
+      if (_housingFilters.amenities.isNotEmpty) {
+        final listingAmenities = (listing.metadata?['amenities'] as List<dynamic>?)
+            ?.cast<String>() ?? [];
+        final hasAllAmenities = _housingFilters.amenities.every(
+          (amenity) => listingAmenities.contains(amenity),
+        );
+        if (!hasAllAmenities) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  /// Convert distance string to km.
+  double _getDistanceInKm(String distance) {
+    switch (distance) {
+      case '0-1':
+        return 1.0;
+      case '1-2':
+        return 2.0;
+      case '2-5':
+        return 5.0;
+      case '5-10':
+        return 10.0;
+      case '10+':
+        return double.infinity;
+      default:
+        return double.infinity;
+    }
+  }
+
+  /// Apply event-specific filters.
+  List<MarketplaceListing> _applyEventFilters(List<MarketplaceListing> listings) {
+    if (!_eventFilters.hasActiveFilters) return listings;
+
+    return listings.where((listing) {
+      // Filter by event type
+      if (_eventFilters.eventType.isNotEmpty) {
+        final eventType = listing.metadata?['event_type'] as String?;
+        if (eventType == null || !_eventFilters.eventType.contains(eventType)) {
+          return false;
+        }
+      }
+
+      // Filter by date range
+      if (_eventFilters.dateFrom != null) {
+        final eventDate = listing.metadata?['event_date'] != null
+            ? DateTime.tryParse(listing.metadata!['event_date'] as String)
+            : null;
+        if (eventDate != null) {
+          if (eventDate.isBefore(_eventFilters.dateFrom!)) return false;
+          if (_eventFilters.dateTo != null && eventDate.isAfter(_eventFilters.dateTo!)) {
+            return false;
+          }
+        }
+      }
+
+      // Filter by free/paid
+      if (_eventFilters.isFree == true) {
+        if (listing.price != null && listing.price! > 0) return false;
+      } else if (_eventFilters.isFree == false) {
+        if (listing.price == null || listing.price == 0) return false;
+      }
+
+      // Filter by location
+      if (_eventFilters.location != null && _eventFilters.location!.isNotEmpty) {
+        if (listing.location == null) return false;
+        if (!listing.location!.toLowerCase().contains(_eventFilters.location!.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  /// Apply resource-specific filters.
+  List<MarketplaceListing> _applyResourceFilters(List<MarketplaceListing> listings) {
+    if (!_resourceFilters.hasActiveFilters) return listings;
+
+    return listings.where((listing) {
+      // Filter by subject
+      if (_resourceFilters.subject.isNotEmpty) {
+        final subject = listing.metadata?['subject'] as String?;
+        if (subject == null || !_resourceFilters.subject.contains(subject)) {
+          return false;
+        }
+      }
+
+      // Filter by resource type
+      if (_resourceFilters.resourceType.isNotEmpty) {
+        final resourceType = listing.metadata?['resource_type'] as String?;
+        if (resourceType == null || !_resourceFilters.resourceType.contains(resourceType)) {
+          return false;
+        }
+      }
+
+      // Filter by difficulty
+      if (_resourceFilters.difficulty != null) {
+        final difficulty = listing.metadata?['difficulty'] as String?;
+        if (difficulty == null || difficulty != _resourceFilters.difficulty) {
+          return false;
+        }
+      }
+
+      // Filter by minimum rating
+      if (_resourceFilters.minRating != null) {
+        final rating = (listing.metadata?['rating'] as num?)?.toDouble();
+        if (rating == null || rating < _resourceFilters.minRating!) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  /// Get filter count for a specific category
+  int _getFilterCountForCategory(CampusConnectCategory category) {
+    switch (category) {
+      case CampusConnectCategory.housing:
+        return _housingFilters.activeFilterCount;
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+        return _eventFilters.activeFilterCount;
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+      case CampusConnectCategory.marketplace:
+        return _resourceFilters.activeFilterCount;
+      case CampusConnectCategory.all:
+      case CampusConnectCategory.questions:
+      case CampusConnectCategory.lostFound:
+      case CampusConnectCategory.rides:
+      case CampusConnectCategory.studyGroups:
+      case CampusConnectCategory.clubs:
+      case CampusConnectCategory.announcements:
+      case CampusConnectCategory.discussions:
+      case CampusConnectCategory.community:
+      case CampusConnectCategory.saved:
+        return 0;
+    }
+  }
+
+  /// Show housing-specific filters
+  Future<void> _showHousingFilters(BuildContext context) async {
+    final result = await HousingFiltersSheet.show(
+      context,
+      initialFilters: _housingFilters,
     );
+    if (result != null) {
+      setState(() {
+        _housingFilters = result;
+      });
+    }
+  }
+
+  /// Show event-specific filters (used for opportunities)
+  Future<void> _showEventFilters(BuildContext context) async {
+    final result = await EventFiltersSheet.show(
+      context,
+      initialFilters: _eventFilters,
+    );
+    if (result != null) {
+      setState(() {
+        _eventFilters = result;
+      });
+    }
+  }
+
+  /// Show resource-specific filters (used for products)
+  Future<void> _showResourceFilters(BuildContext context) async {
+    final result = await ResourceFiltersSheet.show(
+      context,
+      initialFilters: _resourceFilters,
+    );
+    if (result != null) {
+      setState(() {
+        _resourceFilters = result;
+      });
+    }
+  }
+
+  /// Check if a category has internal filters
+  bool _hasInternalFilters(CampusConnectCategory category) {
+    switch (category) {
+      case CampusConnectCategory.housing:
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+      case CampusConnectCategory.marketplace:
+        return true;
+      case CampusConnectCategory.all:
+      case CampusConnectCategory.questions:
+      case CampusConnectCategory.lostFound:
+      case CampusConnectCategory.rides:
+      case CampusConnectCategory.studyGroups:
+      case CampusConnectCategory.clubs:
+      case CampusConnectCategory.announcements:
+      case CampusConnectCategory.discussions:
+      case CampusConnectCategory.community:
+      case CampusConnectCategory.saved:
+        return false;
+    }
+  }
+
+  /// Show internal filters based on selected category
+  Future<void> _showInternalFilters(BuildContext context, CampusConnectCategory category) async {
+    switch (category) {
+      case CampusConnectCategory.housing:
+        await _showHousingFilters(context);
+        break;
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+        await _showEventFilters(context);
+        break;
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+      case CampusConnectCategory.marketplace:
+        await _showResourceFilters(context);
+        break;
+      default:
+        break;
+    }
+  }
+
+  /// Show the unified filter sheet with all tabs
+  Future<void> _showUnifiedFilterSheet(BuildContext context) async {
+    final currentFilters = CampusConnectFilters(
+      housing: _housingFilters,
+      events: _eventFilters,
+      resources: _resourceFilters,
+    );
+
+    // Determine initial tab based on selected category
+    FilterTab? initialTab;
+    if (_selectedCategory == CampusConnectCategory.housing) {
+      initialTab = FilterTab.housing;
+    } else if (_selectedCategory == CampusConnectCategory.events ||
+        _selectedCategory == CampusConnectCategory.opportunities) {
+      initialTab = FilterTab.events;
+    } else if (_selectedCategory == CampusConnectCategory.resources ||
+        _selectedCategory == CampusConnectCategory.products ||
+        _selectedCategory == CampusConnectCategory.marketplace) {
+      initialTab = FilterTab.resources;
+    }
+
+    final result = await CampusConnectFilterSheet.show(
+      context,
+      initialFilters: currentFilters,
+      initialTab: initialTab,
+    );
+
+    if (result != null) {
+      setState(() {
+        _housingFilters = result.housing;
+        _eventFilters = result.events;
+        _resourceFilters = result.resources;
+      });
+    }
   }
 }
 
-/// Listings count display.
+/// Production-grade listings count display.
 class _ListingsCount extends StatelessWidget {
   final int count;
 
@@ -285,21 +667,67 @@ class _ListingsCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 16),
-      child: Center(
-        child: Text(
-          'Showing $count listings',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: const Color(0xFF8B8B8B),
-            fontSize: 13,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            '$count',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           ),
-        ),
+          const SizedBox(width: 4),
+          Text(
+            'posts',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textTertiary,
+              fontSize: 14,
+            ),
+          ),
+          const Spacer(),
+          // Sort button
+          GestureDetector(
+            onTap: () {
+              // TODO: Show sort options
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.sort_rounded,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Latest',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Floating action button.
+/// Production-grade floating action button.
 class _FloatingActionButton extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -308,10 +736,10 @@ class _FloatingActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.darkBrown,
+      color: AppColors.primary,
       shape: const CircleBorder(),
-      elevation: 6,
-      shadowColor: Colors.black.withAlpha(40),
+      elevation: 4,
+      shadowColor: AppColors.primary.withValues(alpha: 0.3),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -320,7 +748,7 @@ class _FloatingActionButton extends StatelessWidget {
           height: 56,
           alignment: Alignment.center,
           child: const Icon(
-            Icons.add,
+            Icons.add_rounded,
             color: Colors.white,
             size: 28,
           ),
@@ -457,7 +885,7 @@ class _LoadingGrid extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha(10),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -529,7 +957,7 @@ class _EmptyState extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -628,7 +1056,7 @@ class _ErrorState extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -700,6 +1128,124 @@ class _ErrorState extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Internal filter chip button.
+///
+/// Shows a filter icon with the category-specific label and filter count badge.
+/// Matches the design of CollegeFilterChip for visual consistency.
+class _InternalFilterChip extends StatelessWidget {
+  final CampusConnectCategory category;
+  final int filterCount;
+  final VoidCallback onTap;
+
+  const _InternalFilterChip({
+    required this.category,
+    required this.filterCount,
+    required this.onTap,
+  });
+
+  String get _filterLabel {
+    switch (category) {
+      case CampusConnectCategory.housing:
+        return 'Housing Filters';
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+        return 'Event Filters';
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+        return 'Resource Filters';
+      default:
+        return 'Filters';
+    }
+  }
+
+  IconData get _filterIcon {
+    switch (category) {
+      case CampusConnectCategory.housing:
+        return Icons.home_outlined;
+      case CampusConnectCategory.events:
+      case CampusConnectCategory.opportunities:
+        return Icons.event_outlined;
+      case CampusConnectCategory.resources:
+      case CampusConnectCategory.products:
+        return Icons.menu_book_outlined;
+      default:
+        return Icons.filter_list_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasActiveFilters = filterCount > 0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: hasActiveFilters
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: hasActiveFilters
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.border.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _filterIcon,
+              size: 14,
+              color: hasActiveFilters
+                  ? AppColors.primary
+                  : AppColors.textTertiary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _filterLabel,
+              style: AppTextStyles.labelSmall.copyWith(
+                fontSize: 12,
+                color: hasActiveFilters
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
+                fontWeight: hasActiveFilters ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            if (hasActiveFilters) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$filterCount',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ] else ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 16,
+                color: AppColors.textTertiary,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

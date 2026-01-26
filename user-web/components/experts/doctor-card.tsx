@@ -1,46 +1,26 @@
 "use client";
 
 /**
- * DoctorCard - Premium doctor card with glassmorphic styling
- * Matches the design patterns from projects-pro.tsx
- * Features two variants: default and featured
+ * DoctorCard - Clean, modern doctor card component
+ * Supports grid card and list variants
  */
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Star, BadgeCheck, Video, Clock, ChevronRight } from "lucide-react";
+import { Star, BadgeCheck, Video, ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatINR } from "@/lib/utils";
-import type { Expert, ExpertSpecialization } from "@/types/expert";
+import type { Expert } from "@/types/expert";
 
 interface DoctorCardProps {
   doctor: Expert;
-  variant?: "default" | "featured";
+  variant?: "default" | "list";
   onClick?: () => void;
   onBookClick?: () => void;
   className?: string;
 }
-
-/**
- * Specialization labels
- */
-const SPEC_LABELS: Record<ExpertSpecialization, string> = {
-  academic_writing: "Academic Writing",
-  research_methodology: "Research",
-  data_analysis: "Data Analysis",
-  programming: "Programming",
-  mathematics: "Mathematics",
-  science: "Science",
-  business: "Business",
-  engineering: "Engineering",
-  law: "Law",
-  medicine: "Medicine",
-  arts: "Arts",
-  other: "Other",
-};
 
 /**
  * Get initials from name
@@ -55,21 +35,7 @@ function getInitials(name: string): string {
 }
 
 /**
- * Get availability color
- */
-function getAvailabilityColor(status: Expert["availability"]): string {
-  switch (status) {
-    case "available":
-      return "bg-emerald-500";
-    case "busy":
-      return "bg-amber-500";
-    case "offline":
-      return "bg-gray-400";
-  }
-}
-
-/**
- * DoctorCard component - glassmorphic style
+ * DoctorCard component - Clean modern design
  */
 export const DoctorCard = memo(function DoctorCard({
   doctor,
@@ -78,218 +44,151 @@ export const DoctorCard = memo(function DoctorCard({
   onBookClick,
   className,
 }: DoctorCardProps) {
-  // Featured variant - larger card with more details
-  if (variant === "featured") {
+  // List variant - horizontal compact card
+  if (variant === "list") {
     return (
       <motion.div
-        whileHover={{ y: -4 }}
-        transition={{ duration: 0.3 }}
-        className={cn("relative group cursor-pointer", className)}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ duration: 0.2 }}
+        className={cn("cursor-pointer", className)}
         onClick={onClick}
       >
-        {/* Glassmorphic card matching projects-pro */}
-        <div className="relative overflow-hidden rounded-[20px] p-6 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:bg-white/90 dark:hover:bg-white/10">
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-100/40 to-purple-50/20 dark:from-violet-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
+        <div className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all duration-200">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <Avatar className="h-12 w-12 border-2 border-stone-100 dark:border-stone-800">
+              <AvatarImage src={doctor.avatar} alt={doctor.name} />
+              <AvatarFallback className="text-sm font-semibold bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300">
+                {getInitials(doctor.name)}
+              </AvatarFallback>
+            </Avatar>
+            {doctor.availability === "available" && (
+              <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-stone-900" />
+            )}
+          </div>
 
-          <div className="relative z-10 flex flex-col items-center text-center">
-            {/* Avatar */}
-            <div className="relative mb-4">
-              <Avatar className="h-24 w-24 border-4 border-white/80 dark:border-white/10 shadow-lg">
-                <AvatarImage src={doctor.avatar} alt={doctor.name} />
-                <AvatarFallback className="text-xl font-bold bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/50 dark:to-purple-900/50 text-foreground">
-                  {getInitials(doctor.name)}
-                </AvatarFallback>
-              </Avatar>
-
-              {/* Availability indicator */}
-              <span
-                className={cn(
-                  "absolute bottom-1 right-1 h-5 w-5 rounded-full border-3 border-white dark:border-slate-800",
-                  getAvailabilityColor(doctor.availability)
-                )}
-              />
-
-              {/* Verified badge */}
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <h3 className="font-semibold text-foreground truncate">
+                {doctor.name}
+              </h3>
               {doctor.verified && (
-                <div className="absolute -top-1 -right-1 h-7 w-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <BadgeCheck className="h-4 w-4 text-white" strokeWidth={2} />
-                </div>
+                <BadgeCheck className="h-4 w-4 text-violet-500 shrink-0" />
               )}
             </div>
-
-            {/* Name & Designation */}
-            <h3 className="text-xl font-semibold text-foreground mb-1">
-              {doctor.name}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-sm text-muted-foreground truncate">
               {doctor.designation}
             </p>
+          </div>
 
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/30">
-                <Star
-                  className="h-4 w-4 fill-amber-500 text-amber-500"
-                  strokeWidth={0}
-                />
-                <span className="font-bold text-sm text-foreground">
-                  {doctor.rating.toFixed(1)}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  ({doctor.reviewCount})
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Video className="h-4 w-4" />
-                <span>{doctor.totalSessions}+ sessions</span>
-              </div>
-            </div>
+          {/* Rating */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+            <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+              {doctor.rating.toFixed(1)}
+            </span>
+          </div>
 
-            {/* Bio */}
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-              {doctor.bio}
-            </p>
-
-            {/* Specializations */}
-            <div className="flex flex-wrap justify-center gap-2 mb-5">
-              {doctor.specializations.slice(0, 3).map((spec) => (
-                <Badge
-                  key={spec}
-                  variant="secondary"
-                  className="text-xs bg-muted/50 text-muted-foreground border-border/50"
-                >
-                  {SPEC_LABELS[spec]}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Price & Book */}
-            <div className="w-full pt-4 border-t border-border/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {formatINR(doctor.pricePerSession)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    per session
-                  </div>
-                </div>
-                <Button
-                  size="lg"
-                  className="bg-foreground text-background hover:bg-foreground/90 shadow-lg"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBookClick?.();
-                  }}
-                >
-                  Book Now
-                </Button>
-              </div>
+          {/* Price */}
+          <div className="text-right shrink-0">
+            <div className="text-lg font-bold text-foreground">
+              {formatINR(doctor.pricePerSession)}
             </div>
           </div>
 
-          {/* Hover chevron */}
-          <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+          {/* Arrow */}
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
         </div>
       </motion.div>
     );
   }
 
-  // Default variant - compact horizontal card
+  // Default variant - Grid card
   return (
     <motion.div
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.3 }}
-      className={cn("relative group cursor-pointer", className)}
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.2 }}
+      className={cn("cursor-pointer h-full", className)}
       onClick={onClick}
     >
-      {/* Glassmorphic card matching projects-pro */}
-      <div className="relative overflow-hidden rounded-[20px] p-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:bg-white/90 dark:hover:bg-white/10">
-        {/* Subtle gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-100/30 to-purple-50/10 dark:from-violet-900/5 dark:to-transparent pointer-events-none rounded-[20px]" />
+      <div className="h-full flex flex-col rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all duration-200 overflow-hidden">
+        {/* Top section with avatar */}
+        <div className="relative p-5 pb-4">
+          {/* Availability badge */}
+          {doctor.availability === "available" && (
+            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Online
+            </div>
+          )}
 
-        <div className="relative z-10 flex items-center gap-4">
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <Avatar className="h-14 w-14 border-2 border-white/80 dark:border-white/10 shadow-md">
-              <AvatarImage src={doctor.avatar} alt={doctor.name} />
-              <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/50 dark:to-purple-900/50 text-foreground">
-                {getInitials(doctor.name)}
-              </AvatarFallback>
-            </Avatar>
-
-            {/* Availability indicator */}
-            <span
-              className={cn(
-                "absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-white dark:border-slate-800",
-                getAvailabilityColor(doctor.availability)
-              )}
-            />
+          {/* Avatar with gradient ring */}
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <div className="absolute -inset-1 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full opacity-60" />
+              <Avatar className="relative h-16 w-16 border-2 border-white dark:border-stone-900">
+                <AvatarImage src={doctor.avatar} alt={doctor.name} />
+                <AvatarFallback className="text-lg font-bold bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900 dark:to-purple-900 text-violet-700 dark:text-violet-300">
+                  {getInitials(doctor.name)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </div>
 
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="font-semibold text-[15px] text-foreground truncate">
+          {/* Name & verification */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <h3 className="font-semibold text-foreground truncate">
                 {doctor.name}
               </h3>
               {doctor.verified && (
-                <BadgeCheck
-                  className="h-4 w-4 text-emerald-500 shrink-0"
-                  strokeWidth={2}
-                />
+                <BadgeCheck className="h-4 w-4 text-violet-500 shrink-0" />
               )}
             </div>
-            <p className="text-sm text-muted-foreground truncate mb-2">
+            <p className="text-sm text-muted-foreground line-clamp-1">
               {doctor.designation}
             </p>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 border border-amber-200/50 dark:border-amber-800/30">
-                <Star
-                  className="h-3.5 w-3.5 fill-amber-500 text-amber-500"
-                  strokeWidth={0}
-                />
-                <span className="font-semibold text-xs text-foreground">
-                  {doctor.rating.toFixed(1)}
-                </span>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {doctor.totalSessions} sessions
-              </span>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                <span>
-                  {doctor.responseTime.split(" ").slice(-2).join(" ")}
-                </span>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {/* Price & Book */}
-          <div className="text-right shrink-0">
-            <div className="text-lg font-bold text-foreground">
-              {formatINR(doctor.pricePerSession)}
-            </div>
-            <div className="text-[10px] text-muted-foreground mb-2">
-              /session
+        {/* Stats row */}
+        <div className="flex items-center justify-center gap-4 px-5 py-3 bg-stone-50 dark:bg-stone-800/50">
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+            <span className="text-sm font-semibold">{doctor.rating.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">({doctor.reviewCount})</span>
+          </div>
+          <div className="w-px h-4 bg-stone-200 dark:bg-stone-700" />
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Video className="h-3.5 w-3.5" />
+            <span>{doctor.totalSessions}+</span>
+          </div>
+        </div>
+
+        {/* Bottom section with price and CTA */}
+        <div className="mt-auto p-4 pt-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xl font-bold text-foreground">
+                {formatINR(doctor.pricePerSession)}
+              </div>
+              <div className="text-xs text-muted-foreground">per session</div>
             </div>
             <Button
               size="sm"
-              className="bg-foreground text-background hover:bg-foreground/90 text-xs shadow-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onBookClick?.();
               }}
+              className="bg-violet-600 hover:bg-violet-700 text-white shadow-sm"
             >
               Book
             </Button>
           </div>
         </div>
-
-        {/* Hover chevron */}
-        <ChevronRight className="absolute top-1/2 -translate-y-1/2 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300" />
       </div>
     </motion.div>
   );

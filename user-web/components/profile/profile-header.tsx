@@ -6,10 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AvatarUploadDialog } from "./avatar-upload-dialog";
+import { AccountBadge, type AccountType } from "./account-badge";
 import type { UserProfile, UserSubscription } from "@/types/profile";
 
 interface ProfileHeaderProps {
-  profile: UserProfile;
+  profile: UserProfile & { accountType?: AccountType };
   subscription: UserSubscription;
   onAvatarChange: (file: File) => void;
 }
@@ -79,9 +80,18 @@ export function ProfileHeader({
             <h1 className="text-2xl font-bold">
               {profile.firstName} {profile.lastName}
             </h1>
-            <Badge variant={getTierBadgeVariant(subscription.tier)} className="capitalize">
-              {subscription.tier}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {profile.accountType && (
+                <AccountBadge
+                  accountType={profile.accountType}
+                  isVerified={profile.emailVerified}
+                  size="md"
+                />
+              )}
+              <Badge variant={getTierBadgeVariant(subscription.tier)} className="capitalize">
+                {subscription.tier}
+              </Badge>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 text-sm text-muted-foreground">

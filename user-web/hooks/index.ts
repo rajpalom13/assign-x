@@ -11,9 +11,10 @@ export { useMinimumLoadingTime } from "./use-minimum-loading-time";
 export { useStaggeredReveal } from "./use-staggered-reveal";
 export { useReducedMotion } from "./use-reduced-motion";
 
-// Onboarding tour hooks
+// Content moderation hooks
 export {
-  useOnboardingTour,
-  useShouldShowTour,
-  useTourSync,
-} from "./use-onboarding-tour";
+  useModeration,
+  useContentValidation,
+  useModerationStatus,
+  useContentMonitor,
+} from "./useModeration";

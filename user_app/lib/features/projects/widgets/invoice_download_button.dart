@@ -304,7 +304,7 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.primaryColor.withAlpha(26),
+                  color: theme.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -345,8 +345,8 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
                   ),
                   decoration: BoxDecoration(
                     color: _invoice!.isPaid
-                        ? Colors.green.withAlpha(26)
-                        : Colors.orange.withAlpha(26),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -506,7 +506,7 @@ class _InvoiceDownloadButtonState extends ConsumerState<InvoiceDownloadButton> {
           : TextButton.icon(
               onPressed: _initializeInvoice,
               icon: Icon(Icons.refresh, color: Colors.red[400], size: 18),
-              label: Text('Retry', style: TextStyle(color: Colors.red[400])),
+              label: Text('Retry', style: AppTextStyles.labelSmall.copyWith(color: Colors.red[400])),
             );
     }
 

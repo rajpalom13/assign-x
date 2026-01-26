@@ -4,6 +4,11 @@
  */
 
 /**
+ * Account type for user categorization
+ */
+export type AccountType = "student" | "professional" | "business_owner";
+
+/**
  * User profile information
  */
 export interface UserProfile {
@@ -16,6 +21,7 @@ export interface UserProfile {
   phone?: string;
   phoneVerified: boolean;
   dateOfBirth?: string;
+  accountType?: AccountType;
   createdAt: string;
   updatedAt: string;
 }

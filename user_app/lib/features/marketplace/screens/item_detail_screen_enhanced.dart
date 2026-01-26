@@ -394,18 +394,23 @@ class _ImageGalleryState extends State<_ImageGallery> {
 
   @override
   Widget build(BuildContext context) {
+    final images = widget.listing.images ?? [];
+    if (images.isEmpty) {
+      return _PlaceholderImage(type: widget.listing.type);
+    }
+
     return Stack(
       children: [
         // Images
         PageView.builder(
           controller: _pageController,
-          itemCount: widget.listing.images.length,
+          itemCount: images.length,
           onPageChanged: (index) {
             setState(() => _currentIndex = index);
           },
           itemBuilder: (context, index) {
             return CachedNetworkImage(
-              imageUrl: widget.listing.images[index],
+              imageUrl: images[index],
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
                 color: AppColors.shimmerBase,
@@ -423,7 +428,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
         ),
 
         // Page indicator
-        if (widget.listing.images.length > 1)
+        if (images.length > 1)
           Positioned(
             bottom: 20,
             left: 0,
@@ -431,7 +436,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                widget.listing.images.length,
+                images.length,
                 (index) => AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   width: _currentIndex == index ? 24 : 8,

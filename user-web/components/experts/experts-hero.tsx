@@ -1,23 +1,13 @@
 "use client";
 
 /**
- * ExpertsHero - Premium hero section for experts page
- * Matches the glassmorphic design from projects-pro.tsx
- * Features subtle gradients, animated stats, and search functionality
+ * ExpertsHero - Clean, focused hero section for experts page
+ * Features a prominent search bar and inline trust indicators
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Stethoscope,
-  Star,
-  Users,
-  Clock,
-  CheckCircle2,
-  Zap,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, BadgeCheck, Star, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ExpertsHeroProps {
@@ -26,163 +16,20 @@ interface ExpertsHeroProps {
 }
 
 /**
- * Stat card data - matching projects-pro style
+ * Trust indicators - compact inline display
  */
-const STATS = [
-  {
-    icon: Users,
-    value: 500,
-    suffix: "+",
-    label: "Verified Doctors",
-    gradient: "from-violet-400 to-purple-500",
-    shadowColor: "shadow-violet-500/20",
-    bgOverlay: "from-violet-100/40 to-purple-50/20 dark:from-violet-900/10",
-  },
-  {
-    icon: Star,
-    value: 4.9,
-    suffix: "",
-    label: "Average Rating",
-    gradient: "from-amber-400 to-orange-500",
-    shadowColor: "shadow-amber-500/20",
-    bgOverlay: "from-amber-100/40 to-orange-50/20 dark:from-amber-900/10",
-  },
-  {
-    icon: Zap,
-    value: 10,
-    suffix: "K+",
-    label: "Sessions Completed",
-    gradient: "from-emerald-400 to-teal-500",
-    shadowColor: "shadow-emerald-500/20",
-    bgOverlay: "from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10",
-  },
-  {
-    icon: Clock,
-    value: 24,
-    suffix: "/7",
-    label: "Available Support",
-    gradient: "from-blue-400 to-cyan-500",
-    shadowColor: "shadow-blue-500/20",
-    bgOverlay: "from-blue-100/40 to-cyan-50/20 dark:from-blue-900/10",
-  },
+const TRUST_INDICATORS = [
+  { icon: BadgeCheck, text: "500+ Verified", color: "text-violet-500" },
+  { icon: Star, text: "4.9 Rating", color: "text-amber-500" },
+  { icon: Clock, text: "24/7 Available", color: "text-emerald-500" },
 ];
 
 /**
- * Animated counter hook
- */
-function useCounter(target: number, duration: number = 2000) {
-  const [count, setCount] = useState(0);
-  const countRef = useRef(0);
-  const frameRef = useRef<number | undefined>(undefined);
-
-  useEffect(() => {
-    const startTime = Date.now();
-    const startValue = 0;
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = startValue + (target - startValue) * eased;
-
-      countRef.current = current;
-      setCount(current);
-
-      if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    frameRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, [target, duration]);
-
-  return count;
-}
-
-/**
- * Stat card component - glassmorphic style matching projects-pro
- */
-function StatCard({
-  icon: Icon,
-  value,
-  suffix,
-  label,
-  gradient,
-  shadowColor,
-  bgOverlay,
-  index,
-}: {
-  icon: React.ElementType;
-  value: number;
-  suffix: string;
-  label: string;
-  gradient: string;
-  shadowColor: string;
-  bgOverlay: string;
-  index: number;
-}) {
-  const animatedValue = useCounter(value, 2000);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
-      whileHover={{ y: -2 }}
-      className="group relative"
-    >
-      {/* Glassmorphic card matching projects-pro */}
-      <div className="relative overflow-hidden rounded-[20px] p-4 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:bg-white/90 dark:hover:bg-white/10">
-        {/* Subtle gradient overlay */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-br pointer-events-none rounded-[20px] opacity-60",
-            bgOverlay
-          )}
-        />
-
-        <div className="relative z-10 flex items-center gap-3">
-          <div
-            className={cn(
-              "h-11 w-11 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg shrink-0",
-              gradient,
-              shadowColor
-            )}
-          >
-            <Icon className="h-5 w-5 text-white" strokeWidth={1.5} />
-          </div>
-          <div>
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-2xl font-bold text-foreground">
-                {Number.isInteger(value)
-                  ? Math.round(animatedValue)
-                  : animatedValue.toFixed(1)}
-              </span>
-              <span className="text-lg font-bold text-foreground/70">
-                {suffix}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground font-medium">{label}</p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-/**
- * ExpertsHero component - matches projects-pro design
+ * ExpertsHero component - Clean discovery-focused design
  */
 export function ExpertsHero({ onSearch, className }: ExpertsHeroProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -191,60 +38,99 @@ export function ExpertsHero({ onSearch, className }: ExpertsHeroProps) {
 
   return (
     <div className={cn("relative w-full", className)}>
-      {/* Content - no background here, background is on page level */}
-      <div className="relative z-10 w-full py-8">
-        {/* Header */}
+      <div className="relative z-10 w-full py-6 md:py-8">
+        {/* Compact Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-6"
         >
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-              <Stethoscope className="h-5 w-5 text-white" strokeWidth={1.5} />
-            </div>
-          </div>
-
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground/90 mb-2">
-            Connect with{" "}
-            <span className="font-semibold text-foreground">Top Doctors</span>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight text-foreground mb-2">
+            Find Your{" "}
+            <span className="bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+              Expert
+            </span>
           </h1>
-
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Get personalized consultations from verified medical professionals,
-            available 24/7 for your health needs
+          <p className="text-sm md:text-base text-muted-foreground max-w-lg mx-auto">
+            Connect with verified professionals for consultations
           </p>
         </motion.div>
 
-        {/* Search Bar - glassmorphic style */}
+        {/* Prominent Search Bar */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-2xl mx-auto mb-10"
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="max-w-xl mx-auto mb-6"
         >
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-              strokeWidth={2}
-            />
+          <div
+            className={cn(
+              "relative rounded-2xl transition-all duration-300",
+              isFocused
+                ? "ring-2 ring-violet-500/40 ring-offset-2 ring-offset-background"
+                : ""
+            )}
+          >
+            {/* Search Icon */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+              <Search
+                className={cn(
+                  "h-5 w-5 transition-colors duration-200",
+                  isFocused ? "text-violet-500" : "text-muted-foreground"
+                )}
+                strokeWidth={2}
+              />
+            </div>
+
+            {/* Search Input - Solid white background for visibility */}
             <input
               type="text"
-              placeholder="Search doctors, specializations, conditions..."
+              placeholder="Search by name, specialty, or condition..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full h-12 pl-11 pr-4 text-sm bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className={cn(
+                "w-full h-14 pl-12 pr-4 text-base",
+                "bg-white dark:bg-stone-900",
+                "border-2 border-stone-200 dark:border-stone-700",
+                "rounded-2xl shadow-lg shadow-stone-200/50 dark:shadow-stone-900/50",
+                "placeholder:text-muted-foreground/60",
+                "focus:outline-none focus:border-violet-400 dark:focus:border-violet-500",
+                "transition-all duration-200"
+              )}
             />
+
+            {/* Shortcut hint */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
+              <kbd className="px-2 py-1 text-xs font-medium text-muted-foreground bg-stone-100 dark:bg-stone-800 rounded-md border border-stone-200 dark:border-stone-700">
+                /
+              </kbd>
+            </div>
           </div>
         </motion.div>
 
-        {/* Stats Grid - matching projects-pro card style */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {STATS.map((stat, index) => (
-            <StatCard key={stat.label} {...stat} index={index} />
+        {/* Trust Indicators - Compact inline badges */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-wrap items-center justify-center gap-3 md:gap-6"
+        >
+          {TRUST_INDICATORS.map((item, index) => (
+            <motion.div
+              key={item.text}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.25 + index * 0.05 }}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+            >
+              <item.icon className={cn("h-4 w-4", item.color)} strokeWidth={2} />
+              <span className="font-medium">{item.text}</span>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

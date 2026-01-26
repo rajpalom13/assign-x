@@ -121,6 +121,12 @@ export async function getCampusConnectPosts(
       query = query.eq("category", filters.category);
     }
 
+    // Exclude housing for non-students (server-side enforcement)
+    // This provides an additional layer of security beyond client-side filtering
+    if (filters.excludeHousing) {
+      query = query.neq("category", "housing");
+    }
+
     // College filter (UI uses universityId, DB uses college_id)
     if (filters.universityId) {
       query = query.eq("college_id", filters.universityId);
@@ -817,5 +823,331 @@ export async function uploadCampusConnectImage(file: {
   } catch (error: any) {
     console.error("Cloudinary upload error:", error);
     return { data: null, error: error.message || "Failed to upload image" };
+  }
+}
+
+// =============================================================================
+// REPORT & SAVED LISTINGS OPERATIONS
+// =============================================================================
+
+/**
+ * Report a listing
+ * @param listingId - The ID of the listing to report
+ * @param reason - The reason for reporting (scam, inappropriate, inaccurate, spam, other)
+ * @param details - Optional additional details about the report
+ */
+export async function reportListing(
+  listingId: string,
+  reason: string,
+  details?: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Validate reason
+  const validReasons = ["scam", "inappropriate", "inaccurate", "spam", "other"];
+  if (!validReasons.includes(reason)) {
+    return { success: false, error: "Invalid report reason" };
+  }
+
+  try {
+    // Check if user already reported this listing
+    const { data: existing } = await supabase
+      .from("listing_reports")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("reporter_id", user.id)
+      .single();
+
+    if (existing) {
+      return { success: false, error: "You have already reported this listing" };
+    }
+
+    // Create report
+    const { error } = await supabase
+      .from("listing_reports")
+      .insert({
+        listing_id: listingId,
+        reporter_id: user.id,
+        reason,
+        details: details?.trim() || null,
+        status: "pending",
+      });
+
+    if (error) {
+      console.error("Error creating report:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Unexpected error reporting listing:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Save a listing to user's saved items
+ * @param listingId - The ID of the listing to save
+ */
+export async function saveListing(
+  listingId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    // Check if already saved
+    const { data: existing } = await supabase
+      .from("saved_listings")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (existing) {
+      return { success: false, error: "Listing already saved" };
+    }
+
+    // Save the listing
+    const { error } = await supabase
+      .from("saved_listings")
+      .insert({
+        listing_id: listingId,
+        user_id: user.id,
+      });
+
+    if (error) {
+      console.error("Error saving listing:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect/saved");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Unexpected error saving listing:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Remove a listing from user's saved items
+ * @param listingId - The ID of the listing to unsave
+ */
+export async function unsaveListing(
+  listingId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("saved_listings")
+      .delete()
+      .eq("listing_id", listingId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error unsaving listing:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/campus-connect");
+    revalidatePath("/campus-connect/saved");
+    return { success: true, error: null };
+  } catch (error: any) {
+    console.error("Unexpected error unsaving listing:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get all saved listings for the current user
+ */
+export async function getSavedListings(): Promise<{
+  data: CampusConnectPost[];
+  error: string | null;
+}> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { data: [], error: "Not authenticated" };
+  }
+
+  try {
+    // Get saved listing IDs for this user
+    const { data: savedItems, error: savedError } = await supabase
+      .from("saved_listings")
+      .select("listing_id, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (savedError) {
+      console.error("Error fetching saved listings:", savedError);
+      return { data: [], error: savedError.message };
+    }
+
+    if (!savedItems || savedItems.length === 0) {
+      return { data: [], error: null };
+    }
+
+    const listingIds = savedItems.map((s) => s.listing_id);
+
+    // Fetch the full post data for saved listings
+    const { data: posts, error: postsError } = await supabase
+      .from("campus_posts")
+      .select(`
+        *,
+        author:profiles (
+          id,
+          full_name,
+          avatar_url,
+          is_college_verified
+        ),
+        college:colleges (
+          id,
+          name,
+          short_name,
+          city
+        )
+      `)
+      .in("id", listingIds)
+      .or("status.eq.active,status.eq.published,status.is.null");
+
+    if (postsError) {
+      console.error("Error fetching saved posts:", postsError);
+      return { data: [], error: postsError.message };
+    }
+
+    // Transform posts and mark as saved
+    const transformedPosts = (posts || []).map((post: any) => {
+      const content = post.content || "";
+      const previewText = content.length > 150
+        ? content.substring(0, 150) + "..."
+        : content;
+
+      return {
+        id: post.id,
+        category: post.category,
+        title: post.title,
+        content: content,
+        previewText,
+        imageUrls: post.images || [],
+        authorId: post.user_id,
+        authorName: post.author?.full_name || "Anonymous",
+        authorAvatar: post.author?.avatar_url || null,
+        isAuthorVerified: post.author?.is_college_verified || false,
+        universityId: post.college_id,
+        universityName: post.college?.name || null,
+        likeCount: post.likes_count || 0,
+        commentCount: post.comments_count || 0,
+        saveCount: post.saves_count || 0,
+        viewCount: post.views_count || 0,
+        isLiked: false, // Will check below
+        isSaved: true, // These are saved posts
+        isPinned: post.is_pinned || false,
+        isAdminPost: post.is_admin_post || false,
+        createdAt: post.created_at,
+        timeAgo: formatDistanceToNow(new Date(post.created_at), { addSuffix: true }),
+      };
+    });
+
+    // Check likes for these posts
+    if (transformedPosts.length > 0) {
+      const { data: likes } = await supabase
+        .from("campus_post_likes")
+        .select("post_id")
+        .eq("user_id", user.id)
+        .in("post_id", listingIds);
+
+      const likedIds = new Set(likes?.map((l) => l.post_id) || []);
+
+      transformedPosts.forEach((post) => {
+        post.isLiked = likedIds.has(post.id);
+      });
+    }
+
+    // Sort by saved order (most recently saved first)
+    const savedOrder = new Map(savedItems.map((s, i) => [s.listing_id, i]));
+    transformedPosts.sort((a, b) => {
+      const orderA = savedOrder.get(a.id) ?? 999;
+      const orderB = savedOrder.get(b.id) ?? 999;
+      return orderA - orderB;
+    });
+
+    return { data: transformedPosts, error: null };
+  } catch (error: any) {
+    console.error("Unexpected error fetching saved listings:", error);
+    return { data: [], error: error.message };
+  }
+}
+
+/**
+ * Check if a listing has been reported by the current user
+ * @param listingId - The ID of the listing to check
+ */
+export async function hasUserReportedListing(
+  listingId: string
+): Promise<{ isReported: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { isReported: false, error: null };
+  }
+
+  try {
+    const { data: report } = await supabase
+      .from("listing_reports")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("reporter_id", user.id)
+      .single();
+
+    return { isReported: !!report, error: null };
+  } catch (error: any) {
+    return { isReported: false, error: null };
+  }
+}
+
+/**
+ * Check if a listing is saved by the current user
+ * @param listingId - The ID of the listing to check
+ */
+export async function isListingSaved(
+  listingId: string
+): Promise<{ isSaved: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { isSaved: false, error: null };
+  }
+
+  try {
+    const { data: saved } = await supabase
+      .from("saved_listings")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("user_id", user.id)
+      .single();
+
+    return { isSaved: !!saved, error: null };
+  } catch (error: any) {
+    return { isSaved: false, error: null };
   }
 }

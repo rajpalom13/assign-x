@@ -206,8 +206,14 @@ export function TrustStats() {
   return (
     <section
       ref={ref}
-      className="relative py-16 sm:py-24 bg-[var(--landing-bg-primary)]"
+      className="relative py-16 sm:py-24"
+      style={{
+        background: "var(--landing-bg-primary)",
+      }}
     >
+      {/* Top separator line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--landing-border)] to-transparent" />
+
       {/* Decorative gradient */}
       <div className="absolute inset-0 landing-mesh-gradient opacity-50" />
 

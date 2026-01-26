@@ -50,7 +50,7 @@ export function Header({
   }
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
+    <header className="flex h-16 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-6" />
 
@@ -60,24 +60,26 @@ export function Header({
         </h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Availability Toggle */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-card">
-                <span
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    isAvailable ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                />
-                <span className="text-xs font-medium hidden sm:inline">
-                  {isAvailable ? "Available" : "Busy"}
-                </span>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-lg border bg-card shadow-sm transition-all duration-200 hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                      isAvailable ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-gray-400"
+                    }`}
+                  />
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {isAvailable ? "Available" : "Busy"}
+                  </span>
+                </div>
                 <Switch
                   checked={isAvailable}
                   onCheckedChange={handleAvailabilityToggle}
-                  className="h-4 w-8 data-[state=checked]:bg-green-500"
+                  className="h-5 w-9 data-[state=checked]:bg-green-500"
                 />
               </div>
             </TooltipTrigger>

@@ -124,10 +124,10 @@ export function QCReviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
         {mode === "approve" ? (
           <>
-            <DialogHeader>
+            <DialogHeader className="p-6 pb-4">
               <DialogTitle className="flex items-center gap-2 text-green-600">
                 <CheckCircle2 className="h-5 w-5" />
                 Approve & Deliver
@@ -138,16 +138,16 @@ export function QCReviewModal({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 px-6 pb-6">
               {/* Project Summary */}
-              <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+              <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium font-mono">
                     {project.project_number}
                   </span>
                 </div>
-                <p className="text-sm">{project.title}</p>
+                <p className="text-sm font-medium">{project.title}</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span>Client: {project.user_name}</span>
                   <span>Expert: {project.doer_name}</span>
@@ -165,17 +165,19 @@ export function QCReviewModal({
                   value={approvalMessage}
                   onChange={(e) => setApprovalMessage(e.target.value)}
                   rows={3}
+                  className="rounded-xl"
                 />
               </div>
 
               {/* Confirmation */}
-              <div className="flex items-start gap-3 p-3 rounded-lg border bg-green-50/50 dark:bg-green-950/20">
+              <div className="flex items-start gap-3 p-4 rounded-xl border bg-green-50/50 dark:bg-green-950/20">
                 <Checkbox
                   id="confirm-delivery"
                   checked={confirmDelivery}
                   onCheckedChange={(checked) =>
                     setConfirmDelivery(checked === true)
                   }
+                  className="mt-0.5"
                 />
                 <div className="space-y-1">
                   <Label
@@ -192,24 +194,25 @@ export function QCReviewModal({
               </div>
 
               {/* Commission Info */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5">
                 <span className="text-sm">Your commission on delivery:</span>
-                <Badge className="bg-green-600">
+                <Badge className="bg-green-600 text-white">
                   ${project.supervisor_commission.toFixed(2)}
                 </Badge>
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="p-6 pt-0 gap-3">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
+                className="rounded-xl"
               >
                 Cancel
               </Button>
               <Button
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 rounded-xl"
                 onClick={handleApprove}
                 disabled={!confirmDelivery || isLoading}
               >
@@ -224,7 +227,7 @@ export function QCReviewModal({
           </>
         ) : (
           <>
-            <DialogHeader>
+            <DialogHeader className="p-6 pb-4">
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <XCircle className="h-5 w-5" />
                 Request Revision
@@ -234,16 +237,16 @@ export function QCReviewModal({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 px-6 pb-6">
               {/* Project Summary */}
-              <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+              <div className="p-4 rounded-xl bg-muted/50 space-y-2">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium font-mono">
                     {project.project_number}
                   </span>
                 </div>
-                <p className="text-sm">{project.title}</p>
+                <p className="text-sm font-medium">{project.title}</p>
                 {project.revision_count && project.revision_count > 0 && (
                   <Badge variant="destructive" className="text-xs">
                     Revision #{project.revision_count + 1}
@@ -252,20 +255,20 @@ export function QCReviewModal({
               </div>
 
               {/* Severity */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Revision Severity</Label>
                 <RadioGroup
                   value={severity}
                   onValueChange={(v) =>
                     setSeverity(v as "minor" | "major" | "critical")
                   }
-                  className="flex gap-4"
+                  className="flex gap-6"
                 >
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="minor" id="minor" />
                     <Label
                       htmlFor="minor"
-                      className="text-sm cursor-pointer text-amber-600"
+                      className="text-sm cursor-pointer text-amber-600 font-medium"
                     >
                       Minor
                     </Label>
@@ -274,7 +277,7 @@ export function QCReviewModal({
                     <RadioGroupItem value="major" id="major" />
                     <Label
                       htmlFor="major"
-                      className="text-sm cursor-pointer text-orange-600"
+                      className="text-sm cursor-pointer text-orange-600 font-medium"
                     >
                       Major
                     </Label>
@@ -283,7 +286,7 @@ export function QCReviewModal({
                     <RadioGroupItem value="critical" id="critical" />
                     <Label
                       htmlFor="critical"
-                      className="text-sm cursor-pointer text-red-600"
+                      className="text-sm cursor-pointer text-red-600 font-medium"
                     >
                       Critical
                     </Label>
@@ -292,7 +295,7 @@ export function QCReviewModal({
               </div>
 
               {/* Quick Reasons */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Common Issues (Select all that apply)</Label>
                 <div className="flex flex-wrap gap-2">
                   {REVISION_REASONS.map((reason) => (
@@ -329,6 +332,7 @@ export function QCReviewModal({
                   onChange={(e) => setRevisionFeedback(e.target.value)}
                   rows={4}
                   required
+                  className="rounded-xl"
                 />
                 <p className="text-xs text-muted-foreground">
                   Be specific about what needs to change for approval.
@@ -336,7 +340,7 @@ export function QCReviewModal({
               </div>
 
               {/* Warning */}
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p className="text-xs">
                   The expert will be notified immediately and must resubmit
@@ -345,11 +349,12 @@ export function QCReviewModal({
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="p-6 pt-0 gap-3">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
+                className="rounded-xl"
               >
                 Cancel
               </Button>
@@ -357,6 +362,7 @@ export function QCReviewModal({
                 variant="destructive"
                 onClick={handleReject}
                 disabled={!revisionFeedback.trim() || isLoading}
+                className="rounded-xl"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

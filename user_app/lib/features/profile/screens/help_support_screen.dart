@@ -361,7 +361,7 @@ class _ContactOption extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: AppTextStyles.labelSmall.copyWith(
                 color: Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

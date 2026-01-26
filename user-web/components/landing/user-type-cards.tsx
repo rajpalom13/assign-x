@@ -218,8 +218,12 @@ export function UserTypeCards() {
   return (
     <section
       ref={ref}
-      className="relative py-20 sm:py-28 bg-[var(--landing-bg-secondary)]"
+      className="relative py-20 sm:py-28"
+      style={{ background: "var(--landing-bg-secondary)" }}
     >
+      {/* Top separator line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--landing-border)] to-transparent" />
+
       {/* Subtle background pattern */}
       <div className="absolute inset-0 landing-grid-pattern opacity-30" />
 

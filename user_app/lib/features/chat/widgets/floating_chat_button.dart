@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
 
 /// Floating chat button with unread badge.
 class FloatingChatButton extends StatelessWidget {
@@ -15,27 +16,30 @@ class FloatingChatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.primaryLight],
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withAlpha(75),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primary, AppColors.primaryLight],
             ),
-          ],
-        ),
-        child: Stack(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.29),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
           children: [
             // Chat icon
             const Center(
@@ -64,7 +68,7 @@ class FloatingChatButton extends StatelessWidget {
                   child: Center(
                     child: Text(
                       unreadCount > 9 ? '9+' : unreadCount.toString(),
-                      style: const TextStyle(
+                      style: AppTextStyles.labelSmall.copyWith(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -74,6 +78,7 @@ class FloatingChatButton extends StatelessWidget {
                 ),
               ),
           ],
+          ),
         ),
       ),
     );

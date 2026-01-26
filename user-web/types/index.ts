@@ -1,5 +1,6 @@
 export * from "./database";
 export * from "./project";
+export * from "./account-upgrade";
 
 /**
  * Common types used across the application

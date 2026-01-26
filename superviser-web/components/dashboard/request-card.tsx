@@ -68,25 +68,25 @@ export function RequestCard({ request, onAnalyze, isLoading }: RequestCardProps)
   }
 
   const getPriorityStyles = () => {
-    if (isCritical) return "border-red-500 bg-red-50 dark:bg-red-950/20"
-    if (isUrgent) return "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
-    return ""
+    if (isCritical) return "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20"
+    if (isUrgent) return "border-l-4 border-l-orange-400 bg-orange-50 dark:bg-orange-950/20"
+    return "border-l-4 border-l-blue-400"
   }
 
   return (
     <Card
       className={cn(
-        "transition-all hover:shadow-md cursor-pointer group",
+        "hover:shadow-md transition-all duration-200 cursor-pointer group",
         getPriorityStyles()
       )}
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           {/* Left Section */}
           <div className="flex-1 min-w-0">
             {/* Header Row */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className="text-xs font-mono">
                 {request.project_number}
               </Badge>
@@ -97,7 +97,7 @@ export function RequestCard({ request, onAnalyze, isLoading }: RequestCardProps)
                 <Badge
                   variant="destructive"
                   className={cn(
-                    "text-xs gap-1",
+                    "text-xs gap-2",
                     isCritical ? "bg-red-600" : "bg-orange-500"
                   )}
                 >
@@ -119,7 +119,7 @@ export function RequestCard({ request, onAnalyze, isLoading }: RequestCardProps)
             </div>
 
             {/* Meta Info Row */}
-            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

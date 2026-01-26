@@ -52,7 +52,7 @@ export default async function DashboardLayout({
       <AppSidebar user={userData} />
       <SidebarInset>
         <Header userName={userData.name} />
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-6 lg:p-8">
           {children}
         </main>
       </SidebarInset>

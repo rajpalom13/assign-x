@@ -63,6 +63,7 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.8
   phosphor_flutter: ^2.0.1
+  lucide_icons: ^0.257.0
 
   # Connectivity
   connectivity_plus: ^5.0.2

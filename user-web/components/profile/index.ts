@@ -18,3 +18,17 @@ export { StatsCard } from "./stats-card";
 export { ReferralSection } from "./referral-section";
 export { WalletTopUpSheet } from "./wallet-top-up-sheet";
 export { AppInfoFooter } from "./app-info-footer";
+
+// Account upgrade components
+export { AccountUpgradeSection } from "./account-upgrade-section";
+export { UpgradeDialog } from "./upgrade-dialog";
+
+// Account type badge
+export {
+  AccountBadge,
+  CompactAccountBadge,
+  getAccountType,
+  badgeConfig,
+  type AccountType,
+  type BadgeSize,
+} from "./account-badge";

@@ -78,9 +78,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App Logo (Text-based)
-                const Text(
+                Text(
                   'AssignX',
-                  style: TextStyle(
+                  style: AppTextStyles.displayLarge.copyWith(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

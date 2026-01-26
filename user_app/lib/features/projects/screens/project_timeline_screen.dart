@@ -66,10 +66,10 @@ class _ProjectTimelineScreenState extends ConsumerState<ProjectTimelineScreen>
         child: projectAsync.when(
           data: (project) {
             if (project == null) {
-              return const Center(
+              return Center(
                 child: Text(
                   'Project not found',
-                  style: TextStyle(color: Colors.white),
+                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                 ),
               );
             }
@@ -82,7 +82,7 @@ class _ProjectTimelineScreenState extends ConsumerState<ProjectTimelineScreen>
               error: (e, _) => Center(
                 child: Text(
                   'Error: $e',
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                 ),
               ),
             );
@@ -93,7 +93,7 @@ class _ProjectTimelineScreenState extends ConsumerState<ProjectTimelineScreen>
           error: (e, _) => Center(
             child: Text(
               'Error: $e',
-              style: const TextStyle(color: Colors.white),
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
             ),
           ),
         ),
@@ -187,10 +187,10 @@ class _ProjectTimelineScreenState extends ConsumerState<ProjectTimelineScreen>
                 ),
               ),
             ),
-            child: const FlexibleSpaceBar(
+            child: FlexibleSpaceBar(
               title: Text(
                 'Project Timeline',
-                style: TextStyle(
+                style: AppTextStyles.headingSmall.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -465,7 +465,7 @@ class _ProjectHeader extends StatelessWidget {
                           ),
                           child: Text(
                             project.status.displayName,
-                            style: const TextStyle(
+                            style: AppTextStyles.labelSmall.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -660,9 +660,9 @@ class _TimelineNode extends StatelessWidget {
                                 ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'CURRENT',
-                                style: TextStyle(
+                                style: AppTextStyles.labelSmall.copyWith(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,

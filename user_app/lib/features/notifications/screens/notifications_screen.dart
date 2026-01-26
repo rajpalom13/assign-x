@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/config/supabase_config.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../../../shared/widgets/mesh_gradient_background.dart';
 
 /// Provider for notifications list
 final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
@@ -89,24 +89,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           ),
         ),
         actions: [
-          GlassButton(
-            label: 'Mark all read',
+          TextButton(
             onPressed: () => _markAllAsRead(ref),
-            backgroundColor: Colors.transparent,
-            foregroundColor: AppColors.primary,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: Text(
+              'Mark all read',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: MeshGradientBackground(
-        position: MeshPosition.center,
-        opacity: 0.4,
-        colors: const [
-          Color(0xFFFBE8E8), // Light pink
-          Color(0xFFFCEDE8), // Light peach
-          Color(0xFFF0E8F8), // Light purple
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+        ),
         child: SafeArea(
           child: Column(
             children: [
@@ -184,8 +187,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.error.withAlpha(51),
-                        AppColors.error.withAlpha(26),
+                        AppColors.error.withValues(alpha: 0.2),
+                        AppColors.error.withValues(alpha: 0.1),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -193,7 +196,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.error_outline,
+                    LucideIcons.alertCircle,
                     size: 32,
                     color: AppColors.error,
                   ),
@@ -213,12 +216,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                GlassButton(
-                  label: 'Retry',
-                  icon: Icons.refresh,
+                ElevatedButton.icon(
                   onPressed: () => ref.invalidate(notificationsProvider),
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  icon: Icon(LucideIcons.refreshCw, size: 18),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -233,35 +242,85 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     );
   }
 
-  /// Build filter tabs with glass morphism
+  /// Build filter tabs with glassmorphic design - even width
   Widget _buildFilterTabs() {
+    const tabs = [
+      (icon: LucideIcons.inbox, label: 'All'),
+      (icon: LucideIcons.mailOpen, label: 'Unread'),
+      (icon: LucideIcons.briefcase, label: 'Projects'),
+      (icon: LucideIcons.users, label: 'Campus'),
+      (icon: LucideIcons.settings, label: 'System'),
+    ];
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GlassCard(
-        blur: 12,
-        opacity: 0.8,
-        padding: const EdgeInsets.all(4),
-        child: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicator: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          labelColor: Colors.white,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: AppTextStyles.labelMedium.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: AppTextStyles.labelMedium,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Unread'),
-            Tab(text: 'Projects'),
-            Tab(text: 'Campus'),
-            Tab(text: 'System'),
-          ],
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.5),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(6),
+      child: Row(
+        children: List.generate(tabs.length, (index) {
+          final tab = tabs[index];
+          final isSelected = _selectedTabIndex == index;
+
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                _tabController.animateTo(index);
+                setState(() => _selectedTabIndex = index);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      tab.icon,
+                      size: 18,
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tab.label,
+                      style: AppTextStyles.caption.copyWith(
+                        fontSize: 10,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -461,8 +520,8 @@ class _EmptyNotifications extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary.withAlpha(51),
-                      AppColors.primary.withAlpha(26),
+                      AppColors.primary.withValues(alpha: 0.2),
+                      AppColors.primary.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -470,7 +529,7 @@ class _EmptyNotifications extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.notifications_off_outlined,
+                  LucideIcons.bellOff,
                   size: 48,
                   color: AppColors.primary,
                 ),
@@ -522,7 +581,7 @@ class _NotificationTile extends StatelessWidget {
           gradient: LinearGradient(
             colors: [
               Colors.transparent,
-              AppColors.error.withAlpha(128),
+              AppColors.error.withValues(alpha: 0.5),
             ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
@@ -530,7 +589,7 @@ class _NotificationTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Icon(
-          Icons.delete_outline,
+          LucideIcons.trash2,
           color: Colors.white,
           size: 28,
         ),
@@ -551,8 +610,8 @@ class _NotificationTile extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    _getIconColor().withAlpha(77),
-                    _getIconColor().withAlpha(51),
+                    _getIconColor().withValues(alpha: 0.3),
+                    _getIconColor().withValues(alpha: 0.2),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -597,7 +656,7 @@ class _NotificationTile extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withAlpha(77),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 blurRadius: 4,
                                 spreadRadius: 1,
                               ),
@@ -620,7 +679,7 @@ class _NotificationTile extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.access_time,
+                        LucideIcons.clock,
                         size: 12,
                         color: AppColors.textTertiary,
                       ),
@@ -645,37 +704,37 @@ class _NotificationTile extends StatelessWidget {
   IconData _getIcon() {
     switch (notification.notificationType) {
       case NotificationType.projectSubmitted:
-        return Icons.send;
+        return LucideIcons.send;
       case NotificationType.quoteReady:
-        return Icons.request_quote;
+        return LucideIcons.fileText;
       case NotificationType.paymentReceived:
-        return Icons.payment;
+        return LucideIcons.creditCard;
       case NotificationType.projectAssigned:
-        return Icons.person_add;
+        return LucideIcons.userPlus;
       case NotificationType.taskAvailable:
-        return Icons.task;
+        return LucideIcons.clipboardList;
       case NotificationType.taskAssigned:
-        return Icons.assignment_ind;
+        return LucideIcons.clipboardCheck;
       case NotificationType.workSubmitted:
-        return Icons.cloud_upload;
+        return LucideIcons.uploadCloud;
       case NotificationType.qcApproved:
-        return Icons.verified;
+        return LucideIcons.badgeCheck;
       case NotificationType.qcRejected:
-        return Icons.cancel;
+        return LucideIcons.xCircle;
       case NotificationType.revisionRequested:
-        return Icons.refresh;
+        return LucideIcons.refreshCw;
       case NotificationType.projectDelivered:
-        return Icons.local_shipping;
+        return LucideIcons.truck;
       case NotificationType.projectCompleted:
-        return Icons.check_circle;
+        return LucideIcons.checkCircle2;
       case NotificationType.newMessage:
-        return Icons.chat_bubble_outline;
+        return LucideIcons.messageCircle;
       case NotificationType.payoutProcessed:
-        return Icons.account_balance_wallet;
+        return LucideIcons.wallet;
       case NotificationType.systemAlert:
-        return Icons.info_outline;
+        return LucideIcons.info;
       case NotificationType.promotional:
-        return Icons.campaign;
+        return LucideIcons.megaphone;
     }
   }
 

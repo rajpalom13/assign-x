@@ -80,12 +80,12 @@ export function AppSidebar({ user }: AppSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b">
-        <Link href="/dashboard" className="flex items-center gap-2 px-2 py-4">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-foreground">AX</span>
+      <SidebarHeader className="h-16 py-4 border-b">
+        <Link href="/dashboard" className="flex items-center gap-3 px-2 transition-all duration-200 hover:opacity-80">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm">
+            <span className="text-base font-bold text-primary-foreground">AX</span>
           </div>
-          <span className="font-semibold text-lg">{APP_NAME}</span>
+          <span className="font-semibold text-xl">{APP_NAME}</span>
         </Link>
       </SidebarHeader>
 
@@ -96,7 +96,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.href)} className="py-1.5 transition-all duration-200">
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -114,7 +114,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
             <SidebarMenu>
               {secondaryNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={isActive(item.href)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.href)} className="py-1.5 transition-all duration-200">
                     <Link href={item.href}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -127,13 +127,13 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t">
+      <SidebarFooter className="py-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="w-full">
-                  <Avatar className="h-6 w-6">
+                <SidebarMenuButton className="w-full transition-all duration-200">
+                  <Avatar className="h-9 w-9">
                     <AvatarImage src={user?.avatarUrl || undefined} />
                     <AvatarFallback className="text-xs">
                       {user?.name?.charAt(0)?.toUpperCase() || "S"}

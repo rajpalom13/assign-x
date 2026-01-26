@@ -6,7 +6,7 @@
  * Responsive asymmetric grid layout
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -22,6 +22,11 @@ import {
   Users,
   Star,
   TrendingUp,
+  Home,
+  Calendar,
+  BookOpen,
+  ShoppingBag,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
@@ -33,6 +38,159 @@ import { GreetingAnimation } from "@/components/dashboard/greeting-animation";
 /**
  * Status configuration with consistent neutral theme
  */
+/**
+ * Campus Connect carousel items
+ */
+const CAMPUS_CONNECT_ITEMS = [
+  {
+    id: "housing",
+    icon: Home,
+    title: "Student Housing",
+    description: "Find your perfect place",
+    gradient: "from-rose-400 to-pink-500",
+    bgGradient: "from-rose-100/40 to-pink-50/20 dark:from-rose-900/10",
+  },
+  {
+    id: "events",
+    icon: Calendar,
+    title: "Campus Events",
+    description: "Never miss what's happening",
+    gradient: "from-blue-400 to-indigo-500",
+    bgGradient: "from-blue-100/40 to-indigo-50/20 dark:from-blue-900/10",
+  },
+  {
+    id: "resources",
+    icon: BookOpen,
+    title: "Study Resources",
+    description: "Notes, guides & materials",
+    gradient: "from-amber-400 to-orange-500",
+    bgGradient: "from-amber-100/40 to-orange-50/20 dark:from-amber-900/10",
+  },
+  {
+    id: "marketplace",
+    icon: ShoppingBag,
+    title: "Marketplace",
+    description: "Buy & sell with students",
+    gradient: "from-emerald-400 to-teal-500",
+    bgGradient: "from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10",
+  },
+];
+
+/**
+ * Campus Connect Carousel Component
+ * Animated carousel button that cycles through Campus Connect features
+ */
+function CampusConnectCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const router = useRouter();
+
+  // Auto-rotate every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % CAMPUS_CONNECT_ITEMS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentItem = CAMPUS_CONNECT_ITEMS[currentIndex];
+  const Icon = currentItem.icon;
+
+  return (
+    <button
+      onClick={() => router.push("/campus-connect")}
+      className="col-span-2 group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10 text-left"
+    >
+      {/* Animated gradient background */}
+      <div
+        className={cn(
+          "absolute inset-0 bg-gradient-to-r to-transparent pointer-events-none rounded-[20px] transition-all duration-500",
+          currentItem.bgGradient
+        )}
+      />
+
+      {/* Shimmer effect */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      </div>
+
+      <div className="relative z-10 flex items-center gap-4">
+        {/* Animated Icon Container */}
+        <div className="relative">
+          <div
+            className={cn(
+              "h-12 w-12 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-500",
+              currentItem.gradient
+            )}
+            style={{
+              boxShadow: `0 10px 25px -5px ${currentIndex === 0 ? 'rgba(244,63,94,0.25)' : currentIndex === 1 ? 'rgba(99,102,241,0.25)' : currentIndex === 2 ? 'rgba(251,146,60,0.25)' : 'rgba(20,184,166,0.25)'}`,
+            }}
+          >
+            <Icon className="h-6 w-6 text-white transition-transform duration-300 group-hover:scale-110" strokeWidth={1.5} />
+          </div>
+          {/* Pulse ring */}
+          <div className={cn(
+            "absolute inset-0 rounded-2xl opacity-50 animate-ping",
+            `bg-gradient-to-br ${currentItem.gradient}`
+          )} style={{ animationDuration: '2s' }} />
+        </div>
+
+        {/* Content with slide animation */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-foreground text-[15px] transition-all duration-300">
+              Campus Connect
+            </h3>
+            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-medium text-primary">
+              <MessageCircle className="h-3 w-3" />
+              Live
+            </span>
+          </div>
+          {/* Animated subtitle */}
+          <div className="relative h-4 overflow-hidden">
+            <p
+              key={currentItem.id}
+              className="text-xs text-muted-foreground/80 animate-slide-up"
+            >
+              {currentItem.title} - {currentItem.description}
+            </p>
+          </div>
+        </div>
+
+        {/* Carousel dots */}
+        <div className="flex items-center gap-1.5 mr-2">
+          {CAMPUS_CONNECT_ITEMS.map((_, index) => (
+            <div
+              key={index}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                index === currentIndex
+                  ? "w-4 bg-primary"
+                  : "w-1.5 bg-muted-foreground/30"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Arrow */}
+        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/20 shrink-0">
+          <ChevronRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-0.5" />
+        </div>
+      </div>
+
+      {/* Bottom progress bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted/30 overflow-hidden rounded-b-[20px]">
+        <div
+          className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-300 ease-linear"
+          style={{
+            width: '100%',
+            animation: 'progress 3s linear infinite',
+          }}
+        />
+      </div>
+    </button>
+  );
+}
+
 const STATUS_CONFIG: Record<string, { label: string; dot: string }> = {
   submitted: { label: "Submitted", dot: "bg-muted-foreground" },
   analyzing: { label: "Reviewing", dot: "bg-muted-foreground" },
@@ -231,33 +389,30 @@ export function DashboardPro() {
                   <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5" />
                 </Link>
 
-                {/* ====== GENERATE CONTENT ====== */}
+                {/* ====== AI PLAGIARISM CHECK (Swapped to single column) ====== */}
                 <Link
-                  href="/projects/new?type=content"
+                  href="/projects/new?type=plagiarism"
                   className="group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
                 >
-                  {/* Subtle purple tint */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-100/40 to-purple-50/20 dark:from-violet-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
+                  {/* Subtle green tint */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/40 to-teal-50/20 dark:from-emerald-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
 
                   <div className="relative z-10">
-                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mb-4 shadow-lg shadow-violet-500/20">
-                      <Sparkles className="h-5 w-5 text-white" strokeWidth={1.5} />
+                    <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+                      <Shield className="h-5 w-5 text-white" strokeWidth={1.5} />
                     </div>
 
-                    {/* AI indicator */}
-                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-violet-100/80 dark:bg-violet-900/40 mb-3">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500" />
-                      </span>
-                      <span className="text-[10px] font-medium text-violet-700 dark:text-violet-300">AI-Powered</span>
+                    {/* Accuracy indicator */}
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-900/40 mb-3">
+                      <CheckCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">99.9% Accurate</span>
                     </div>
 
                     <h3 className="font-semibold text-foreground text-[15px] mb-0.5">
-                      Generate Content
+                      Plagiarism Check
                     </h3>
                     <p className="text-xs text-muted-foreground/80">
-                      Outlines, drafts & ideas
+                      AI-powered detection
                     </p>
                   </div>
 
@@ -265,40 +420,8 @@ export function DashboardPro() {
                   <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0.5" />
                 </Link>
 
-                {/* ====== AI PLAGIARISM CHECK ====== */}
-                <Link
-                  href="/projects/new?type=plagiarism"
-                  className="col-span-2 group relative overflow-hidden rounded-[20px] p-4 lg:p-5 bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 hover:bg-white/90 dark:hover:bg-white/10"
-                >
-                  {/* Subtle green tint */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-100/30 via-teal-50/20 to-transparent dark:from-emerald-900/10 dark:to-transparent pointer-events-none rounded-[20px]" />
-
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-                      <Shield className="h-6 w-6 text-white" strokeWidth={1.5} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-foreground text-[15px]">
-                          Plagiarism Check
-                        </h3>
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-100/80 dark:bg-emerald-900/40 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
-                          <CheckCircle className="h-3 w-3" />
-                          99.9%
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground/80">
-                        AI-powered originality detection
-                      </p>
-                    </div>
-
-                    {/* Arrow */}
-                    <div className="h-9 w-9 rounded-xl bg-emerald-100/60 dark:bg-emerald-900/30 flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-200/80 dark:group-hover:bg-emerald-800/50 shrink-0">
-                      <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                  </div>
-                </Link>
+                {/* ====== CAMPUS CONNECT CAROUSEL ====== */}
+                <CampusConnectCarousel />
               </div>
             </div>
           </div>

@@ -86,11 +86,11 @@ function CountdownTimer({ deadline }: { deadline: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 font-mono text-sm font-medium",
+        "flex items-center gap-1.5 font-mono text-sm font-medium bg-muted/50 px-3 py-1.5 rounded-lg",
         isCritical
-          ? "text-red-600"
+          ? "text-destructive bg-destructive/10"
           : isUrgent
-            ? "text-amber-600"
+            ? "text-warning bg-warning/10"
             : "text-muted-foreground"
       )}
     >
@@ -115,17 +115,21 @@ export function OngoingProjectCard({
   const statusConfig = STATUS_CONFIG[project.status]
 
   return (
-    <Card className="group transition-all hover:shadow-md hover:border-primary/20">
-      <CardHeader className="pb-3">
+    <Card className="group rounded-xl transition-all duration-200 hover:shadow-lg hover:border-primary/30">
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-muted-foreground">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded font-mono">
                 {project.project_number}
               </span>
               <Badge
                 variant="outline"
-                className={cn(statusConfig.bgColor, statusConfig.color)}
+                className={cn(
+                  "text-xs",
+                  statusConfig.bgColor,
+                  statusConfig.color
+                )}
               >
                 {statusConfig.label}
               </Badge>
@@ -143,7 +147,7 @@ export function OngoingProjectCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="pt-0 space-y-5">
         {/* Project Info */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -157,10 +161,10 @@ export function OngoingProjectCard({
 
         {/* Doer Info */}
         {project.doer_name && (
-          <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-medium">{project.doer_name}</p>
@@ -183,13 +187,13 @@ export function OngoingProjectCard({
             <span>{project.word_count.toLocaleString()} words</span>
           )}
           {project.page_count && <span>{project.page_count} pages</span>}
-          <span className="ml-auto font-medium text-foreground">
+          <span className="ml-auto font-semibold text-foreground">
             ${project.supervisor_commission.toFixed(2)} commission
           </span>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-2 border-t">
+        <div className="flex items-center gap-3 pt-4 mt-4 border-t">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -218,7 +222,7 @@ export function OngoingProjectCard({
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto group-hover:bg-primary group-hover:text-primary-foreground"
+            className="ml-auto group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
             onClick={() => onViewDetails?.(project.id)}
             asChild
           >

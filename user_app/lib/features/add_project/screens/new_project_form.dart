@@ -117,9 +117,9 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'New Project',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headingSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -585,7 +585,7 @@ class _NewProjectFormState extends ConsumerState<NewProjectForm> {
                       )
                     : Text(
                         _currentStep < 2 ? 'Continue' : 'Submit Project',
-                        style: const TextStyle(
+                        style: AppTextStyles.labelLarge.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
