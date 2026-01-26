@@ -48,8 +48,8 @@ export function SubjectSelector({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between",
-              error && "border-destructive",
+              "w-full h-11 justify-between",
+              error && "border-red-500",
               !value && "text-muted-foreground"
             )}
           >
@@ -57,13 +57,13 @@ export function SubjectSelector({
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded",
+                    "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm",
                     selectedSubject.color
                   )}
                 >
-                  <selectedSubject.icon className="h-3.5 w-3.5" />
+                  <selectedSubject.icon className="h-4 w-4" />
                 </div>
-                <span>{selectedSubject.name}</span>
+                <span className="font-medium">{selectedSubject.name}</span>
               </div>
             ) : (
               "Select subject..."
@@ -73,7 +73,7 @@ export function SubjectSelector({
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search subjects..." />
+            <CommandInput placeholder="Search subjects..." className="h-10" />
             <CommandList>
               <CommandEmpty>No subject found.</CommandEmpty>
               <CommandGroup>
@@ -85,21 +85,22 @@ export function SubjectSelector({
                       onChange(subject.id);
                       setOpen(false);
                     }}
+                    className="cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          "flex h-6 w-6 items-center justify-center rounded",
+                          "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm",
                           subject.color
                         )}
                       >
-                        <subject.icon className="h-3.5 w-3.5" />
+                        <subject.icon className="h-4 w-4" />
                       </div>
-                      <span>{subject.name}</span>
+                      <span className="font-medium">{subject.name}</span>
                     </div>
                     <Check
                       className={cn(
-                        "ml-auto h-4 w-4",
+                        "ml-auto h-4 w-4 text-violet-600",
                         value === subject.id ? "opacity-100" : "opacity-0"
                       )}
                     />
@@ -110,7 +111,12 @@ export function SubjectSelector({
           </Command>
         </PopoverContent>
       </Popover>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+          <span className="h-1 w-1 rounded-full bg-red-500" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }

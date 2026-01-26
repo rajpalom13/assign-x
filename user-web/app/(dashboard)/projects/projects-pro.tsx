@@ -36,7 +36,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useProjectStore, useUserStore, type Project } from "@/stores";
 import type { ProjectTab } from "@/types/project";
-import { UploadSheet } from "@/components/dashboard/upload-sheet";
 import { formatDistanceToNow, differenceInDays, differenceInHours } from "date-fns";
 
 /**
@@ -114,7 +113,6 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
   const { user } = useUserStore();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [uploadSheetOpen, setUploadSheetOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ProjectTab>("in_progress");
 
   // User's first name
@@ -244,7 +242,7 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
                 <div className="grid grid-cols-2 gap-3 lg:gap-4 w-full lg:w-[380px]">
                   {/* New Project - Hero Card */}
                   <button
-                    onClick={() => setUploadSheetOpen(true)}
+                    onClick={() => router.push('/projects/new')}
                     className="col-span-2 group relative overflow-hidden rounded-[20px] p-5 lg:p-6 bg-gradient-to-br from-stone-800 via-stone-900 to-neutral-900 dark:from-stone-800 dark:via-stone-900 dark:to-neutral-950 text-white transition-all duration-300 hover:shadow-2xl hover:shadow-stone-900/30 hover:-translate-y-1 text-left"
                   >
                     {/* Decorative gradient overlay */}
@@ -399,7 +397,7 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
             {/* PROJECTS GRID */}
             {/* ═══════════════════════════════════════════════════════════════ */}
             {filteredProjects.length === 0 ? (
-              <EmptyState tab={selectedTab} searchQuery={searchQuery} onNewProject={() => setUploadSheetOpen(true)} />
+              <EmptyState tab={selectedTab} searchQuery={searchQuery} onNewProject={() => router.push('/projects/new')} />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProjects
@@ -412,8 +410,6 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
           </div>
         </div>
       </div>
-
-      <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
     </>
   );
 }

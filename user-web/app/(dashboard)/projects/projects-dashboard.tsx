@@ -43,7 +43,6 @@ import { StaggerItem } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useProjectStore, type Project } from "@/stores";
-import { UploadSheet } from "@/components/dashboard/upload-sheet";
 import { formatDistanceToNow, differenceInDays, differenceInHours, format } from "date-fns";
 
 // ============================================================================
@@ -1081,7 +1080,6 @@ function EmptyState({ onNewProject }: { onNewProject: () => void }) {
 export function ProjectsDashboard({ onPayNow }: ProjectsDashboardProps) {
   const router = useRouter();
   const { projects } = useProjectStore();
-  const [uploadSheetOpen, setUploadSheetOpen] = useState(false);
 
   // Smart grouping
   const groupedProjects = useMemo(() => {
@@ -1119,17 +1117,20 @@ export function ProjectsDashboard({ onPayNow }: ProjectsDashboardProps) {
     router.push(`/project/${project.id}`);
   }, [router]);
 
+  const handleNewProject = useCallback(() => {
+    router.push('/projects/new');
+  }, [router]);
+
   if (projects.length === 0) {
     return (
       <>
         <div className={cn("fixed inset-0 mesh-background mesh-gradient-bottom-right-animated", getTimeBasedGradientClass())} />
         <div className="relative z-10 h-full flex flex-col p-4 md:p-6 lg:p-8">
           <StaggerItem>
-            <StatsHeader stats={stats} onNewProject={() => setUploadSheetOpen(true)} />
+            <StatsHeader stats={stats} onNewProject={handleNewProject} />
           </StaggerItem>
-          <EmptyState onNewProject={() => setUploadSheetOpen(true)} />
+          <EmptyState onNewProject={handleNewProject} />
         </div>
-        <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
       </>
     );
   }
@@ -1144,7 +1145,7 @@ export function ProjectsDashboard({ onPayNow }: ProjectsDashboardProps) {
         <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
           {/* Stats Header */}
           <StaggerItem>
-            <StatsHeader stats={stats} onNewProject={() => setUploadSheetOpen(true)} />
+            <StatsHeader stats={stats} onNewProject={handleNewProject} />
           </StaggerItem>
 
           {/* Insights Bar */}
@@ -1247,9 +1248,6 @@ export function ProjectsDashboard({ onPayNow }: ProjectsDashboardProps) {
           </div>
         </div>
       </div>
-
-      {/* Upload Sheet */}
-      <UploadSheet open={uploadSheetOpen} onOpenChange={setUploadSheetOpen} />
     </>
   );
 }

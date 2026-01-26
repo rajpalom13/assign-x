@@ -1,7 +1,6 @@
 "use client";
 
-import { Calculator, Info } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -18,7 +17,7 @@ interface PriceEstimateProps {
 }
 
 /**
- * Price estimate card showing breakdown
+ * Price estimate card - Clean Professional Design
  */
 export function PriceEstimate({
   wordCount,
@@ -37,21 +36,33 @@ export function PriceEstimate({
   }
 
   return (
-    <Card className={cn("bg-muted/50", className)}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Calculator className="h-4 w-4" />
-          Price Estimate
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className={cn("rounded-lg border bg-muted/30 p-4", className)}>
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold">Price Estimate</h4>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                <p className="text-xs">
+                  Final price may vary based on complexity and requirements.
+                  You&apos;ll receive an exact quote before payment.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
         {/* Breakdown */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">
               Base ({wordCount.toLocaleString()} words × ₹{baseRatePerWord})
             </span>
-            <span>₹{basePrice.toLocaleString()}</span>
+            <span className="font-medium tabular-nums">₹{Math.round(basePrice).toLocaleString()}</span>
           </div>
 
           {urgencyMultiplier > 1 && (
@@ -59,45 +70,33 @@ export function PriceEstimate({
               <span className="text-muted-foreground">
                 Urgency Fee ({Math.round((urgencyMultiplier - 1) * 100)}%)
               </span>
-              <span>₹{urgencyFee.toLocaleString()}</span>
+              <span className="font-medium tabular-nums">
+                +₹{Math.round(urgencyFee).toLocaleString()}
+              </span>
             </div>
           )}
 
           <div className="flex justify-between">
             <span className="text-muted-foreground">GST (18%)</span>
-            <span>₹{Math.round(gst).toLocaleString()}</span>
+            <span className="font-medium tabular-nums">₹{Math.round(gst).toLocaleString()}</span>
           </div>
         </div>
 
         {/* Total */}
         <div className="border-t pt-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <span className="font-medium">Estimated Total</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs text-xs">
-                      Final price may vary based on complexity and requirements.
-                      You&apos;ll receive an exact quote before payment.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <span className="text-lg font-bold text-primary">
+            <span className="font-semibold">Total</span>
+            <span className="text-xl font-bold tabular-nums">
               ₹{Math.round(total).toLocaleString()}
             </span>
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          * This is an estimate. Actual price will be confirmed after review.
+        {/* Disclaimer */}
+        <p className="text-[11px] text-muted-foreground pt-1">
+          * This is an estimate. Final quote will be provided after review.
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
