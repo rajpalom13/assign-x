@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Loader2, GraduationCap, Building2, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, GraduationCap, Building2, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Logo } from '@/components/shared/Logo'
 import { cn } from '@/lib/utils'
 import { QUALIFICATION_OPTIONS, EXPERIENCE_LEVELS } from '@/lib/constants'
 import { createClient } from '@/lib/supabase/client'
@@ -67,22 +66,25 @@ const STEPS = [
     title: 'Education',
     description: 'Tell us about your educational background',
     icon: GraduationCap,
+    color: 'teal',
   },
   {
     title: 'Skills & Interests',
     description: 'Select your areas of expertise',
     icon: Building2,
+    color: 'emerald',
   },
   {
     title: 'Experience',
     description: 'How experienced are you?',
     icon: Sparkles,
+    color: 'amber',
   },
 ]
 
 /**
  * Profile setup form component with multi-step wizard
- * Collects qualification, skills, subjects, and experience level
+ * Professional design with teal/emerald theme
  */
 export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -252,31 +254,93 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
     }),
   }
 
+  const CurrentStepIcon = STEPS[currentStep].icon
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* Background Pattern */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 via-transparent to-emerald-500/5" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="px-6 pt-8">
+      <div className="relative z-10 px-6 pt-8">
+        {/* Logo */}
         <div className="mb-6 flex items-center justify-center">
-          <Logo size="md" />
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 via-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+              <span className="text-base font-bold text-white">AX</span>
+            </div>
+            <span className="font-semibold text-lg">AssignX</span>
+          </div>
+        </div>
+
+        {/* Step Indicators */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          {STEPS.map((step, index) => {
+            const StepIcon = step.icon
+            const isCompleted = index < currentStep
+            const isCurrent = index === currentStep
+
+            return (
+              <div key={index} className="flex items-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                  isCompleted && "bg-gradient-to-br from-teal-400 to-emerald-500",
+                  isCurrent && "bg-gradient-to-br from-teal-400 to-emerald-500 ring-4 ring-teal-500/20",
+                  !isCompleted && !isCurrent && "bg-muted"
+                )}>
+                  {isCompleted ? (
+                    <Check className="h-5 w-5 text-white" />
+                  ) : (
+                    <StepIcon className={cn(
+                      "h-5 w-5",
+                      isCurrent ? "text-white" : "text-muted-foreground"
+                    )} />
+                  )}
+                </div>
+                {index < STEPS.length - 1 && (
+                  <div className={cn(
+                    "w-8 h-0.5 mx-1",
+                    index < currentStep ? "bg-gradient-to-r from-teal-400 to-emerald-500" : "bg-muted"
+                  )} />
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Progress Bar */}
         <div className="mb-2">
           <Progress value={progress} className="h-2" />
         </div>
-        <p className="mb-6 text-center text-sm text-muted-foreground">
+        <p className="mb-4 text-center text-sm text-muted-foreground">
           Step {currentStep + 1} of {totalSteps}
         </p>
 
         {/* Greeting */}
         {userName && currentStep === 0 && (
-          <h1 className="mb-2 text-center text-2xl font-bold text-foreground">
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-2 text-center text-2xl font-bold text-foreground"
+          >
             Welcome, {userName}!
-          </h1>
+          </motion.h1>
         )}
 
         {/* Step Title */}
         <div className="mb-8 text-center">
+          <div className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg",
+            STEPS[currentStep].color === 'teal' && "bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/20",
+            STEPS[currentStep].color === 'emerald' && "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-500/20",
+            STEPS[currentStep].color === 'amber' && "bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/20"
+          )}>
+            <CurrentStepIcon className="h-7 w-7 text-white" />
+          </div>
           <h2 className="text-xl font-semibold text-foreground">
             {STEPS[currentStep].title}
           </h2>
@@ -288,7 +352,7 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
 
       {/* Form Content */}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="relative z-10 flex flex-1 flex-col">
           <div className="flex-1 overflow-y-auto px-6">
             <AnimatePresence mode="wait" custom={currentStep}>
               <motion.div
@@ -302,7 +366,7 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
               >
                 {/* Step 1: Education */}
                 {currentStep === 0 && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 max-w-md mx-auto">
                     <FormField
                       control={form.control}
                       name="qualification"
@@ -314,7 +378,7 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                             defaultValue={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="h-12">
                                 <SelectValue placeholder="Select your qualification" />
                               </SelectTrigger>
                             </FormControl>
@@ -340,6 +404,7 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                           <FormControl>
                             <Input
                               placeholder="Enter your university name"
+                              className="h-12"
                               {...field}
                             />
                           </FormControl>
@@ -355,16 +420,16 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
 
                 {/* Step 2: Skills & Subjects */}
                 {currentStep === 1 && (
-                  <div className="space-y-8">
+                  <div className="space-y-8 max-w-2xl mx-auto">
                     {fetchError && (
-                      <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                      <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20">
                         {fetchError}
                       </div>
                     )}
                     {isLoadingData ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        <span className="ml-2 text-muted-foreground">Loading skills & subjects...</span>
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+                        <span className="ml-3 text-muted-foreground">Loading skills & subjects...</span>
                       </div>
                     ) : (
                       <>
@@ -374,7 +439,12 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                           name="skills"
                           render={() => (
                             <FormItem>
-                              <FormLabel>Your Skills</FormLabel>
+                              <div className="flex items-center justify-between">
+                                <FormLabel className="text-base">Your Skills</FormLabel>
+                                <Badge variant="secondary" className="text-xs">
+                                  {selectedSkills.length} selected
+                                </Badge>
+                              </div>
                               <FormDescription>
                                 Select all skills that apply to you
                               </FormDescription>
@@ -386,11 +456,12 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                                       key={skill.id}
                                       variant={isSelected ? 'default' : 'outline'}
                                       className={cn(
-                                        'cursor-pointer px-3 py-1.5 text-sm transition-all',
-                                        isSelected && 'bg-primary'
+                                        'cursor-pointer px-4 py-2 text-sm transition-all hover:scale-105',
+                                        isSelected && 'bg-gradient-to-r from-teal-500 to-emerald-500 border-0 shadow-md'
                                       )}
                                       onClick={() => toggleSkill(skill.id)}
                                     >
+                                      {isSelected && <Check className="h-3 w-3 mr-1" />}
                                       {skill.name}
                                     </Badge>
                                   )
@@ -410,7 +481,12 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                           name="subjects"
                           render={() => (
                             <FormItem>
-                              <FormLabel>Areas of Interest</FormLabel>
+                              <div className="flex items-center justify-between">
+                                <FormLabel className="text-base">Areas of Interest</FormLabel>
+                                <Badge variant="secondary" className="text-xs">
+                                  {selectedSubjects.length} selected
+                                </Badge>
+                              </div>
                               <FormDescription>
                                 Select subjects you are comfortable with
                               </FormDescription>
@@ -422,11 +498,12 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                                       key={subject.id}
                                       variant={isSelected ? 'default' : 'outline'}
                                       className={cn(
-                                        'cursor-pointer px-3 py-1.5 text-sm transition-all',
-                                        isSelected && 'bg-primary'
+                                        'cursor-pointer px-4 py-2 text-sm transition-all hover:scale-105',
+                                        isSelected && 'bg-gradient-to-r from-emerald-500 to-teal-500 border-0 shadow-md'
                                       )}
                                       onClick={() => toggleSubject(subject.id)}
                                     >
+                                      {isSelected && <Check className="h-3 w-3 mr-1" />}
                                       {subject.name}
                                     </Badge>
                                   )
@@ -450,20 +527,21 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                     control={form.control}
                     name="experienceLevel"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Experience Level</FormLabel>
+                      <FormItem className="max-w-md mx-auto">
+                        <FormLabel className="text-base">Experience Level</FormLabel>
                         <FormDescription>
                           How would you rate your overall experience?
                         </FormDescription>
-                        <div className="mt-4 grid gap-4">
+                        <div className="mt-4 grid gap-3">
                           {EXPERIENCE_LEVELS.map((level) => (
                             <div
                               key={level.value}
                               onClick={() => field.onChange(level.value)}
                               className={cn(
-                                'flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:border-primary',
-                                field.value === level.value &&
-                                  'border-primary bg-primary/5'
+                                'flex cursor-pointer items-center justify-between rounded-xl border-2 p-4 transition-all hover:border-teal-500/50',
+                                field.value === level.value
+                                  ? 'border-teal-500 bg-teal-500/5'
+                                  : 'border-border'
                               )}
                             >
                               <div>
@@ -476,16 +554,14 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                               </div>
                               <div
                                 className={cn(
-                                  'h-5 w-5 rounded-full border-2',
+                                  'h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all',
                                   field.value === level.value
-                                    ? 'border-primary bg-primary'
+                                    ? 'border-teal-500 bg-gradient-to-br from-teal-400 to-emerald-500'
                                     : 'border-muted-foreground/30'
                                 )}
                               >
                                 {field.value === level.value && (
-                                  <div className="flex h-full items-center justify-center">
-                                    <div className="h-2 w-2 rounded-full bg-white" />
-                                  </div>
+                                  <Check className="h-3.5 w-3.5 text-white" />
                                 )}
                               </div>
                             </div>
@@ -501,14 +577,14 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
           </div>
 
           {/* Navigation Buttons */}
-          <div className="border-t bg-background px-6 py-4">
-            <div className="flex gap-3">
+          <div className="relative z-10 border-t bg-background/80 backdrop-blur-sm px-6 py-4">
+            <div className="flex gap-3 max-w-md mx-auto">
               {currentStep > 0 && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
-                  className="flex-1"
+                  className="flex-1 h-12"
                 >
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Back
@@ -520,7 +596,10 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                   type="button"
                   onClick={nextStep}
                   disabled={!isStepValid()}
-                  className={cn('flex-1', currentStep === 0 && 'w-full')}
+                  className={cn(
+                    'flex-1 h-12 gradient-primary hover:opacity-90',
+                    currentStep === 0 && 'w-full'
+                  )}
                 >
                   Next
                   <ChevronRight className="ml-2 h-4 w-4" />
@@ -529,7 +608,7 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                 <Button
                   type="submit"
                   disabled={!form.formState.isValid || isSubmitting}
-                  className="flex-1"
+                  className="flex-1 h-12 gradient-primary hover:opacity-90"
                 >
                   {isSubmitting ? (
                     <>
@@ -537,7 +616,10 @@ export function ProfileSetupForm({ onComplete, userName }: ProfileSetupFormProps
                       Completing Setup...
                     </>
                   ) : (
-                    'Complete Setup'
+                    <>
+                      Complete Setup
+                      <Check className="ml-2 h-4 w-4" />
+                    </>
                   )}
                 </Button>
               )}

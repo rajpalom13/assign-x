@@ -202,10 +202,10 @@ export default function UserDetailPage() {
                       {user.phone}
                     </span>
                   )}
-                  {user.address && (
+                  {(user.city || user.country) && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {user.address}
+                      {[user.city, user.country].filter(Boolean).join(", ")}
                     </span>
                   )}
                 </div>

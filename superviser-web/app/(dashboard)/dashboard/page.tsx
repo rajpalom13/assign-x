@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main dashboard page displaying supervisor overview, stats, new requests, and active projects.
+ * @fileoverview Professional dashboard page displaying supervisor overview, stats, and active projects.
  * @module app/(dashboard)/dashboard/page
  */
 
@@ -20,9 +20,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FolderKanban, Clock, MessageSquare, ChevronRight } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  FolderKanban,
+  Clock,
+  MessageSquare,
+  ChevronRight,
+  Sparkles,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
+import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
   const [_filters, setFilters] = useState<FilterState>({
@@ -49,7 +60,6 @@ export default function DashboardPage() {
   const isLoading = projectsLoading || statsLoading || earningsLoading || expertiseLoading
 
   // Transform projects to match component types
-  // Note: Using project.created_at as fallback for deadline when not set (stable value)
   const newRequests: ProjectRequest[] = useMemo(() => {
     return needsQuote.map(project => ({
       id: project.id,
@@ -62,7 +72,7 @@ export default function DashboardPage() {
       word_count: project.word_count || undefined,
       page_count: project.page_count || undefined,
       created_at: project.created_at || "",
-      attachments_count: 0, // Would need to fetch from attachments table
+      attachments_count: 0,
     }))
   }, [needsQuote])
 
@@ -94,7 +104,7 @@ export default function DashboardPage() {
       doer_avatar: project.doers?.profiles?.avatar_url || undefined,
       status: project.status,
       deadline: project.deadline || project.created_at || "",
-      last_message_at: undefined, // Would need to fetch from chat
+      last_message_at: undefined,
     }))
   }, [inProgress])
 
@@ -111,43 +121,57 @@ export default function DashboardPage() {
   }
 
   const handleQuoteSubmit = async (_requestId: string, _data: { userQuote: number; doerPayout: number }) => {
-    // Refetch projects after quote submission
     await refetchProjects()
   }
 
   const handleAssign = async (_projectId: string, _doerId: string) => {
-    // Refetch projects after assignment
     await refetchProjects()
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "in_progress":
-        return <Badge className="bg-blue-500">In Progress</Badge>
-      case "submitted_for_qc":
-        return <Badge className="bg-yellow-500">For Review</Badge>
-      case "qc_in_progress":
-        return <Badge className="bg-purple-500">Reviewing</Badge>
-      case "assigned":
-        return <Badge className="bg-indigo-500">Assigned</Badge>
-      case "revision_requested":
-        return <Badge className="bg-orange-500">Revision</Badge>
-      case "in_revision":
-        return <Badge className="bg-amber-500">In Revision</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { label: string; variant: string; icon: typeof Clock }> = {
+      in_progress: { label: "In Progress", variant: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Clock },
+      submitted_for_qc: { label: "For Review", variant: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: AlertCircle },
+      qc_in_progress: { label: "Reviewing", variant: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: Clock },
+      assigned: { label: "Assigned", variant: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", icon: CheckCircle2 },
+      revision_requested: { label: "Revision", variant: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: AlertCircle },
+      in_revision: { label: "In Revision", variant: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Clock },
     }
+    return configs[status] || { label: status, variant: "bg-gray-100 text-gray-700", icon: Clock }
   }
 
+  // Quick actions for empty states
+  const quickActions = [
+    { label: "View Doers", href: "/doers", icon: "👥" },
+    { label: "Check Earnings", href: "/earnings", icon: "💰" },
+    { label: "Resources", href: "/resources", icon: "📚" },
+  ]
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Here&apos;s an overview of your supervisor activity.
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <Badge variant="secondary" className="gap-1 font-normal">
+              <Sparkles className="h-3 w-3" />
+              Live
+            </Badge>
+          </div>
+          <p className="text-muted-foreground">
+            Here&apos;s your supervisor activity at a glance.
           </p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/projects" className="gap-2">
+              View All Projects
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -186,87 +210,111 @@ export default function DashboardPage() {
       </div>
 
       {/* Active Projects */}
-      <Card>
-        <CardHeader className="pb-4 border-b">
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-4 border-b bg-muted/30">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FolderKanban className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Active Projects</CardTitle>
-              {activeProjects.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  ({activeProjects.length})
-                </span>
-              )}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <FolderKanban className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Active Projects</CardTitle>
+                  {activeProjects.length > 0 && (
+                    <Badge variant="secondary" className="font-semibold">
+                      {activeProjects.length}
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription>
+                  Projects currently being worked on
+                </CardDescription>
+              </div>
             </div>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="gap-1" asChild>
               <Link href="/projects">
                 View All
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
           </div>
-          <CardDescription>
-            Projects currently being worked on by doers
-          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="divide-y">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-1">
-                      <Skeleton className="h-4 w-[250px]" />
-                      <Skeleton className="h-3 w-[180px]" />
-                    </div>
+                <div key={i} className="flex items-center gap-4 p-4">
+                  <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-6 w-[80px]" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
+                  <Skeleton className="h-6 w-20" />
                 </div>
               ))}
             </div>
           ) : activeProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No active projects</p>
-              <p className="text-sm text-muted-foreground">
-                Assigned projects will appear here
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                <FolderKanban className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1">No active projects</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                Projects will appear here once you assign them to experts. Check the sections above for new requests.
               </p>
+              <div className="flex items-center gap-2">
+                {quickActions.map((action) => (
+                  <Button key={action.href} variant="outline" size="sm" asChild>
+                    <Link href={action.href} className="gap-2">
+                      <span>{action.icon}</span>
+                      {action.label}
+                    </Link>
+                  </Button>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {activeProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-primary">
+            <div className="divide-y">
+              {activeProjects.map((project, index) => {
+                const statusConfig = getStatusConfig(project.status)
+                const StatusIcon = statusConfig.icon
+
+                return (
+                  <Link
+                    key={project.id}
+                    href={`/projects/${project.id}`}
+                    className={cn(
+                      "flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group",
+                      "animate-fade-in-up"
+                    )}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    {/* Doer Avatar */}
+                    <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm flex-shrink-0">
+                      <AvatarImage src={project.doer_avatar} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-semibold">
                         {project.doer_name
                           .split(" ")
                           .map((n) => n[0])
                           .join("")
                           .toUpperCase()
                           .slice(0, 2)}
-                      </span>
-                    </div>
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Project Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-xs font-mono">
+                        <Badge variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
                           {project.project_number}
                         </Badge>
-                        <span className="font-medium truncate">{project.title}</span>
+                        <span className="font-medium truncate group-hover:text-primary transition-colors">
+                          {project.title}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground mt-1">
-                        <span className="truncate">Doer: {project.doer_name}</span>
-                        <span className="hidden sm:inline">|</span>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                        <span className="truncate">Expert: {project.doer_name}</span>
+                        <span className="text-border">•</span>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
                           <span className="whitespace-nowrap">
@@ -275,20 +323,29 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 sm:flex-shrink-0">
-                    {getStatusBadge(project.status)}
-                    <Button variant="ghost" size="icon" className="relative" asChild>
-                      <Link href={`/chat/${project.id}`}>
+
+                    {/* Status & Actions */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <Badge className={cn("gap-1", statusConfig.variant)}>
+                        <StatusIcon className="h-3 w-3" />
+                        {statusConfig.label}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          window.location.href = `/chat/${project.id}`
+                        }}
+                      >
                         <MessageSquare className="h-4 w-4" />
-                        {project.last_message_at && (
-                          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
-                        )}
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                      </Button>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </CardContent>

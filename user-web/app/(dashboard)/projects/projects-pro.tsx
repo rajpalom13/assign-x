@@ -396,17 +396,18 @@ export function ProjectsPro({ onPayNow }: ProjectsProProps) {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* PROJECTS GRID */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            {filteredProjects.length === 0 ? (
-              <EmptyState tab={selectedTab} searchQuery={searchQuery} onNewProject={() => router.push('/projects/new')} />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredProjects
-                  .filter((p) => p.status !== "payment_pending" && p.status !== "quoted")
-                  .map((project) => (
+            {(() => {
+              const displayableProjects = filteredProjects.filter((p) => p.status !== "payment_pending" && p.status !== "quoted");
+              return displayableProjects.length === 0 ? (
+                <EmptyState tab={selectedTab} searchQuery={searchQuery} onNewProject={() => router.push('/projects/new')} />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {displayableProjects.map((project) => (
                     <ProjectCard key={project.id} project={project} onClick={() => handleProjectClick(project)} />
                   ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

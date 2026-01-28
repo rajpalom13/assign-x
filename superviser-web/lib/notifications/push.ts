@@ -170,7 +170,8 @@ export async function savePushSubscription(
   }
 
   // Save to supervisor_push_subscriptions table
-  const { error } = await supabase.from("supervisor_push_subscriptions").upsert(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from("supervisor_push_subscriptions").upsert(
     {
       supervisor_id: user.id,
       endpoint: subscriptionData.endpoint,
@@ -202,7 +203,8 @@ export async function removePushSubscription(): Promise<void> {
     throw new Error("User not authenticated")
   }
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from("supervisor_push_subscriptions")
     .delete()
     .eq("supervisor_id", user.id)
@@ -219,7 +221,7 @@ export async function removePushSubscription(): Promise<void> {
  * Convert URL-safe base64 string to Uint8Array
  * Required for VAPID public key conversion
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding)
     .replace(/\-/g, "+")
@@ -232,7 +234,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i)
   }
 
-  return outputArray
+  return outputArray.buffer as ArrayBuffer
 }
 
 /**
@@ -252,6 +254,5 @@ export async function showTestNotification(): Promise<void> {
     icon: "/icon-192x192.png",
     badge: "/icon-192x192.png",
     tag: "test-notification",
-    vibrate: [200, 100, 200],
   })
 }

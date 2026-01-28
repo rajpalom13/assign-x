@@ -8,6 +8,7 @@ import {
   FileText,
   LucideIcon,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -37,7 +38,7 @@ const defaultResources: ResourceItem[] = [
   {
     id: 'training-center',
     title: 'Training Center',
-    description: 'Re-watch training videos and learn best practices',
+    description: 'Re-watch training videos and learn best practices for quality work',
     icon: GraduationCap,
     category: 'training',
     badge: 'Updated',
@@ -45,7 +46,7 @@ const defaultResources: ResourceItem[] = [
   {
     id: 'ai-report',
     title: 'AI Report Generator',
-    description: 'Check AI percentage in your work before submission',
+    description: 'Check AI percentage in your work before submission to ensure originality',
     icon: Bot,
     category: 'tools',
     isNew: true,
@@ -53,14 +54,14 @@ const defaultResources: ResourceItem[] = [
   {
     id: 'citation-builder',
     title: 'Citation Builder',
-    description: 'Generate APA, Harvard, MLA references from URLs',
+    description: 'Generate APA, Harvard, MLA references from URLs automatically',
     icon: Quote,
     category: 'tools',
   },
   {
     id: 'templates',
     title: 'Format Templates',
-    description: 'Download standard Word, PPT, and Excel templates',
+    description: 'Download standard Word, PPT, and Excel templates for your projects',
     icon: FileText,
     category: 'templates',
   },
@@ -92,34 +93,36 @@ const itemVariants = {
 
 /**
  * Resources grid component
- * Displays a grid of available tools and resources
+ * Professional design with gradient cards
  */
 export function ResourcesGrid({ onResourceClick, className }: ResourcesGridProps) {
-  /** Get category color */
-  const getCategoryColor = (category: ResourceItem['category']) => {
+  /** Get category styles */
+  const getCategoryStyles = (category: ResourceItem['category']) => {
     switch (category) {
       case 'training':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+        return {
+          badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+          iconBg: 'bg-gradient-to-br from-teal-400 to-teal-600',
+          gradient: 'stat-gradient-teal',
+        }
       case 'tools':
-        return 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+        return {
+          badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+          iconBg: 'bg-gradient-to-br from-purple-400 to-purple-600',
+          gradient: 'stat-gradient-purple',
+        }
       case 'templates':
-        return 'bg-green-500/10 text-green-600 border-green-500/20'
+        return {
+          badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+          iconBg: 'bg-gradient-to-br from-emerald-400 to-emerald-600',
+          gradient: 'stat-gradient-emerald',
+        }
       default:
-        return 'bg-muted'
-    }
-  }
-
-  /** Get icon background color */
-  const getIconBg = (category: ResourceItem['category']) => {
-    switch (category) {
-      case 'training':
-        return 'bg-blue-500/10 text-blue-600'
-      case 'tools':
-        return 'bg-purple-500/10 text-purple-600'
-      case 'templates':
-        return 'bg-green-500/10 text-green-600'
-      default:
-        return 'bg-muted text-muted-foreground'
+        return {
+          badge: 'bg-muted',
+          iconBg: 'bg-muted',
+          gradient: '',
+        }
     }
   }
 
@@ -128,26 +131,31 @@ export function ResourcesGrid({ onResourceClick, className }: ResourcesGridProps
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}
+      className={cn('grid gap-6 sm:grid-cols-2 lg:grid-cols-4', className)}
     >
       {defaultResources.map((resource) => {
         const Icon = resource.icon
+        const styles = getCategoryStyles(resource.category)
 
         return (
           <motion.div key={resource.id} variants={itemVariants}>
             <Card
-              className="relative cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group h-full"
+              className={cn(
+                "relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group h-full overflow-hidden",
+                styles.gradient
+              )}
               onClick={() => onResourceClick(resource.id)}
             >
               {/* Badges */}
-              <div className="absolute top-3 right-3 flex gap-1">
+              <div className="absolute top-4 right-4 flex gap-1.5 z-10">
                 {resource.isNew && (
-                  <Badge variant="default" className="bg-green-500 text-xs">
+                  <Badge className="bg-gradient-to-r from-teal-500 to-emerald-500 border-0 text-white text-xs gap-1 shadow-md">
+                    <Sparkles className="h-3 w-3" />
                     New
                   </Badge>
                 )}
                 {resource.badge && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
                     {resource.badge}
                   </Badge>
                 )}
@@ -158,33 +166,36 @@ export function ResourcesGrid({ onResourceClick, className }: ResourcesGridProps
                 )}
               </div>
 
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-4">
                 <div
                   className={cn(
-                    'w-12 h-12 rounded-lg flex items-center justify-center mb-3',
-                    getIconBg(resource.category)
+                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg',
+                    styles.iconBg
                   )}
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-7 w-7 text-white" />
                 </div>
-                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                <CardTitle className="text-lg group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                   {resource.title}
                 </CardTitle>
               </CardHeader>
 
               <CardContent className="pt-0">
-                <CardDescription className="text-sm">
+                <CardDescription className="text-sm leading-relaxed">
                   {resource.description}
                 </CardDescription>
 
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
                   <Badge
                     variant="outline"
-                    className={cn('capitalize text-xs', getCategoryColor(resource.category))}
+                    className={cn('capitalize text-xs', styles.badge)}
                   >
                     {resource.category}
                   </Badge>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                    <span>Open</span>
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -208,23 +219,33 @@ interface ResourceCardProps {
 export function ResourceCard({ resource, onClick, className }: ResourceCardProps) {
   const Icon = resource.icon
 
-  const getIconBg = (category: ResourceItem['category']) => {
+  const getCategoryStyles = (category: ResourceItem['category']) => {
     switch (category) {
       case 'training':
-        return 'bg-blue-500/10 text-blue-600'
+        return {
+          iconBg: 'bg-gradient-to-br from-teal-400 to-teal-600',
+        }
       case 'tools':
-        return 'bg-purple-500/10 text-purple-600'
+        return {
+          iconBg: 'bg-gradient-to-br from-purple-400 to-purple-600',
+        }
       case 'templates':
-        return 'bg-green-500/10 text-green-600'
+        return {
+          iconBg: 'bg-gradient-to-br from-emerald-400 to-emerald-600',
+        }
       default:
-        return 'bg-muted text-muted-foreground'
+        return {
+          iconBg: 'bg-muted',
+        }
     }
   }
+
+  const styles = getCategoryStyles(resource.category)
 
   return (
     <Card
       className={cn(
-        'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group',
+        'cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group',
         className
       )}
       onClick={onClick}
@@ -232,13 +253,13 @@ export function ResourceCard({ resource, onClick, className }: ResourceCardProps
       <CardHeader className="pb-3">
         <div
           className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center mb-2',
-            getIconBg(resource.category)
+            'w-12 h-12 rounded-xl flex items-center justify-center mb-3 shadow-md',
+            styles.iconBg
           )}
         >
-          <Icon className="h-5 w-5" />
+          <Icon className="h-6 w-6 text-white" />
         </div>
-        <CardTitle className="text-base group-hover:text-primary transition-colors">
+        <CardTitle className="text-base group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
           {resource.title}
         </CardTitle>
       </CardHeader>

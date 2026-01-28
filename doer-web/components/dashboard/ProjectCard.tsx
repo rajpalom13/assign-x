@@ -2,7 +2,17 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Clock, Flame, IndianRupee, User, Calendar, CheckCircle2, Loader2 } from 'lucide-react'
+import {
+  Clock,
+  Flame,
+  IndianRupee,
+  User,
+  Calendar,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+  AlertTriangle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,8 +46,8 @@ interface ProjectCardProps {
 }
 
 /**
- * Project card component
- * Displays project details in a card format
+ * Professional project card component
+ * Modern design with gradients and better visual hierarchy
  */
 export function ProjectCard({
   id,
@@ -81,6 +91,7 @@ export function ProjectCard({
 
   const timeRemaining = getTimeRemaining()
   const showUrgent = isUrgent || isDeadlineSoon()
+  const isOverdue = timeRemaining === 'Overdue'
 
   /** Handle accept click */
   const handleAccept = async (e: React.MouseEvent) => {
@@ -100,102 +111,144 @@ export function ProjectCard({
     onClick?.(id)
   }
 
-  /** Get status badge */
+  /** Get status badge config */
   const getStatusBadge = () => {
-    switch (status) {
-      case 'paid':
-        return null
-      case 'assigned':
-        return <Badge variant="secondary">Assigned</Badge>
-      case 'in_progress':
-        return <Badge className="bg-blue-500">In Progress</Badge>
-      case 'submitted_for_qc':
-        return <Badge className="bg-purple-500">Submitted</Badge>
-      case 'qc_in_progress':
-        return <Badge className="bg-yellow-500">Under Review</Badge>
-      case 'revision_requested':
-        return <Badge variant="destructive">Revision Needed</Badge>
-      case 'in_revision':
-        return <Badge className="bg-orange-500">In Revision</Badge>
-      case 'completed':
-      case 'auto_approved':
-        return <Badge className="bg-green-500">Completed</Badge>
-      case 'delivered':
-        return <Badge className="bg-green-600">Delivered</Badge>
-      default:
-        return null
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      paid: { label: '', className: '' },
+      assigned: { label: 'Assigned', className: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' },
+      in_progress: { label: 'In Progress', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+      submitted_for_qc: { label: 'Submitted', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+      qc_in_progress: { label: 'Under Review', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+      revision_requested: { label: 'Revision Needed', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+      in_revision: { label: 'In Revision', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+      completed: { label: 'Completed', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+      auto_approved: { label: 'Completed', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+      delivered: { label: 'Delivered', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
     }
+
+    const config = statusConfig[status]
+    if (!config || !config.label) return null
+
+    return (
+      <Badge variant="secondary" className={cn("text-xs font-medium", config.className)}>
+        {config.label}
+      </Badge>
+    )
   }
 
   return (
     <motion.div
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <Card
         className={cn(
-          'cursor-pointer transition-shadow hover:shadow-md',
-          showUrgent && 'border-red-500 border-2',
-          status === 'revision_requested' && 'border-destructive'
+          'cursor-pointer transition-all duration-300 overflow-hidden group',
+          'hover:shadow-lg hover:shadow-black/5 hover:border-primary/20',
+          showUrgent && !isOverdue && 'border-amber-500/50 dark:border-amber-500/30',
+          isOverdue && 'border-red-500/50 dark:border-red-500/30',
+          status === 'revision_requested' && 'border-red-500/50'
         )}
         onClick={handleClick}
       >
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
+        {/* Urgency indicator bar */}
+        {(showUrgent || status === 'revision_requested') && (
+          <div className={cn(
+            "h-1 w-full",
+            isOverdue ? "bg-red-500" :
+            status === 'revision_requested' ? "bg-red-500" :
+            "bg-gradient-to-r from-amber-400 to-orange-500"
+          )} />
+        )}
+
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0 space-y-2">
               {/* Subject badge */}
-              <Badge variant="outline" className="mb-2">
+              <Badge variant="outline" className="text-xs font-normal">
                 {subject}
               </Badge>
 
               {/* Title */}
-              <h3 className="font-semibold text-base leading-tight line-clamp-2">
+              <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
                 {title}
               </h3>
             </div>
 
             {/* Urgent indicator */}
             {showUrgent && (
-              <div className="flex items-center gap-1 text-red-500 animate-pulse">
-                <Flame className="h-5 w-5" />
-                <span className="text-xs font-medium">Urgent</span>
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium shrink-0",
+                isOverdue
+                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              )}>
+                {isOverdue ? (
+                  <AlertTriangle className="h-3 w-3" />
+                ) : (
+                  <Flame className="h-3 w-3 animate-pulse" />
+                )}
+                <span>{isOverdue ? 'Overdue' : 'Urgent'}</span>
               </div>
             )}
           </div>
 
           {/* Status badge */}
-          {getStatusBadge()}
+          <div className="flex items-center gap-2 mt-2">
+            {getStatusBadge()}
+          </div>
         </CardHeader>
 
-        <CardContent className="pb-2">
+        <CardContent className="pb-3">
           {/* Description */}
           {description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
               {description}
             </p>
           )}
 
-          {/* Meta info */}
-          <div className="flex flex-wrap gap-3 text-sm">
+          {/* Meta info grid */}
+          <div className="grid grid-cols-2 gap-3">
             {/* Price */}
-            <div className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-              <IndianRupee className="h-4 w-4" />
-              <span>{price.toLocaleString('en-IN')}</span>
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+              <IndianRupee className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                {price.toLocaleString('en-IN')}
+              </span>
             </div>
 
             {/* Deadline */}
-            <div
-              className={cn(
-                'flex items-center gap-1',
-                showUrgent ? 'text-red-500' : 'text-muted-foreground'
-              )}
-            >
-              <Clock className="h-4 w-4" />
-              <span>{timeRemaining}</span>
+            <div className={cn(
+              "flex items-center gap-2 p-2 rounded-lg",
+              isOverdue
+                ? "bg-red-50 dark:bg-red-900/20"
+                : showUrgent
+                  ? "bg-amber-50 dark:bg-amber-900/20"
+                  : "bg-muted/50"
+            )}>
+              <Clock className={cn(
+                "h-4 w-4",
+                isOverdue
+                  ? "text-red-600 dark:text-red-400"
+                  : showUrgent
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground"
+              )} />
+              <span className={cn(
+                "text-sm font-medium",
+                isOverdue
+                  ? "text-red-700 dark:text-red-400"
+                  : showUrgent
+                    ? "text-amber-700 dark:text-amber-400"
+                    : "text-muted-foreground"
+              )}>
+                {timeRemaining}
+              </span>
             </div>
 
             {/* Due date */}
-            <div className="flex items-center gap-1 text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
                 {deadline.toLocaleDateString('en-IN', {
@@ -207,34 +260,41 @@ export function ProjectCard({
 
             {/* Supervisor */}
             {supervisorName && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>{supervisorName}</span>
+                <span className="truncate">{supervisorName}</span>
               </div>
             )}
           </div>
         </CardContent>
 
-        {/* Action footer - show for pool tasks that are paid but not assigned */}
-        {status === 'paid' && onAccept && (
-          <CardFooter className="pt-2">
+        {/* Action footer */}
+        {status === 'paid' && onAccept ? (
+          <CardFooter className="pt-3 border-t">
             <Button
-              className="w-full"
+              className="w-full gap-2 gradient-primary hover:opacity-90"
               onClick={handleAccept}
               disabled={isAccepting}
             >
               {isAccepting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Accepting...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  <CheckCircle2 className="h-4 w-4" />
                   Accept Task
                 </>
               )}
             </Button>
+          </CardFooter>
+        ) : (
+          <CardFooter className="pt-3 border-t">
+            <div className="w-full flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">View details</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
           </CardFooter>
         )}
       </Card>

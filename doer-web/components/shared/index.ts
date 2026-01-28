@@ -4,5 +4,5 @@
  */
 
 export { ErrorBoundary } from "./ErrorBoundary"
-export { default as Logo } from "./Logo"
-export { default as AvailabilityToggle } from "./AvailabilityToggle"
+export { Logo } from "./Logo"
+export { AvailabilityToggle } from "./AvailabilityToggle"

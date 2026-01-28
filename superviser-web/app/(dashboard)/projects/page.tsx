@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   FileSearch,
   SlidersHorizontal,
+  FolderKanban,
 } from "lucide-react"
 import { useProjectsByStatus, useSupervisor } from "@/hooks"
 import type { ProjectWithRelations } from "@/types/database"
@@ -306,13 +307,30 @@ export default function ProjectsPage() {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Active Projects</h1>
-        <p className="text-muted-foreground">
-          Manage your ongoing projects, review submissions, and track completed work.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center">
+              <FolderKanban className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage and track all project activities
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {forReviewProjects.length > 0 && (
+            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 gap-1.5">
+              <FileSearch className="h-3.5 w-3.5" />
+              {forReviewProjects.length} awaiting review
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -492,8 +510,8 @@ export default function ProjectsPage() {
                 <CompletedProjectCard
                   key={project.id}
                   project={project}
-                  rating={4.5 + Math.random() * 0.5}
-                  feedback="Project completed successfully."
+                  rating={(project as ActiveProject & { rating?: number }).rating || 0}
+                  feedback={(project as ActiveProject & { feedback?: string }).feedback || undefined}
                 />
               ))}
             </div>

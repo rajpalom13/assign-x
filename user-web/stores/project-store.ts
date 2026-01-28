@@ -43,7 +43,7 @@ export interface Project {
   reference_style?: {
     id: string;
     name: string;
-    short_name: string;
+    version: string;
   } | null;
   files?: ProjectFile[];
   deliverables?: ProjectDeliverable[];
@@ -182,7 +182,7 @@ function transformProject(p: Project): Project {
     progress: p.progress_percentage,
     quoteAmount: p.final_quote || p.user_quote || undefined,
     wordCount: p.word_count || undefined,
-    referenceStyle: p.reference_style?.short_name,
+    referenceStyle: p.reference_style?.name,
     createdAt: p.created_at,
     deliveredAt: p.delivered_at || undefined,
     completedAt: p.completed_at || undefined,

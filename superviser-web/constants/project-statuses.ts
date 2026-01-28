@@ -145,7 +145,7 @@ export function isStatusInGroup(
   status: string,
   group: keyof typeof STATUS_GROUPS
 ): boolean {
-  return STATUS_GROUPS[group].includes(status as ProjectStatus)
+  return (STATUS_GROUPS[group] as readonly string[]).includes(status)
 }
 
 /**

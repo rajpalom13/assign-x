@@ -1,5 +1,5 @@
 /**
- * @fileoverview Login form component with Google OAuth authentication only.
+ * @fileoverview Professional login form component with Google OAuth authentication.
  * @module components/auth/login-form
  */
 
@@ -7,9 +7,10 @@
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Lock, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { cn } from "@/lib/utils"
 
 /**
  * Login form component that uses Google OAuth for authentication
@@ -44,19 +45,24 @@ export function LoginForm() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Google Sign In Button */}
       <Button
         type="button"
         variant="outline"
         size="lg"
-        className="w-full flex items-center justify-center gap-3"
+        className={cn(
+          "w-full h-12 flex items-center justify-center gap-3 text-base font-medium",
+          "border-2 hover:border-primary/20 hover:bg-muted/50 transition-all duration-200",
+          "shadow-sm hover:shadow-md"
+        )}
         onClick={handleGoogleSignIn}
         disabled={isLoading}
       >
         {isLoading ? (
           <>
             <Loader2 className="h-5 w-5 animate-spin" />
-            Signing in...
+            <span>Signing in...</span>
           </>
         ) : (
           <>
@@ -78,13 +84,45 @@ export function LoginForm() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continue with Google
+            <span>Continue with Google</span>
           </>
         )}
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
-        By signing in, you agree to our Terms of Service and Privacy Policy
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            Secure authentication
+          </span>
+        </div>
+      </div>
+
+      {/* Security Features */}
+      <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Lock className="h-3.5 w-3.5" />
+          <span>SSL Protected</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Mail className="h-3.5 w-3.5" />
+          <span>Work Email Recommended</span>
+        </div>
+      </div>
+
+      {/* Terms */}
+      <p className="text-center text-xs text-muted-foreground leading-relaxed">
+        By signing in, you agree to our{" "}
+        <a href="#" className="text-primary hover:underline font-medium">
+          Terms of Service
+        </a>{" "}
+        and{" "}
+        <a href="#" className="text-primary hover:underline font-medium">
+          Privacy Policy
+        </a>
       </p>
     </div>
   )

@@ -77,7 +77,9 @@ export async function GET(request: Request) {
   const roleFromCookie = getCookieValue(cookieHeader, "signup_role");
 
   // Use URL role first (magic link), then cookie role (OAuth)
-  const role = roleFromUrl || roleFromCookie;
+  const validRoles = ['student', 'professional', 'business'];
+  const rawRole = roleFromUrl || roleFromCookie;
+  const role = rawRole && validRoles.includes(rawRole) ? rawRole : (rawRole ? 'student' : null);
   const isSignup = isSignupFromCookie || !!roleFromUrl;
 
   if (code) {

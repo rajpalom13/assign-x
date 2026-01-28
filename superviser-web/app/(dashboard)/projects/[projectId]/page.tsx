@@ -362,12 +362,12 @@ export default function ProjectDetailPage() {
                 </>
               )}
 
-              {project.special_instructions && (
+              {project.specific_instructions && (
                 <>
                   <Separator />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">Special Instructions</p>
-                    <p className="text-sm whitespace-pre-wrap">{project.special_instructions}</p>
+                    <p className="text-sm whitespace-pre-wrap">{project.specific_instructions}</p>
                   </div>
                 </>
               )}

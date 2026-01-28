@@ -143,6 +143,17 @@ export function useProject(projectId: string): UseProjectReturn {
       setIsLoading(true)
       setError(null)
 
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Not authenticated")
+
+      const { data: supervisor } = await supabase
+        .from("supervisors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single()
+
+      if (!supervisor) throw new Error("Supervisor not found")
+
       const { data, error: queryError } = await supabase
         .from("projects")
         .select(`
@@ -159,6 +170,7 @@ export function useProject(projectId: string): UseProjectReturn {
           )
         `)
         .eq("id", projectId)
+        .eq("supervisor_id", supervisor.id)
         .single()
 
       if (queryError) throw queryError
@@ -190,10 +202,22 @@ export function useProject(projectId: string): UseProjectReturn {
     if (!projectId) return
 
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error("Not authenticated")
+
+    const { data: supervisor } = await supabase
+      .from("supervisors")
+      .select("id")
+      .eq("profile_id", user.id)
+      .single()
+
+    if (!supervisor) throw new Error("Supervisor not found")
+
     const { error: updateError } = await supabase
       .from("projects")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", projectId)
+      .eq("supervisor_id", supervisor.id)
 
     if (updateError) throw updateError
     await fetchProject()

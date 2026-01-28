@@ -31,24 +31,27 @@ export async function createSupportTicket(
   userId: string,
   ticket: CreateTicketPayload
 ): Promise<{ success: boolean; error?: string; ticket?: SupportTicket }> {
-  // In production, this would create actual ticket in database
-  const newTicket: SupportTicket = {
-    id: `ticket-${Date.now()}`,
-    user_id: userId,
-    user_name: null,
-    subject: ticket.subject,
-    description: ticket.description,
-    category: ticket.category,
-    priority: ticket.priority || 'medium',
-    status: 'open',
-    assigned_to: null,
-    assigned_name: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    resolved_at: null,
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('support_tickets')
+    .insert({
+      requester_id: userId,
+      subject: ticket.subject,
+      description: ticket.description,
+      category: ticket.category,
+      priority: ticket.priority || 'medium',
+      status: 'open',
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating support ticket:', error)
+    return { success: false, error: error.message }
   }
 
-  return { success: true, ticket: newTicket }
+  return { success: true, ticket: data }
 }
 
 /**
@@ -62,7 +65,7 @@ export async function getSupportTickets(userId: string): Promise<SupportTicket[]
   const { data } = await supabase
     .from('support_tickets')
     .select('*')
-    .eq('user_id', userId)
+    .eq('requester_id', userId)
     .order('created_at', { ascending: false })
 
   return data || []

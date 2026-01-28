@@ -107,7 +107,7 @@ export default function OnboardingPage() {
         const { data } = await supabase
           .from("supervisors")
           .select("status, cv_verification, experience_validation, background_check")
-          .eq("id", user.id)
+          .eq("profile_id", user.id)
           .single()
 
         const supervisor = data as SupervisorProfile | null
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
 
       // Create supervisor profile - using type assertion since table schema is extended
       const supervisorData = {
-        id: userId,
+        profile_id: userId,
         qualification: onboardingData.profile.qualification,
         years_of_experience: onboardingData.profile.yearsOfExperience,
         expertise_areas: onboardingData.profile.expertiseAreas,
@@ -242,7 +242,7 @@ export default function OnboardingPage() {
       const { data } = await supabase
         .from("supervisors")
         .select("status, cv_verification, experience_validation, background_check")
-        .eq("id", userId)
+        .eq("profile_id", userId)
         .single()
 
       const supervisor = data as SupervisorProfile | null

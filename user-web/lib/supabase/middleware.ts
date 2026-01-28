@@ -89,6 +89,10 @@ export async function updateSession(request: NextRequest) {
     "/support",
     "/wallet",
     "/payment-methods",
+    "/experts",
+    "/campus-connect",
+    "/marketplace",
+    "/dashboard",
   ];
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
@@ -98,6 +102,22 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Verify user has a valid user_type for protected routes
+  if (user && isProtectedRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || !['student', 'professional', 'business'].includes(profile.user_type)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('error', 'unauthorized');
+      return NextResponse.redirect(url);
+    }
   }
 
   // Onboarding routes - need auth but allow incomplete profiles

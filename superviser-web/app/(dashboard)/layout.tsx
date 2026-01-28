@@ -47,11 +47,55 @@ export default async function DashboardLayout({
     avatarUrl: profile?.avatar_url,
   }
 
+  // Fetch supervisor data and stats for header
+  let pendingQCCount = 0
+  let activeProjectsCount = 0
+  let notificationCount = 0
+
+  try {
+    const { data: supervisor } = await supabase
+      .from("supervisors")
+      .select("id")
+      .eq("profile_id", user.id)
+      .single()
+
+    if (supervisor) {
+      const [pendingQCResult, activeProjectsResult, notificationsResult] = await Promise.all([
+        supabase
+          .from("projects")
+          .select("id", { count: "exact", head: true })
+          .eq("supervisor_id", supervisor.id)
+          .eq("status", "submitted_for_qc"),
+        supabase
+          .from("projects")
+          .select("id", { count: "exact", head: true })
+          .eq("supervisor_id", supervisor.id)
+          .in("status", ["assigned", "in_progress", "submitted_for_qc", "qc_in_progress", "revision_requested", "in_revision"]),
+        supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("read", false),
+      ])
+
+      pendingQCCount = pendingQCResult.count || 0
+      activeProjectsCount = activeProjectsResult.count || 0
+      notificationCount = notificationsResult.count || 0
+    }
+  } catch {
+    // Stats queries may fail if tables don't exist yet
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar user={userData} />
       <SidebarInset>
-        <Header userName={userData.name} />
+        <Header
+          userName={userData.name}
+          pendingQCCount={pendingQCCount}
+          activeProjectsCount={activeProjectsCount}
+          notificationCount={notificationCount}
+        />
         <main className="flex-1 overflow-auto p-6 lg:p-8">
           {children}
         </main>
