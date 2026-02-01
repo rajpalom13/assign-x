@@ -43,14 +43,14 @@ export function ReadyToAssignSection({
 
   return (
     <>
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4 border-b">
+      <Card className="border border-[#E7DED0] bg-white/85 p-6 shadow-sm">
+        <CardHeader className="p-0 pb-4 border-b border-[#E7DED0]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              <CardTitle className="text-lg">Ready to Assign</CardTitle>
+              <span className="h-2 w-2 rounded-full bg-[#1B6F6A]" />
+              <CardTitle className="text-lg text-[#122022]">Ready to Assign</CardTitle>
               {projects.length > 0 && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-[#6B7B78]">
                   ({projects.length})
                 </span>
               )}
@@ -66,8 +66,8 @@ export function ReadyToAssignSection({
               </Button>
             )}
           </div>
-          <CardDescription className="mt-1">
-            Paid projects ready for doer assignment
+          <CardDescription className="mt-1 text-[#5A6B68]">
+            Paid projects ready for expert assignment
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 pt-4">
@@ -102,14 +102,14 @@ export function ReadyToAssignSection({
             </div>
           ) : projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Users className="h-12 w-12 text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No projects to assign</p>
-              <p className="text-sm text-muted-foreground">
+              <Users className="h-12 w-12 text-[#8FA3A0] mb-3" />
+              <p className="text-[#5A6B68]">No projects to assign</p>
+              <p className="text-sm text-[#7A8B87]">
                 Paid projects will appear here for assignment
               </p>
             </div>
           ) : (
-            <ScrollArea className="max-h-[400px]">
+            <ScrollArea className="max-h-[420px]">
               <div className="space-y-3 pr-4">
                 {projects.map((project) => (
                   <ReadyToAssignCard

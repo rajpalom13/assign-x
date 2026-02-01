@@ -67,9 +67,9 @@ export function StatsCards({
         ? { value: trends.activeProjects, isPositive: trends.activeProjects > 0 }
         : undefined,
       href: "/projects?tab=ongoing",
-      gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
-      iconBg: "bg-blue-500/10 dark:bg-blue-500/20",
-      iconColor: "text-blue-600 dark:text-blue-400",
+      gradient: "from-[#E7F2EF] via-[#F3EBDD] to-transparent",
+      iconBg: "bg-[#9FD6CC]/40",
+      iconColor: "text-[#0F4C4A]",
     },
     {
       title: "Pending QC",
@@ -80,9 +80,9 @@ export function StatsCards({
         ? { value: Math.abs(trends.pendingQC), isPositive: trends.pendingQC < 0 }
         : undefined,
       href: "/projects?tab=review",
-      gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-      iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
-      iconColor: "text-amber-600 dark:text-amber-400",
+      gradient: "from-[#F4E7D0] via-[#F3EBDD] to-transparent",
+      iconBg: "bg-[#C8A96A]/30",
+      iconColor: "text-[#7A5A2C]",
     },
     {
       title: "Completed",
@@ -93,9 +93,9 @@ export function StatsCards({
         ? { value: trends.completed, isPositive: trends.completed > 0 }
         : undefined,
       href: "/projects?tab=completed",
-      gradient: "from-green-500/10 via-green-500/5 to-transparent",
-      iconBg: "bg-green-500/10 dark:bg-green-500/20",
-      iconColor: "text-green-600 dark:text-green-400",
+      gradient: "from-[#E7F2EF] via-[#F7F1E8] to-transparent",
+      iconBg: "bg-[#9FD6CC]/35",
+      iconColor: "text-[#1B6F6A]",
     },
     {
       title: "Earnings",
@@ -106,17 +106,17 @@ export function StatsCards({
         ? { value: trends.earnings, isPositive: trends.earnings > 0 }
         : undefined,
       href: "/earnings",
-      gradient: "from-purple-500/10 via-purple-500/5 to-transparent",
-      iconBg: "bg-purple-500/10 dark:bg-purple-500/20",
-      iconColor: "text-purple-600 dark:text-purple-400",
+      gradient: "from-[#F7E1D6] via-[#F3EBDD] to-transparent",
+      iconBg: "bg-[#E48B6A]/20",
+      iconColor: "text-[#9A5A41]",
     },
   ]
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="relative overflow-hidden">
+          <Card key={i} className="relative overflow-hidden border border-[#E7DED0] bg-white/90">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-3 flex-1">
@@ -137,15 +137,15 @@ export function StatsCards({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-2">
       {stats.map((stat, index) => {
         const cardContent = (
           <Card
-            className={cn(
-              "relative overflow-hidden transition-all duration-300 group",
-              stat.href && "cursor-pointer hover:shadow-lg hover:shadow-black/5 hover:-translate-y-0.5 hover:border-primary/20",
-              "animate-fade-in-up"
-            )}
+              className={cn(
+                "relative overflow-hidden border border-[#E7DED0] bg-white/90 transition-all duration-300 group",
+                stat.href && "cursor-pointer hover:shadow-[0_12px_24px_-16px_rgba(15,76,74,0.6)] hover:-translate-y-0.5",
+                "animate-fade-in-up"
+              )}
             style={{ animationDelay: `${index * 0.05}s` }}
           >
               {/* Gradient Background */}
@@ -156,14 +156,14 @@ export function StatsCards({
                 )}
               />
 
-              <CardContent className="relative p-6">
+              <CardContent className="relative p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#7A8B87]">
                       {stat.title}
                     </p>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold tracking-tight">
+                      <span className="text-3xl font-semibold tracking-tight text-[#122022]">
                         {stat.value}
                       </span>
                     </div>
@@ -173,8 +173,8 @@ export function StatsCards({
                           className={cn(
                             "inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-md",
                             stat.trend.isPositive
-                              ? "text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30"
-                              : "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
+                              ? "text-[#0F4C4A] bg-[#E7F2EF]"
+                              : "text-[#8A4C3A] bg-[#F7E1D6]"
                           )}
                         >
                           {stat.trend.isPositive ? (
@@ -185,7 +185,7 @@ export function StatsCards({
                           {stat.trend.value}%
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-[#6B7B78]">
                         {stat.description}
                       </span>
                     </div>
@@ -205,7 +205,7 @@ export function StatsCards({
                 {/* Hover Arrow Indicator */}
                 {stat.href && (
                   <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                    <ArrowUpRight className="h-4 w-4 text-[#8FA3A0]" />
                   </div>
                 )}
               </CardContent>

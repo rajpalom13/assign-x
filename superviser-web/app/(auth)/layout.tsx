@@ -4,29 +4,30 @@
  */
 
 import { APP_NAME } from "@/lib/constants"
-import { Shield, Users, Wallet, CheckCircle2, Sparkles } from "lucide-react"
+import { Shield, CheckCircle2, Timer, Sparkles } from "lucide-react"
 
-const features = [
-  {
-    icon: Users,
-    title: "Expert Network",
-    description: "Access to verified academic experts across all disciplines",
-  },
-  {
-    icon: Wallet,
-    title: "Earn Commission",
-    description: "Competitive commission structure on every completed project",
-  },
+const assuranceSignals = [
   {
     icon: Shield,
-    title: "Quality Assurance",
-    description: "Tools for plagiarism checking, AI detection, and QC review",
+    label: "Verified QA",
+    detail: "Multi-step checks",
   },
   {
     icon: CheckCircle2,
-    title: "Project Management",
-    description: "Streamlined workflow from quote to delivery",
+    label: "Clear decisions",
+    detail: "Actionable feedback",
   },
+  {
+    icon: Timer,
+    label: "On time",
+    detail: "Priority routing",
+  },
+]
+
+const trustStats = [
+  { value: "98%", label: "On-time QC" },
+  { value: "4.9/5", label: "Supervisor score" },
+  { value: "24h", label: "Avg. turnaround" },
 ]
 
 export default function AuthLayout({
@@ -35,94 +36,125 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel - Branding (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
+    <div className="min-h-screen flex bg-[#F2E9DA]">
+      {/* Left Panel - Visual Story (Hidden on mobile) */}
+      <div className="relative hidden lg:flex lg:w-[56%] overflow-hidden bg-[#0F2A2E] text-white">
+        {/* Ambient gradients */}
+        <div className="absolute inset-0">
+          <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-[#1C4B4F]/60 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-[#72B7AD]/30 blur-3xl" />
+          <div className="absolute right-16 top-1/3 h-64 w-64 rounded-full bg-[#C77B4E]/20 blur-3xl" />
         </div>
 
-        {/* Gradient Orbs */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-500/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
+        {/* Diagonal sheen */}
+        <div className="absolute -right-20 top-12 h-[420px] w-[420px] rotate-12 rounded-[64px] bg-white/5" />
+
+        {/* Subtle texture */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              "linear-gradient(120deg, rgba(255,255,255,0.05) 0%, transparent 45%), linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            backgroundSize: "100% 100%, 64px 64px",
+          }}
+        />
+
+        {/* Asymmetric card cluster */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute right-16 top-14 w-56 rounded-[28px] border border-white/10 bg-[#122022]/80 p-5 shadow-2xl animate-fade-in-up">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-white/50">Control Rate</div>
+            <div className="mt-3 text-3xl font-semibold text-[#72B7AD]">92%</div>
+            <div className="mt-2 text-xs text-white/60">Escalations resolved</div>
+          </div>
+          <div className="absolute left-14 top-[42%] w-[260px] -translate-y-1/2 rounded-2xl border border-[#72B7AD]/40 bg-white/10 p-4 backdrop-blur-md animate-fade-in-up">
+            <div className="flex items-center gap-2 text-xs text-white/70">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#72B7AD]/20 text-[#72B7AD]">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              Prioritized QA signals
+            </div>
+            <div className="mt-3 text-sm text-white/60">
+              Automated routing surfaces high-risk files for immediate review.
+            </div>
+          </div>
+          <div className="absolute bottom-16 right-24 h-44 w-44 rounded-[32px] border border-white/15 bg-gradient-to-br from-white/15 to-white/5 p-4 shadow-lg animate-bounce-subtle">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-white/50">Avg. Review</div>
+            <div className="mt-5 text-2xl font-semibold text-white">2h 18m</div>
+            <div className="mt-2 text-xs text-white/50">From intake to sign-off</div>
+          </div>
+        </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+        <div className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-[#1C4B4F] via-[#2F6D6E] to-[#72B7AD] shadow-lg shadow-[#0F2A2E]/40 flex items-center justify-center">
               <span className="text-xl font-bold text-white">AX</span>
             </div>
             <div>
-              <span className="font-bold text-2xl text-white">{APP_NAME}</span>
-              <div className="flex items-center gap-1.5 text-white/60 text-sm">
+              <span className="text-2xl font-bold text-white">{APP_NAME}</span>
+              <div className="flex items-center gap-1.5 text-sm text-white/60">
                 <Shield className="h-3.5 w-3.5" />
-                Supervisor Portal
+                Supervisor Control
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/80 text-sm">
-                <Sparkles className="h-4 w-4 text-yellow-400" />
-                Trusted by 500+ supervisors
-              </div>
-              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-                Quality Control Hub for
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-                  Academic Excellence
-                </span>
-              </h1>
-              <p className="text-lg text-white/60 max-w-lg">
-                Join our network of expert supervisors and help maintain the highest standards in academic assistance.
-              </p>
+          <div className="max-w-xl space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/70">
+              <Sparkles className="h-4 w-4 text-[#C77B4E]" />
+              Built for high-stakes review cycles
             </div>
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white xl:text-5xl">
+              Quality control,
+              <span className="block bg-gradient-to-r from-[#72B7AD] to-[#C77B4E] bg-clip-text text-transparent">
+                clearly measured
+              </span>
+            </h1>
+            <p className="text-lg text-white/60">
+              Keep standards crisp with a focused workspace that highlights risk, prioritizes action, and documents every decision.
+            </p>
 
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center group-hover:from-indigo-500/30 group-hover:to-purple-500/30 transition-colors">
-                      <feature.icon className="h-5 w-5 text-indigo-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">{feature.title}</h3>
-                      <p className="text-sm text-white/50 mt-0.5">{feature.description}</p>
-                    </div>
-                  </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {assuranceSignals.map((signal) => (
+                <div key={signal.label} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3">
+                  <signal.icon className="h-4 w-4 text-[#72B7AD]" />
+                  <div className="mt-2 text-sm font-semibold text-white">{signal.label}</div>
+                  <div className="mt-1 text-xs text-white/50">{signal.detail}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center gap-6 text-white/40 text-sm">
-            <span>&copy; {new Date().getFullYear()} {APP_NAME}</span>
-            <span>•</span>
-            <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
-            <span>•</span>
-            <a href="#" className="hover:text-white/60 transition-colors">Terms of Service</a>
+          {/* Footer stats */}
+          <div className="flex max-w-md gap-6 border-t border-white/10 pt-5 text-sm text-white/60">
+            {trustStats.map((stat) => (
+              <div key={stat.label} className="flex flex-col">
+                <span className="text-2xl font-semibold text-white">{stat.value}</span>
+                <span className="mt-1 text-[11px] text-white/50">{stat.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Right Panel - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <div className="w-full max-w-md">
-          {children}
+      <div className="relative flex-1 bg-[#F2E9DA]">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 20%, rgba(230,240,238,0.9) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(199,123,78,0.18) 0%, transparent 45%)",
+          }}
+        />
+        <div className="absolute -left-16 bottom-10 h-52 w-52 rounded-full bg-[#72B7AD]/20 blur-3xl" />
+        <div className="absolute right-8 top-20 h-40 w-40 rounded-full bg-[#C77B4E]/15 blur-2xl" />
+
+        <div className="relative flex min-h-screen items-center justify-center p-6 lg:p-10">
+          <div className="w-full max-w-[440px]">
+            {children}
+          </div>
         </div>
       </div>
     </div>

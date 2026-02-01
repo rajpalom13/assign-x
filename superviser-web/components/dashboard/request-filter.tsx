@@ -86,14 +86,14 @@ export function RequestFilter({
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* My Field Only Toggle */}
-      <div className="flex items-center gap-2 p-2 rounded-lg border bg-card">
+      <div className="flex items-center gap-2 rounded-xl border border-[#E7DED0] bg-[#F7F1E8] px-3 py-2">
         <Switch
           id="my-field-only"
           checked={filters.myFieldOnly}
           onCheckedChange={handleMyFieldToggle}
-          className="data-[state=checked]:bg-primary"
+          className="data-[state=checked]:bg-[#1B6F6A]"
         />
-        <Label htmlFor="my-field-only" className="text-sm cursor-pointer">
+        <Label htmlFor="my-field-only" className="text-sm cursor-pointer text-[#122022]">
           My Field Only
         </Label>
       </div>
@@ -105,7 +105,7 @@ export function RequestFilter({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="justify-between min-w-[200px]"
+            className="justify-between min-w-[200px] border-[#E7DED0] bg-white/80 text-[#122022] hover:bg-[#F7F1E8]"
           >
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
@@ -148,26 +148,31 @@ export function RequestFilter({
       </Popover>
 
       {/* Urgent Only Toggle */}
-      <Button
-        variant={filters.urgentOnly ? "default" : "outline"}
-        size="sm"
-        onClick={() => updateFilters({ urgentOnly: !filters.urgentOnly })}
-        className={cn(
-          filters.urgentOnly && "bg-red-500 hover:bg-red-600 text-white"
-        )}
-      >
-        <span className={cn("h-2 w-2 rounded-full mr-2", filters.urgentOnly ? "bg-white" : "bg-red-500")} />
-        Urgent
-      </Button>
+        <Button
+          variant={filters.urgentOnly ? "default" : "outline"}
+          size="sm"
+          onClick={() => updateFilters({ urgentOnly: !filters.urgentOnly })}
+          className={cn(
+            filters.urgentOnly && "bg-[#E48B6A] hover:bg-[#D97757] text-white"
+          )}
+        >
+          <span
+            className={cn(
+              "h-2 w-2 rounded-full mr-2",
+              filters.urgentOnly ? "bg-white" : "bg-[#E48B6A]"
+            )}
+          />
+          Urgent
+        </Button>
 
       {/* Active Filters Display */}
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1">
+          <Badge className="gap-1 border border-[#9FD6CC]/60 bg-[#E7F2EF] text-[#0F4C4A]">
             {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
             <button
               onClick={clearFilters}
-              className="ml-1 hover:bg-muted rounded-full p-0.5"
+              className="ml-1 hover:bg-[#E7F2EF] rounded-full p-0.5"
             >
               <X className="h-3 w-3" />
             </button>

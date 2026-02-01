@@ -43,14 +43,14 @@ export function NewRequestsSection({
 
   return (
     <>
-      <Card className="p-6">
-        <CardHeader className="p-0 pb-4 border-b">
+      <Card className="border border-[#E7DED0] bg-white/85 p-6 shadow-sm">
+        <CardHeader className="p-0 pb-4 border-b border-[#E7DED0]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-              <CardTitle className="text-lg">New Requests</CardTitle>
+              <span className="h-2 w-2 rounded-full bg-[#E48B6A] animate-pulse" />
+              <CardTitle className="text-lg text-[#122022]">New Requests</CardTitle>
               {requests.length > 0 && (
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-[#6B7B78]">
                   ({requests.length})
                 </span>
               )}
@@ -66,8 +66,8 @@ export function NewRequestsSection({
               </Button>
             )}
           </div>
-          <CardDescription className="mt-1">
-            Projects awaiting your analysis and quote
+          <CardDescription className="mt-1 text-[#5A6B68]">
+            Projects awaiting analysis and quote
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 pt-4">
@@ -99,14 +99,14 @@ export function NewRequestsSection({
             </div>
           ) : requests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No new requests</p>
-              <p className="text-sm text-muted-foreground">
+              <FileText className="h-12 w-12 text-[#8FA3A0] mb-3" />
+              <p className="text-[#5A6B68]">No new requests</p>
+              <p className="text-sm text-[#7A8B87]">
                 New project requests will appear here
               </p>
             </div>
           ) : (
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="h-[560px]">
               <div className="space-y-3 pr-4">
                 {requests.map((request) => (
                   <RequestCard

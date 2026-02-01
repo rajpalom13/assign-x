@@ -53,7 +53,8 @@ export function LoginForm() {
         size="lg"
         className={cn(
           "w-full h-12 flex items-center justify-center gap-3 text-base font-medium",
-          "border-2 hover:border-primary/20 hover:bg-muted/50 transition-all duration-200",
+          "border border-[#1C4B4F]/20 bg-white/80 text-[#122022]",
+          "hover:border-[#1C4B4F]/40 hover:bg-[#1C4B4F]/5 transition-all duration-200",
           "shadow-sm hover:shadow-md"
         )}
         onClick={handleGoogleSignIn}
@@ -116,11 +117,11 @@ export function LoginForm() {
       {/* Terms */}
       <p className="text-center text-xs text-muted-foreground leading-relaxed">
         By signing in, you agree to our{" "}
-        <a href="#" className="text-primary hover:underline font-medium">
+        <a href="#" className="text-[#1C4B4F] hover:underline font-medium">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="#" className="text-primary hover:underline font-medium">
+        <a href="#" className="text-[#1C4B4F] hover:underline font-medium">
           Privacy Policy
         </a>
       </p>
