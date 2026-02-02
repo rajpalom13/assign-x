@@ -8,7 +8,9 @@
 
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useProjectsByStatus, useSupervisorStats, useEarningsStats, useAuth } from "@/hooks"
+import { useProjectsByStatus, useSupervisorStats, useEarningsStats, useAuth, claimProject } from "@/hooks"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { RequestCardV2, ProjectRequest } from "@/components/dashboard/request-card-v2"
 import { ReadyToAssignCardV2, PaidProject } from "@/components/dashboard/ready-to-assign-card-v2"
 import { StatsGrid } from "@/components/dashboard/stats-grid"
@@ -146,12 +148,27 @@ export default function DashboardPage() {
     setFilters(newFilters)
   }
 
-  const handleAnalyzeRequest = async (_request: ProjectRequest) => {
-    await refetchProjects()
+  const router = useRouter()
+
+  const handleAnalyzeRequest = async (request: ProjectRequest) => {
+    try {
+      // Claim the project (assign to this supervisor)
+      await claimProject(request.id)
+      toast.success(`Project ${request.project_number} claimed successfully!`)
+      // Refresh data
+      await refetchProjects()
+      // Navigate to project detail page for quoting
+      router.push(`/projects/${request.id}`)
+    } catch (error) {
+      console.error("Failed to claim project:", error)
+      toast.error("Failed to claim project. It may have been claimed by another supervisor.")
+      await refetchProjects()
+    }
   }
 
-  const handleAssignProject = async (_project: PaidProject) => {
-    await refetchProjects()
+  const handleAssignProject = async (project: PaidProject) => {
+    // Navigate to project detail to assign a doer
+    router.push(`/projects/${project.id}`)
   }
 
   return (

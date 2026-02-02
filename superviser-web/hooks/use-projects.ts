@@ -278,17 +278,221 @@ export const PROJECT_STATUS_GROUPS = {
   cancelled: ["cancelled", "refunded"] as ProjectStatus[],
 }
 
+/**
+ * Claim a project - assign it to the current supervisor.
+ * @param projectId - The project UUID to claim
+ * @returns Promise that resolves when the project is claimed
+ */
+export async function claimProject(projectId: string): Promise<void> {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  // Get supervisor ID
+  const { data: supervisor } = await supabase
+    .from("supervisors")
+    .select("id")
+    .eq("profile_id", user.id)
+    .single()
+
+  if (!supervisor) throw new Error("Supervisor not found")
+
+  // Update the project to assign this supervisor
+  const { error: updateError } = await supabase
+    .from("projects")
+    .update({
+      supervisor_id: supervisor.id,
+      status: "analyzing",
+      status_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", projectId)
+    .is("supervisor_id", null) // Only claim if not already claimed
+
+  if (updateError) throw updateError
+}
+
+/**
+ * Hook to fetch NEW/UNASSIGNED projects that need a supervisor.
+ * These are projects where supervisor_id IS NULL and status is 'submitted' or 'analyzing'.
+ */
+export function useNewRequests() {
+  const [projects, setProjects] = useState<ProjectWithRelations[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchNewRequests = useCallback(async () => {
+    const supabase = createClient()
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Not authenticated")
+
+      // Verify user is a supervisor
+      const { data: supervisor } = await supabase
+        .from("supervisors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single()
+
+      if (!supervisor) {
+        setProjects([])
+        return
+      }
+
+      // Fetch UNASSIGNED projects (supervisor_id IS NULL) with status 'submitted' or 'analyzing'
+      const { data, error: queryError } = await supabase
+        .from("projects")
+        .select(`
+          *,
+          profiles!projects_user_id_fkey (*),
+          subjects (*),
+          doers (
+            *,
+            profiles!profile_id (*)
+          )
+        `)
+        .is("supervisor_id", null)
+        .in("status", ["submitted", "analyzing"])
+        .order("created_at", { ascending: false })
+
+      if (queryError) throw queryError
+
+      // Transform null to undefined for type compatibility
+      const transformedData = (data || []).map(project => ({
+        ...project,
+        profiles: project.profiles || undefined,
+        subjects: project.subjects || undefined,
+        doers: project.doers ? {
+          ...project.doers,
+          profiles: project.doers.profiles || undefined,
+        } : undefined,
+      })) as ProjectWithRelations[]
+
+      setProjects(transformedData)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to fetch new requests"))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchNewRequests()
+  }, [fetchNewRequests])
+
+  return {
+    newRequests: projects,
+    isLoading,
+    error,
+    refetch: fetchNewRequests,
+  }
+}
+
+/**
+ * Hook to fetch projects that are PAID and ready to assign to a doer.
+ * These are projects where supervisor_id = current supervisor, status = 'paid', and doer_id IS NULL.
+ */
+export function useReadyToAssign() {
+  const [projects, setProjects] = useState<ProjectWithRelations[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchReadyToAssign = useCallback(async () => {
+    const supabase = createClient()
+
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error("Not authenticated")
+
+      // Get supervisor ID
+      const { data: supervisor } = await supabase
+        .from("supervisors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single()
+
+      if (!supervisor) {
+        setProjects([])
+        return
+      }
+
+      // Fetch projects assigned to this supervisor that are paid and need doer assignment
+      const { data, error: queryError } = await supabase
+        .from("projects")
+        .select(`
+          *,
+          profiles!projects_user_id_fkey (*),
+          subjects (*),
+          doers (
+            *,
+            profiles!profile_id (*)
+          )
+        `)
+        .eq("supervisor_id", supervisor.id)
+        .eq("status", "paid")
+        .is("doer_id", null)
+        .order("created_at", { ascending: false })
+
+      if (queryError) throw queryError
+
+      // Transform null to undefined for type compatibility
+      const transformedData = (data || []).map(project => ({
+        ...project,
+        profiles: project.profiles || undefined,
+        subjects: project.subjects || undefined,
+        doers: project.doers ? {
+          ...project.doers,
+          profiles: project.doers.profiles || undefined,
+        } : undefined,
+      })) as ProjectWithRelations[]
+
+      setProjects(transformedData)
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to fetch ready to assign projects"))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchReadyToAssign()
+  }, [fetchReadyToAssign])
+
+  return {
+    readyToAssign: projects,
+    isLoading,
+    error,
+    refetch: fetchReadyToAssign,
+  }
+}
+
 export function useProjectsByStatus() {
-  const { projects: allProjects, isLoading, error, refetch } = useProjects()
+  const { projects: allProjects, isLoading: projectsLoading, error: projectsError, refetch: refetchProjects } = useProjects()
+  const { newRequests, isLoading: newReqLoading, error: newReqError, refetch: refetchNewReq } = useNewRequests()
+  const { readyToAssign: readyProjects, isLoading: readyLoading, error: readyError, refetch: refetchReady } = useReadyToAssign()
+
+  const isLoading = projectsLoading || newReqLoading || readyLoading
+  const error = projectsError || newReqError || readyError
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchProjects(), refetchNewReq(), refetchReady()])
+  }, [refetchProjects, refetchNewReq, refetchReady])
 
   const groupedProjects = useMemo(() => {
     return {
-      needsQuote: allProjects.filter(p =>
-        PROJECT_STATUS_GROUPS.needsQuote.includes(p.status as ProjectStatus)
-      ),
-      readyToAssign: allProjects.filter(p =>
-        PROJECT_STATUS_GROUPS.readyToAssign.includes(p.status as ProjectStatus)
-      ),
+      // NEW: Unassigned projects needing supervisor
+      needsQuote: newRequests,
+      // NEW: Projects paid and needing doer assignment
+      readyToAssign: readyProjects,
+      // Projects assigned to this supervisor that are in progress
       inProgress: allProjects.filter(p =>
         PROJECT_STATUS_GROUPS.inProgress.includes(p.status as ProjectStatus)
       ),
@@ -302,7 +506,7 @@ export function useProjectsByStatus() {
         PROJECT_STATUS_GROUPS.cancelled.includes(p.status as ProjectStatus)
       ),
     }
-  }, [allProjects])
+  }, [allProjects, newRequests, readyProjects])
 
   return {
     ...groupedProjects,

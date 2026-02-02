@@ -50,6 +50,9 @@ export {
   useProjects,
   useProject,
   useProjectsByStatus,
+  useNewRequests,
+  useReadyToAssign,
+  claimProject,
   PROJECT_STATUS_GROUPS,
 } from "./use-projects"
 
