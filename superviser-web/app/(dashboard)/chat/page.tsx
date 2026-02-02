@@ -25,7 +25,7 @@ import {
   Bell,
 } from "lucide-react"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, type Variants } from "framer-motion"
 
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils"
 import { CHAT_ROOM_TYPE_CONFIG } from "@/components/chat"
 import { AnimatedTabs } from "@/components/ui/animated-tabs"
 import { useChatRooms, useUnreadMessages } from "@/hooks"
-import type { ChatRoomType } from "@/types/database"
+import type { ChatRoomType, ChatRoomWithParticipants } from "@/types/database"
 
 // Animation variants
 const containerVariants = {
@@ -50,7 +50,7 @@ const containerVariants = {
   },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
@@ -115,7 +115,7 @@ export default function ChatPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
 
   const { rooms, isLoading, error, refetch } = useChatRooms()
-  const { unreadByRoom, totalUnread, markAllAsRead } = useUnreadMessages()
+  const { unreadByRoom, unreadCount: totalUnread, markAllAsRead } = useUnreadMessages()
 
   // Calculate stats
   const stats = useMemo(() => {

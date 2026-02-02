@@ -158,6 +158,10 @@ export interface ProjectWithRelations extends Project {
 
 export interface DoerWithProfile extends Doer {
   profiles?: Profile
+  // Extended fields from relations/computed
+  skills?: string[]
+  subjects?: string[]
+  active_projects_count?: number
 }
 
 export interface ChatRoomWithParticipants extends ChatRoom {

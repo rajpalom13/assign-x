@@ -6,7 +6,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { motion } from "framer-motion"
+import { motion, type Variants } from "framer-motion"
 import {
   Users,
   FolderKanban,
@@ -59,7 +59,7 @@ const containerVariants = {
   },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -71,7 +71,7 @@ const itemVariants = {
   },
 }
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
     opacity: 1,

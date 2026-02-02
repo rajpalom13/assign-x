@@ -1020,7 +1020,7 @@ export default function DoersPage() {
     return result.sort(sortFns[sortOption])
   }, [doers, searchQuery, statusFilter, ratingFilter, sortOption])
 
-  const hasActiveFilters = searchQuery || statusFilter !== "all" || ratingFilter !== "all"
+  const hasActiveFilters = Boolean(searchQuery) || statusFilter !== "all" || ratingFilter !== "all"
 
   const handleDoerSelect = (doer: Doer) => {
     setSelectedDoer(doer)

@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks"
 export function DashboardHeader() {
   const { user } = useAuth()
 
-  const userInitials = user?.user_metadata?.full_name
+  const userInitials = user?.full_name
     ?.split(" ")
     .map((n: string) => n[0])
     .join("")
@@ -61,11 +61,11 @@ export function DashboardHeader() {
 
         <div className="flex items-center gap-3 pl-3 border-l border-border/50">
           <div className="text-right hidden lg:block">
-            <p className="text-sm font-medium">{user?.user_metadata?.full_name || "Supervisor"}</p>
+            <p className="text-sm font-medium">{user?.full_name || "Supervisor"}</p>
             <p className="text-xs text-muted-foreground">Supervisor</p>
           </div>
           <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
+            <AvatarImage src={user?.avatar_url || undefined} />
             <AvatarFallback className="bg-[var(--color-sage)] text-white font-medium">
               {userInitials}
             </AvatarFallback>
