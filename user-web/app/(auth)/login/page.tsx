@@ -158,49 +158,16 @@ function LoginContent() {
         Sign in to continue to your dashboard
       </motion.p>
 
-      {/* Google OAuth Button */}
+      {/* Magic Link Button */}
       <motion.div
         initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
       >
         <Button
-          onClick={handleGoogle}
-          disabled={loading}
+          onClick={() => setShowMagicLink(true)}
           variant="outline"
           className="mt-8 h-14 w-full gap-2.5 rounded-xl text-sm font-medium"
-        >
-          {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          Continue with Google
-        </Button>
-      </motion.div>
-
-      {/* Divider */}
-      <motion.div
-        initial={prefersReducedMotion ? {} : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.35, duration: 0.5 }}
-        className="my-6 flex items-center gap-3"
-      >
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">or</span>
-        <div className="h-px flex-1 bg-border" />
-      </motion.div>
-
-      {/* Magic Link Button */}
-      <motion.div
-        initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        <Button
-          onClick={() => setShowMagicLink(true)}
-          variant="ghost"
-          className="h-14 w-full gap-2.5 rounded-xl text-sm font-medium"
         >
           <Mail className="h-5 w-5" />
           Continue with Email
@@ -211,8 +178,8 @@ function LoginContent() {
       <motion.p
         initial={prefersReducedMotion ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.45, duration: 0.5 }}
-        className="mt-4 text-center text-[13px] text-muted-foreground"
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="mt-6 text-center text-[13px] text-muted-foreground"
       >
         No password needed. We&apos;ll send you a secure sign-in link.
       </motion.p>

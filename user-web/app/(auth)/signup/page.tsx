@@ -800,33 +800,10 @@ function SignupContent() {
                       </Alert>
                     )}
 
-                    {/* Google OAuth Button */}
-                    <Button
-                      onClick={handleGoogleSignIn}
-                      disabled={isLoading}
-                      variant="outline"
-                      className="w-full h-14"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <GoogleIcon className="mr-2 h-5 w-5" />
-                      )}
-                      Continue with Google
-                    </Button>
-
-                    {/* Divider */}
-                    <div className="my-6 flex items-center gap-3">
-                      <div className="h-px flex-1 bg-border" />
-                      <span className="text-xs text-muted-foreground">or</span>
-                      <div className="h-px flex-1 bg-border" />
-                    </div>
-
                     {/* Magic Link Button */}
                     <Button
                       onClick={() => setShowMagicLink(true)}
                       disabled={isLoading}
-                      variant="ghost"
                       className="w-full h-14"
                     >
                       <Mail className="mr-2 h-5 w-5" />
