@@ -132,14 +132,14 @@ const ROLE_VISUAL_CONFIG = {
 // Sign-in visual config
 const SIGNIN_VISUAL_CONFIG = {
   visualHeading: "Almost There!",
-  visualSubheading: "Sign in with Google to create your account securely and start your journey.",
+  visualSubheading: "Enter your email to receive a secure magic link and start your journey.",
   cards: [
     {
       icon: Shield,
       iconBg: "bg-success",
       title: "Secure",
-      value: "OAuth",
-      label: "Authentication",
+      value: "Magic",
+      label: "Link",
       position: "position-1",
       delay: 0.3,
     },
@@ -155,9 +155,9 @@ const SIGNIN_VISUAL_CONFIG = {
     {
       icon: Star,
       iconBg: "bg-accent",
-      title: "Trusted",
-      value: "Google",
-      label: "Powered by",
+      title: "No",
+      value: "Password",
+      label: "Needed",
       position: "position-3",
       delay: 0.7,
     },
@@ -765,7 +765,7 @@ function SignupContent() {
                     </p>
                   </motion.div>
                 ) : (
-                  /* Auth Options (Google + Magic Link) */
+                  /* Auth Options (Magic Link only) */
                   <>
                     <div className="onboarding-form-header">
                       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#765341]/10 text-[#765341] border border-[#765341]/30 dark:bg-[#765341]/20 dark:text-[#A07A65] dark:border-[#765341]/40">
@@ -775,7 +775,7 @@ function SignupContent() {
                         Sign up as {selectedRoleData.title}
                       </h2>
                       <p className="onboarding-form-subtitle">
-                        Choose how you want to create your account
+                        We&apos;ll send you a magic link to sign up instantly
                       </p>
                     </div>
 
@@ -786,7 +786,7 @@ function SignupContent() {
                         <AlertDescription className="text-[#5C4233] dark:text-[#A07A65]">
                           <strong>Student accounts require a valid college email</strong>
                           <br />
-                          Please sign in with your institutional email (e.g.,
+                          Please use your institutional email (e.g.,
                           name@university.edu or name@college.ac.in)
                         </AlertDescription>
                       </Alert>
@@ -800,44 +800,37 @@ function SignupContent() {
                       </Alert>
                     )}
 
-                    {/* Google Sign-in Button */}
+                    {/* Google OAuth Button */}
                     <Button
                       onClick={handleGoogleSignIn}
                       disabled={isLoading}
-                      className="onboarding-google-button"
                       variant="outline"
+                      className="w-full h-14"
                     >
                       {isLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       ) : (
-                        <GoogleIcon className="h-5 w-5" />
+                        <GoogleIcon className="mr-2 h-5 w-5" />
                       )}
-                      <span>
-                        {isLoading ? "Connecting..." : "Continue with Google"}
-                      </span>
+                      Continue with Google
                     </Button>
 
                     {/* Divider */}
-                    <div className="relative my-6">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          Or continue with
-                        </span>
-                      </div>
+                    <div className="my-6 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs text-muted-foreground">or</span>
+                      <div className="h-px flex-1 bg-border" />
                     </div>
 
                     {/* Magic Link Button */}
                     <Button
                       onClick={() => setShowMagicLink(true)}
                       disabled={isLoading}
-                      variant="outline"
-                      className="w-full h-12"
+                      variant="ghost"
+                      className="w-full h-14"
                     >
                       <Mail className="mr-2 h-5 w-5" />
-                      Sign in with Email
+                      Continue with Email
                     </Button>
 
                     {/* Security note */}
@@ -845,6 +838,11 @@ function SignupContent() {
                       <Shield className="h-4 w-4" />
                       Secure passwordless authentication
                     </div>
+
+                    {/* Info */}
+                    <p className="text-center text-[13px] text-muted-foreground mt-4">
+                      No password needed. We&apos;ll send you a secure sign-up link.
+                    </p>
 
                     {/* Terms */}
                     <p className="text-center text-xs text-muted-foreground mt-4">

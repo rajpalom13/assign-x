@@ -158,7 +158,7 @@ function LoginContent() {
         Sign in to continue to your dashboard
       </motion.p>
 
-      {/* Google Button */}
+      {/* Google OAuth Button */}
       <motion.div
         initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -168,14 +168,14 @@ function LoginContent() {
           onClick={handleGoogle}
           disabled={loading}
           variant="outline"
-          className="mt-8 h-14 w-full gap-2.5 rounded-xl border text-sm font-medium"
+          className="mt-8 h-14 w-full gap-2.5 rounded-xl text-sm font-medium"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <GoogleIcon className="h-[18px] w-[18px]" />
+            <GoogleIcon />
           )}
-          {loading ? "Connecting..." : "Continue with Google"}
+          Continue with Google
         </Button>
       </motion.div>
 
@@ -183,13 +183,11 @@ function LoginContent() {
       <motion.div
         initial={prefersReducedMotion ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
+        transition={{ delay: 0.35, duration: 0.5 }}
         className="my-6 flex items-center gap-3"
       >
         <div className="h-px flex-1 bg-border" />
-        <span className="text-[11px] uppercase tracking-[0.05em] text-muted-foreground">
-          or
-        </span>
+        <span className="text-xs text-muted-foreground">or</span>
         <div className="h-px flex-1 bg-border" />
       </motion.div>
 
@@ -197,11 +195,11 @@ function LoginContent() {
       <motion.div
         initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45, duration: 0.5 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
       >
         <Button
           onClick={() => setShowMagicLink(true)}
-          variant="outline"
+          variant="ghost"
           className="h-14 w-full gap-2.5 rounded-xl text-sm font-medium"
         >
           <Mail className="h-5 w-5" />
@@ -213,8 +211,8 @@ function LoginContent() {
       <motion.p
         initial={prefersReducedMotion ? {} : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="mt-6 text-center text-[13px] text-muted-foreground"
+        transition={{ delay: 0.45, duration: 0.5 }}
+        className="mt-4 text-center text-[13px] text-muted-foreground"
       >
         No password needed. We&apos;ll send you a secure sign-in link.
       </motion.p>
