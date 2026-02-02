@@ -248,7 +248,7 @@ export async function checkGrammar(content: string): Promise<GrammarCheckResult>
     { pattern: /\b(at this point in time)\b/gi, message: "Consider using 'now' or 'currently'", type: "style" as const },
   ]
 
-  let position = 0
+  const position = 0
   const allPatterns = [...grammarPatterns, ...stylePatterns]
 
   allPatterns.forEach((check, index) => {

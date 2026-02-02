@@ -1,45 +1,67 @@
 /**
- * @fileoverview Professional dashboard page displaying supervisor overview, stats, and active projects.
+ * @fileoverview Supervisor Dashboard - Light theme with warm colors.
+ * Overview of projects, assignments, and performance.
  * @module app/(dashboard)/dashboard/page
  */
 
 "use client"
 
 import { useState, useMemo } from "react"
-import { useProjectsByStatus, useSupervisorStats, useEarningsStats, useSupervisorExpertise } from "@/hooks"
-import {
-  StatsCards,
-  RequestFilter,
-  NewRequestsSection,
-  ReadyToAssignSection,
-  type ProjectRequest,
-  type PaidProject,
-  type FilterState,
-} from "@/components/dashboard"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion, AnimatePresence } from "framer-motion"
+import { useProjectsByStatus, useSupervisorStats, useEarningsStats, useAuth } from "@/hooks"
+import { RequestCardV2, ProjectRequest } from "@/components/dashboard/request-card-v2"
+import { ReadyToAssignCardV2, PaidProject } from "@/components/dashboard/ready-to-assign-card-v2"
+import { StatsGrid } from "@/components/dashboard/stats-grid"
+import { QuickActions } from "@/components/dashboard/quick-actions"
+import { RecentActivity } from "@/components/dashboard/recent-activity"
+import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { AnimatedTabs } from "@/components/ui/animated-tabs"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  FolderKanban,
-  Clock,
-  MessageSquare,
-  ChevronRight,
-  ArrowRight,
-  AlertCircle,
-  CheckCircle2,
-} from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ChevronRight, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
-import { cn } from "@/lib/utils"
+
+interface FilterState {
+  myFieldOnly: boolean
+  selectedFields: string[]
+  urgentOnly: boolean
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+}
+
+const contentVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, x: 10, transition: { duration: 0.2 } },
+}
+
+type TabId = "requests" | "ready"
 
 export default function DashboardPage() {
-  const [_filters, setFilters] = useState<FilterState>({
+  const [activeTab, setActiveTab] = useState<TabId>("requests")
+  const [filters, setFilters] = useState<FilterState>({
     myFieldOnly: true,
     selectedFields: [],
     urgentOnly: false,
   })
+
+  const { user } = useAuth()
 
   // Use real data hooks
   const {
@@ -49,18 +71,17 @@ export default function DashboardPage() {
     needsQC,
     completed,
     isLoading: projectsLoading,
-    refetch: refetchProjects
+    refetch: refetchProjects,
   } = useProjectsByStatus()
 
   const { stats: supervisorStats, isLoading: statsLoading } = useSupervisorStats()
   const { stats: earningsStats, isLoading: earningsLoading } = useEarningsStats()
-  const { subjectIds: expertiseSubjectIds, isLoading: expertiseLoading } = useSupervisorExpertise()
 
-  const isLoading = projectsLoading || statsLoading || earningsLoading || expertiseLoading
+  const isLoading = projectsLoading || statsLoading || earningsLoading
 
   // Transform projects to match component types
   const newRequests: ProjectRequest[] = useMemo(() => {
-    return needsQuote.map(project => ({
+    return needsQuote.map((project) => ({
       id: project.id,
       project_number: project.project_number,
       title: project.title,
@@ -76,7 +97,7 @@ export default function DashboardPage() {
   }, [needsQuote])
 
   const readyToAssign: PaidProject[] = useMemo(() => {
-    return readyToAssignProjects.map(project => ({
+    return readyToAssignProjects.map((project) => ({
       id: project.id,
       project_number: project.project_number,
       title: project.title,
@@ -93,306 +114,230 @@ export default function DashboardPage() {
     }))
   }, [readyToAssignProjects])
 
-  // Transform active projects
-  const activeProjects = useMemo(() => {
-    return inProgress.map(project => ({
-      id: project.id,
-      project_number: project.project_number,
-      title: project.title,
-      doer_name: project.doers?.profiles?.full_name || "Unassigned",
-      doer_avatar: project.doers?.profiles?.avatar_url || undefined,
-      status: project.status,
-      deadline: project.deadline || project.created_at || "",
-      last_message_at: undefined,
-    }))
-  }, [inProgress])
-
   // Calculate stats
-  const stats = useMemo(() => ({
-    activeProjects: supervisorStats?.activeProjects || inProgress.length,
-    pendingQC: needsQC.length,
-    completedThisMonth: supervisorStats?.completedProjects || completed.length,
-    earningsThisMonth: earningsStats?.thisMonth || 0,
-  }), [supervisorStats, earningsStats, inProgress.length, needsQC.length, completed.length])
+  const stats = useMemo(
+    () => ({
+      activeProjects: supervisorStats?.activeProjects || inProgress.length,
+      pendingReview: needsQC.length,
+      completedThisMonth: supervisorStats?.completedProjects || completed.length,
+      earningsThisMonth: earningsStats?.thisMonth || 0,
+    }),
+    [supervisorStats, earningsStats, inProgress.length, needsQC.length, completed.length]
+  )
+
+  const totalAttentionCount = newRequests.length + readyToAssign.length
+
+  const tabs = [
+    {
+      id: "requests",
+      label: "New Requests",
+      count: newRequests.length,
+      badgeColor: "bg-[var(--color-sage)]/10 text-[var(--color-sage)]",
+    },
+    {
+      id: "ready",
+      label: "Ready to Assign",
+      count: readyToAssign.length,
+      badgeColor: "bg-[var(--color-terracotta)]/10 text-[var(--color-terracotta)]",
+    },
+  ]
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters)
   }
 
-  const handleQuoteSubmit = async (_requestId: string, _data: { userQuote: number; doerPayout: number }) => {
+  const handleAnalyzeRequest = async (_request: ProjectRequest) => {
     await refetchProjects()
   }
 
-  const handleAssign = async (_projectId: string, _doerId: string) => {
+  const handleAssignProject = async (_project: PaidProject) => {
     await refetchProjects()
   }
-
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { label: string; variant: string; icon: typeof Clock }> = {
-      in_progress: { label: "In Progress", variant: "bg-[#E7F2EF] text-[#0F4C4A]", icon: Clock },
-      submitted_for_qc: { label: "For Review", variant: "bg-[#F4E7D0] text-[#7A5A2C]", icon: AlertCircle },
-      qc_in_progress: { label: "Reviewing", variant: "bg-[#E7F2EF] text-[#1B6F6A]", icon: Clock },
-      assigned: { label: "Assigned", variant: "bg-[#E6F0EE] text-[#0F4C4A]", icon: CheckCircle2 },
-      revision_requested: { label: "Revision", variant: "bg-[#F7E1D6] text-[#8A4C3A]", icon: AlertCircle },
-      in_revision: { label: "In Revision", variant: "bg-[#F4E7D0] text-[#7A5A2C]", icon: Clock },
-    }
-    return configs[status] || { label: status, variant: "bg-[#F3EBDD] text-[#5A6B68]", icon: Clock }
-  }
-
-  // Quick actions for empty states
-  const quickActions = [
-    { label: "View Doers", href: "/doers", icon: "👥" },
-    { label: "Check Earnings", href: "/earnings", icon: "💰" },
-    { label: "Resources", href: "/resources", icon: "📚" },
-  ]
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="rounded-2xl border border-[#E7DED0] bg-gradient-to-r from-[#F7F1E8] via-[#E7F2EF] to-[#F7F1E8] p-6">
-        <div className="flex items-center justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-[#122022]">Supervisor Dashboard</h1>
-              <Badge className="gap-1 border border-[#9FD6CC]/60 bg-[#E7F2EF] text-[#0F4C4A]">
-                <CheckCircle2 className="h-3 w-3" />
-                On track
-              </Badge>
-            </div>
-            <p className="text-[#536563]">
-              Coastal view of your queue, assignments, and live progress.
-            </p>
-          </div>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen bg-background p-4 lg:p-6"
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Dashboard Header */}
+        <DashboardHeader />
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#0F4C4A]/30 text-[#0F4C4A] hover:bg-[#0F4C4A]/10"
-              asChild
-            >
-              <Link href="/projects" className="gap-2">
-                View All Projects
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="space-y-6">
-          <Card className="border border-[#E7DED0] bg-white/80">
-            <CardHeader className="border-b border-[#E7DED0] pb-3">
-              <CardTitle className="text-base font-semibold text-[#122022]">Queue Filters</CardTitle>
-              <CardDescription className="text-sm text-[#5A6B68]">
-                Focus requests by expertise and urgency.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <RequestFilter
-                supervisorFields={expertiseSubjectIds}
-                onFilterChange={handleFilterChange}
-              />
-            </CardContent>
-          </Card>
-
-          <NewRequestsSection
-            requests={newRequests}
+        {/* Stats Grid */}
+        <motion.div variants={itemVariants}>
+          <StatsGrid
+            activeProjects={stats.activeProjects}
+            pendingReview={stats.pendingReview}
+            completedThisMonth={stats.completedThisMonth}
+            earningsThisMonth={stats.earningsThisMonth}
             isLoading={isLoading}
-            onRefresh={refetchProjects}
-            onQuoteSubmit={handleQuoteSubmit}
           />
+        </motion.div>
 
-          <Card className="overflow-hidden border border-[#E7DED0] bg-white/85">
-            <CardHeader className="pb-4 border-b border-[#E7DED0] bg-gradient-to-r from-[#F8F2E9] via-[#E7F2EF] to-[#F8F2E9]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[#E7F2EF] flex items-center justify-center">
-                    <FolderKanban className="h-5 w-5 text-[#0F4C4A]" />
+        {/* Main Content Grid - Two Columns */}
+        <div className="grid gap-6 lg:grid-cols-[60%_40%]">
+          {/* Left Column - 60% - Requires Attention */}
+          <motion.div variants={itemVariants}>
+            <Card className="bg-white border-border/50 rounded-2xl overflow-hidden shadow-none h-full">
+              <CardHeader className="border-b border-border/50 pb-0">
+                <div className="flex items-center justify-between py-4">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-lg font-semibold">
+                      Requires Attention
+                    </CardTitle>
+                    {totalAttentionCount > 0 && (
+                      <Badge 
+                        variant="secondary" 
+                        className="rounded-full bg-[var(--color-terracotta)]/10 text-[var(--color-terracotta)] border-0"
+                      >
+                        {totalAttentionCount}
+                      </Badge>
+                    )}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-lg text-[#122022]">Active Projects</CardTitle>
-                      {activeProjects.length > 0 && (
-                        <Badge className="border border-[#9FD6CC]/60 bg-[#E7F2EF] text-[#0F4C4A]">
-                          {activeProjects.length}
-                        </Badge>
+                </div>
+                
+                {/* Animated Tabs */}
+                <AnimatedTabs
+                  tabs={tabs}
+                  activeTab={activeTab}
+                  onTabChange={(tabId) => setActiveTab(tabId as TabId)}
+                  layoutId="attention-tabs"
+                />
+              </CardHeader>
+              
+              <CardContent className="p-0">
+                <AnimatePresence mode="wait">
+                  {activeTab === "requests" ? (
+                    <motion.div
+                      key="requests"
+                      variants={contentVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="p-4 space-y-3"
+                    >
+                      {isLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                          ))}
+                        </div>
+                      ) : newRequests.length === 0 ? (
+                        <div className="text-center py-12">
+                          <div className="h-12 w-12 rounded-full bg-[var(--color-sage)]/10 flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle2 className="h-6 w-6 text-[var(--color-sage)]" />
+                          </div>
+                          <p className="text-sm font-medium text-foreground">No new requests</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            You&apos;re all caught up!
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {newRequests.slice(0, 5).map((request) => (
+                            <RequestCardV2
+                              key={request.id}
+                              request={request}
+                              onAnalyze={handleAnalyzeRequest}
+                              isLoading={isLoading}
+                              variant="compact"
+                            />
+                          ))}
+                          {newRequests.length > 5 && (
+                            <Button
+                              variant="ghost"
+                              className="w-full text-[var(--color-sage)] hover:text-[var(--color-sage)]/80 hover:bg-[var(--color-sage)]/5 mt-2"
+                              asChild
+                            >
+                              <Link href="/projects">
+                                View all {newRequests.length} requests
+                                <ChevronRight className="h-4 w-4 ml-1" />
+                              </Link>
+                            </Button>
+                          )}
+                        </>
                       )}
-                    </div>
-                    <CardDescription className="text-[#5A6B68]">
-                      Projects currently being worked on
-                    </CardDescription>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" className="gap-1 text-[#0F4C4A]" asChild>
-                  <Link href="/projects">
-                    View All
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="divide-y divide-[#E7DED0]/70">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4 p-4">
-                      <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                      <Skeleton className="h-6 w-20" />
-                    </div>
-                  ))}
-                </div>
-              ) : activeProjects.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                  <div className="h-16 w-16 rounded-2xl bg-[#F3EBDD] flex items-center justify-center mb-4">
-                    <FolderKanban className="h-8 w-8 text-[#8FA3A0]" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1 text-[#122022]">No active projects</h3>
-                  <p className="text-sm text-[#5A6B68] mb-6 max-w-sm">
-                    Assign a project to see live progress here.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    {quickActions.map((action) => (
-                      <Button
-                        key={action.href}
-                        variant="outline"
-                        size="sm"
-                        className="border-[#E7DED0] text-[#0F4C4A] hover:bg-[#E7F2EF]"
-                        asChild
-                      >
-                        <Link href={action.href} className="gap-2">
-                          <span>{action.icon}</span>
-                          {action.label}
-                        </Link>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="divide-y divide-[#E7DED0]/70">
-                  {activeProjects.map((project, index) => {
-                    const statusConfig = getStatusConfig(project.status)
-                    const StatusIcon = statusConfig.icon
-
-                    return (
-                      <Link
-                        key={project.id}
-                        href={`/projects/${project.id}`}
-                        className={cn(
-                          "flex items-center gap-4 p-4 hover:bg-[#F7F1E8] transition-colors group",
-                          "animate-fade-in-up"
-                        )}
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                      >
-                        <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm flex-shrink-0">
-                          <AvatarImage src={project.doer_avatar} />
-                          <AvatarFallback className="bg-gradient-to-br from-[#1C4B4F] to-[#72B7AD] text-white text-sm font-semibold">
-                            {project.doer_name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()
-                              .slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge className="text-xs font-mono px-1.5 py-0 h-5 border border-[#E7DED0] bg-[#F3EBDD] text-[#5A6B68]">
-                              {project.project_number}
-                            </Badge>
-                            <span className="font-medium truncate text-[#122022] group-hover:text-[#0F4C4A] transition-colors">
-                              {project.title}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm text-[#5A6B68] mt-1">
-                            <span className="truncate">Expert: {project.doer_name}</span>
-                            <span className="text-[#D9C9B3]">•</span>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              <span className="whitespace-nowrap">
-                                Due {formatDistanceToNow(new Date(project.deadline), { addSuffix: true })}
-                              </span>
-                            </div>
-                          </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="ready"
+                      variants={contentVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="p-4 space-y-3"
+                    >
+                      {isLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                          ))}
                         </div>
-
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <Badge className={cn("gap-1", statusConfig.variant)}>
-                            <StatusIcon className="h-3 w-3" />
-                            {statusConfig.label}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-[#0F4C4A] opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              window.location.href = `/chat/${project.id}`
-                            }}
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </Button>
-                          <ChevronRight className="h-4 w-4 text-[#8FA3A0] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      ) : readyToAssign.length === 0 ? (
+                        <div className="text-center py-12">
+                          <div className="h-12 w-12 rounded-full bg-[var(--color-sage)]/10 flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle2 className="h-6 w-6 text-[var(--color-sage)]" />
+                          </div>
+                          <p className="text-sm font-medium text-foreground">No projects ready</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Projects will appear here after payment
+                          </p>
                         </div>
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      ) : (
+                        <>
+                          {readyToAssign.slice(0, 5).map((project) => (
+                            <ReadyToAssignCardV2
+                              key={project.id}
+                              project={project}
+                              onAssign={handleAssignProject}
+                              isLoading={isLoading}
+                              variant="compact"
+                            />
+                          ))}
+                          {readyToAssign.length > 5 && (
+                            <Button
+                              variant="ghost"
+                              className="w-full text-[var(--color-sage)] hover:text-[var(--color-sage)]/80 hover:bg-[var(--color-sage)]/5 mt-2"
+                              asChild
+                            >
+                              <Link href="/projects">
+                                View all {readyToAssign.length} projects
+                                <ChevronRight className="h-4 w-4 ml-1" />
+                              </Link>
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-[#E7DED0] bg-white/80 p-4">
-            <div className="mb-3 text-sm font-semibold text-[#122022]">Key Metrics</div>
-            <StatsCards
-              activeProjects={stats.activeProjects}
-              pendingQC={stats.pendingQC}
-              completedThisMonth={stats.completedThisMonth}
-              earningsThisMonth={stats.earningsThisMonth}
-              isLoading={isLoading}
+          {/* Right Column - 40% - Recent Activity + Quick Actions */}
+          <motion.div variants={itemVariants} className="space-y-6">
+            {/* Recent Activity */}
+            <RecentActivity
+              runsCount={completed.length}
+              promptsCount={newRequests.length}
+              competitorsCount={readyToAssign.length}
+              onViewAllClick={() => {}}
+              onRunPromptsClick={() => {}}
             />
-          </div>
 
-          <ReadyToAssignSection
-            projects={readyToAssign}
-            isLoading={isLoading}
-            onRefresh={refetchProjects}
-            onAssign={handleAssign}
-          />
-
-          <Card className="border border-[#E7DED0] bg-gradient-to-br from-[#FFF5E8] via-[#FDF1E2] to-[#F3EBDD]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base text-[#122022]">Quick Actions</CardTitle>
-              <CardDescription className="text-sm text-[#6B7B78]">
-                Jump to the areas you use most.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {quickActions.map((action) => (
-                <Button
-                  key={action.href}
-                  variant="outline"
-                  className="justify-start gap-2 border-[#E7DED0] bg-white/80 text-[#0F4C4A] hover:bg-[#E7F2EF]"
-                  asChild
-                >
-                  <Link href={action.href}>
-                    <span>{action.icon}</span>
-                    {action.label}
-                  </Link>
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
+            {/* Quick Actions */}
+            <QuickActions
+              onCreatePromptClick={() => {}}
+              onViewAnalyticsClick={() => {}}
+              onManageTeamClick={() => {}}
+              onUpgradePlanClick={() => {}}
+            />
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
