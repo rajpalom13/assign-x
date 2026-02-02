@@ -12,6 +12,7 @@ import type {
   ProjectWithRelations,
   ProjectStatus
 } from "@/types/database"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 
 interface UseProjectsOptions {
   status?: ProjectStatus | ProjectStatus[]
@@ -507,6 +508,71 @@ export function useProjectsByStatus() {
       ),
     }
   }, [allProjects, newRequests, readyProjects])
+
+  // Real-time subscription for project updates
+  useEffect(() => {
+    const supabase = createClient()
+    let supervisorChannel: RealtimeChannel | null = null
+    let newRequestsChannel: RealtimeChannel | null = null
+
+    const setupSubscriptions = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: supervisor } = await supabase
+        .from("supervisors")
+        .select("id")
+        .eq("profile_id", user.id)
+        .single()
+
+      if (!supervisor) return
+
+      // Subscribe to this supervisor's projects
+      supervisorChannel = supabase
+        .channel(`supervisor_projects_${supervisor.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'projects',
+            filter: `supervisor_id=eq.${supervisor.id}`,
+          },
+          () => {
+            // Refetch all project data on any change
+            refetch()
+          }
+        )
+        .subscribe()
+
+      // Subscribe to new unassigned projects
+      newRequestsChannel = supabase
+        .channel('new_project_requests')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'projects',
+          },
+          (payload) => {
+            const project = payload.new as { supervisor_id: string | null; status: string }
+            // Only refetch if it's a new unassigned project
+            if (!project.supervisor_id && ['submitted', 'analyzing'].includes(project.status)) {
+              refetch()
+            }
+          }
+        )
+        .subscribe()
+    }
+
+    setupSubscriptions()
+
+    return () => {
+      supervisorChannel?.unsubscribe()
+      newRequestsChannel?.unsubscribe()
+    }
+  }, [refetch])
 
   return {
     ...groupedProjects,

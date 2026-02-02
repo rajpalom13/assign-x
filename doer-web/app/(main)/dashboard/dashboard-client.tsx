@@ -27,6 +27,7 @@ import {
   isDeadlineUrgent,
   type ProjectWithSupervisor,
 } from '@/services/project.service'
+import { useProjectSubscription, useNewProjectsSubscription } from '@/hooks/useProjectSubscription'
 
 type DoerProfile = {
   id: string
@@ -147,6 +148,44 @@ export function DashboardClient({ initialDoer }: DashboardClientProps) {
   useEffect(() => {
     loadTasks()
   }, [loadTasks])
+
+  /**
+   * Real-time subscription for assigned project updates
+   * Refreshes the task list when projects are assigned or updated
+   */
+  useProjectSubscription({
+    doerId: initialDoer?.id,
+    onProjectAssigned: (project) => {
+      console.log('[Dashboard] Project assigned via realtime:', project.id)
+      toast.success('New project assigned to you!')
+      loadTasks()
+    },
+    onProjectUpdate: () => {
+      console.log('[Dashboard] Project updated via realtime')
+      loadTasks()
+    },
+    onStatusChange: (project, oldStatus, newStatus) => {
+      console.log('[Dashboard] Project status changed:', oldStatus, '->', newStatus)
+      if (newStatus === 'revision_requested') {
+        toast.warning('Revision requested for a project')
+      }
+      loadTasks()
+    },
+    enabled: !!initialDoer?.id,
+  })
+
+  /**
+   * Real-time subscription for new available projects in the pool
+   * Refreshes the pool list when new projects become available
+   */
+  useNewProjectsSubscription({
+    enabled: true,
+    onNewProject: (project) => {
+      console.log('[Dashboard] New project available in pool:', project.id)
+      toast.info('New project available in the pool!')
+      loadTasks()
+    },
+  })
 
   /**
    * Handle accepting a task from the pool

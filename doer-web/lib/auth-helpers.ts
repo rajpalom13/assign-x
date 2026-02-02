@@ -92,7 +92,7 @@ export async function verifyProjectAccess(projectId: string): Promise<void> {
   // Get the project and check if user is the assigned doer
   const { data: project, error } = await supabase
     .from('projects')
-    .select('assigned_doer_id, supervisor_id')
+    .select('doer_id, supervisor_id')
     .eq('id', projectId)
     .single()
 
@@ -101,7 +101,7 @@ export async function verifyProjectAccess(projectId: string): Promise<void> {
   }
 
   // Check if user is either the assigned doer or the supervisor
-  const isAssignedDoer = doer && project.assigned_doer_id === doer.id
+  const isAssignedDoer = doer && project.doer_id === doer.id
   const isSupervisor = project.supervisor_id === user.id
 
   if (!isAssignedDoer && !isSupervisor) {

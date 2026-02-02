@@ -203,24 +203,37 @@ export function AssignDoerModal({
     try {
       const supabase = createClient()
 
-      // Create assignment record
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("project_assignments").insert({
-        project_id: project.id,
-        doer_id: selectedDoer.id,
-        assigned_at: new Date().toISOString(),
-      })
+      // Create assignment record for tracking
+      const { error: assignmentError } = await supabase
+        .from("project_assignments")
+        .insert({
+          project_id: project.id,
+          assignment_type: "doer",
+          assignee_id: selectedDoer.id,
+          assigned_by: (await supabase.auth.getUser()).data.user?.id,
+          assigned_at: new Date().toISOString(),
+        })
 
-      // Update project status
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
+      if (assignmentError) {
+        console.error("Error creating assignment record:", assignmentError)
+        // Don't throw - assignment record is optional tracking
+      }
+
+      // Update project status and assign doer
+      const { error: updateError } = await supabase
         .from("projects")
         .update({
           status: "assigned",
-          assigned_doer_id: selectedDoer.id,
+          doer_id: selectedDoer.id,
+          doer_assigned_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", project.id)
+
+      if (updateError) {
+        console.error("Error updating project:", updateError)
+        throw updateError
+      }
 
       toast.success(`Project assigned to ${selectedDoer.full_name}`)
       onAssign(project.id, selectedDoer.id)
