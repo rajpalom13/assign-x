@@ -21,7 +21,8 @@ import {
   ChevronRight,
 } from "lucide-react"
 import Link from "next/link"
-import { useProjectsByStatus, useSupervisor } from "@/hooks"
+import { useProjectsByStatus, useSupervisor, claimProject } from "@/hooks"
+import { useRouter } from "next/navigation"
 import type { ProjectWithRelations } from "@/types/database"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -253,7 +254,7 @@ function LoadingCard() {
 }
 
 export default function ProjectsPage() {
-  const [activeTab, setActiveTab] = useState("ongoing")
+  const [activeTab, setActiveTab] = useState("new")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("All Subjects")
   const [sortBy, setSortBy] = useState<"deadline" | "created" | "amount">("deadline")
@@ -265,6 +266,8 @@ export default function ProjectsPage() {
 
   // Use real data hooks
   const {
+    needsQuote,
+    readyToAssign,
     inProgress,
     needsQC,
     completed,
@@ -473,7 +476,35 @@ export default function ProjectsPage() {
     }, 1500)
   }, [])
 
+  const router = useRouter()
+
+  // Get new requests (unassigned projects) from useProjectsByStatus
+  const newRequestsProjects = useMemo(() => {
+    return needsQuote.map(transformToActiveProject)
+  }, [needsQuote])
+
+  // Get ready to assign projects
+  const readyToAssignProjects = useMemo(() => {
+    return readyToAssign.map(transformToActiveProject)
+  }, [readyToAssign])
+
+  // Handle claiming a new request
+  const handleClaimProject = useCallback(async (projectId: string) => {
+    try {
+      await claimProject(projectId)
+      toast.success("Project claimed successfully!")
+      await refetch()
+      router.push(`/projects/${projectId}`)
+    } catch (error) {
+      console.error("Failed to claim project:", error)
+      toast.error("Failed to claim project. It may have been claimed by another supervisor.")
+      await refetch()
+    }
+  }, [refetch, router])
+
   const tabs = [
+    { id: "new", label: "New Requests", count: newRequestsProjects.length, badgeColor: newRequestsProjects.length > 0 ? "bg-emerald-100 text-emerald-700" : undefined },
+    { id: "assign", label: "Ready to Assign", count: readyToAssignProjects.length, badgeColor: readyToAssignProjects.length > 0 ? "bg-blue-100 text-blue-700" : undefined },
     { id: "ongoing", label: "Ongoing", count: ongoingProjects.length },
     { id: "review", label: "For Review", count: forReviewProjects.length, badgeColor: forReviewProjects.length > 0 ? "bg-amber-100 text-amber-700" : undefined },
     { id: "completed", label: "Completed", count: completedProjects.length },
@@ -682,6 +713,150 @@ export default function ProjectsPage() {
 
           {/* Tab Content */}
           <div className="p-6">
+            {/* New Requests Tab */}
+            {activeTab === "new" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {isLoading ? (
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
+                  </div>
+                ) : newRequestsProjects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center mb-4">
+                      <CheckCircle2 className="h-10 w-10 text-emerald-500/50" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground">No new requests</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      New project requests will appear here for you to claim
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {newRequestsProjects.map((project) => (
+                      <Card key={project.id} className="group bg-white rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <CardContent className="p-5 space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-muted-foreground">{project.project_number}</span>
+                              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700">
+                                New
+                              </Badge>
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground line-clamp-2 mb-1">{project.title}</h3>
+                            <p className="text-sm text-muted-foreground">{project.subject}</p>
+                          </div>
+                          <div className="flex items-center justify-between py-3 border-y border-border/30">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] text-xs">
+                                  {project.user_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm text-foreground">{project.user_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              <span>{project.deadline ? format(new Date(project.deadline), "MMM d") : "No deadline"}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="default" 
+                              size="sm" 
+                              className="flex-1 rounded-lg h-9 bg-[var(--color-sage)] hover:bg-[var(--color-sage-hover)]"
+                              onClick={() => handleClaimProject(project.id)}
+                            >
+                              <Eye className="w-4 h-4 mr-1.5" />
+                              Claim & Analyze
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Ready to Assign Tab */}
+            {activeTab === "assign" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {isLoading ? (
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
+                  </div>
+                ) : readyToAssignProjects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center mb-4">
+                      <TrendingUp className="h-10 w-10 text-blue-500/50" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground">No projects to assign</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      Paid projects waiting for doer assignment will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {readyToAssignProjects.map((project) => (
+                      <Card key={project.id} className="group bg-white rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <CardContent className="p-5 space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-muted-foreground">{project.project_number}</span>
+                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                                Paid
+                              </Badge>
+                            </div>
+                            <span className="text-sm font-semibold text-[var(--color-sage)]">
+                              ₹{project.quoted_amount?.toLocaleString() || 0}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground line-clamp-2 mb-1">{project.title}</h3>
+                            <p className="text-sm text-muted-foreground">{project.subject}</p>
+                          </div>
+                          <div className="flex items-center justify-between py-3 border-y border-border/30">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-7 w-7">
+                                <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] text-xs">
+                                  {project.user_name?.charAt(0) || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm text-foreground">{project.user_name}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              <span>{project.deadline ? format(new Date(project.deadline), "MMM d") : "No deadline"}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="flex-1 rounded-lg h-9" asChild>
+                              <Link href={`/projects/${project.id}`}>
+                                <Eye className="w-4 h-4 mr-1.5" />
+                                View & Assign Doer
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* Ongoing Tab */}
             {activeTab === "ongoing" && (
               <motion.div
