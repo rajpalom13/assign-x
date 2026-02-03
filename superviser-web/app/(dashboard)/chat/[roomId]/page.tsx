@@ -22,11 +22,17 @@ import { createClient } from "@/lib/supabase/client"
 
 export default function ChatRoomPage() {
   const params = useParams()
-  const projectId = params.roomId as string
+  const roomId = params.roomId as string
 
   const { supervisor } = useSupervisor()
-  const { rooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useChatRooms({ projectId })
+  // Fetch all rooms and then find the specific one - roomId from URL could be either a room ID or project ID
+  const { rooms: allRooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useChatRooms()
   const { markAsRead } = useUnreadMessages()
+
+  // Filter to find the room - first try direct room ID match, then project ID match
+  const rooms = allRooms.filter(room =>
+    room.id === roomId || room.project_id === roomId
+  )
 
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({})
@@ -262,7 +268,7 @@ export default function ChatRoomPage() {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <ChatWindow
-        projectId={projectId}
+        projectId={rooms[0]?.project_id || roomId}
         projectNumber={rooms[0]?.projects?.project_number || "Unknown"}
         rooms={chatRooms}
         currentUserId={supervisor?.profile_id || ""}

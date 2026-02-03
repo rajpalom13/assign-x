@@ -98,15 +98,15 @@ export const chatService = {
         const { data: existingParticipant } = await supabase
           .from('chat_participants')
           .select('id')
-          .eq('room_id', roomAfterRace.id)
+          .eq('chat_room_id', roomAfterRace.id)
           .eq('profile_id', userId)
           .single()
 
         if (!existingParticipant) {
           await supabase.from('chat_participants').insert({
-            room_id: roomAfterRace.id,
+            chat_room_id: roomAfterRace.id,
             profile_id: userId,
-            role: 'user',
+            participant_role: 'user',
           }).single()
         }
 
@@ -117,9 +117,9 @@ export const chatService = {
 
     // Add user as participant
     await supabase.from('chat_participants').insert({
-      room_id: newRoom.id,
+      chat_room_id: newRoom.id,
       profile_id: userId,
-      role: 'user',
+      participant_role: 'user',
     })
 
     return newRoom
@@ -134,12 +134,12 @@ export const chatService = {
     // Get rooms where user is a participant
     const { data: participations, error: partError } = await supabase
       .from('chat_participants')
-      .select('room_id')
+      .select('chat_room_id')
       .eq('profile_id', userId)
 
     if (partError) throw partError
 
-    const roomIds = participations.map((p) => p.room_id)
+    const roomIds = participations.map((p) => p.chat_room_id)
     if (roomIds.length === 0) return []
 
     // Get room details
@@ -401,12 +401,12 @@ export const chatService = {
     // Get rooms where user is a participant
     const { data: participations } = await supabase
       .from('chat_participants')
-      .select('room_id')
+      .select('chat_room_id')
       .eq('profile_id', userId)
 
     if (!participations || participations.length === 0) return 0
 
-    const roomIds = participations.map((p) => p.room_id)
+    const roomIds = participations.map((p) => p.chat_room_id)
 
     const { count, error } = await supabase
       .from('chat_messages')

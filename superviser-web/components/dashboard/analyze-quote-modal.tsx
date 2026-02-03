@@ -45,8 +45,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { submitQuoteAction } from "@/app/actions/quote"
 import type { ProjectRequest } from "./request-card"
 
 const quoteFormSchema = z.object({
@@ -165,27 +165,23 @@ export function AnalyzeQuoteModal({
 
     setIsSubmitting(true)
     try {
-      const supabase = createClient()
+      // Calculate amounts
+      const supervisorCommission = Math.ceil((data.userQuote * pricing.supervisor_percentage) / 100)
+      const platformFee = Math.ceil((data.userQuote * pricing.platform_percentage) / 100)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any).from("project_quotes").insert({
-        project_id: request.id,
-        user_quote: data.userQuote,
-        doer_payout: data.doerPayout,
-        supervisor_notes: data.notes || null,
-        created_at: new Date().toISOString(),
+      // Use server action to submit quote (bypasses RLS)
+      const result = await submitQuoteAction({
+        projectId: request.id,
+        userQuote: data.userQuote,
+        doerPayout: data.doerPayout,
+        supervisorCommission,
+        platformFee,
       })
 
-      // Update project status
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from("projects")
-        .update({
-          status: "quoted",
-          quoted_amount: data.userQuote,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", request.id)
+      if (!result.success) {
+        toast.error(result.error || "Failed to submit quote")
+        return
+      }
 
       toast.success("Quote submitted successfully")
       onQuoteSubmit(request.id, data)

@@ -58,6 +58,7 @@ import { appVersion } from "@/lib/data/settings";
 import { format } from "date-fns";
 import type { FeedbackData } from "@/types/settings";
 import { signOut } from "@/lib/actions/auth";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 /**
  * Settings section component - Glass morphism styling
@@ -244,23 +245,15 @@ export function SettingsPro() {
   // Memoize time-based gradient class
   const gradientClass = useMemo(() => getTimeBasedGradientClass(), []);
 
-  const [notifications, setNotifications] = useState({
-    pushNotifications: true,
-    emailNotifications: true,
-    projectUpdates: true,
-    marketingEmails: false,
-    weeklyDigest: true,
-  });
-
-  const [privacy, setPrivacy] = useState({
-    analyticsOptOut: false,
-    showOnlineStatus: true,
-  });
-
-  const [appearance, setAppearance] = useState({
-    reducedMotion: false,
-    compactMode: false,
-  });
+  // Use Supabase-persisted preferences
+  const {
+    preferences,
+    isLoading: prefsLoading,
+    isSaving,
+    updateNotifications,
+    updatePrivacy,
+    updateAppearance,
+  } = useUserPreferences();
 
   useEffect(() => {
     setMounted(true);
@@ -335,19 +328,31 @@ export function SettingsPro() {
     }
   };
 
-  const handleNotificationToggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-    toast.success("Preference updated");
+  const handleNotificationToggle = async (key: "pushNotifications" | "emailNotifications" | "projectUpdates" | "marketingEmails" | "weeklyDigest") => {
+    const success = await updateNotifications(key);
+    if (success) {
+      toast.success("Preference updated");
+    } else {
+      toast.error("Failed to save preference");
+    }
   };
 
-  const handlePrivacyToggle = (key: keyof typeof privacy) => {
-    setPrivacy((prev) => ({ ...prev, [key]: !prev[key] }));
-    toast.success("Setting updated");
+  const handlePrivacyToggle = async (key: "analyticsOptOut" | "showOnlineStatus") => {
+    const success = await updatePrivacy(key);
+    if (success) {
+      toast.success("Setting updated");
+    } else {
+      toast.error("Failed to save setting");
+    }
   };
 
-  const handleAppearanceToggle = (key: keyof typeof appearance) => {
-    setAppearance((prev) => ({ ...prev, [key]: !prev[key] }));
-    toast.success("Setting updated");
+  const handleAppearanceToggle = async (key: "reducedMotion" | "compactMode") => {
+    const success = await updateAppearance(key);
+    if (success) {
+      toast.success("Setting updated");
+    } else {
+      toast.error("Failed to save setting");
+    }
   };
 
   return (
@@ -370,25 +375,25 @@ export function SettingsPro() {
             <SettingToggle
               label="Push Notifications"
               description="Get push notifications on your device"
-              checked={notifications.pushNotifications}
+              checked={preferences.notifications.pushNotifications}
               onCheckedChange={() => handleNotificationToggle("pushNotifications")}
             />
             <SettingToggle
               label="Email Notifications"
               description="Receive important updates via email"
-              checked={notifications.emailNotifications}
+              checked={preferences.notifications.emailNotifications}
               onCheckedChange={() => handleNotificationToggle("emailNotifications")}
             />
             <SettingToggle
               label="Project Updates"
               description="Get notified when projects are updated"
-              checked={notifications.projectUpdates}
+              checked={preferences.notifications.projectUpdates}
               onCheckedChange={() => handleNotificationToggle("projectUpdates")}
             />
             <SettingToggle
               label="Marketing Emails"
               description="Receive promotional offers"
-              checked={notifications.marketingEmails}
+              checked={preferences.notifications.marketingEmails}
               onCheckedChange={() => handleNotificationToggle("marketingEmails")}
             />
           </div>
@@ -424,13 +429,13 @@ export function SettingsPro() {
               <SettingToggle
                 label="Reduced Motion"
                 description="Minimize animations"
-                checked={appearance.reducedMotion}
+                checked={preferences.appearance.reducedMotion}
                 onCheckedChange={() => handleAppearanceToggle("reducedMotion")}
               />
               <SettingToggle
                 label="Compact Mode"
                 description="Use a more compact layout"
-                checked={appearance.compactMode}
+                checked={preferences.appearance.compactMode}
                 onCheckedChange={() => handleAppearanceToggle("compactMode")}
               />
             </div>
@@ -446,13 +451,13 @@ export function SettingsPro() {
               <SettingToggle
                 label="Analytics Opt-out"
                 description="Disable anonymous usage analytics"
-                checked={privacy.analyticsOptOut}
+                checked={preferences.privacy.analyticsOptOut}
                 onCheckedChange={() => handlePrivacyToggle("analyticsOptOut")}
               />
               <SettingToggle
                 label="Show Online Status"
                 description="Let others see when you are online"
-                checked={privacy.showOnlineStatus}
+                checked={preferences.privacy.showOnlineStatus}
                 onCheckedChange={() => handlePrivacyToggle("showOnlineStatus")}
               />
             </div>

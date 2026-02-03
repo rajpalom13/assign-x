@@ -35,6 +35,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { QCReviewModal } from "@/components/projects"
+import { AnalyzeQuoteModal } from "@/components/dashboard/analyze-quote-modal"
+import type { ProjectRequest } from "@/components/dashboard/request-card"
 
 // Import the useProject hook
 import { useProject } from "@/hooks/use-projects"
@@ -51,6 +53,8 @@ export default function ProjectDetailPage() {
     open: boolean
     mode: "approve" | "reject" | null
   }>({ open: false, mode: null })
+
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false)
 
   const handleApprove = useCallback(async (projectId: string, message?: string) => {
     const supabase = createClient()
@@ -289,15 +293,25 @@ export default function ProjectDetailPage() {
             <CardTitle className="text-sm font-medium">Financials</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-1">
+          <CardContent className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Quote:</span>
-              <span className="font-medium">${project.user_quote || 0}</span>
+              <span className="font-medium">₹{project.user_quote || 0}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Your Commission:</span>
-              <span className="font-medium text-green-600">${project.supervisor_commission || 0}</span>
+              <span className="font-medium text-green-600">₹{project.supervisor_commission || 0}</span>
             </div>
+            {project.status === "analyzing" && (
+              <Button
+                size="sm"
+                className="w-full mt-2"
+                onClick={() => setQuoteModalOpen(true)}
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Set Quote
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -473,6 +487,28 @@ export default function ProjectDetailPage() {
         }
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      {/* Quote Modal */}
+      <AnalyzeQuoteModal
+        request={project ? {
+          id: project.id,
+          project_number: project.project_number,
+          title: project.title,
+          subject: project.subjects?.name || "General",
+          service_type: project.service_type,
+          user_name: project.profiles?.full_name || "Unknown User",
+          deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+          word_count: project.word_count ?? undefined,
+          page_count: project.page_count ?? undefined,
+          created_at: project.created_at || new Date().toISOString(),
+        } : null}
+        isOpen={quoteModalOpen}
+        onClose={() => setQuoteModalOpen(false)}
+        onQuoteSubmit={async () => {
+          setQuoteModalOpen(false)
+          await refetch()
+        }}
       />
     </div>
   )

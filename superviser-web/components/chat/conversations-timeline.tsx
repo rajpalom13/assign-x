@@ -8,6 +8,7 @@
  */
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConversationItem } from "./conversation-item"
@@ -184,13 +185,11 @@ export function ConversationsTimeline({
   unreadCounts,
   isLoading = false,
 }: ConversationsTimelineProps) {
-  const [, setSelectedRoom] = React.useState<string | null>(null)
+  const router = useRouter()
 
   const handleRoomClick = React.useCallback((roomId: string) => {
-    setSelectedRoom(roomId)
-    // Navigation or modal opening can be handled here
-    // For now, we just track the selection
-  }, [])
+    router.push(`/chat/${roomId}`)
+  }, [router])
 
   if (isLoading) {
     return <TimelineSkeleton />

@@ -1120,7 +1120,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
             const senderName = msg.sender?.full_name || supervisor;
 
             return (
-              <div key={msg.id} className={cn("flex gap-2 mb-3", isUser && "flex-row-reverse")}>
+              <div key={msg.id} className={cn("flex gap-2 mb-3", isUser ? "flex-row-reverse justify-start" : "justify-start")}>
                 <div
                   className={cn(
                     "h-8 w-8 rounded-xl flex items-center justify-center text-xs font-medium shrink-0",
@@ -1131,13 +1131,13 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
                 >
                   {isUser ? <User className="h-4 w-4" /> : senderName.charAt(0)}
                 </div>
-                <div className={cn("max-w-[75%]", isUser && "items-end")}>
+                <div className={cn("flex flex-col max-w-[75%]", isUser ? "items-end" : "items-start")}>
                   <div
                     className={cn(
                       "px-4 py-2.5 rounded-2xl text-sm",
                       isUser
-                        ? "bg-violet-600 text-white rounded-br-md"
-                        : "bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-bl-md"
+                        ? "bg-violet-600 text-white rounded-br-sm"
+                        : "bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-bl-sm"
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -1152,7 +1152,7 @@ function ChatPanel({ projectId, userId, supervisorName }: ChatPanelProps) {
                       </a>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                  <span className={cn("text-[10px] text-muted-foreground mt-1 px-1", isUser && "text-right")}>
                     {msg.created_at && formatTime(msg.created_at)}
                   </span>
                 </div>
