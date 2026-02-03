@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   FileSearch,
   Loader2,
+  ExternalLink,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Project, ProjectStatus } from '@/types/database'
 
@@ -81,7 +83,7 @@ function formatRelativeTime(dateString: string | null | undefined): string {
  */
 export function UnderReviewTab({
   projects,
-  isLoading = false,
+  isLoading: _isLoading = false,
   onProjectClick,
 }: UnderReviewTabProps) {
   // Sort by submission time (most recent first)
@@ -91,122 +93,107 @@ export function UnderReviewTab({
     return bTime - aTime
   })
 
-  if (projects.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <FileSearch className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium">No Projects Under Review</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-          Submit your completed work to see it here for quality check
-        </p>
-      </motion.div>
-    )
-  }
-
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {projects.length} project{projects.length !== 1 ? 's' : ''} under review
-      </p>
-
-      <AnimatePresence mode="popLayout">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedProjects.map((project, index) => {
-            const statusInfo = getReviewStatusDisplay(project.status)
-
-            return (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => onProjectClick?.(project.id)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base line-clamp-2 flex-1">
-                        {project.title}
-                      </CardTitle>
-                      <div className="flex-shrink-0 text-muted-foreground">
-                        {statusInfo.icon}
-                      </div>
-                    </div>
-                    {project.subject_name && (
-                      <Badge variant="secondary" className="mt-1 text-xs w-fit">
-                        {project.subject_name}
-                      </Badge>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    {/* Status badge and description */}
-                    <div className="space-y-1">
-                      <Badge
-                        variant="outline"
-                        className={cn('gap-1', statusInfo.color)}
-                      >
-                        {statusInfo.label}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground">
-                        {statusInfo.description}
-                      </p>
-                    </div>
-
-                    {/* Submission info */}
-                    <div className="flex items-center justify-between text-sm border-t pt-3">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>Submitted</span>
-                      </div>
-                      <span className="font-medium">
-                        {formatRelativeTime(project.submitted_at)}
-                      </span>
-                    </div>
-
-                    {/* Supervisor */}
-                    {project.supervisor_name && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Reviewer</span>
-                        <span className="font-medium">{project.supervisor_name}</span>
-                      </div>
-                    )}
-
-                    {/* Price */}
-                    <div className="flex items-center justify-between text-sm border-t pt-3">
-                      <span className="text-muted-foreground">Earnings</span>
-                      <span className="font-semibold text-green-600">
-                        Rs. {(project.price ?? project.doer_payout ?? 0).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    {/* Progress indicator */}
-                    <div className="flex justify-center pt-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                          <div className="h-2 w-2 rounded-full bg-primary/60 animate-pulse delay-75" />
-                          <div className="h-2 w-2 rounded-full bg-primary/30 animate-pulse delay-150" />
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          Processing...
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
+    <Card className="border border-border/70 bg-card/90">
+      <CardHeader className="space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg font-semibold">Review queue</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Projects waiting for QC approval and supervisor feedback.
+            </CardDescription>
+          </div>
+          <Badge variant="secondary" className="rounded-full px-3 py-1">
+            {projects.length} in review
+          </Badge>
         </div>
-      </AnimatePresence>
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {projects.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center"
+          >
+            <FileSearch className="h-12 w-12 text-muted-foreground mb-3" />
+            <h3 className="text-base font-semibold">No projects under review</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Submit your completed work to see it in the review queue.
+            </p>
+          </motion.div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            <div className="space-y-3">
+              {sortedProjects.map((project, index) => {
+                const statusInfo = getReviewStatusDisplay(project.status)
+                const payout = project.price ?? project.doer_payout ?? 0
+
+                return (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ delay: index * 0.04 }}
+                  >
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/70 bg-background/80 p-4 transition hover:shadow-lg"
+                      onClick={() => onProjectClick?.(project.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') onProjectClick?.(project.id)
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-foreground line-clamp-1">
+                            {project.title}
+                          </p>
+                          <Badge variant="outline" className={cn('rounded-full px-2 py-0.5 text-xs', statusInfo.color)}>
+                            {statusInfo.label}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          {project.subject_name && <span>{project.subject_name}</span>}
+                          {project.subject_name && project.supervisor_name && <span>•</span>}
+                          {project.supervisor_name && <span>Reviewer: {project.supervisor_name}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          Submitted {formatRelativeTime(project.submitted_at)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{statusInfo.description}</p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Earnings</p>
+                          <p className="text-base font-semibold text-emerald-600">
+                            ₹{payout.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 rounded-full"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onProjectClick?.(project.id)
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </AnimatePresence>
+        )}
+      </CardContent>
+    </Card>
   )
 }

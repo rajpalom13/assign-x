@@ -4,6 +4,14 @@ import { ROUTES } from '@/lib/constants'
 import { DashboardClient } from './dashboard-client'
 
 /**
+ * Checks if a Supabase error indicates a missing row.
+ */
+const isNoRowError = (error: { code?: string; message?: string; details?: string } | null) =>
+  error?.code === 'PGRST116' ||
+  error?.message?.toLowerCase().includes('no rows') ||
+  error?.details?.toLowerCase().includes('results contain 0 rows')
+
+/**
  * Dashboard server component
  * Fetches session and doer profile from server-side httpOnly cookies
  * Passes data to client component for rendering
@@ -59,10 +67,18 @@ export default async function DashboardPage() {
     error: doerError?.message
   })
 
-  // Redirect to login if doer not found
-  if (!doer || doerError) {
-    console.error('[Dashboard Server] Doer not found:', doerError)
+  const doerMissing = !doer || isNoRowError(doerError)
+
+  // Redirect to login if doer fetch failed unexpectedly
+  if (doerError && !isNoRowError(doerError)) {
+    console.error('[Dashboard Server] Doer fetch failed:', doerError)
     redirect(ROUTES.login)
+  }
+
+  // Redirect to profile setup if doer not found
+  if (doerMissing) {
+    console.log('[Dashboard Server] Doer missing, redirecting to profile setup')
+    redirect(ROUTES.profileSetup)
   }
 
   // Pass doer data to client component
