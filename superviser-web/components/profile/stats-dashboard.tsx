@@ -51,7 +51,7 @@ function StatCard({
 }: StatCardProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardContent className="pt-6">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
@@ -67,14 +67,14 @@ function StatCard({
   }
 
   return (
-    <Card>
+    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="text-sm text-gray-500">{title}</p>
+            <p className="text-2xl font-semibold mt-1 text-[#1C1C1C]">{value}</p>
             {subtitle && (
-              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+              <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
             )}
           </div>
           <div
@@ -95,19 +95,19 @@ function StatCard({
               <ArrowDownRight className="h-4 w-4 text-red-600" />
             )}
             {trend === "stable" && (
-              <Minus className="h-4 w-4 text-muted-foreground" />
+              <Minus className="h-4 w-4 text-gray-400" />
             )}
             <span
               className={cn(
                 "text-xs font-medium",
                 trend === "up" && "text-green-600",
                 trend === "down" && "text-red-600",
-                trend === "stable" && "text-muted-foreground"
+                trend === "stable" && "text-gray-500"
               )}
             >
               {trendValue}
             </span>
-            <span className="text-xs text-muted-foreground">vs last month</span>
+            <span className="text-xs text-gray-500">vs last month</span>
           </div>
         )}
       </CardContent>
@@ -124,24 +124,24 @@ function MetricCard({ metric }: MetricCardProps) {
   const isAboveTarget = metric.value >= metric.target
 
   return (
-    <div className="p-4 bg-muted/30 rounded-lg">
+    <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
       <div className="flex items-start justify-between mb-2">
         <div>
           <p className="text-sm font-medium">{metric.label}</p>
           <p className="text-2xl font-bold">
             {metric.value}
-            <span className="text-sm font-normal text-muted-foreground">
+            <span className="text-sm font-normal text-gray-500">
               {metric.unit}
             </span>
           </p>
         </div>
         <div
-          className={cn(
-            "flex items-center gap-1 text-xs font-medium",
-            metric.trend === "up" && "text-green-600",
-            metric.trend === "down" && "text-red-600",
-            metric.trend === "stable" && "text-muted-foreground"
-          )}
+            className={cn(
+              "flex items-center gap-1 text-xs font-medium",
+              metric.trend === "up" && "text-green-600",
+              metric.trend === "down" && "text-red-600",
+              metric.trend === "stable" && "text-gray-500"
+            )}
         >
           {metric.trend === "up" && <TrendingUp className="h-3 w-3" />}
           {metric.trend === "down" && <TrendingDown className="h-3 w-3" />}
@@ -155,7 +155,7 @@ function MetricCard({ metric }: MetricCardProps) {
       </div>
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Target: {metric.target}{metric.unit}</span>
+          <span className="text-gray-500">Target: {metric.target}{metric.unit}</span>
           <span className={cn(isAboveTarget ? "text-green-600" : "text-amber-600")}>
             {isAboveTarget ? "On Track" : "Below Target"}
           </span>
@@ -171,7 +171,7 @@ function MetricCard({ metric }: MetricCardProps) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="p-4 bg-muted/30 rounded-lg">
+    <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
       <div className="flex items-start justify-between mb-2">
         <div className="space-y-2">
           <Skeleton className="h-4 w-24" />
@@ -229,7 +229,7 @@ export function StatsDashboard() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -283,10 +283,12 @@ export function StatsDashboard() {
       </div>
 
       {/* Earnings Overview */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Earnings Overview</CardTitle>
-          <CardDescription>Your total and pending earnings</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Earnings Overview</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Your total and pending earnings
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -338,10 +340,12 @@ export function StatsDashboard() {
       </Card>
 
       {/* Performance Metrics */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Performance Metrics</CardTitle>
-          <CardDescription>Track your key performance indicators</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Performance Metrics</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Track your key performance indicators
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -362,10 +366,12 @@ export function StatsDashboard() {
       </Card>
 
       {/* Quick Facts */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Quick Facts</CardTitle>
-          <CardDescription>Additional statistics about your work</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Quick Facts</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Additional statistics about your work
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -376,24 +382,24 @@ export function StatsDashboard() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Briefcase className="h-8 w-8 text-muted-foreground" />
+              <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+                <Briefcase className="h-8 w-8 text-gray-400" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Projects</p>
+                  <p className="text-sm text-gray-500">Total Projects</p>
                   <p className="text-lg font-semibold">{stats?.totalProjects ?? 0}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Users className="h-8 w-8 text-muted-foreground" />
+              <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+                <Users className="h-8 w-8 text-gray-400" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Doers Managed</p>
+                  <p className="text-sm text-gray-500">Doers Managed</p>
                   <p className="text-lg font-semibold">{stats?.totalDoers ?? 0}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Clock className="h-8 w-8 text-muted-foreground" />
+              <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+                <Clock className="h-8 w-8 text-gray-400" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Quotes</p>
+                  <p className="text-sm text-gray-500">Pending Quotes</p>
                   <p className="text-lg font-semibold">{stats?.pendingQuotes ?? 0}</p>
                 </div>
               </div>

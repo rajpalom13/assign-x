@@ -86,8 +86,39 @@ export function useAuth() {
       setLoading(true)
 
       try {
-        // Use getUser() instead of getSession() - more reliable with SSR
-        const { data: { user: authUser } } = await supabase.auth.getUser()
+        console.log("[useAuth] Checking auth session...")
+        console.log("[useAuth] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+
+        // First try getSession() - reads from cookies/localStorage without network call
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        console.log("[useAuth] getSession result:", {
+          hasSession: !!sessionData?.session,
+          userId: sessionData?.session?.user?.id,
+          error: sessionError?.message
+        })
+
+        let authUser = sessionData?.session?.user || null
+
+        // If we have a session, optionally verify with getUser() (with timeout)
+        if (sessionData?.session) {
+          try {
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("getUser timeout")), 3000)
+            )
+            const getUserPromise = supabase.auth.getUser()
+            const result = await Promise.race([getUserPromise, timeoutPromise]) as Awaited<typeof getUserPromise>
+
+            if (result.data?.user) {
+              authUser = result.data.user
+              console.log("[useAuth] getUser verified:", authUser.id)
+            }
+          } catch (verifyErr) {
+            // getUser timed out or failed, but we still have session - use session user
+            console.warn("[useAuth] getUser verification failed, using session:", verifyErr)
+          }
+        }
+
+        console.log("[useAuth] Final auth user:", authUser?.id, authUser?.email)
 
         if (!isMounted) return
 
@@ -110,11 +141,11 @@ export function useAuth() {
           if (!isMounted) return
 
           if (!supervisorData) {
-            // Supervisor record doesn't exist - redirect to profile setup (if not already there)
+            // Supervisor record doesn't exist - redirect to onboarding (if not already there)
             const pathname = window.location.pathname
-            if (pathname !== "/profile-setup") {
+            if (pathname !== "/onboarding" && !pathname.startsWith("/onboarding")) {
               setLoading(false)
-              router.push("/profile-setup")
+              router.push("/onboarding")
               return
             }
             setLoading(false)
@@ -150,8 +181,8 @@ export function useAuth() {
             return
           }
         }
-      } catch {
-        // Auth initialization failed silently
+      } catch (err) {
+        console.error("[useAuth] Auth initialization failed:", err)
       }
 
       if (isMounted) {

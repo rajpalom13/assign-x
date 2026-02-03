@@ -19,20 +19,20 @@ const featureCards = [
     label: "Control Rate",
     value: "92%",
     detail: "Escalations resolved",
-    color: "#72B7AD",
+    color: "#F97316",
   },
   {
     icon: Zap,
     label: "Prioritized QA",
     detail: "Automated routing surfaces high-risk files for immediate review.",
-    color: "#C77B4E",
+    color: "#F97316",
   },
   {
     icon: Clock,
     label: "Avg. Review",
     value: "2h 18m",
     detail: "From intake to sign-off",
-    color: "#72B7AD",
+    color: "#F97316",
   },
 ]
 
@@ -42,25 +42,25 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-[#F2E9DA]">
+    <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Left Panel - Enhanced Visual Design (55% width, Fixed, Non-scrollable) */}
-        <div className="hidden lg:flex lg:w-[55%] fixed h-screen overflow-hidden bg-[#0F2A2E] text-white">
+        <div className="hidden lg:flex lg:w-[55%] fixed h-screen overflow-hidden bg-[#1C1C1C] text-white">
           {/* Subtle radial gradient background */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(28,75,79,0.4)_0%,_transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(114,183,173,0.15)_0%,_transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(45,45,45,0.4)_0%,_transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(249,115,22,0.15)_0%,_transparent_50%)]" />
           </div>
 
           {/* Corner Accent - Bottom Right Orange Gradient */}
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-tl from-[#C77B4E]/30 via-[#C77B4E]/10 to-transparent" />
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#C77B4E]/20 blur-3xl rounded-full" />
+            <div className="absolute inset-0 bg-gradient-to-tl from-[#F97316]/30 via-[#F97316]/10 to-transparent" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#F97316]/20 blur-3xl rounded-full" />
           </div>
 
-          {/* Top Left Corner Accent - Teal Glow */}
+          {/* Top Left Corner Accent - Charcoal Glow */}
           <div className="absolute top-0 left-0 w-[300px] h-[300px] pointer-events-none">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1C4B4F]/50 via-[#1C4B4F]/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#2D2D2D]/50 via-[#2D2D2D]/20 to-transparent" />
           </div>
 
           {/* Subtle grid texture */}
@@ -77,12 +77,12 @@ export default function AuthLayout({
           <div className="relative z-10 flex flex-col h-full w-full p-10 xl:p-14">
             {/* Logo - Compact */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#1C4B4F] via-[#2F6D6E] to-[#72B7AD] shadow-lg shadow-[#0F2A2E]/40 flex items-center justify-center border border-white/10">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#F97316] via-[#EA580C] to-[#FB923C] shadow-lg shadow-[#1C1C1C]/40 flex items-center justify-center border border-white/10">
                 <span className="text-lg font-bold text-white">AX</span>
               </div>
               <div>
                 <span className="text-xl font-bold text-white tracking-tight">{APP_NAME}</span>
-                <div className="flex items-center gap-1.5 text-xs text-[#72B7AD]">
+                <div className="flex items-center gap-1.5 text-xs text-[#FB923C]">
                   <Shield className="h-3 w-3" />
                   Supervisor Control
                 </div>
@@ -92,7 +92,7 @@ export default function AuthLayout({
             {/* Main Content - Flex grow */}
             <div className="flex-1 flex flex-col justify-center py-6">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#72B7AD]/30 bg-[#72B7AD]/10 px-3 py-1.5 text-xs font-medium text-[#72B7AD] w-fit mb-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#F97316]/30 bg-[#F97316]/10 px-3 py-1.5 text-xs font-medium text-[#FB923C] w-fit mb-6">
                 <Sparkles className="h-3.5 w-3.5" />
                 Built for high-stakes review cycles
               </div>
@@ -100,7 +100,7 @@ export default function AuthLayout({
               {/* Headline with stronger contrast */}
               <h1 className="text-4xl xl:text-[52px] font-bold leading-[1.1] tracking-tight text-white">
                 Quality control,
-                <span className="block text-[#72B7AD]">
+                <span className="block text-[#F97316]">
                   clearly measured
                 </span>
               </h1>
@@ -115,7 +115,7 @@ export default function AuthLayout({
                 {featureCards.map((card) => (
                   <div
                     key={card.label}
-                    className="group rounded-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm p-3.5 flex flex-col hover:border-[#72B7AD]/30 transition-all duration-300"
+                    className="group rounded-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm p-3.5 flex flex-col hover:border-[#F97316]/30 transition-all duration-300"
                   >
                     <div
                       className="h-8 w-8 rounded-lg flex items-center justify-center mb-2.5"
@@ -142,15 +142,15 @@ export default function AuthLayout({
               <div className="mt-6 flex items-center gap-5">
                 <div className="flex items-center gap-2 text-sm text-white/70">
                   <div className="flex -space-x-2">
-                    <div className="w-7 h-7 rounded-full bg-[#72B7AD]/30 border-2 border-[#0F2A2E] flex items-center justify-center text-xs font-medium text-white">S</div>
-                    <div className="w-7 h-7 rounded-full bg-[#C77B4E]/30 border-2 border-[#0F2A2E] flex items-center justify-center text-xs font-medium text-white">M</div>
-                    <div className="w-7 h-7 rounded-full bg-[#1C4B4F]/50 border-2 border-[#0F2A2E] flex items-center justify-center text-xs font-medium text-white">+</div>
+                    <div className="w-7 h-7 rounded-full bg-[#F97316]/30 border-2 border-[#1C1C1C] flex items-center justify-center text-xs font-medium text-white">S</div>
+                    <div className="w-7 h-7 rounded-full bg-[#FB923C]/30 border-2 border-[#1C1C1C] flex items-center justify-center text-xs font-medium text-white">M</div>
+                    <div className="w-7 h-7 rounded-full bg-[#2D2D2D]/50 border-2 border-[#1C1C1C] flex items-center justify-center text-xs font-medium text-white">+</div>
                   </div>
                   <span className="text-xs">500+ Active</span>
                 </div>
                 <div className="h-3.5 w-px bg-white/20" />
                 <div className="flex items-center gap-1.5 text-xs text-white/70">
-                  <TrendingUp className="h-3.5 w-3.5 text-[#72B7AD]" />
+                  <TrendingUp className="h-3.5 w-3.5 text-[#F97316]" />
                   <span>Performance tracked</span>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function AuthLayout({
                 ))}
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-                <Award className="h-3.5 w-3.5 text-[#C77B4E]" />
+                <Award className="h-3.5 w-3.5 text-[#F97316]" />
                 <span className="text-[11px] text-white/70">Certified Platform</span>
               </div>
             </div>
@@ -175,18 +175,18 @@ export default function AuthLayout({
         </div>
 
         {/* Right Panel - Auth Form (45% width, Scrollable) */}
-        <div className="lg:ml-[55%] flex-1 min-h-screen overflow-y-auto bg-[#F2E9DA]">
+        <div className="lg:ml-[55%] flex-1 min-h-screen overflow-y-auto bg-gray-50">
           {/* Subtle background accents */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div
               className="absolute inset-0 opacity-50"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 20% 20%, rgba(230,240,238,0.9) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(199,123,78,0.18) 0%, transparent 45%)",
+                  "radial-gradient(circle at 20% 20%, rgba(249,115,22,0.08) 0%, transparent 55%), radial-gradient(circle at 80% 15%, rgba(249,115,22,0.12) 0%, transparent 45%)",
               }}
             />
-            <div className="absolute -left-16 bottom-10 h-52 w-52 rounded-full bg-[#72B7AD]/20 blur-3xl" />
-            <div className="absolute right-8 top-20 h-40 w-40 rounded-full bg-[#C77B4E]/15 blur-2xl" />
+            <div className="absolute -left-16 bottom-10 h-52 w-52 rounded-full bg-[#F97316]/10 blur-3xl" />
+            <div className="absolute right-8 top-20 h-40 w-40 rounded-full bg-[#F97316]/8 blur-2xl" />
           </div>
 
           <div className="relative flex min-h-screen items-center justify-center p-6 lg:p-10">

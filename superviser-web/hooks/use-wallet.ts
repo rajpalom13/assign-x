@@ -36,7 +36,9 @@ export function useWallet(): UseWalletReturn {
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       // Get wallet with recent transactions
@@ -54,15 +56,19 @@ export function useWallet(): UseWalletReturn {
       }
 
       if (walletData) {
+        console.log("[useWallet] Found wallet for user:", user.id, "balance:", walletData.balance, "total_credited:", walletData.total_credited, "transactions:", walletData.wallet_transactions?.length || 0)
         // Sort transactions by date
         walletData.wallet_transactions = walletData.wallet_transactions?.sort(
           (a: WalletTransaction, b: WalletTransaction) =>
             new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
         )
+      } else {
+        console.warn("[useWallet] No wallet found for user ID:", user.id)
       }
 
       setWallet(walletData)
     } catch (err) {
+      console.error("[useWallet] Failed to fetch wallet:", err)
       setError(err instanceof Error ? err : new Error("Failed to fetch wallet"))
     } finally {
       setIsLoading(false)
@@ -225,7 +231,9 @@ export function useEarningsStats(): UseEarningsStatsReturn {
       const supabase = createClient()
 
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // Use getSession() - faster, no network timeout issues
+        const { data: sessionData } = await supabase.auth.getSession()
+        const user = sessionData?.session?.user
         if (!user) throw new Error("Not authenticated")
 
         // Get wallet
@@ -236,6 +244,7 @@ export function useEarningsStats(): UseEarningsStatsReturn {
           .single()
 
         if (!wallet) {
+          console.warn("[useEarningsStats] No wallet found for user ID:", user.id)
           setStats({
             thisMonth: 0,
             lastMonth: 0,
@@ -247,6 +256,7 @@ export function useEarningsStats(): UseEarningsStatsReturn {
           })
           return
         }
+        console.log("[useEarningsStats] Found wallet:", wallet.id, "balance:", wallet.balance, "total_credited:", wallet.total_credited)
 
         // Get transactions for calculations
         const now = new Date()
@@ -313,6 +323,7 @@ export function useEarningsStats(): UseEarningsStatsReturn {
           monthlyGrowth: Math.round(monthlyGrowth),
         })
       } catch (err) {
+        console.error("[useEarningsStats] Failed to fetch earnings stats:", err)
         setError(err instanceof Error ? err : new Error("Failed to fetch earnings stats"))
       } finally {
         setIsLoading(false)

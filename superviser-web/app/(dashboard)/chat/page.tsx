@@ -1,129 +1,53 @@
 /**
- * @fileoverview Chat list page showing all conversation rooms with modern UI design.
- * Uses real Supabase data via useChatRooms hook with redesigned interface.
+ * @fileoverview Chat list page - redesigned landing layout
  * @module app/(dashboard)/chat/page
  */
 
 "use client"
 
-import { useState, useMemo } from "react"
-import { formatDistanceToNow } from "date-fns"
+import { useMemo, useState } from "react"
+import { motion } from "framer-motion"
 import {
-  Search,
+  AlertCircle,
+  ArrowRight,
+  Bell,
   MessageSquare,
-  Users,
+  RefreshCw,
+  Search,
   User,
   UserCog,
-  ShieldAlert,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-  CheckCheck,
-  Plus,
-  MessageCircle,
-  Inbox,
-  Bell,
+  Users,
 } from "lucide-react"
-import Link from "next/link"
-import { motion, AnimatePresence, type Variants } from "framer-motion"
 
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { useAuth, useChatRooms, useUnreadMessages } from "@/hooks"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn } from "@/lib/utils"
-import { CHAT_ROOM_TYPE_CONFIG } from "@/components/chat"
-import { AnimatedTabs } from "@/components/ui/animated-tabs"
-import { useChatRooms, useUnreadMessages } from "@/hooks"
-import type { ChatRoomType, ChatRoomWithParticipants } from "@/types/database"
+import { Input } from "@/components/ui/input"
+import { CategoryTabs, type CategoryTab } from "@/components/chat/category-tabs"
+import { ConversationsTimeline } from "@/components/chat/conversations-timeline"
+import { MessagesQuickActions } from "@/components/chat/messages-quick-actions"
+import { MessagesEmptyState } from "@/components/chat/messages-empty-state"
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-}
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 500,
-      damping: 30,
-    },
-  },
-}
-
-function getRoomIcon(type: ChatRoomType) {
-  switch (type) {
-    case "project_user_supervisor":
-      return User
-    case "project_supervisor_doer":
-      return UserCog
-    case "project_all":
-      return Users
-    default:
-      return Users
-  }
-}
-
-function getParticipantInfo(room: { chat_participants?: Array<{ profiles?: { full_name?: string; avatar_url?: string | null } | null; participant_role?: string }> | null; room_type?: ChatRoomType }) {
-  if (!room.chat_participants || room.chat_participants.length === 0) {
-    return { name: "Unknown", avatar: undefined }
-  }
-
-  // For group chats, show "Group Chat"
-  if (room.room_type === "project_all") {
-    return { name: "Group Chat", avatar: undefined }
-  }
-
-  // Find the other participant (not supervisor)
-  const otherParticipant = room.chat_participants.find(
-    (p) => p.participant_role !== "supervisor"
-  )
-
-  if (otherParticipant?.profiles) {
-    return {
-      name: otherParticipant.profiles.full_name || "Unknown",
-      avatar: otherParticipant.profiles.avatar_url || undefined,
-    }
-  }
-
-  return { name: "Unknown", avatar: undefined }
-}
-
-// Get last message preview
-function getLastMessagePreview(room: ChatRoomWithParticipants): string {
-  // If the room data has a last_message_content field or similar, use it
-  // Otherwise return a placeholder based on room type
-  const config = CHAT_ROOM_TYPE_CONFIG[room.room_type as ChatRoomType]
-  return config?.description || "No messages yet"
-}
+export type MessageFilter =
+  | "all"
+  | "unread"
+  | "project_user_supervisor"
+  | "project_supervisor_doer"
+  | "project_all"
 
 export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState<string>("all")
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<MessageFilter>("all")
 
-  const { rooms, isLoading, error, refetch } = useChatRooms()
-  const { unreadByRoom, unreadCount: totalUnread, markAllAsRead } = useUnreadMessages()
+  const { user } = useAuth()
+  const { rooms, isLoading, refetch, error } = useChatRooms()
+  const { unreadByRoom, markAllAsRead } = useUnreadMessages()
 
-  // Calculate stats
   const stats = useMemo(() => {
     const totalConversations = rooms.length
     const unreadMessages = Object.values(unreadByRoom).reduce((sum, count) => sum + count, 0)
-    const clientChats = rooms.filter(r => r.room_type === "project_user_supervisor").length
-    const expertChats = rooms.filter(r => r.room_type === "project_supervisor_doer").length
-    const groupChats = rooms.filter(r => r.room_type === "project_all").length
+    const clientChats = rooms.filter((room) => room.room_type === "project_user_supervisor").length
+    const expertChats = rooms.filter((room) => room.room_type === "project_supervisor_doer").length
+    const groupChats = rooms.filter((room) => room.room_type === "project_all").length
 
     return {
       totalConversations,
@@ -134,346 +58,302 @@ export default function ChatPage() {
     }
   }, [rooms, unreadByRoom])
 
-  // Filter rooms based on search and active tab
+  const firstName = user?.full_name?.split(" ")[0] || "there"
+  const heroSubtitle = stats.unreadMessages === 0
+    ? "All caught up. Your inbox is clear and calm."
+    : stats.unreadMessages === 1
+      ? "You have 1 unread message waiting for you."
+      : `You have ${stats.unreadMessages} unread messages waiting for you.`
+
+  const heroStats = useMemo(
+    () => [
+      {
+        label: "Total Conversations",
+        value: stats.totalConversations,
+        icon: MessageSquare,
+        tone: "bg-orange-50 text-orange-600",
+      },
+      {
+        label: "Unread",
+        value: stats.unreadMessages,
+        icon: Bell,
+        tone: "bg-amber-50 text-amber-600",
+      },
+      {
+        label: "Client Chats",
+        value: stats.clientChats,
+        icon: User,
+        tone: "bg-blue-50 text-blue-600",
+      },
+      {
+        label: "Expert Chats",
+        value: stats.expertChats,
+        icon: UserCog,
+        tone: "bg-emerald-50 text-emerald-600",
+      },
+      {
+        label: "Group Rooms",
+        value: stats.groupChats,
+        icon: Users,
+        tone: "bg-purple-50 text-purple-600",
+        wide: true,
+      },
+    ],
+    [stats]
+  )
+
   const filteredRooms = useMemo(() => {
-    return rooms.filter((room) => {
-      const participant = getParticipantInfo(room)
-      const projectNumber = room.projects?.project_number || ""
-      const projectTitle = room.projects?.title || ""
+    let filtered = rooms
 
-      const matchesSearch =
-        searchQuery === "" ||
-        projectTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        participant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        projectNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    if (activeTab === "unread") {
+      filtered = filtered.filter((room) => (unreadByRoom[room.id] || 0) > 0)
+    } else if (activeTab === "project_user_supervisor") {
+      filtered = filtered.filter((room) => room.room_type === "project_user_supervisor")
+    } else if (activeTab === "project_supervisor_doer") {
+      filtered = filtered.filter((room) => room.room_type === "project_supervisor_doer")
+    } else if (activeTab === "project_all") {
+      filtered = filtered.filter((room) => room.room_type === "project_all")
+    }
 
-      const unreadCount = unreadByRoom[room.id] || 0
-      
-      let matchesTab = true
-      switch (activeTab) {
-        case "unread":
-          matchesTab = unreadCount > 0
-          break
-        case "project_user_supervisor":
-          matchesTab = room.room_type === "project_user_supervisor"
-          break
-        case "project_supervisor_doer":
-          matchesTab = room.room_type === "project_supervisor_doer"
-          break
-        case "project_all":
-          matchesTab = room.room_type === "project_all"
-          break
-        default:
-          matchesTab = true
-      }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((room) => {
+        const projectTitle = room.projects?.title?.toLowerCase() || ""
+        const projectNumber = room.projects?.project_number
+          ? String(room.projects.project_number).toLowerCase()
+          : ""
+        const participants =
+          room.chat_participants
+            ?.map((p) => p.profiles?.full_name?.toLowerCase() || "")
+            .join(" ") || ""
 
-      return matchesSearch && matchesTab
-    })
-  }, [rooms, searchQuery, activeTab, unreadByRoom])
+        return (
+          projectTitle.includes(query) ||
+          projectNumber.includes(query) ||
+          participants.includes(query)
+        )
+      })
+    }
 
-  // Tabs configuration
-  const tabs = [
-    { id: "all", label: "All Messages" },
-    { id: "unread", label: "Unread", count: stats.unreadMessages, badgeColor: "bg-[var(--color-sage)]/10 text-[var(--color-sage)]" },
-    { id: "project_user_supervisor", label: "Client Chats", count: stats.clientChats },
-    { id: "project_supervisor_doer", label: "Expert Chats", count: stats.expertChats },
-    { id: "project_all", label: "Group Chats", count: stats.groupChats },
-  ]
+    return filtered
+  }, [rooms, activeTab, searchQuery, unreadByRoom])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading conversations...</p>
-        </div>
-      </div>
-    )
+  const handleFilterUnread = () => {
+    setActiveTab("unread")
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] gap-4">
-        <AlertCircle className="h-12 w-12 text-destructive" />
-        <h3 className="text-lg font-medium">Failed to load conversations</h3>
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-        <Button onClick={() => refetch()} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Try Again
-        </Button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center max-w-md">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
+          <h2 className="text-lg font-semibold text-[#1C1C1C] mt-4">Unable to load messages</h2>
+          <p className="text-sm text-gray-500 mt-2">{error.message}</p>
+          <Button
+            onClick={refetch}
+            className="mt-6 bg-[#F97316] hover:bg-[#EA580C] text-white"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try again
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
-      {/* Header Section with Gradient Background */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[var(--color-sage)]/10 via-[var(--color-sage)]/5 to-transparent px-6 py-8">
-        {/* Decorative blur circles */}
-        <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[var(--color-sage)]/5 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[var(--color-sage)]/5 blur-3xl" />
-        <div className="absolute top-10 right-1/4 h-32 w-32 rounded-full bg-[var(--color-terracotta)]/5 blur-2xl" />
-
-        <div className="relative z-10">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">Messages</h2>
-                {stats.unreadMessages > 0 && (
-                  <Badge className="bg-[var(--color-sage)] text-white px-2.5 py-0.5">
-                    {stats.unreadMessages} unread
-                  </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground">
-                {stats.unreadMessages > 0
-                  ? `You have ${stats.unreadMessages} unread message${stats.unreadMessages > 1 ? "s" : ""}`
-                  : "All caught up! Stay connected with your clients and experts."}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {stats.unreadMessages > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => markAllAsRead()}
-                  className="gap-2"
-                >
-                  <CheckCheck className="h-4 w-4" />
-                  Mark All Read
-                </Button>
-              )}
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => refetch()}
-                className="shrink-0"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[var(--color-sage)]/10">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-[var(--color-sage)]/10 flex items-center justify-center">
-                  <Inbox className="h-4 w-4 text-[var(--color-sage)]" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                  <p className="text-lg font-semibold leading-tight">{stats.totalConversations}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[var(--color-sage)]/10">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-[var(--color-terracotta)]/10 flex items-center justify-center">
-                  <Bell className="h-4 w-4 text-[var(--color-terracotta)]" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Unread</p>
-                  <p className="text-lg font-semibold leading-tight">{stats.unreadMessages}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[var(--color-sage)]/10">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <User className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Client Chats</p>
-                  <p className="text-lg font-semibold leading-tight">{stats.clientChats}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[var(--color-sage)]/10">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <UserCog className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Expert Chats</p>
-                  <p className="text-lg font-semibold leading-tight">{stats.expertChats}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 bg-white rounded-t-2xl -mt-4 relative z-20 flex flex-col">
-        {/* Animated Tabs */}
-        <AnimatedTabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          layoutId="chatTabsIndicator"
-        />
-
-        {/* Search Bar */}
-        <div className="px-4 py-3 border-b border-gray-100">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, project number, or title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-muted/50 border-0 focus:bg-white focus:ring-2 focus:ring-[var(--color-sage)]/20 rounded-xl"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 right-8 h-56 w-56 rounded-full bg-orange-100/60 blur-3xl" />
+          <div className="absolute top-32 left-8 h-48 w-48 rounded-full bg-amber-100/50 blur-3xl" />
         </div>
 
-        {/* Conversation List */}
-        <ScrollArea className="flex-1">
-          <AnimatePresence mode="wait">
-            {filteredRooms.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="flex flex-col items-center justify-center py-16 text-center px-4"
-              >
-                <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                  <MessageSquare className="h-10 w-10 text-muted-foreground/50" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">
-                  {searchQuery || activeTab !== "all" ? "No conversations found" : "No messages yet"}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  {searchQuery || activeTab !== "all"
-                    ? "Try adjusting your search or filters"
-                    : "Start a conversation from a project to connect with clients and experts"}
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="divide-y divide-gray-50"
-              >
-                {filteredRooms.map((room) => {
-                  const roomType = room.room_type as ChatRoomType
-                  const Icon = getRoomIcon(roomType)
-                  const config = CHAT_ROOM_TYPE_CONFIG[roomType]
-                  const participant = getParticipantInfo(room)
-                  const unreadCount = unreadByRoom[room.id] || 0
-                  const projectNumber = room.projects?.project_number || "Unknown"
-                  const projectTitle = room.projects?.title || "Untitled Project"
-                  const isSelected = selectedRoomId === room.id
-                  const hasUnread = unreadCount > 0
-                  const lastMessagePreview = getLastMessagePreview(room)
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="relative max-w-[1400px] mx-auto p-8 lg:p-10"
+        >
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-8 lg:p-10 mb-10"
+          >
+            <div className="pointer-events-none absolute -top-16 right-0 h-44 w-44 rounded-full bg-orange-100/50 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 left-6 h-32 w-32 rounded-full bg-amber-100/40 blur-3xl" />
 
-                  return (
-                    <motion.div
-                      key={room.id}
-                      variants={itemVariants}
-                      layout
-                    >
-                      <Link 
-                        href={`/chat/${room.project_id}`}
-                        onClick={() => setSelectedRoomId(room.id)}
-                      >
+            <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-start">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-gray-600">
+                  Inbox Studio
+                </div>
+
+                <div>
+                  <h1 className="text-4xl lg:text-5xl font-bold text-[#1C1C1C] tracking-tight">
+                    Messages, {firstName}
+                  </h1>
+                  <p className="text-lg text-gray-600 mt-2">
+                    {heroSubtitle}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={handleFilterUnread}
+                    className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-full px-6 h-11 font-medium shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                  >
+                    View Unread
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("all")}
+                    className="rounded-full px-6 h-11 border-gray-200 text-gray-700 hover:bg-gray-100"
+                  >
+                    All Messages
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={markAllAsRead}
+                    disabled={stats.unreadMessages === 0}
+                    className="rounded-full px-6 h-11 border-gray-200 text-gray-700 hover:bg-gray-100"
+                  >
+                    Mark All Read
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                  <span className="px-3 py-1 rounded-full bg-gray-100">
+                    Total {stats.totalConversations}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-700">
+                    Unread {stats.unreadMessages}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                    Clients {stats.clientChats}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                    Experts {stats.expertChats}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700">
+                    Groups {stats.groupChats}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="rounded-2xl border border-gray-200 bg-white p-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[#1C1C1C]">Inbox Pulse</h3>
+                    <span className="text-xs text-gray-400">Live counts</span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {heroStats.map((stat) => {
+                      const Icon = stat.icon
+                      return (
                         <div
-                          className={cn(
-                            "flex items-center gap-4 px-4 py-4 cursor-pointer transition-all duration-200",
-                            "hover:bg-muted/50",
-                            isSelected && "bg-[var(--color-sage)]/5 border-l-2 border-[var(--color-sage)]",
-                            !isSelected && "border-l-2 border-transparent",
-                            hasUnread && !isSelected && "bg-[var(--color-sage)]/[0.02]"
-                          )}
+                          key={stat.label}
+                          className={`rounded-xl border border-gray-100 bg-gray-50 p-3 ${
+                            stat.wide ? "col-span-2" : ""
+                          }`}
                         >
-                          {/* Avatar */}
-                          <div className="relative shrink-0">
-                            <Avatar className={cn(
-                              "h-12 w-12 transition-all duration-200",
-                              hasUnread && "ring-2 ring-[var(--color-sage)]/20"
-                            )}>
-                              <AvatarImage src={participant.avatar} />
-                              <AvatarFallback className={cn(
-                                "text-sm font-medium",
-                                hasUnread ? "bg-[var(--color-sage)]/10 text-[var(--color-sage)]" : "bg-muted"
-                              )}>
-                                {participant.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()
-                                  .slice(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            {/* Room type indicator */}
-                            <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-                              <Icon className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className={cn(
-                                "font-medium text-sm truncate",
-                                hasUnread ? "text-foreground" : "text-foreground"
-                              )}>
-                                {participant.name}
-                              </span>
-                              {room.is_suspended && (
-                                <Badge
-                                  variant="destructive"
-                                  className="text-[10px] px-1.5 py-0 shrink-0"
-                                >
-                                  <ShieldAlert className="h-2.5 w-2.5 mr-0.5" />
-                                  Suspended
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-xs font-medium text-[var(--color-sage)] bg-[var(--color-sage)]/10 px-1.5 py-0.5 rounded">
-                                {projectNumber}
-                              </span>
-                              <span className="text-xs text-muted-foreground truncate">
-                                {projectTitle}
-                              </span>
-                            </div>
-                            <p className={cn(
-                              "text-sm truncate",
-                              hasUnread ? "text-foreground font-medium" : "text-muted-foreground"
-                            )}>
-                              {lastMessagePreview}
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              {stat.label}
                             </p>
+                            <div
+                              className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                                stat.tone
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </div>
                           </div>
-
-                          {/* Meta - Time and Unread Badge */}
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            {room.last_message_at && (
-                              <span className={cn(
-                                "text-xs",
-                                hasUnread ? "text-[var(--color-sage)] font-medium" : "text-muted-foreground"
-                              )}>
-                                {formatDistanceToNow(new Date(room.last_message_at), {
-                                  addSuffix: true,
-                                })}
-                              </span>
-                            )}
-                            {unreadCount > 0 && (
-                              <Badge className="h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center bg-[var(--color-sage)] text-white text-xs font-semibold rounded-full">
-                                {unreadCount > 99 ? "99+" : unreadCount}
-                              </Badge>
-                            )}
-                          </div>
+                          <p className="text-xl font-bold text-[#1C1C1C] mt-2">{stat.value}</p>
                         </div>
-                      </Link>
-                    </motion.div>
-                  )
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </ScrollArea>
+                      )
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="rounded-2xl border border-gray-200 bg-white p-4 mb-8"
+          >
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+              <div className="relative w-full lg:max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  className="pl-10 rounded-xl border-gray-200 focus-visible:ring-orange-500"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <CategoryTabs
+                activeTab={activeTab as CategoryTab}
+                onTabChange={(tab) => setActiveTab(tab as MessageFilter)}
+                stats={{
+                  unread: stats.unreadMessages,
+                  clientChats: stats.clientChats,
+                  expertChats: stats.expertChats,
+                  groupChats: stats.groupChats,
+                }}
+              />
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+            className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6"
+          >
+            <div className="min-w-0">
+              {filteredRooms.length > 0 ? (
+                <ConversationsTimeline
+                  rooms={filteredRooms}
+                  unreadCounts={unreadByRoom}
+                  isLoading={isLoading}
+                />
+              ) : (
+                <div className="bg-white rounded-2xl border border-gray-200 p-8">
+                  <MessagesEmptyState
+                    searchQuery={searchQuery.trim() ? searchQuery : undefined}
+                    activeFilter={activeTab !== "all" ? activeTab : undefined}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="hidden lg:block">
+              <div className="sticky top-24 rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    Quick Actions
+                  </h3>
+                  <span className="text-xs text-gray-400">Inbox tools</span>
+                </div>
+                <MessagesQuickActions
+                  unreadCount={stats.unreadMessages}
+                  onMarkAllRead={markAllAsRead}
+                  onRefresh={refetch}
+                  onFilterUnread={handleFilterUnread}
+                />
+              </div>
+            </div>
+          </motion.section>
+        </motion.div>
       </div>
     </div>
   )

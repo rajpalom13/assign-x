@@ -1,68 +1,47 @@
+/**
+ * @fileoverview Projects Page - Redesigned with dashboard aesthetics
+ * Charcoal + Orange accent palette with modern minimal design
+ * @module app/(dashboard)/projects/page
+ */
+
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import {
-  Search,
-  Filter,
+  FileText,
+  Zap,
   Clock,
-  CheckCircle2,
   FileSearch,
-  SlidersHorizontal,
-  FolderKanban,
-  Plus,
-  Download,
+  CheckCircle2,
   LayoutGrid,
   TrendingUp,
-  AlertCircle,
-  MessageSquare,
-  MoreHorizontal,
-  Eye,
-  ChevronRight,
+  ArrowRight,
+  Calendar,
 } from "lucide-react"
-import Link from "next/link"
+import { toast } from "sonner"
+import { formatDistanceToNow } from "date-fns"
+
 import { useProjectsByStatus, useSupervisor, claimProject } from "@/hooks"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks"
 import type { ProjectWithRelations } from "@/types/database"
 import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
-import { format } from "date-fns"
-
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { AnimatedTabs } from "@/components/ui/animated-tabs"
-import {
-  OngoingProjectCard,
-  ForReviewCard,
-  CompletedProjectCard,
-  QCReviewModal,
-  type ActiveProject,
-} from "@/components/projects"
-import { STATUS_CONFIG } from "@/components/projects/types"
-import { cn } from "@/lib/utils"
+  ProjectsIllustration,
+  ProjectStatusPills,
+  ProjectStatCard,
+  ProjectsSearchBar,
+  ProjectCardV2,
+  ProjectsEmptyState,
+} from "@/components/projects/v2"
+import type { ProjectCardV2Data } from "@/components/projects/v2"
+import { QCReviewModal, type ActiveProject } from "@/components/projects"
 
+// Subject list for filter
 const SUBJECTS = [
-  "All Subjects",
   "Computer Science",
   "Business Administration",
   "Environmental Science",
@@ -70,201 +49,30 @@ const SUBJECTS = [
   "Psychology",
   "Marketing",
   "Nursing",
+  "Engineering",
+  "Mathematics",
+  "Literature",
 ]
 
-// Mini Stat Card Component
-interface MiniStatCardProps {
-  icon: React.ElementType
-  value: number
-  label: string
-  color?: "default" | "amber" | "sage" | "blue"
-  delay?: number
-}
-
-function MiniStatCard({ icon: Icon, value, label, color = "default", delay = 0 }: MiniStatCardProps) {
-  const colorStyles = {
-    default: { bg: "bg-gray-50", border: "border-gray-100", icon: "text-gray-500" },
-    amber: { bg: "bg-amber-50", border: "border-amber-100", icon: "text-amber-600" },
-    sage: { bg: "bg-[var(--color-sage)]/10", border: "border-[var(--color-sage)]/20", icon: "text-[var(--color-sage)]" },
-    blue: { bg: "bg-blue-50", border: "border-blue-100", icon: "text-blue-600" },
-  }
-  const styles = colorStyles[color]
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: delay / 1000 }}
-      className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-center gap-3">
-        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", styles.bg, styles.border)}>
-          <Icon className={cn("w-5 h-5", styles.icon)} />
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// Project Card Component for the new grid design
-interface ProjectCardProps {
-  project: ActiveProject
-  variant: "ongoing" | "review" | "completed"
-  onApprove?: () => void
-  onReject?: () => void
-}
-
-function ProjectCard({ project, variant, onApprove, onReject }: ProjectCardProps) {
-  const statusConfig = STATUS_CONFIG[project.status]
-  const deadlineDate = new Date(project.deadline)
-  const isOverdue = deadlineDate < new Date()
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="group bg-white rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300"
-    >
-      <div className="p-5 space-y-4">
-        {/* Header: Project Number & Status */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">{project.project_number}</span>
-            <Badge
-              variant="secondary"
-              className={cn(
-                "text-xs",
-                statusConfig.bgColor,
-                statusConfig.color
-              )}
-            >
-              {statusConfig.label}
-            </Badge>
-          </div>
-          <span className="text-sm font-semibold text-[var(--color-sage)]">
-            ${project.quoted_amount.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Title & Subject */}
-        <div>
-          <h3 className="font-semibold text-foreground line-clamp-2 mb-1 group-hover:text-[var(--color-sage)] transition-colors">
-            {project.title}
-          </h3>
-          <p className="text-sm text-muted-foreground">{project.subject}</p>
-        </div>
-
-        {/* Doer & Deadline */}
-        <div className="flex items-center justify-between py-3 border-y border-border/30">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-7 w-7">
-              <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] text-xs">
-                {project.doer_name?.charAt(0) || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-foreground">{project.doer_name || "Unassigned"}</span>
-          </div>
-          <div className={cn("flex items-center gap-1.5 text-sm", isOverdue ? "text-red-500" : "text-muted-foreground")}>
-            <Clock className="w-4 h-4" />
-            <span>{format(deadlineDate, "MMM d")}</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex-1 rounded-lg h-9" asChild>
-            <Link href={`/projects/${project.id}`}>
-              <Eye className="w-4 h-4 mr-1.5" />
-              View
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="rounded-lg h-9 px-3">
-            <MessageSquare className="w-4 h-4" />
-          </Button>
-          {variant === "review" && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg h-9 px-3 text-green-600 hover:text-green-700 hover:bg-green-50"
-                onClick={onApprove}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={onReject}
-              >
-                <AlertCircle className="w-4 h-4" />
-              </Button>
-            </>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-lg h-9 px-3">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Message Client</DropdownMenuItem>
-              <DropdownMenuItem>Message Doer</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Cancel Project</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// Loading Card Component
-function LoadingCard() {
-  return (
-    <div className="bg-white rounded-2xl border border-border/50 p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-5 w-16" />
-      </div>
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-full" />
-        <Skeleton className="h-4 w-2/3" />
-      </div>
-      <div className="flex items-center justify-between py-3 border-y border-border/30">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-7 w-7 rounded-full" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <Skeleton className="h-4 w-16" />
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-9 flex-1" />
-        <Skeleton className="h-9 w-9" />
-      </div>
-    </div>
-  )
-}
-
 export default function ProjectsPage() {
-  const [activeTab, setActiveTab] = useState("new")
+  const router = useRouter()
+  const { user } = useAuth()
+  const firstName = user?.full_name?.split(" ")[0] || "Supervisor"
+
+  // Active filter state
+  const [activeFilter, setActiveFilter] = useState<string>("new")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedSubject, setSelectedSubject] = useState("All Subjects")
+  const [selectedSubject, setSelectedSubject] = useState("all")
   const [sortBy, setSortBy] = useState<"deadline" | "created" | "amount">("deadline")
+
+  // QC Modal state
   const [qcModalState, setQcModalState] = useState<{
     open: boolean
     project: ActiveProject | null
     mode: "approve" | "reject" | null
   }>({ open: false, project: null, mode: null })
 
-  // Use real data hooks
+  // Fetch projects data
   const {
     needsQuote,
     readyToAssign,
@@ -272,11 +80,29 @@ export default function ProjectsPage() {
     needsQC,
     completed,
     isLoading,
-    refetch
+    refetch,
   } = useProjectsByStatus()
   const { supervisor } = useSupervisor()
 
-  // Transform projects to component format
+  // Transform project to card format
+  const transformToCardData = (project: ProjectWithRelations): ProjectCardV2Data => ({
+    id: project.id,
+    project_number: project.project_number,
+    title: project.title,
+    subject: project.subjects?.name || "General",
+    service_type: project.service_type,
+    status: project.status,
+    deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+    user_name: project.profiles?.full_name || "Unknown User",
+    doer_name: project.doers?.profiles?.full_name,
+    quoted_amount: project.user_quote || 0,
+    supervisor_commission: project.supervisor_commission || 0,
+    has_unread_messages: false,
+    revision_count: (project as ProjectWithRelations & { revision_count?: number }).revision_count || 0,
+    created_at: project.created_at || new Date().toISOString(),
+  })
+
+  // Transform to ActiveProject for QC modal
   const transformToActiveProject = (project: ProjectWithRelations): ActiveProject => ({
     id: project.id,
     project_number: project.project_number,
@@ -304,33 +130,100 @@ export default function ProjectsPage() {
   })
 
   // Calculate stats
-  const totalProjects = inProgress.length + needsQC.length + completed.length
-  const completedThisMonth = completed.filter(p => {
-    const completedDate = p.completed_at ? new Date(p.completed_at) : null
-    if (!completedDate) return false
-    const now = new Date()
-    return completedDate.getMonth() === now.getMonth() && completedDate.getFullYear() === now.getFullYear()
-  }).length
+  const stats = useMemo(() => {
+    const totalActive = inProgress.length + needsQC.length
+    const completedThisMonth = completed.filter(p => {
+      const completedDate = p.completed_at ? new Date(p.completed_at) : null
+      if (!completedDate) return false
+      const now = new Date()
+      return completedDate.getMonth() === now.getMonth() && completedDate.getFullYear() === now.getFullYear()
+    }).length
 
-  // Filter function
-  const filterProjects = (projects: ActiveProject[]) => {
+    return {
+      total: needsQuote.length + readyToAssign.length + inProgress.length + needsQC.length + completed.length,
+      active: totalActive,
+      forReview: needsQC.length,
+      completedThisMonth,
+    }
+  }, [needsQuote, readyToAssign, inProgress, needsQC, completed])
+
+  // Status pills configuration
+  const statusPills = useMemo(() => [
+    {
+      id: "new",
+      label: "New Requests",
+      count: needsQuote.length,
+      icon: FileText,
+      badgeColor: needsQuote.length > 0 ? "#10B981" : undefined,
+    },
+    {
+      id: "ready",
+      label: "Ready to Assign",
+      count: readyToAssign.length,
+      icon: Zap,
+      badgeColor: readyToAssign.length > 0 ? "#3B82F6" : undefined,
+    },
+    {
+      id: "ongoing",
+      label: "In Progress",
+      count: inProgress.length,
+      icon: Clock,
+    },
+    {
+      id: "review",
+      label: "For Review",
+      count: needsQC.length,
+      icon: FileSearch,
+      badgeColor: needsQC.length > 0 ? "#F59E0B" : undefined,
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      count: completed.length,
+      icon: CheckCircle2,
+    },
+  ], [needsQuote.length, readyToAssign.length, inProgress.length, needsQC.length, completed.length])
+
+  const pipelineStages = useMemo(() => {
+    const totalCount = stats.total || 1
+    return [
+      { label: "New Requests", count: needsQuote.length, color: "bg-emerald-500" },
+      { label: "Ready to Assign", count: readyToAssign.length, color: "bg-blue-500" },
+      { label: "In Progress", count: inProgress.length, color: "bg-orange-500" },
+      { label: "For Review", count: needsQC.length, color: "bg-amber-500" },
+    ].map((stage) => ({
+      ...stage,
+      percent: Math.round((stage.count / totalCount) * 100),
+    }))
+  }, [stats.total, needsQuote.length, readyToAssign.length, inProgress.length, needsQC.length])
+
+  const upcomingProjects = useMemo(() => {
+    const projects = [...inProgress, ...needsQC]
+    return projects
+      .filter((project) => project.deadline)
+      .sort((a, b) => new Date(a.deadline || 0).getTime() - new Date(b.deadline || 0).getTime())
+      .slice(0, 3)
+  }, [inProgress, needsQC])
+
+  // Filter projects
+  const filterProjects = useCallback((projects: ProjectCardV2Data[]) => {
     return projects.filter((project) => {
       const matchesSearch =
         searchQuery === "" ||
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.project_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.doer_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        (project.doer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
 
       const matchesSubject =
-        selectedSubject === "All Subjects" || project.subject === selectedSubject
+        selectedSubject === "all" || project.subject === selectedSubject
 
       return matchesSearch && matchesSubject
     })
-  }
+  }, [searchQuery, selectedSubject])
 
-  // Sort function
-  const sortProjects = (projects: ActiveProject[]) => {
+  // Sort projects
+  const sortProjects = useCallback((projects: ProjectCardV2Data[]) => {
     return [...projects].sort((a, b) => {
       switch (sortBy) {
         case "deadline":
@@ -338,28 +231,71 @@ export default function ProjectsPage() {
         case "created":
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         case "amount":
-          return b.quoted_amount - a.quoted_amount
+          return (b.quoted_amount || 0) - (a.quoted_amount || 0)
         default:
           return 0
       }
     })
-  }
+  }, [sortBy])
 
-  const ongoingProjects = useMemo(() => {
-    const transformed = inProgress.map(transformToActiveProject)
+  // Get filtered projects based on active filter
+  const filteredProjects = useMemo(() => {
+    let sourceProjects: ProjectWithRelations[] = []
+
+    switch (activeFilter) {
+      case "new":
+        sourceProjects = needsQuote
+        break
+      case "ready":
+        sourceProjects = readyToAssign
+        break
+      case "ongoing":
+        sourceProjects = inProgress
+        break
+      case "review":
+        sourceProjects = needsQC
+        break
+      case "completed":
+        sourceProjects = completed
+        break
+      default:
+        sourceProjects = needsQuote
+    }
+
+    const transformed = sourceProjects.map(transformToCardData)
     return sortProjects(filterProjects(transformed))
-  }, [inProgress, searchQuery, selectedSubject, sortBy])
+  }, [activeFilter, needsQuote, readyToAssign, inProgress, needsQC, completed, filterProjects, sortProjects])
 
-  const forReviewProjects = useMemo(() => {
-    const transformed = needsQC.map(transformToActiveProject)
-    return sortProjects(filterProjects(transformed))
-  }, [needsQC, searchQuery, selectedSubject, sortBy])
+  // Check if search/filter is active with no results
+  const hasActiveFilters = searchQuery !== "" || selectedSubject !== "all"
+  const showNoResults = filteredProjects.length === 0 && hasActiveFilters
 
-  const completedProjects = useMemo(() => {
-    const transformed = completed.map(transformToActiveProject)
-    return sortProjects(filterProjects(transformed))
-  }, [completed, searchQuery, selectedSubject, sortBy])
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("")
+    setSelectedSubject("all")
+  }, [])
 
+  const focusNewRequests = useCallback(() => {
+    setActiveFilter("new")
+    setSearchQuery("")
+    setSelectedSubject("all")
+  }, [])
+
+  // Handle claim project
+  const handleClaimProject = useCallback(async (projectId: string) => {
+    try {
+      await claimProject(projectId)
+      toast.success("Project claimed successfully!")
+      await refetch()
+      router.push(`/projects/${projectId}`)
+    } catch (error) {
+      console.error("Failed to claim project:", error)
+      toast.error("Failed to claim project. It may have been claimed by another supervisor.")
+      await refetch()
+    }
+  }, [refetch, router])
+
+  // Handle QC approve
   const handleApprove = useCallback(async (projectId: string, message?: string) => {
     const supabase = createClient()
     try {
@@ -382,6 +318,7 @@ export default function ProjectsPage() {
     }
   }, [refetch])
 
+  // Handle QC reject
   const handleReject = useCallback(async (
     projectId: string,
     feedback: string,
@@ -434,545 +371,257 @@ export default function ProjectsPage() {
     }
   }, [supervisor, refetch])
 
-  const openQCModal = (project: ActiveProject, mode: "approve" | "reject") => {
-    setQcModalState({ open: true, project, mode })
+  // Open QC Modal
+  const openQCModal = (project: ProjectWithRelations, mode: "approve" | "reject") => {
+    setQcModalState({
+      open: true,
+      project: transformToActiveProject(project),
+      mode,
+    })
   }
 
-  const handlePreviewFile = useCallback((file: { url?: string; name?: string }) => {
-    if (!file.url) {
-      toast.error("File URL not available")
-      return
-    }
-    window.open(file.url, "_blank", "noopener,noreferrer")
-  }, [])
+  // Get variant for card based on filter
+  const getCardVariant = (): "new" | "ready" | "ongoing" | "review" | "completed" => {
+    return activeFilter as "new" | "ready" | "ongoing" | "review" | "completed"
+  }
 
-  const handleDownloadFile = useCallback(async (file: { url?: string; name?: string }) => {
-    if (!file.url) {
-      toast.error("File URL not available")
-      return
-    }
-    try {
-      const response = await fetch(file.url)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = file.name || "download"
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-      toast.success("File downloaded successfully")
-    } catch (error) {
-      console.error("Failed to download file:", error)
-      toast.error("Failed to download file. Please try again.")
-    }
-  }, [])
-
-  const handleRunQC = useCallback(async (projectId: string) => {
-    toast.info("Running quality checks...")
-    setTimeout(() => {
-      toast.warning("QC checks require external API integration")
-    }, 1500)
-  }, [])
-
-  const router = useRouter()
-
-  // Get new requests (unassigned projects) from useProjectsByStatus
-  const newRequestsProjects = useMemo(() => {
-    return needsQuote.map(transformToActiveProject)
-  }, [needsQuote])
-
-  // Get ready to assign projects
-  const readyToAssignProjects = useMemo(() => {
-    return readyToAssign.map(transformToActiveProject)
-  }, [readyToAssign])
-
-  // Handle claiming a new request
-  const handleClaimProject = useCallback(async (projectId: string) => {
-    try {
-      await claimProject(projectId)
-      toast.success("Project claimed successfully!")
-      await refetch()
-      router.push(`/projects/${projectId}`)
-    } catch (error) {
-      console.error("Failed to claim project:", error)
-      toast.error("Failed to claim project. It may have been claimed by another supervisor.")
-      await refetch()
-    }
-  }, [refetch, router])
-
-  const tabs = [
-    { id: "new", label: "New Requests", count: newRequestsProjects.length, badgeColor: newRequestsProjects.length > 0 ? "bg-emerald-100 text-emerald-700" : undefined },
-    { id: "assign", label: "Ready to Assign", count: readyToAssignProjects.length, badgeColor: readyToAssignProjects.length > 0 ? "bg-blue-100 text-blue-700" : undefined },
-    { id: "ongoing", label: "Ongoing", count: ongoingProjects.length },
-    { id: "review", label: "For Review", count: forReviewProjects.length, badgeColor: forReviewProjects.length > 0 ? "bg-amber-100 text-amber-700" : undefined },
-    { id: "completed", label: "Completed", count: completedProjects.length },
-  ]
+  // Find original project for QC modal
+  const findOriginalProject = (id: string): ProjectWithRelations | undefined => {
+    return needsQC.find(p => p.id === id)
+  }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background">
-      {/* Premium gradient background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#faf8f5] via-[#f5f2ed] to-[#edf1e8]" />
-        <div className="absolute -top-20 -right-20 w-[600px] h-[600px] bg-gradient-to-bl from-[var(--color-sage)]/[0.15] via-[var(--color-sage)]/[0.08] to-transparent rounded-full blur-[100px]" />
-        <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-gradient-to-tr from-[var(--color-terracotta)]/[0.08] via-transparent to-transparent rounded-full blur-[80px]" />
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 right-0 h-64 w-64 rounded-full bg-orange-100/60 blur-3xl" />
+          <div className="absolute top-40 left-10 h-56 w-56 rounded-full bg-amber-100/50 blur-3xl" />
+        </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl p-6 md:p-8 space-y-6">
-        {/* Header Section */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="relative bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg shadow-gray-900/[0.05] border border-white/70 overflow-hidden"
+          className="relative max-w-[1400px] mx-auto p-6 lg:p-10"
         >
-          {/* Decorative gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-sage)]/10 via-[var(--color-sage)]/5 to-transparent pointer-events-none" />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--color-sage)]/[0.08] to-transparent rounded-full blur-3xl pointer-events-none" />
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white p-6 lg:p-8 mb-10"
+          >
+            <div className="absolute -top-16 left-1/3 h-44 w-44 rounded-full bg-orange-100/50 blur-3xl" />
+            <div className="absolute -bottom-16 right-10 h-44 w-44 rounded-full bg-amber-100/50 blur-3xl" />
 
-          <div className="relative p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Left: Title and description */}
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--color-sage)]/20 to-[var(--color-sage)]/10 flex items-center justify-center border border-[var(--color-sage)]/20">
-                    <FolderKanban className="h-5 w-5 text-[var(--color-sage)]" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
-                      Projects
-                    </h1>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Manage and track all project activities across ongoing, review, and completed stages
-                </p>
-              </div>
-
-              {/* Right: Quick Actions */}
-              <div className="flex items-center gap-3">
-                {/* Stats badges */}
-                <div className="hidden md:flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] border-[var(--color-sage)]/20">
-                    <LayoutGrid className="h-3 w-3 mr-1" />
-                    {ongoingProjects.length} Active
-                  </Badge>
-                  {forReviewProjects.length > 0 && (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
-                      <FileSearch className="h-3 w-3 mr-1" />
-                      {forReviewProjects.length} For Review
-                    </Badge>
-                  )}
-                  <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    {completedProjects.length} Completed
-                  </Badge>
+            <div className="relative grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Projects Studio</p>
+                  <h1 className="text-4xl lg:text-5xl font-bold text-[#1C1C1C] tracking-tight mt-2">
+                    Projects, {firstName}
+                  </h1>
+                  <p className="text-lg text-gray-500 mt-3">
+                    {needsQuote.length > 0
+                      ? `${needsQuote.length} new request${needsQuote.length > 1 ? "s" : ""} waiting for you`
+                      : needsQC.length > 0
+                        ? `${needsQC.length} project${needsQC.length > 1 ? "s" : ""} ready for review`
+                        : "Everything looks steady. Your queue is under control."}
+                  </p>
                 </div>
 
-                <Button variant="outline" size="sm" className="rounded-xl gap-2">
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
-                <Button size="sm" className="rounded-xl gap-2 bg-[var(--color-sage)] hover:bg-[var(--color-sage-hover)]">
-                  <Plus className="h-4 w-4" />
-                  New Project
-                </Button>
-              </div>
-            </div>
-          </div>
-        </motion.header>
-
-        {/* Stats Row */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          <MiniStatCard
-            icon={LayoutGrid}
-            value={totalProjects}
-            label="Total Projects"
-            color="sage"
-            delay={0}
-          />
-          <MiniStatCard
-            icon={Clock}
-            value={inProgress.length}
-            label="In Progress"
-            color="blue"
-            delay={100}
-          />
-          <MiniStatCard
-            icon={FileSearch}
-            value={needsQC.length}
-            label="For Review"
-            color={needsQC.length > 0 ? "amber" : "default"}
-            delay={200}
-          />
-          <MiniStatCard
-            icon={CheckCircle2}
-            value={completedThisMonth}
-            label="Completed This Month"
-            color="sage"
-            delay={300}
-          />
-        </motion.div>
-
-        {/* Search & Filter Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/70 p-4"
-        >
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search projects, clients, or experts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-xl bg-white border-border/50"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
-                >
-                  <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              )}
-            </div>
-
-            {/* Filters */}
-            <div className="flex gap-3">
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-[160px] rounded-xl bg-white border-border/50">
-                  <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUBJECTS.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
-                      {subject}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="rounded-xl gap-2 bg-white border-border/50">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Sort
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={focusNewRequests}
+                    className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-full px-6 h-11 font-medium shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                  >
+                    Review New Requests
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem
-                    checked={sortBy === "deadline"}
-                    onCheckedChange={() => setSortBy("deadline")}
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveFilter("ongoing")}
+                    className="rounded-full h-11 px-5 border-gray-200 text-gray-700"
                   >
-                    Deadline (Nearest)
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={sortBy === "created"}
-                    onCheckedChange={() => setSortBy("created")}
-                  >
-                    Recently Created
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={sortBy === "amount"}
-                    onCheckedChange={() => setSortBy("amount")}
-                  >
-                    Highest Value
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    Active Queue
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                  <span className="px-3 py-1 rounded-full bg-gray-100">Total {stats.total}</span>
+                  <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-700">Active {stats.active}</span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">Completed {stats.completedThisMonth}</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="w-full h-[220px]">
+                  <ProjectsIllustration />
+                </div>
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[#1C1C1C]">Pipeline Snapshot</h3>
+                    <span className="text-xs text-gray-400">{stats.total} total</span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {pipelineStages.map((stage) => (
+                      <div key={stage.label} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{stage.label}</span>
+                          <span>{stage.count}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white border border-gray-200 overflow-hidden">
+                          <div
+                            className={stage.color}
+                            style={{ width: `${stage.percent}%`, height: "100%" }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.section>
 
-        {/* Animated Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/70 overflow-hidden"
-        >
-          <AnimatedTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            layoutId="projectsTabIndicator"
-          />
+          <div className="grid lg:grid-cols-[320px_1fr] gap-8">
+            <aside className="space-y-6">
+              <div className="space-y-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-[#1C1C1C]">Status Rail</h2>
+                  <p className="text-xs text-gray-500">Track projects by stage and jump in.</p>
+                </div>
+                <ProjectStatusPills
+                  pills={statusPills}
+                  activeId={activeFilter}
+                  onSelect={setActiveFilter}
+                />
+              </div>
 
-          {/* Tab Content */}
-          <div className="p-6">
-            {/* New Requests Tab */}
-            {activeTab === "new" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                {isLoading ? (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
+
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#1C1C1C]">Due Soon</h3>
+                  <span className="text-xs text-gray-400">{upcomingProjects.length} items</span>
+                </div>
+                {upcomingProjects.length === 0 ? (
+                  <p className="text-xs text-gray-500 mt-3">No upcoming deadlines in your active queue.</p>
+                ) : (
+                  <div className="mt-3 space-y-3">
+                    {upcomingProjects.map((project) => (
+                      <div key={project.id} className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 line-clamp-1">{project.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            #{project.project_number} • {project.profiles?.full_name || "Client"}
+                          </p>
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {project.deadline
+                            ? formatDistanceToNow(new Date(project.deadline), { addSuffix: true })
+                            : "No deadline"}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : newRequestsProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center mb-4">
-                      <CheckCircle2 className="h-10 w-10 text-emerald-500/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">No new requests</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      New project requests will appear here for you to claim
+                )}
+              </div>
+            </aside>
+
+            <section className="space-y-6">
+              <ProjectsSearchBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedSubject={selectedSubject}
+                onSubjectChange={setSelectedSubject}
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                subjects={SUBJECTS}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={handleClearFilters}
+              />
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
+                className="bg-white rounded-2xl border border-gray-200 p-6"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#1C1C1C]">
+                      {statusPills.find(p => p.id === activeFilter)?.label || "Projects"}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {filteredProjects.length} project{filteredProjects.length !== 1 ? "s" : ""}
+                      {hasActiveFilters && " matching filters"}
                     </p>
                   </div>
-                ) : (
+                </div>
+
+                {isLoading && (
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {newRequestsProjects.map((project) => (
-                      <Card key={project.id} className="group bg-white rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300">
-                        <CardContent className="p-5 space-y-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-muted-foreground">{project.project_number}</span>
-                              <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700">
-                                New
-                              </Badge>
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground line-clamp-2 mb-1">{project.title}</h3>
-                            <p className="text-sm text-muted-foreground">{project.subject}</p>
-                          </div>
-                          <div className="flex items-center justify-between py-3 border-y border-border/30">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7">
-                                <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] text-xs">
-                                  {project.user_name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm text-foreground">{project.user_name}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Clock className="w-4 h-4" />
-                              <span>{project.deadline ? format(new Date(project.deadline), "MMM d") : "No deadline"}</span>
-                            </div>
-                          </div>
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-16" />
+                        </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                        <div className="flex items-center justify-between py-3 border-y border-gray-100">
                           <div className="flex items-center gap-2">
-                            <Button 
-                              variant="default" 
-                              size="sm" 
-                              className="flex-1 rounded-lg h-9 bg-[var(--color-sage)] hover:bg-[var(--color-sage-hover)]"
-                              onClick={() => handleClaimProject(project.id)}
-                            >
-                              <Eye className="w-4 h-4 mr-1.5" />
-                              Claim & Analyze
-                            </Button>
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <Skeleton className="h-4 w-24" />
                           </div>
-                        </CardContent>
-                      </Card>
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                        <div className="flex gap-2">
+                          <Skeleton className="h-10 flex-1 rounded-xl" />
+                          <Skeleton className="h-10 w-10 rounded-xl" />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
-              </motion.div>
-            )}
 
-            {/* Ready to Assign Tab */}
-            {activeTab === "assign" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                {isLoading ? (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
-                  </div>
-                ) : readyToAssignProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center mb-4">
-                      <TrendingUp className="h-10 w-10 text-blue-500/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">No projects to assign</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      Paid projects waiting for doer assignment will appear here
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {readyToAssignProjects.map((project) => (
-                      <Card key={project.id} className="group bg-white rounded-2xl border border-border/50 overflow-hidden hover:shadow-lg transition-all duration-300">
-                        <CardContent className="p-5 space-y-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-muted-foreground">{project.project_number}</span>
-                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
-                                Paid
-                              </Badge>
-                            </div>
-                            <span className="text-sm font-semibold text-[var(--color-sage)]">
-                              ₹{project.quoted_amount?.toLocaleString() || 0}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground line-clamp-2 mb-1">{project.title}</h3>
-                            <p className="text-sm text-muted-foreground">{project.subject}</p>
-                          </div>
-                          <div className="flex items-center justify-between py-3 border-y border-border/30">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7">
-                                <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] text-xs">
-                                  {project.user_name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm text-foreground">{project.user_name}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Clock className="w-4 h-4" />
-                              <span>{project.deadline ? format(new Date(project.deadline), "MMM d") : "No deadline"}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="flex-1 rounded-lg h-9" asChild>
-                              <Link href={`/projects/${project.id}`}>
-                                <Eye className="w-4 h-4 mr-1.5" />
-                                View & Assign Doer
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                {!isLoading && showNoResults && (
+                  <ProjectsEmptyState
+                    variant="search"
+                    searchQuery={searchQuery}
+                    onClearSearch={handleClearFilters}
+                  />
                 )}
-              </motion.div>
-            )}
 
-            {/* Ongoing Tab */}
-            {activeTab === "ongoing" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                {isLoading ? (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
-                  </div>
-                ) : ongoingProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--color-sage)]/10 to-[var(--color-sage)]/5 flex items-center justify-center mb-4">
-                      <Clock className="h-10 w-10 text-[var(--color-sage)]/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">No ongoing projects</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      {searchQuery || selectedSubject !== "All Subjects"
-                        ? "Try adjusting your filters"
-                        : "Projects will appear here once assigned to experts"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {ongoingProjects.map((project) => (
-                      <OngoingProjectCard key={project.id} project={project} />
-                    ))}
-                  </div>
+                {!isLoading && !showNoResults && filteredProjects.length === 0 && (
+                  <ProjectsEmptyState variant={getCardVariant()} />
                 )}
-              </motion.div>
-            )}
 
-            {/* For Review Tab */}
-            {activeTab === "review" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                {isLoading ? (
+                {!isLoading && filteredProjects.length > 0 && (
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
-                  </div>
-                ) : forReviewProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mb-4">
-                      <FileSearch className="h-10 w-10 text-amber-500/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">No projects for review</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      {searchQuery || selectedSubject !== "All Subjects"
-                        ? "Try adjusting your filters"
-                        : "Projects awaiting QC will appear here"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {forReviewProjects.map((project) => (
-                      <ForReviewCard
+                    {filteredProjects.map((project) => (
+                      <ProjectCardV2
                         key={project.id}
                         project={project}
-                        files={[]}
-                        qcReport={undefined}
-                        onApprove={() => openQCModal(project, "approve")}
-                        onReject={() => openQCModal(project, "reject")}
-                        onPreviewFile={handlePreviewFile}
-                        onDownloadFile={handleDownloadFile}
-                        onRunQC={handleRunQC}
+                        variant={getCardVariant()}
+                        onClaim={() => handleClaimProject(project.id)}
+                        onAssign={() => router.push(`/projects/${project.id}`)}
+                        onApprove={() => {
+                          const original = findOriginalProject(project.id)
+                          if (original) openQCModal(original, "approve")
+                        }}
+                        onReject={() => {
+                          const original = findOriginalProject(project.id)
+                          if (original) openQCModal(original, "reject")
+                        }}
                       />
                     ))}
                   </div>
                 )}
               </motion.div>
-            )}
-
-            {/* Completed Tab */}
-            {activeTab === "completed" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                {isLoading ? (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {[1, 2, 3, 4, 5, 6].map((i) => <LoadingCard key={i} />)}
-                  </div>
-                ) : completedProjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mb-4">
-                      <CheckCircle2 className="h-10 w-10 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">No completed projects</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                      {searchQuery || selectedSubject !== "All Subjects"
-                        ? "Try adjusting your filters"
-                        : "Completed projects will appear here"}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {completedProjects.map((project) => (
-                      <CompletedProjectCard
-                        key={project.id}
-                        project={project}
-                        rating={(project as ActiveProject & { rating?: number }).rating || 0}
-                        feedback={(project as ActiveProject & { feedback?: string }).feedback || undefined}
-                      />
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
+            </section>
           </div>
         </motion.div>
       </div>

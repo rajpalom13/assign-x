@@ -203,6 +203,13 @@ export function AssignDoerModal({
     try {
       const supabase = createClient()
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error("You must be logged in to assign a doer")
+        return
+      }
+
       // Create assignment record for tracking
       const { error: assignmentError } = await supabase
         .from("project_assignments")
@@ -210,7 +217,7 @@ export function AssignDoerModal({
           project_id: project.id,
           assignment_type: "doer",
           assignee_id: selectedDoer.id,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id,
+          assigned_by: user.id,
           assigned_at: new Date().toISOString(),
         })
 

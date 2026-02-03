@@ -164,6 +164,7 @@ export function DoerList() {
       rating_low: (a, b) => a.rating - b.rating,
       projects_high: (a, b) => b.completed_projects - a.completed_projects,
       projects_low: (a, b) => a.completed_projects - b.completed_projects,
+      earnings_high: (a, b) => (b.total_earnings || 0) - (a.total_earnings || 0),
       recent: (a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime(),
     }
     return result.sort(sortFns[sortOption])

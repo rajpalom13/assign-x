@@ -34,6 +34,7 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [retryCount, setRetryCount] = useState(0)
 
   const fetchProjects = useCallback(async () => {
     const supabase = createClient()
@@ -42,8 +43,21 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Not authenticated")
+      // Use getSession() first - faster, no network call
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
+
+      if (!user) {
+        // Retry up to 3 times with delay if auth not ready
+        if (retryCount < 3) {
+          console.warn(`[useProjects] No session found, retrying (${retryCount + 1}/3)...`)
+          setTimeout(() => setRetryCount(c => c + 1), 500)
+          return
+        }
+        console.error("[useProjects] No authenticated user after retries")
+        throw new Error("Not authenticated")
+      }
+      console.log("[useProjects] Authenticated user:", user.id)
 
       // Get supervisor ID
       const { data: supervisor } = await supabase
@@ -53,9 +67,12 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
         .single()
 
       if (!supervisor) {
+        console.warn("[useProjects] No supervisor found for user ID:", user.id)
+        console.warn("[useProjects] This means there is no supervisor record with profile_id =", user.id)
         setProjects([])
         return
       }
+      console.log("[useProjects] Found supervisor ID:", supervisor.id, "for profile_id:", user.id)
 
       // Build query
       let query = supabase
@@ -100,11 +117,12 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
       setProjects(transformedData)
       setTotalCount(count || 0)
     } catch (err) {
+      console.error("[useProjects] Failed to fetch projects:", err)
       setError(err instanceof Error ? err : new Error("Failed to fetch projects"))
     } finally {
       setIsLoading(false)
     }
-  }, [status, limit, offset])
+  }, [status, limit, offset, retryCount])
 
   useEffect(() => {
     fetchProjects()
@@ -144,7 +162,9 @@ export function useProject(projectId: string): UseProjectReturn {
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       const { data: supervisor } = await supabase
@@ -287,7 +307,9 @@ export const PROJECT_STATUS_GROUPS = {
 export async function claimProject(projectId: string): Promise<void> {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use getSession() - faster, no network timeout issues
+  const { data: sessionData } = await supabase.auth.getSession()
+  const user = sessionData?.session?.user
   if (!user) throw new Error("Not authenticated")
 
   // Get supervisor ID
@@ -330,7 +352,9 @@ export function useNewRequests() {
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       // Verify user is a supervisor
@@ -376,6 +400,7 @@ export function useNewRequests() {
 
       setProjects(transformedData)
     } catch (err) {
+      console.error("[useNewRequests] Failed to fetch new requests:", err)
       setError(err instanceof Error ? err : new Error("Failed to fetch new requests"))
     } finally {
       setIsLoading(false)
@@ -410,7 +435,9 @@ export function useReadyToAssign() {
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       // Get supervisor ID
@@ -457,6 +484,7 @@ export function useReadyToAssign() {
 
       setProjects(transformedData)
     } catch (err) {
+      console.error("[useReadyToAssign] Failed to fetch ready to assign projects:", err)
       setError(err instanceof Error ? err : new Error("Failed to fetch ready to assign projects"))
     } finally {
       setIsLoading(false)
@@ -516,7 +544,9 @@ export function useProjectsByStatus() {
     let newRequestsChannel: RealtimeChannel | null = null
 
     const setupSubscriptions = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) return
 
       const { data: supervisor } = await supabase

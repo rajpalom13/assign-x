@@ -36,8 +36,10 @@ export function useSupervisor(): UseSupervisorReturn {
       setError(null)
 
       // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      // Use getSession() - faster, no network timeout issues
+      const { data: sessionData, error: authError } = await supabase.auth.getSession()
       if (authError) throw authError
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       // Get profile
@@ -72,6 +74,7 @@ export function useSupervisor(): UseSupervisorReturn {
 
       setSupervisor(transformedSupervisor as SupervisorWithProfile | null)
     } catch (err) {
+      console.error("[useSupervisor] Failed to fetch supervisor:", err)
       setError(err instanceof Error ? err : new Error("Failed to fetch supervisor"))
     } finally {
       setIsLoading(false)
@@ -148,7 +151,9 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
       const supabase = createClient()
 
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // Use getSession() - faster, no network timeout issues
+        const { data: sessionData } = await supabase.auth.getSession()
+        const user = sessionData?.session?.user
         if (!user) return
 
         // Get supervisor ID
@@ -158,7 +163,11 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
           .eq("profile_id", user.id)
           .single()
 
-        if (!supervisor) return
+        if (!supervisor) {
+          console.warn("[useSupervisorStats] No supervisor found for user ID:", user.id)
+          return
+        }
+        console.log("[useSupervisorStats] Found supervisor:", supervisor.id, "avg_rating:", supervisor.average_rating, "total_projects:", supervisor.total_projects_managed, "total_earnings:", supervisor.total_earnings)
 
         // Get project counts by status
         const { data: projects } = await supabase
@@ -204,6 +213,7 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
           totalDoers: uniqueDoers,
         })
       } catch (err) {
+        console.error("[useSupervisorStats] Failed to fetch stats:", err)
         setError(err instanceof Error ? err : new Error("Failed to fetch stats"))
       } finally {
         setIsLoading(false)

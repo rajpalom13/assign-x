@@ -39,6 +39,9 @@
     --ring: 222 47% 20%;
     --radius: 0.625rem;
 
+    /* Skeleton Loading */
+    --skeleton-base: 24 20% 92%;
+
     /* Chart Colors - Vibrant palette */
     --chart-1: 234 89% 64%;
     --chart-2: 160 84% 39%;
@@ -146,6 +149,9 @@
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 234 89% 64%;
+
+    /* Skeleton Loading */
+    --skeleton-base: 220 10% 18%;
 
     /* Chart Colors - Vibrant for dark */
     --chart-1: 234 89% 64%;
@@ -290,42 +296,52 @@
 }
 
 :root {
-  --sidebar: hsl(0 0% 100%);
-  --sidebar-foreground: hsl(222 47% 30%);
-  --sidebar-primary: hsl(222 47% 20%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(234 89% 64% / 0.08);
-  --sidebar-accent-foreground: hsl(234 89% 50%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(234 89% 64%);
+  /* Premium Command Center Sidebar - Dark Theme */
+  --sidebar: #0a0f14;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #22d3ee;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(34, 211, 238, 0.1);
+  --sidebar-accent-foreground: #22d3ee;
+  --sidebar-border: rgba(51, 65, 85, 0.5);
+  --sidebar-ring: #22d3ee;
 
-  /* Dashboard Dark Theme - Coastal Modern */
-  --dash-bg: #0A1F1F;
-  --dash-bg-secondary: #0F2A2E;
-  --dash-surface: #152E33;
-  --dash-surface-hover: #1A3A40;
-  --dash-border: rgba(114, 183, 173, 0.15);
-  --dash-accent: #72B7AD;
-  --dash-accent-hover: #8AC9BF;
-  --dash-highlight: #C77B4E;
-  --dash-text: #FFFFFF;
-  --dash-text-secondary: rgba(255, 255, 255, 0.7);
-  --dash-text-muted: rgba(255, 255, 255, 0.5);
-  --dash-success: #22C55E;
-  --dash-warning: #F59E0B;
-  --dash-error: #EF4444;
-  --dash-info: #3B82F6;
+  /* Command Center Design Tokens */
+  --cmd-bg: #0a0f14;
+  --cmd-bg-elevated: #0f1419;
+  --cmd-surface: rgba(15, 23, 42, 0.5);
+  --cmd-surface-hover: rgba(30, 41, 59, 0.5);
+  --cmd-border: rgba(51, 65, 85, 0.5);
+  --cmd-border-hover: rgba(71, 85, 105, 0.6);
+
+  /* Command Center Accent Colors */
+  --cmd-cyan: #22d3ee;
+  --cmd-amber: #fbbf24;
+  --cmd-emerald: #34d399;
+  --cmd-violet: #a78bfa;
+  --cmd-rose: #fb7185;
+
+  /* Command Center Text */
+  --cmd-text: #ffffff;
+  --cmd-text-secondary: #94a3b8;
+  --cmd-text-muted: #64748b;
+
+  /* Status Colors */
+  --cmd-success: #22c55e;
+  --cmd-warning: #f59e0b;
+  --cmd-error: #ef4444;
+  --cmd-info: #3b82f6;
 }
 
 .dark {
-  --sidebar: hsl(222 47% 8%);
-  --sidebar-foreground: hsl(210 40% 80%);
-  --sidebar-primary: hsl(234 89% 64%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(234 89% 64% / 0.12);
-  --sidebar-accent-foreground: hsl(234 89% 70%);
-  --sidebar-border: hsl(217 33% 18%);
-  --sidebar-ring: hsl(234 89% 64%);
+  --sidebar: #0a0f14;
+  --sidebar-foreground: #94a3b8;
+  --sidebar-primary: #22d3ee;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(34, 211, 238, 0.1);
+  --sidebar-accent-foreground: #22d3ee;
+  --sidebar-border: rgba(51, 65, 85, 0.5);
+  --sidebar-ring: #22d3ee;
 }
 
   /* Component Utility Classes */
@@ -431,16 +447,11 @@
     box-shadow: 0 0 0 2px hsl(var(--accent) / 0.4), 0 0 0 4px hsl(var(--background));
   }
 
-  /* Skeleton loading shimmer */
+  /* Skeleton loading pulse */
+  .skeleton-pulse,
   .skeleton-shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted) / 0.5) 50%,
-      hsl(var(--muted)) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    background-color: hsl(var(--skeleton-base));
+    animation: pulseSublte 1.6s ease-in-out infinite;
   }
 
   /* Dashboard Dark Theme Utilities */
@@ -541,9 +552,6 @@
   }
   .animate-pulse-subtle {
     animation: pulseSublte 2s ease-in-out infinite;
-  }
-  .animate-shimmer {
-    animation: shimmer 1.5s infinite;
   }
   .animate-bounce-subtle {
     animation: bounceSubtle 1s ease-in-out infinite;
@@ -695,10 +703,6 @@
   50% { opacity: 0.7; }
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
 
 @keyframes bounceSubtle {
   0%, 100% { transform: translateY(0); }

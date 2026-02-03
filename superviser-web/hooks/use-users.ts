@@ -70,7 +70,8 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
       setIsLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: sessionData } = await supabase.auth.getSession()
+      const user = sessionData?.session?.user
       if (!user) throw new Error("Not authenticated")
 
       // Get supervisor ID

@@ -21,6 +21,7 @@ export interface Doer {
   completed_projects: number
   active_projects: number
   success_rate: number
+  total_earnings?: number
   average_response_time?: string
   joined_at: string
   is_available: boolean
@@ -82,4 +83,8 @@ export type DoerSortOption =
   | "rating_low"
   | "projects_high"
   | "projects_low"
+  | "earnings_high"
   | "recent"
+
+/** Rating filter options */
+export type RatingFilter = "all" | "4plus" | "4_5plus" | "5"

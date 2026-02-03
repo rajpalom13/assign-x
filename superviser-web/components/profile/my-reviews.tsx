@@ -126,7 +126,7 @@ function ReviewCard({ review, onRespond }: ReviewCardProps) {
   }
 
   return (
-    <Card>
+    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
       <CardContent className="pt-6">
         <div className="flex gap-4">
           <Avatar className="h-10 w-10">
@@ -142,7 +142,7 @@ function ReviewCard({ review, onRespond }: ReviewCardProps) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-medium">{review.client_name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   {review.project_title} ({review.project_id})
                 </p>
               </div>
@@ -154,16 +154,16 @@ function ReviewCard({ review, onRespond }: ReviewCardProps) {
                       "h-4 w-4",
                       i < review.rating
                         ? "fill-amber-400 text-amber-400"
-                        : "text-muted-foreground/30"
+                        : "text-gray-300"
                     )}
                   />
                 ))}
               </div>
             </div>
 
-            <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
+            <p className="mt-2 text-sm text-gray-500">{review.comment}</p>
 
-            <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
@@ -183,8 +183,8 @@ function ReviewCard({ review, onRespond }: ReviewCardProps) {
 
             {/* Existing Response */}
             {review.response && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg border-l-2 border-primary">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+              <div className="mt-4 p-3 bg-orange-50/50 rounded-xl border-l-2 border-orange-200">
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                   <ThumbsUp className="h-3 w-3" />
                   <span>Your Response</span>
                   {review.responded_at && (
@@ -258,16 +258,18 @@ export function MyReviews() {
   return (
     <div className="space-y-6">
       {/* Rating Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Rating Overview</CardTitle>
-          <CardDescription>Your overall rating from clients</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Average Rating */}
-            <div className="flex flex-col items-center justify-center p-4 bg-muted/30 rounded-lg min-w-[140px]">
-              <p className="text-4xl font-bold">{stats.average_rating}</p>
+    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Rating Overview</CardTitle>
+        <CardDescription className="text-sm text-gray-500">
+          Your overall rating from clients
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Average Rating */}
+          <div className="flex flex-col items-center justify-center p-4 bg-orange-50/60 border border-orange-100 rounded-2xl min-w-[140px]">
+            <p className="text-4xl font-semibold text-[#1C1C1C]">{stats.average_rating}</p>
               <div className="flex items-center gap-1 mt-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
@@ -276,15 +278,15 @@ export function MyReviews() {
                       "h-4 w-4",
                       i < Math.round(stats.average_rating)
                         ? "fill-amber-400 text-amber-400"
-                        : "text-muted-foreground/30"
+                        : "text-gray-300"
                     )}
                   />
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {stats.total_reviews} reviews
-              </p>
-            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              {stats.total_reviews} reviews
+            </p>
+          </div>
 
             {/* Rating Distribution */}
             <div className="flex-1 space-y-2">
@@ -298,7 +300,7 @@ export function MyReviews() {
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                     </div>
                     <Progress value={percentage} className="flex-1 h-2" />
-                    <span className="text-sm text-muted-foreground w-8 text-right">
+                    <span className="text-sm text-gray-500 w-8 text-right">
                       {count}
                     </span>
                   </div>
@@ -311,7 +313,7 @@ export function MyReviews() {
 
       {/* Filters */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Client Reviews</h3>
+        <h3 className="text-lg font-semibold text-[#1C1C1C]">Client Reviews</h3>
         <Select value={filterRating} onValueChange={setFilterRating}>
           <SelectTrigger className="w-[160px]">
             <Filter className="h-4 w-4 mr-2" />
@@ -337,9 +339,9 @@ export function MyReviews() {
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Star className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <Star className="h-12 w-12 text-gray-300 mb-4" />
               <h3 className="text-lg font-medium">No reviews found</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 {filterRating !== "all"
                   ? "Try changing your filter"
                   : "Reviews from clients will appear here"}

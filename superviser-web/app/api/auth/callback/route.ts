@@ -34,7 +34,6 @@ function validateRedirectPath(path: string): string {
     "/dashboard",
     "/onboarding",
     "/profile",
-    "/profile-setup",
     "/projects",
     "/doers",
     "/chat",

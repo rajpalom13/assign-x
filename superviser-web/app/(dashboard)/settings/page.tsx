@@ -143,17 +143,18 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1200px] space-y-8 px-6 py-8 lg:px-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-500/10 to-gray-500/10 flex items-center justify-center">
-              <Settings className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            <div className="h-12 w-12 rounded-2xl border border-orange-100 bg-orange-50 flex items-center justify-center">
+              <Settings className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Account</p>
+              <h1 className="text-3xl font-semibold tracking-tight text-[#1C1C1C]">Settings</h1>
+              <p className="text-sm text-gray-500">
                 Manage your account preferences
               </p>
             </div>
@@ -163,31 +164,31 @@ export default function SettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid p-1 rounded-xl bg-muted/50">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid p-1 rounded-2xl border border-orange-100 bg-orange-50/60">
           <TabsTrigger
             value="notifications"
-            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 rounded-xl text-gray-500 data-[state=active]:bg-white data-[state=active]:text-[#1C1C1C] data-[state=active]:shadow-sm"
           >
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           <TabsTrigger
             value="appearance"
-            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 rounded-xl text-gray-500 data-[state=active]:bg-white data-[state=active]:text-[#1C1C1C] data-[state=active]:shadow-sm"
           >
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">Appearance</span>
           </TabsTrigger>
           <TabsTrigger
             value="privacy"
-            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 rounded-xl text-gray-500 data-[state=active]:bg-white data-[state=active]:text-[#1C1C1C] data-[state=active]:shadow-sm"
           >
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">Privacy</span>
           </TabsTrigger>
           <TabsTrigger
             value="language"
-            className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="gap-2 rounded-xl text-gray-500 data-[state=active]:bg-white data-[state=active]:text-[#1C1C1C] data-[state=active]:shadow-sm"
           >
             <Globe className="h-4 w-4" />
             <span className="hidden sm:inline">Language</span>
@@ -197,13 +198,13 @@ export default function SettingsPage() {
         {/* Notifications Tab */}
         <TabsContent value="notifications" className="space-y-6 animate-fade-in-up">
           {/* Email Notifications */}
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-muted-foreground" />
+                <Mail className="h-5 w-5 text-orange-600" />
                 <div>
-                  <CardTitle className="text-lg">Email Notifications</CardTitle>
-                  <CardDescription>Manage what emails you receive</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Email Notifications</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Manage what emails you receive</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -211,7 +212,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>New project requests</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when new projects need quotes</p>
+                  <p className="text-sm text-gray-500">Get notified when new projects need quotes</p>
                 </div>
                 <Switch
                   checked={notifications.emailNewProject}
@@ -222,7 +223,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Project updates</Label>
-                  <p className="text-sm text-muted-foreground">Updates on project status changes</p>
+                  <p className="text-sm text-gray-500">Updates on project status changes</p>
                 </div>
                 <Switch
                   checked={notifications.emailProjectUpdate}
@@ -233,7 +234,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Payment notifications</Label>
-                  <p className="text-sm text-muted-foreground">Get notified about payments and withdrawals</p>
+                  <p className="text-sm text-gray-500">Get notified about payments and withdrawals</p>
                 </div>
                 <Switch
                   checked={notifications.emailPayment}
@@ -244,7 +245,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Marketing emails</Label>
-                  <p className="text-sm text-muted-foreground">Tips, product updates and offers</p>
+                  <p className="text-sm text-gray-500">Tips, product updates and offers</p>
                 </div>
                 <Switch
                   checked={notifications.emailMarketing}
@@ -255,13 +256,13 @@ export default function SettingsPage() {
           </Card>
 
           {/* Push Notifications */}
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-muted-foreground" />
+                <Smartphone className="h-5 w-5 text-orange-600" />
                 <div>
-                  <CardTitle className="text-lg">Push Notifications</CardTitle>
-                  <CardDescription>In-app and browser notifications</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Push Notifications</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">In-app and browser notifications</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -269,7 +270,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>New projects</Label>
-                  <p className="text-sm text-muted-foreground">Instant alerts for new project requests</p>
+                  <p className="text-sm text-gray-500">Instant alerts for new project requests</p>
                 </div>
                 <Switch
                   checked={notifications.pushNewProject}
@@ -280,7 +281,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Chat messages</Label>
-                  <p className="text-sm text-muted-foreground">New messages from clients and experts</p>
+                  <p className="text-sm text-gray-500">New messages from clients and experts</p>
                 </div>
                 <Switch
                   checked={notifications.pushChat}
@@ -291,7 +292,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Deadline reminders</Label>
-                  <p className="text-sm text-muted-foreground">Reminders before project deadlines</p>
+                  <p className="text-sm text-gray-500">Reminders before project deadlines</p>
                 </div>
                 <Switch
                   checked={notifications.pushDeadline}
@@ -302,7 +303,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Notification sound</Label>
-                  <p className="text-sm text-muted-foreground">Play sound for notifications</p>
+                  <p className="text-sm text-gray-500">Play sound for notifications</p>
                 </div>
                 <Switch
                   checked={notifications.sound}
@@ -313,13 +314,13 @@ export default function SettingsPage() {
           </Card>
 
           {/* Quiet Hours */}
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
+                <Clock className="h-5 w-5 text-orange-600" />
                 <div>
-                  <CardTitle className="text-lg">Quiet Hours</CardTitle>
-                  <CardDescription>Pause notifications during specific hours</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Quiet Hours</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Pause notifications during specific hours</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -327,7 +328,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Enable quiet hours</Label>
-                  <p className="text-sm text-muted-foreground">Mute notifications during set times</p>
+                  <p className="text-sm text-gray-500">Mute notifications during set times</p>
                 </div>
                 <Switch
                   checked={notifications.quietHours}
@@ -337,7 +338,7 @@ export default function SettingsPage() {
               {notifications.quietHours && (
                 <div className="flex items-center gap-4 pt-2">
                   <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <Label className="text-xs text-gray-500">From</Label>
                     <Input
                       type="time"
                       value={notifications.quietStart}
@@ -345,7 +346,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <Label className="text-xs text-gray-500">To</Label>
                     <Input
                       type="time"
                       value={notifications.quietEnd}
@@ -360,10 +361,10 @@ export default function SettingsPage() {
 
         {/* Appearance Tab */}
         <TabsContent value="appearance" className="space-y-6 animate-fade-in-up">
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Theme</CardTitle>
-              <CardDescription>Select your preferred appearance</CardDescription>
+              <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Theme</CardTitle>
+              <CardDescription className="text-sm text-gray-500">Select your preferred appearance</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
@@ -377,24 +378,24 @@ export default function SettingsPage() {
                       className={cn(
                         "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
                         isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-transparent bg-muted/50 hover:bg-muted"
+                          ? "border-orange-200 bg-orange-50/60"
+                          : "border-transparent bg-gray-50 hover:bg-gray-100"
                       )}
                     >
                       <div
                         className={cn(
                           "h-12 w-12 rounded-xl flex items-center justify-center",
-                          isSelected ? "bg-primary/10" : "bg-background"
+                          isSelected ? "bg-orange-100" : "bg-white"
                         )}
                       >
-                        <Icon className={cn("h-6 w-6", isSelected && "text-primary")} />
+                        <Icon className={cn("h-6 w-6", isSelected ? "text-orange-600" : "text-gray-500")} />
                       </div>
-                      <span className={cn("font-medium", isSelected && "text-primary")}>
+                      <span className={cn("font-medium", isSelected ? "text-[#1C1C1C]" : "text-gray-600")}>
                         {option.label}
                       </span>
                       {isSelected && (
-                        <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="h-3 w-3 text-primary-foreground" />
+                        <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-orange-500 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-white" />
                         </div>
                       )}
                     </button>
@@ -404,7 +405,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Alert>
+          <Alert className="rounded-2xl border border-orange-100 bg-orange-50/60">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Pro tip</AlertTitle>
             <AlertDescription>
@@ -415,13 +416,13 @@ export default function SettingsPage() {
 
         {/* Privacy Tab */}
         <TabsContent value="privacy" className="space-y-6 animate-fade-in-up">
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-muted-foreground" />
+                <Eye className="h-5 w-5 text-orange-600" />
                 <div>
-                  <CardTitle className="text-lg">Profile Visibility</CardTitle>
-                  <CardDescription>Control what others can see</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Profile Visibility</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Control what others can see</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -429,7 +430,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Show online status</Label>
-                  <p className="text-sm text-muted-foreground">Let others see when you&apos;re online</p>
+                  <p className="text-sm text-gray-500">Let others see when you&apos;re online</p>
                 </div>
                 <Switch
                   checked={privacy.showOnline}
@@ -440,7 +441,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Show activity status</Label>
-                  <p className="text-sm text-muted-foreground">Show your recent activity to doers</p>
+                  <p className="text-sm text-gray-500">Show your recent activity to doers</p>
                 </div>
                 <Switch
                   checked={privacy.showActivity}
@@ -451,7 +452,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Show earnings badge</Label>
-                  <p className="text-sm text-muted-foreground">Display your earnings tier on profile</p>
+                  <p className="text-sm text-gray-500">Display your earnings tier on profile</p>
                 </div>
                 <Switch
                   checked={privacy.showEarnings}
@@ -461,13 +462,13 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-muted-foreground" />
+                <Lock className="h-5 w-5 text-orange-600" />
                 <div>
-                  <CardTitle className="text-lg">Security</CardTitle>
-                  <CardDescription>Protect your account</CardDescription>
+                  <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Security</CardTitle>
+                  <CardDescription className="text-sm text-gray-500">Protect your account</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -476,9 +477,11 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <Label>Two-factor authentication</Label>
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                    <Badge variant="secondary" className="text-xs border border-orange-100 bg-orange-50 text-orange-700">
+                      Recommended
+                    </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
+                  <p className="text-sm text-gray-500">Add an extra layer of security</p>
                 </div>
                 <Switch
                   checked={privacy.twoFactor}
@@ -489,7 +492,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Active sessions</Label>
-                  <p className="text-sm text-muted-foreground">Manage your logged in devices</p>
+                  <p className="text-sm text-gray-500">Manage your logged in devices</p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-1">
                   Manage
@@ -499,16 +502,16 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl border-red-200 dark:border-red-900">
+          <Card className="rounded-2xl border border-rose-200 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg text-red-600">Danger Zone</CardTitle>
-              <CardDescription>Irreversible and destructive actions</CardDescription>
+              <CardTitle className="text-lg font-semibold text-rose-600">Danger Zone</CardTitle>
+              <CardDescription className="text-sm text-gray-500">Irreversible and destructive actions</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Delete account</Label>
-                  <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+                  <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
                 </div>
                 <Button variant="destructive" size="sm">
                   Delete Account
@@ -520,10 +523,10 @@ export default function SettingsPage() {
 
         {/* Language Tab */}
         <TabsContent value="language" className="space-y-6 animate-fade-in-up">
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Language & Region</CardTitle>
-              <CardDescription>Set your preferred language and timezone</CardDescription>
+              <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Language & Region</CardTitle>
+              <CardDescription className="text-sm text-gray-500">Set your preferred language and timezone</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -557,17 +560,17 @@ export default function SettingsPage() {
                     <SelectItem value="Europe/London">Greenwich Mean Time (GMT)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-500">
                   Current time: {new Date().toLocaleTimeString("en-IN", { timeZone: timezone })}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl">
+          <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Help & Support</CardTitle>
-              <CardDescription>Get help when you need it</CardDescription>
+              <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Help & Support</CardTitle>
+              <CardDescription className="text-sm text-gray-500">Get help when you need it</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button variant="outline" className="w-full justify-between" asChild>

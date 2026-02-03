@@ -11,7 +11,7 @@ export const ROUTES = {
   login: "/login",
   dashboard: "/dashboard",
   onboarding: "/onboarding",
-  profileSetup: "/profile-setup",
+  profileSetup: "/onboarding",  // Profile setup is handled by onboarding flow
   projects: "/projects",
   doers: "/doers",
   users: "/users",

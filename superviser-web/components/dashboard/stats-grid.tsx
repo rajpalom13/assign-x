@@ -6,6 +6,7 @@
 import { motion } from "framer-motion"
 import { FolderKanban, Clock, CheckCircle, Wallet } from "lucide-react"
 import { StatCard, type SparklineDataPoint, type MetricTrend } from "@/components/shared/stat-card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
  * Props for the StatsGrid component.
@@ -55,10 +56,7 @@ export function StatsGrid({
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-32 bg-muted rounded-xl animate-pulse"
-          />
+          <Skeleton key={index} className="h-32 rounded-xl" />
         ))}
       </div>
     )

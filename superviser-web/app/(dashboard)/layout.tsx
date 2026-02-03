@@ -6,8 +6,8 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/layout/app-sidebar"
-import { Header } from "@/components/layout/header"
+import { AppSidebarV2 } from "@/components/layout/app-sidebar-v2"
+import { HeaderV2 } from "@/components/layout/header-v2"
 
 interface UserProfile {
   full_name: string | null
@@ -88,15 +88,17 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar user={userData} />
-      <SidebarInset>
-        <Header
+      <AppSidebarV2
+        user={userData}
+        unreadChats={0}
+        pendingProjects={pendingQCCount}
+      />
+      <SidebarInset className="bg-gray-50">
+        <HeaderV2
           userName={userData.name}
-          pendingQCCount={pendingQCCount}
-          activeProjectsCount={activeProjectsCount}
           notificationCount={notificationCount}
         />
-        <main className="flex-1 overflow-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
       </SidebarInset>

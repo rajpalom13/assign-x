@@ -87,10 +87,12 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
   return (
     <div className="space-y-6">
       {/* Profile Picture */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Profile Picture</CardTitle>
-          <CardDescription>Update your profile photo</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Profile Picture</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Update your profile photo
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -113,7 +115,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
               </Button>
             </div>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-sm text-gray-500 mb-2">
                 Upload a professional photo. JPG, PNG or GIF, max 2MB.
               </p>
               <div className="flex gap-2">
@@ -130,17 +132,19 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
       </Card>
 
       {/* Personal Information */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Personal Information</CardTitle>
-          <CardDescription>Update your personal details</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Personal Information</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Update your personal details
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="full_name">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="full_name"
                   value={editedProfile.full_name}
@@ -152,7 +156,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
@@ -162,7 +166,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
                   disabled
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Email cannot be changed. Contact support if needed.
               </p>
             </div>
@@ -172,7 +176,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="phone"
                   value={editedProfile.phone}
@@ -184,7 +188,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="qualification">Highest Qualification</Label>
               <div className="relative">
-                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="qualification"
                   value={editedProfile.qualification}
@@ -199,7 +203,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="experience">Years of Experience</Label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="experience"
                   type="number"
@@ -228,10 +232,12 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
       </Card>
 
       {/* Expertise Areas */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Areas of Expertise</CardTitle>
-          <CardDescription>Add or remove your subject expertise</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Areas of Expertise</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Add or remove your subject expertise
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -269,17 +275,19 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
       </Card>
 
       {/* Banking Information */}
-      <Card>
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Banking Information</CardTitle>
-          <CardDescription>Update your payout details</CardDescription>
+          <CardTitle className="text-lg font-semibold text-[#1C1C1C]">Banking Information</CardTitle>
+          <CardDescription className="text-sm text-gray-500">
+            Update your payout details
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="bank_name">Bank Name</Label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="bank_name"
                   value={editedProfile.bank_details.bank_name}
@@ -291,7 +299,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="account_holder">Account Holder Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="account_holder"
                   value={editedProfile.bank_details.account_holder_name}
@@ -306,7 +314,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
             <div className="space-y-2">
               <Label htmlFor="account_number">Account Number</Label>
               <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="account_number"
                   value={editedProfile.bank_details.account_number}

@@ -69,8 +69,8 @@ function MenuItem({
   return (
     <Card
       className={cn(
-        "transition-all hover:shadow-md cursor-pointer group",
-        variant === "destructive" && "hover:border-destructive/50",
+        "rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md cursor-pointer group",
+        variant === "destructive" && "hover:border-rose-200",
         disabled && "opacity-50 cursor-not-allowed"
       )}
       onClick={disabled ? undefined : onClick}
@@ -79,9 +79,9 @@ function MenuItem({
         <div className="flex items-center gap-4">
           <div
             className={cn(
-              "h-10 w-10 rounded-lg flex items-center justify-center",
-              variant === "default" && "bg-primary/10 text-primary",
-              variant === "destructive" && "bg-destructive/10 text-destructive"
+              "h-11 w-11 rounded-xl flex items-center justify-center",
+              variant === "default" && "bg-orange-50 text-orange-600",
+              variant === "destructive" && "bg-rose-50 text-rose-600"
             )}
           >
             {icon}
@@ -90,15 +90,22 @@ function MenuItem({
             <div className="flex items-center gap-2">
               <p
                 className={cn(
-                  "font-medium group-hover:text-primary transition-colors",
-                  variant === "destructive" && "group-hover:text-destructive"
+                  "text-base font-semibold text-[#1C1C1C] group-hover:text-orange-600 transition-colors",
+                  variant === "destructive" && "group-hover:text-rose-600"
                 )}
               >
                 {label}
               </p>
-              {badge && <Badge variant="secondary">{badge}</Badge>}
+              {badge && (
+                <Badge
+                  variant="secondary"
+                  className="border border-gray-200 bg-gray-50 text-gray-600"
+                >
+                  {badge}
+                </Badge>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-sm text-gray-500">{description}</p>
           </div>
         </div>
       </CardContent>
@@ -307,19 +314,20 @@ export default function ProfilePage() {
   // Error state
   if (supervisorError) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-[1200px] space-y-6 px-6 py-8 lg:px-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
-          <p className="text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Account</p>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#1C1C1C]">Profile</h2>
+          <p className="text-sm text-gray-500">
             Manage your account settings and preferences
           </p>
         </div>
-        <Card>
+        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <AlertCircle className="h-12 w-12 text-destructive mb-4" />
               <h3 className="text-lg font-semibold mb-2">Failed to load profile</h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-gray-500 mb-4">
                 {supervisorError.message || "An error occurred while loading your profile"}
               </p>
               <Button onClick={() => refetch()}>Try Again</Button>
@@ -333,10 +341,11 @@ export default function ProfilePage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-[1200px] space-y-6 px-6 py-8 lg:px-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
-          <p className="text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Account</p>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#1C1C1C]">Profile</h2>
+          <p className="text-sm text-gray-500">
             Manage your account settings and preferences
           </p>
         </div>
@@ -349,19 +358,20 @@ export default function ProfilePage() {
 
   if (!profileData) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-[1200px] space-y-6 px-6 py-8 lg:px-8">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
-          <p className="text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Account</p>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#1C1C1C]">Profile</h2>
+          <p className="text-sm text-gray-500">
             Manage your account settings and preferences
           </p>
         </div>
-        <Card>
+        <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <User className="h-12 w-12 text-muted-foreground mb-4" />
+              <User className="h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Profile not found</h3>
-              <p className="text-muted-foreground">
+              <p className="text-gray-500">
                 Your supervisor profile could not be found. Please contact support.
               </p>
             </div>
@@ -380,7 +390,7 @@ export default function ProfilePage() {
               variant="ghost"
               size="sm"
               onClick={() => setActiveView("overview")}
-              className="mb-2"
+              className="mb-2 text-gray-600 hover:text-[#1C1C1C]"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Profile
@@ -399,7 +409,7 @@ export default function ProfilePage() {
               variant="ghost"
               size="sm"
               onClick={() => setActiveView("overview")}
-              className="mb-2"
+              className="mb-2 text-gray-600 hover:text-[#1C1C1C]"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Profile
@@ -414,7 +424,7 @@ export default function ProfilePage() {
               variant="ghost"
               size="sm"
               onClick={() => setActiveView("overview")}
-              className="mb-2"
+              className="mb-2 text-gray-600 hover:text-[#1C1C1C]"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Profile
@@ -429,7 +439,7 @@ export default function ProfilePage() {
               variant="ghost"
               size="sm"
               onClick={() => setActiveView("overview")}
-              className="mb-2"
+              className="mb-2 text-gray-600 hover:text-[#1C1C1C]"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Profile
@@ -456,12 +466,12 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             {/* Profile Header */}
-            <Card>
+            <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
               <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex flex-col lg:flex-row gap-6">
                   {/* Avatar and Basic Info */}
                   <div className="flex items-start gap-4">
-                    <Avatar className="h-20 w-20">
+                    <Avatar className="h-24 w-24">
                       <AvatarImage src={profileData.avatar_url} alt={profileData.full_name} />
                       <AvatarFallback className="text-2xl">
                         {profileData.full_name
@@ -471,17 +481,30 @@ export default function ProfilePage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-xl font-semibold">{profileData.full_name}</h3>
-                      <p className="text-sm text-muted-foreground">{profileData.qualification}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Supervisor</p>
+                      <h3 className="text-2xl font-semibold tracking-tight text-[#1C1C1C]">
+                        {profileData.full_name}
+                      </h3>
+                      <p className="text-sm text-gray-500">{profileData.qualification}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                          <span className="font-medium">{profileData.rating.toFixed(1)}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-sm font-semibold text-[#1C1C1C]">
+                            {profileData.rating.toFixed(1)}
+                          </span>
+                          <span className="text-xs text-gray-500">
                             ({profileData.total_reviews} reviews)
                           </span>
                         </div>
-                        <Badge variant={profileData.is_available ? "default" : "secondary"}>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            "border border-gray-200 bg-gray-50 text-xs font-semibold uppercase tracking-wide",
+                            profileData.is_available
+                              ? "text-emerald-700"
+                              : "text-amber-700"
+                          )}
+                        >
                           {profileData.is_available ? "Available" : "Busy"}
                         </Badge>
                       </div>
@@ -489,44 +512,48 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Quick Stats */}
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 md:ml-auto">
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-2xl font-bold">
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 lg:ml-auto">
+                    <div className="text-center p-4 bg-orange-50/60 border border-orange-100 rounded-2xl">
+                      <p className="text-2xl font-semibold text-[#1C1C1C]">
                         {statsLoading ? "..." : stats?.totalProjects || 0}
                       </p>
-                      <p className="text-xs text-muted-foreground">Projects</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Projects</p>
                     </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-2xl font-bold">
+                    <div className="text-center p-4 bg-orange-50/60 border border-orange-100 rounded-2xl">
+                      <p className="text-2xl font-semibold text-[#1C1C1C]">
                         {statsLoading ? "..." : `${Math.round((stats?.completedProjects || 0) / Math.max(stats?.totalProjects || 1, 1) * 100)}%`}
                       </p>
-                      <p className="text-xs text-muted-foreground">Success Rate</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Success Rate</p>
                     </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-2xl font-bold">{profileData.years_of_experience}+</p>
-                      <p className="text-xs text-muted-foreground">Years Exp</p>
+                    <div className="text-center p-4 bg-orange-50/60 border border-orange-100 rounded-2xl">
+                      <p className="text-2xl font-semibold text-[#1C1C1C]">
+                        {profileData.years_of_experience}+
+                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Years Exp</p>
                     </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-2xl font-bold">
+                    <div className="text-center p-4 bg-orange-50/60 border border-orange-100 rounded-2xl">
+                      <p className="text-2xl font-semibold text-[#1C1C1C]">
                         {statsLoading ? "..." : stats?.totalDoers || 0}
                       </p>
-                      <p className="text-xs text-muted-foreground">Doers Worked</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Doers Worked</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Expertise Areas */}
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-2">Areas of Expertise</p>
+                <div className="mt-5 pt-5 border-t border-gray-100">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400 mb-2">
+                    Areas of Expertise
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {profileData.expertise_areas.length > 0 ? (
                       profileData.expertise_areas.map((area) => (
-                        <Badge key={area} variant="secondary">
+                        <Badge key={area} variant="secondary" className="bg-gray-100 text-gray-700">
                           {area}
                         </Badge>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">
+                      <p className="text-sm text-gray-500 italic">
                         No expertise areas added yet
                       </p>
                     )}
@@ -535,7 +562,11 @@ export default function ProfilePage() {
 
                 {/* Edit Button */}
                 <div className="mt-4">
-                  <Button variant="outline" onClick={() => setActiveView("edit")}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveView("edit")}
+                    className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                  >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>
@@ -578,14 +609,14 @@ export default function ProfilePage() {
             {/* Logout */}
             <Card
               className={cn(
-                "transition-all hover:shadow-md cursor-pointer group hover:border-destructive/50",
+                "rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md cursor-pointer group hover:border-rose-200",
                 isLoggingOut && "opacity-50 cursor-not-allowed"
               )}
               onClick={isLoggingOut ? undefined : handleLogout}
             >
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-destructive/10 text-destructive">
+                  <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600">
                     {isLoggingOut ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
@@ -593,10 +624,10 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium group-hover:text-destructive transition-colors">
+                    <p className="text-base font-semibold text-[#1C1C1C] group-hover:text-rose-600 transition-colors">
                       {isLoggingOut ? "Logging out..." : "Log Out"}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-500">
                       Sign out of your account
                     </p>
                   </div>
@@ -609,12 +640,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-[1200px] space-y-6 px-6 py-8 lg:px-8">
       {/* Header */}
       {activeView === "overview" && (
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile</h2>
-          <p className="text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Account</p>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#1C1C1C]">Profile</h2>
+          <p className="text-sm text-gray-500">
             Manage your account settings and preferences
           </p>
         </div>

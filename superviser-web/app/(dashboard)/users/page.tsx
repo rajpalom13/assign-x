@@ -1,286 +1,51 @@
 /**
- * @fileoverview Client Users page - Redesigned with agiready/saas design system
+ * @fileoverview Supervisor users page - redesigned layout and UI
  * @module app/(dashboard)/users/page
  */
 
 "use client"
 
-import { useState, useMemo } from "react"
-import { motion, type Variants } from "framer-motion"
-import {
-  Users,
-  FolderKanban,
-  IndianRupee,
-  UserPlus,
-  Search,
-  SlidersHorizontal,
-  X,
-  ArrowUpRight,
-  MoreHorizontal,
-  Mail,
-  Calendar,
-  Clock,
-} from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { motion } from "framer-motion"
+import { AlertCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { StatCard } from "@/components/shared/stat-card"
-import { useUsers, useUserStats } from "@/hooks/use-users"
-import { User, UserFilterStatus, UserSortOption } from "@/components/users/types"
-import { UserDetails } from "@/components/users/user-details"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { UsersHero } from "@/components/users/v2/users-hero"
+import { UsersStatsPills } from "@/components/users/v2/users-stats-pills"
+import { InsightsDashboard } from "@/components/users/v2/insights-dashboard"
+import { AdvancedFilterBar } from "@/components/users/v2/advanced-filter-bar"
+import { UsersSidebar } from "@/components/users/v2/users-sidebar"
+import { UserCardEnhanced } from "@/components/users/v2/user-card-enhanced"
+import { UsersTableView } from "@/components/users/v2/users-table-view"
+import { UsersEmptyState } from "@/components/users/v2/empty-state"
+import { UserDetails } from "@/components/users/user-details"
+import { useUsers, useUserStats, type UserWithStats } from "@/hooks/use-users"
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
-    },
-  },
-}
+type ViewMode = "grid" | "table"
+type JoinedFilter = "all" | "week" | "month"
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    },
-  },
-}
+const currencyFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+})
 
-const cardVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      duration: 0.35,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    },
-  },
-  hover: {
-    y: -4,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut",
-    },
-  },
-}
-
-// Generate mock sparkline data
-function generateSparklineData(points: number, trend: "up" | "down" | "stable" = "up"): { date: string; value: number }[] {
-  const data: { date: string; value: number }[] = []
-  let value = trend === "up" ? 30 : trend === "down" ? 80 : 50
-
-  for (let i = 0; i < points; i++) {
-    const change = (Math.random() - 0.5) * 20
-    value = Math.max(10, Math.min(90, value + change))
-    data.push({
-      date: new Date(Date.now() - (points - i) * 24 * 60 * 60 * 1000).toISOString(),
-      value,
-    })
-  }
-  return data
-}
-
-// User Card Component
-function EnhancedUserCard({
-  user,
-  onClick,
-}: {
-  user: User
-  onClick?: () => void
-}) {
-  const [thirtyDaysAgo] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000)
-
-  const isActive = useMemo(() => {
-    return (
-      user.active_projects > 0 ||
-      (user.last_active_at &&
-        new Date(user.last_active_at).getTime() > thirtyDaysAgo)
-    )
-  }, [user.active_projects, user.last_active_at, thirtyDaysAgo])
-
-  const initials = user.full_name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
-
-  const lastActiveText = user.last_active_at
-    ? new Date(user.last_active_at).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })
-    : "Never"
-
+function UsersGridSkeleton() {
   return (
-    <motion.div
-      variants={cardVariants}
-      whileHover="hover"
-      className="group"
-    >
-      <Card
-        className="bg-white border-border/50 rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-lg hover:shadow-[var(--color-sage)]/5 hover:border-[var(--color-sage)]/30"
-        onClick={onClick}
-      >
-        <CardContent className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <Card key={index} className="bg-white border-gray-200 rounded-2xl">
+          <CardContent className="p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <Avatar className="h-12 w-12 ring-2 ring-[var(--color-sage)]/10">
-                  <AvatarImage src={user.avatar_url} alt={user.full_name} />
-                  <AvatarFallback className="bg-[var(--color-sage)]/10 text-[var(--color-sage)] font-medium">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                {isActive && (
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-[var(--color-sage)] border-2 border-white" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-sage)] transition-colors line-clamp-1">
-                  {user.full_name}
-                </h3>
-                <div className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span className="line-clamp-1">{user.email}</span>
-                </div>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>View Profile</DropdownMenuItem>
-                <DropdownMenuItem>View Projects</DropdownMenuItem>
-                <DropdownMenuItem>Send Message</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-[var(--color-bg-muted)] rounded-xl p-3">
-              <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-1">
-                <FolderKanban className="h-3.5 w-3.5" />
-                Projects
-              </div>
-              <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                {user.total_projects}
-              </p>
-            </div>
-            <div className="bg-[var(--color-bg-muted)] rounded-xl p-3">
-              <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mb-1">
-                <IndianRupee className="h-3.5 w-3.5" />
-                Total Spent
-              </div>
-              <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-                ₹{user.total_spent.toLocaleString("en-IN")}
-              </p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-border/50">
-            <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-              <Clock className="h-3.5 w-3.5" />
-              <span>Last active {lastActiveText}</span>
-            </div>
-            <Badge
-              variant={isActive ? "default" : "outline"}
-              className={cn(
-                "text-xs",
-                isActive
-                  ? "bg-[var(--color-sage)]/10 text-[var(--color-sage)] hover:bg-[var(--color-sage)]/20 border-[var(--color-sage)]/20"
-                  : "text-[var(--color-text-muted)] border-[var(--color-border-default)]"
-              )}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  )
-}
-
-// Empty State
-function EmptyState({ onClear }: { onClear: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-16 px-4"
-    >
-      <div className="w-20 h-20 bg-[var(--color-sage)]/10 rounded-full flex items-center justify-center mb-4">
-        <Users className="h-10 w-10 text-[var(--color-sage)]" />
-      </div>
-      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
-        No users found
-      </h3>
-      <p className="text-sm text-[var(--color-text-muted)] text-center max-w-sm mb-6">
-        Try adjusting your search or filters to find what you're looking for
-      </p>
-      <Button
-        variant="outline"
-        onClick={onClear}
-        className="border-[var(--color-sage)]/30 text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"
-      >
-        Clear Filters
-      </Button>
-    </motion.div>
-  )
-}
-
-// Loading Skeleton
-function UsersLoadingSkeleton() {
-  return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <Card key={i} className="bg-white border-border/50 rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-3 mb-4">
               <Skeleton className="h-12 w-12 rounded-full" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-3">
               <Skeleton className="h-16 rounded-xl" />
               <Skeleton className="h-16 rounded-xl" />
             </div>
@@ -293,18 +58,32 @@ function UsersLoadingSkeleton() {
 }
 
 export default function UsersPage() {
-  // State
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState<UserFilterStatus>("all")
-  const [sortBy, setSortBy] = useState<UserSortOption>("recent")
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const directoryRef = useRef<HTMLDivElement>(null)
 
-  // Data fetching
-  const { users, isLoading, error, totalCount } = useUsers()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [projectsFilter, setProjectsFilter] = useState("all")
+  const [spendingFilter, setSpendingFilter] = useState("all")
+  const [joinedFilter, setJoinedFilter] = useState<JoinedFilter>("all")
+  const [sortBy, setSortBy] = useState("recent")
+  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [tableSortColumn, setTableSortColumn] = useState("lastActive")
+  const [tableSortDirection, setTableSortDirection] = useState<"asc" | "desc">("desc")
+
+  const { users, isLoading, error, totalCount } = useUsers({ limit: 1000, offset: 0 })
   const { stats } = useUserStats(users)
 
-  // Filter logic
-  const [thirtyDaysAgo] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const nowDate = new Date()
+  const sevenDaysAgo = new Date(nowDate.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(nowDate.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const startOfMonth = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1)
+
+  const isUserActive = (user: UserWithStats) =>
+    user.active_projects > 0 ||
+    (user.last_active_at && new Date(user.last_active_at).getTime() > thirtyDaysAgo.getTime())
 
   const filteredUsers = useMemo(() => {
     let result = [...users]
@@ -315,304 +94,543 @@ export default function UsersPage() {
         (u) =>
           u.full_name.toLowerCase().includes(query) ||
           u.email.toLowerCase().includes(query) ||
-          u.college?.toLowerCase().includes(query)
+          u.college?.toLowerCase()?.includes(query)
       )
     }
 
-    if (filterStatus === "active") {
-      result = result.filter(
-        (u) =>
-          u.active_projects > 0 ||
-          (u.last_active_at &&
-            new Date(u.last_active_at).getTime() > thirtyDaysAgo)
-      )
-    }
-    if (filterStatus === "inactive") {
-      result = result.filter(
-        (u) =>
-          u.active_projects === 0 &&
-          (!u.last_active_at ||
-            new Date(u.last_active_at).getTime() <= thirtyDaysAgo)
-      )
+    if (statusFilter === "active") {
+      result = result.filter(isUserActive)
     }
 
-    const sortFns: Record<UserSortOption, (a: User, b: User) => number> = {
-      name_asc: (a, b) => a.full_name.localeCompare(b.full_name),
-      name_desc: (a, b) => b.full_name.localeCompare(a.full_name),
-      projects_high: (a, b) => b.total_projects - a.total_projects,
-      projects_low: (a, b) => a.total_projects - b.total_projects,
-      spent_high: (a, b) => b.total_spent - a.total_spent,
-      spent_low: (a, b) => a.total_spent - b.total_spent,
+    if (statusFilter === "inactive") {
+      result = result.filter((u) => !isUserActive(u))
+    }
+
+    if (projectsFilter === "has-projects") {
+      result = result.filter((u) => u.total_projects > 0)
+    }
+
+    if (projectsFilter === "no-projects") {
+      result = result.filter((u) => u.total_projects === 0)
+    }
+
+    if (spendingFilter === "high") {
+      result = result.filter((u) => u.total_spent > 50000)
+    }
+
+    if (spendingFilter === "medium") {
+      result = result.filter((u) => u.total_spent >= 10000 && u.total_spent <= 50000)
+    }
+
+    if (spendingFilter === "low") {
+      result = result.filter((u) => u.total_spent < 10000)
+    }
+
+    if (joinedFilter === "week") {
+      result = result.filter((u) => new Date(u.joined_at) >= sevenDaysAgo)
+    }
+
+    if (joinedFilter === "month") {
+      result = result.filter((u) => new Date(u.joined_at) >= startOfMonth)
+    }
+
+    const sorters: Record<string, (a: UserWithStats, b: UserWithStats) => number> = {
       recent: (a, b) =>
-        new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime(),
+        new Date(b.last_active_at || b.joined_at).getTime() -
+        new Date(a.last_active_at || a.joined_at).getTime(),
+      "name-asc": (a, b) => a.full_name.localeCompare(b.full_name),
+      "name-desc": (a, b) => b.full_name.localeCompare(a.full_name),
+      "projects-high": (a, b) => b.total_projects - a.total_projects,
+      "projects-low": (a, b) => a.total_projects - b.total_projects,
+      "revenue-high": (a, b) => b.total_spent - a.total_spent,
+      "revenue-low": (a, b) => a.total_spent - b.total_spent,
     }
-    return result.sort(sortFns[sortBy])
-  }, [users, searchQuery, filterStatus, sortBy, thirtyDaysAgo])
 
-  // Clear filters
-  const clearFilters = () => {
+    return result.sort(sorters[sortBy] || sorters.recent)
+  }, [
+    users,
+    searchQuery,
+    statusFilter,
+    projectsFilter,
+    spendingFilter,
+    joinedFilter,
+    sortBy,
+    sevenDaysAgo,
+    startOfMonth,
+    thirtyDaysAgo,
+  ])
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    return filteredUsers.slice(startIndex, startIndex + pageSize)
+  }, [filteredUsers, currentPage, pageSize])
+
+  const tableUsers = useMemo(
+    () =>
+      paginatedUsers.map((user) => ({
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        avatar: user.avatar_url,
+        projects: user.total_projects,
+        revenue: user.total_spent,
+        status: isUserActive(user) ? "active" : "inactive",
+        lastActive: user.last_active_at || user.joined_at,
+      })),
+    [paginatedUsers, thirtyDaysAgo]
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, projectsFilter, spendingFilter, joinedFilter, sortBy])
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize))
+    setCurrentPage((prev) => Math.min(prev, totalPages))
+  }, [filteredUsers.length, pageSize])
+
+  useEffect(() => {
+    const sortToTable = (value: string) => {
+      switch (value) {
+        case "name-asc":
+          return { column: "name", direction: "asc" as const }
+        case "name-desc":
+          return { column: "name", direction: "desc" as const }
+        case "projects-high":
+          return { column: "projects", direction: "desc" as const }
+        case "projects-low":
+          return { column: "projects", direction: "asc" as const }
+        case "revenue-high":
+          return { column: "revenue", direction: "desc" as const }
+        case "revenue-low":
+          return { column: "revenue", direction: "asc" as const }
+        default:
+          return { column: "lastActive", direction: "desc" as const }
+      }
+    }
+
+    const mapped = sortToTable(sortBy)
+    setTableSortColumn(mapped.column)
+    setTableSortDirection(mapped.direction)
+  }, [sortBy])
+
+  const handleTableSort = (column: string) => {
+    if (column === "status") return
+    if (column === "lastActive") {
+      setTableSortColumn("lastActive")
+      setTableSortDirection("desc")
+      setSortBy("recent")
+      return
+    }
+
+    const nextDirection =
+      tableSortColumn === column && tableSortDirection === "asc" ? "desc" : "asc"
+    setTableSortColumn(column)
+    setTableSortDirection(nextDirection)
+
+    if (column === "name") {
+      setSortBy(nextDirection === "asc" ? "name-asc" : "name-desc")
+      return
+    }
+
+    if (column === "projects") {
+      setSortBy(nextDirection === "asc" ? "projects-low" : "projects-high")
+      return
+    }
+
+    if (column === "revenue") {
+      setSortBy(nextDirection === "asc" ? "revenue-low" : "revenue-high")
+    }
+  }
+
+  const totalCompletedProjects = useMemo(
+    () => users.reduce((sum, user) => sum + user.completed_projects, 0),
+    [users]
+  )
+
+  const averageProjectValue =
+    totalCompletedProjects > 0
+      ? Math.round(stats.totalSpent / totalCompletedProjects)
+      : 0
+
+  const activeThisMonth = useMemo(
+    () => users.filter(isUserActive).length,
+    [users, thirtyDaysAgo]
+  )
+
+  const newThisWeek = useMemo(
+    () => users.filter((user) => new Date(user.joined_at) >= sevenDaysAgo).length,
+    [users, sevenDaysAgo]
+  )
+
+  const growthData = useMemo(() => {
+    const referenceDate = new Date()
+    const months = Array.from({ length: 6 }).map((_, index) => {
+      const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 5 + index, 1)
+      const label = date.toLocaleString("en-US", { month: "short" })
+      const count = users.filter((user) => {
+        const joined = new Date(user.joined_at)
+        return joined.getMonth() === date.getMonth() && joined.getFullYear() === date.getFullYear()
+      }).length
+
+      return { month: label, value: count }
+    })
+
+    return months
+  }, [users])
+
+  const growthPercentage = useMemo(() => {
+    const last = growthData[growthData.length - 1]?.value || 0
+    const prev = growthData[growthData.length - 2]?.value || 0
+    if (prev === 0) return 0
+    return Math.round(((last - prev) / prev) * 100)
+  }, [growthData])
+
+  const topClients = useMemo(
+    () =>
+      [...users]
+        .sort((a, b) => b.total_spent - a.total_spent)
+        .slice(0, 5)
+        .map((user, index) => ({
+          id: user.id,
+          name: user.full_name,
+          avatar: user.avatar_url,
+          revenue: user.total_spent,
+          rank: index + 1,
+        })),
+    [users]
+  )
+
+  const quickFilters = useMemo(
+    () => [
+      { id: "active", label: "Active Clients", count: activeThisMonth, color: "green" as const },
+      {
+        id: "high-value",
+        label: "High Value",
+        count: users.filter((user) => user.total_spent > 50000).length,
+        color: "orange" as const,
+      },
+      {
+        id: "new-week",
+        label: "New This Week",
+        count: newThisWeek,
+        color: "orange" as const,
+      },
+      {
+        id: "new-month",
+        label: "New This Month",
+        count: users.filter((user) => new Date(user.joined_at) >= startOfMonth).length,
+        color: "blue" as const,
+      },
+      { id: "inactive", label: "Inactive", count: stats.inactive, color: "gray" as const },
+    ],
+    [activeThisMonth, users, startOfMonth, stats.inactive, newThisWeek]
+  )
+
+  const recentActivity = useMemo(() => {
+    const items = users.flatMap((user) => {
+      const activity = [] as Array<{
+        id: string
+        type: "project_created" | "project_completed" | "user_joined"
+        user_name: string
+        user_avatar?: string
+        timestamp: string
+        description: string
+      }>
+
+      if (user.joined_at) {
+        activity.push({
+          id: `${user.id}-joined`,
+          type: "user_joined",
+          user_name: user.full_name,
+          user_avatar: user.avatar_url,
+          timestamp: user.joined_at,
+          description: "joined the platform",
+        })
+      }
+
+      if (user.completed_projects > 0 && user.last_active_at) {
+        activity.push({
+          id: `${user.id}-completed`,
+          type: "project_completed",
+          user_name: user.full_name,
+          user_avatar: user.avatar_url,
+          timestamp: user.last_active_at,
+          description: `completed ${user.completed_projects} project${user.completed_projects > 1 ? "s" : ""}`,
+        })
+      }
+
+      return activity
+    })
+
+    return items
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 8)
+  }, [users])
+
+  const activeQuickFilter = useMemo(() => {
+    if (joinedFilter === "month") return "new-month"
+    if (joinedFilter === "week") return "new-week"
+    if (statusFilter === "active") return "active"
+    if (statusFilter === "inactive") return "inactive"
+    if (spendingFilter === "high") return "high-value"
+    return undefined
+  }, [joinedFilter, statusFilter, spendingFilter])
+
+  const handleQuickFilter = (filterId: string) => {
+    if (filterId === "active") {
+      setStatusFilter("active")
+      return
+    }
+    if (filterId === "inactive") {
+      setStatusFilter("inactive")
+      return
+    }
+    if (filterId === "high-value") {
+      setSpendingFilter("high")
+      return
+    }
+    if (filterId === "new-month") {
+      setJoinedFilter("month")
+      return
+    }
+    if (filterId === "new-week") {
+      setJoinedFilter("week")
+    }
+  }
+
+  const handleClearAll = () => {
     setSearchQuery("")
-    setFilterStatus("all")
+    setStatusFilter("all")
+    setProjectsFilter("all")
+    setSpendingFilter("all")
+    setJoinedFilter("all")
     setSortBy("recent")
   }
 
-  const hasActiveFilters = searchQuery || filterStatus !== "all"
+  const handlePillClick = (metric: string) => {
+    switch (metric) {
+      case "total-clients":
+        handleClearAll()
+        break
+      case "active-month":
+        setStatusFilter("active")
+        break
+      case "total-revenue":
+        setSpendingFilter("high")
+        break
+      case "avg-project":
+        setProjectsFilter("has-projects")
+        break
+      case "new-week":
+        setJoinedFilter("week")
+        break
+      default:
+        break
+    }
+  }
 
-  // Calculate new users this month
-  const newUsersThisMonth = useMemo(() => {
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    return users.filter((u) => new Date(u.joined_at) >= startOfMonth).length
-  }, [users])
+  const activeStatKey = useMemo(() => {
+    if (joinedFilter === "week") return "new-week"
+    if (projectsFilter === "has-projects") return "avg-project"
+    if (spendingFilter === "high") return "total-revenue"
+    if (statusFilter === "active") return "active-month"
+    return undefined
+  }, [joinedFilter, projectsFilter, spendingFilter, statusFilter])
 
-  // Sparkline data
-  const sparklines = useMemo(
-    () => ({
-      users: generateSparklineData(12, "up"),
-      projects: generateSparklineData(12, "up"),
-      revenue: generateSparklineData(12, "stable"),
-      newUsers: generateSparklineData(12, "up"),
-    }),
-    []
-  )
+  const handleExport = () => {
+    const header = ["Name", "Email", "Projects", "Revenue", "Status", "Last Active"]
+    const rows = filteredUsers.map((user) => [
+      user.full_name,
+      user.email,
+      user.total_projects.toString(),
+      currencyFormatter.format(user.total_spent),
+      isUserActive(user) ? "Active" : "Inactive",
+      user.last_active_at || user.joined_at,
+    ])
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+      .join("\n")
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `users-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleViewAll = () => {
+    directoryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Section with Gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[var(--color-sage)]/10 via-[var(--color-sage)]/5 to-transparent">
-        {/* Decorative Blur Circles */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--color-sage)]/10 rounded-full blur-3xl" />
-        <div className="absolute -top-48 right-1/4 w-72 h-72 bg-[var(--color-terracotta)]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-64 h-64 bg-[var(--color-sage)]/5 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-gray-50">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-[1400px] mx-auto px-6 lg:px-10 py-8 lg:py-10 space-y-10"
+      >
+        <UsersHero totalUsers={totalCount} onViewAll={handleViewAll} />
 
-        <div className="relative z-10 px-6 py-12 max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-4xl font-bold text-[var(--color-text-primary)] mb-2">
-              Client Users
-            </h1>
-            <p className="text-lg text-[var(--color-text-secondary)]">
-              View and manage client accounts
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold text-[#1C1C1C]">Network Snapshot</h2>
+            <p className="text-sm text-gray-500">Live client metrics from your portfolio</p>
+          </div>
+          <UsersStatsPills
+            totalClients={stats.total}
+            activeThisMonth={activeThisMonth}
+            totalRevenue={stats.totalSpent}
+            avgProjectValue={averageProjectValue}
+            newThisWeek={newThisWeek}
+            onPillClick={handlePillClick}
+            activeKey={activeStatKey}
+          />
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+            <div>
+              <h2 className="text-xl font-semibold text-[#1C1C1C]">Client Insights</h2>
+              <p className="text-sm text-gray-500">Growth and top revenue contributors</p>
+            </div>
+            <div className="text-sm text-gray-500">
+              Total revenue: <span className="font-semibold text-[#1C1C1C]">{currencyFormatter.format(stats.totalSpent)}</span>
+            </div>
+          </div>
+          <InsightsDashboard
+            growthData={growthData}
+            topClients={topClients}
+            growthPercentage={growthPercentage}
+          />
+        </section>
+
+        <section ref={directoryRef} className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold text-[#1C1C1C]">Client Directory</h2>
+            <p className="text-sm text-gray-500">Search, filter, and manage all clients in one place</p>
+          </div>
+
+          <AdvancedFilterBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            projectsFilter={projectsFilter}
+            onProjectsFilterChange={setProjectsFilter}
+            spendingFilter={spendingFilter}
+            onSpendingFilterChange={setSpendingFilter}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            onExport={handleExport}
+            onClearAll={handleClearAll}
+            extraFilters={
+              joinedFilter === "all"
+                ? []
+                : [
+                    {
+                      id: "joined",
+                      label: joinedFilter === "week" ? "Joined: last 7 days" : "Joined: this month",
+                    },
+                  ]
+            }
+            onExtraFilterClear={() => setJoinedFilter("all")}
+          />
+
+          <div className="xl:hidden flex items-center gap-2 overflow-x-auto pb-2">
+            {quickFilters.map((filter) => {
+              const isActive = activeQuickFilter === filter.id
+              return (
+                <button
+                  key={filter.id}
+                  onClick={() => handleQuickFilter(filter.id)}
+                  className={
+                    `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-orange-300"
+                    }`
+                  }
+                >
+                  <span>{filter.label}</span>
+                  <span className={isActive ? "text-white/80" : "text-gray-500"}>{filter.count}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <p>
+              Showing <span className="font-semibold text-[#1C1C1C]">{filteredUsers.length}</span> of{" "}
+              <span className="font-semibold text-[#1C1C1C]">{totalCount}</span> clients
             </p>
-          </motion.div>
-        </div>
-      </div>
+          </div>
 
-      {/* Main Content */}
-      <div className="px-6 py-8 max-w-7xl mx-auto space-y-8">
-        {/* Stats Cards */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-        >
-          <motion.div variants={itemVariants}>
-            <StatCard
-              label="Total Users"
-              value={stats.total}
-              icon={<Users className="h-5 w-5" />}
-              color="sage"
-              sparklineData={sparklines.users}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <StatCard
-              label="Active Projects"
-              value={users.reduce((sum, u) => sum + u.active_projects, 0)}
-              icon={<FolderKanban className="h-5 w-5" />}
-              color="terracotta"
-              sparklineData={sparklines.projects}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <StatCard
-              label="Total Revenue"
-              value={`₹${(stats.totalSpent / 1000).toFixed(1)}k`}
-              icon={<IndianRupee className="h-5 w-5" />}
-              color="primary"
-              sparklineData={sparklines.revenue}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <StatCard
-              label="New This Month"
-              value={newUsersThisMonth}
-              icon={<UserPlus className="h-5 w-5" />}
-              color="accent"
-              sparklineData={sparklines.newUsers}
-            />
-          </motion.div>
-        </motion.div>
-
-        {/* Search & Filter Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <Card className="bg-white border-border/50 rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-4">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-muted)]" />
-                  <Input
-                    placeholder="Search by name, email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-11 h-11 bg-[var(--color-bg-muted)] border-[var(--color-border-default)] rounded-xl focus-visible:ring-[var(--color-sage)]"
-                  />
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Select
-                    value={filterStatus}
-                    onValueChange={(v) =>
-                      setFilterStatus(v as UserFilterStatus)
-                    }
-                  >
-                    <SelectTrigger className="w-full sm:w-[160px] h-11 bg-[var(--color-bg-muted)] border-[var(--color-border-default)] rounded-xl">
-                      <span className="text-[var(--color-text-muted)]">
-                        Status:
-                      </span>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={sortBy}
-                    onValueChange={(v) =>
-                      setSortBy(v as UserSortOption)
-                    }
-                  >
-                    <SelectTrigger className="w-full sm:w-[180px] h-11 bg-[var(--color-bg-muted)] border-[var(--color-border-default)] rounded-xl">
-                      <SlidersHorizontal className="h-4 w-4 mr-2 text-[var(--color-text-muted)]" />
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="recent">Newest First</SelectItem>
-                      <SelectItem value="projects_high">
-                        Most Projects
-                      </SelectItem>
-                      <SelectItem value="spent_high">
-                        Highest Value
-                      </SelectItem>
-                      <SelectItem value="name_asc">Name A-Z</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Active Filters */}
-              {hasActiveFilters && (
-                <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border/50">
-                  <span className="text-sm text-[var(--color-text-muted)]">
-                    Active filters:
-                  </span>
-                  {searchQuery && (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1 bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)]"
-                    >
-                      Search: {searchQuery}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => setSearchQuery("")}
-                      />
-                    </Badge>
-                  )}
-                  {filterStatus !== "all" && (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1 bg-[var(--color-bg-muted)] text-[var(--color-text-secondary)] capitalize"
-                    >
-                      Status: {filterStatus}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => setFilterStatus("all")}
-                      />
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="text-[var(--color-sage)] hover:text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"
-                  >
-                    Clear All
-                  </Button>
-                </div>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-6">
+              {isLoading ? (
+                <UsersGridSkeleton />
+              ) : error ? (
+                <Card className="bg-white border-gray-200 rounded-2xl">
+                  <CardContent className="p-8 text-center space-y-3">
+                    <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
+                    <p className="text-red-500">Error loading users: {error.message}</p>
+                    <Button variant="outline" onClick={() => window.location.reload()}>
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : filteredUsers.length === 0 ? (
+                <UsersEmptyState onClear={handleClearAll} />
+              ) : viewMode === "grid" ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+                >
+                  {filteredUsers.map((user) => (
+                    <UserCardEnhanced key={user.id} user={user} onClick={setSelectedUser} />
+                  ))}
+                </motion.div>
+              ) : (
+                <UsersTableView
+                  users={tableUsers}
+                  sortColumn={tableSortColumn}
+                  sortDirection={tableSortDirection}
+                  onSort={handleTableSort}
+                  onUserClick={(user) => {
+                    const target = users.find((item) => item.id === user.id)
+                    if (target) setSelectedUser(target)
+                  }}
+                  onActionClick={(action, user) => {
+                    const target = users.find((item) => item.id === user.id)
+                    if (action === "view" && target) setSelectedUser(target)
+                  }}
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={filteredUsers.length}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
               )}
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
 
-        {/* Results Count */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center justify-between"
-        >
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Showing{" "}
-            <span className="font-medium text-[var(--color-text-primary)]">
-              {filteredUsers.length}
-            </span>{" "}
-            of{" "}
-            <span className="font-medium text-[var(--color-text-primary)]">
-              {totalCount}
-            </span>{" "}
-            users
-          </p>
-        </motion.div>
+            <UsersSidebar
+              quickFilters={quickFilters}
+              recentActivity={recentActivity}
+              activeFilter={activeQuickFilter}
+              onFilterClick={handleQuickFilter}
+            />
+          </div>
+        </section>
 
-        {/* Users Grid */}
-        {isLoading ? (
-          <UsersLoadingSkeleton />
-        ) : error ? (
-          <Card className="bg-white border-border/50 rounded-2xl">
-            <CardContent className="p-8 text-center">
-              <p className="text-red-500">Error loading users: {error.message}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
-        ) : filteredUsers.length === 0 ? (
-          <EmptyState onClear={clearFilters} />
-        ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-          >
-            {filteredUsers.map((user) => (
-              <EnhancedUserCard
-                key={user.id}
-                user={user}
-                onClick={() => setSelectedUser(user)}
-              />
-            ))}
-          </motion.div>
-        )}
-
-        {/* User Details Modal */}
         {selectedUser && (
           <UserDetails
             user={selectedUser}
@@ -621,7 +639,7 @@ export default function UsersPage() {
             onChat={(userId) => console.log("Chat with user:", userId)}
           />
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }
