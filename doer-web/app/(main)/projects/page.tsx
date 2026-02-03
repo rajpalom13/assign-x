@@ -1,22 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, type ElementType } from 'react'
 import { useRouter } from 'next/navigation'
 import {
+  Search,
+  RefreshCw,
   FolderOpen,
   Clock,
   CheckCircle2,
   AlertTriangle,
-  RefreshCw,
-  Search,
-  Filter,
+  TrendingUp,
 } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   ActiveProjectsTab,
   UnderReviewTab,
@@ -28,6 +27,41 @@ import { getProjectsByCategory } from '@/services/project.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/types/database'
+import { getTimeRemaining } from '@/components/projects/utils'
+
+/**
+ * Stat tile for project overview metrics.
+ */
+function StatCard({
+  title,
+  value,
+  helper,
+  icon: Icon,
+  tone,
+}: {
+  title: string
+  value: string | number
+  helper: string
+  icon: ElementType
+  tone: string
+}) {
+  return (
+    <Card className="border border-border/70 bg-card/80">
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', tone)}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {title}
+          </p>
+          <p className="text-2xl font-semibold text-foreground">{value}</p>
+          <p className="text-xs text-muted-foreground">{helper}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 /**
  * Projects page
@@ -38,7 +72,6 @@ export default function ProjectsPage() {
   const { doer, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [activeTab, setActiveTab] = useState('active')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeProjects, setActiveProjects] = useState<Project[]>([])
   const [reviewProjects, setReviewProjects] = useState<Project[]>([])
@@ -105,6 +138,71 @@ export default function ProjectsPage() {
     0
   )
 
+  /** Total pipeline value */
+  const totalPipeline = useMemo(() => {
+    const allProjects = [...activeProjects, ...reviewProjects, ...completedProjects]
+    return allProjects.reduce((sum, p) => sum + (p.price ?? p.doer_payout ?? 0), 0)
+  }, [activeProjects, reviewProjects, completedProjects])
+
+  /**
+   * Filter projects by search query.
+   */
+  const filterProjects = useCallback((projects: Project[]) => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return projects
+
+    return projects.filter((project) => {
+      const content = [
+        project.title,
+        project.subject_name,
+        project.supervisor_name,
+        project.status,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return content.includes(query)
+    })
+  }, [searchQuery])
+
+  const filteredActiveProjects = useMemo(
+    () => filterProjects(activeProjects),
+    [filterProjects, activeProjects]
+  )
+
+  const filteredReviewProjects = useMemo(
+    () => filterProjects(reviewProjects),
+    [filterProjects, reviewProjects]
+  )
+
+  const filteredCompletedProjects = useMemo(
+    () => filterProjects(completedProjects),
+    [filterProjects, completedProjects]
+  )
+
+  /**
+   * Select the most urgent project for the summary card.
+   */
+  const priorityProject = useMemo(() => {
+    if (activeProjects.length === 0) return null
+    const revisionProject = activeProjects.find(
+      (project) => project.status === 'revision_requested'
+    )
+    if (revisionProject) return revisionProject
+
+    return [...activeProjects].sort(
+      (a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+    )[0]
+  }, [activeProjects])
+
+  /**
+   * Format payout value.
+   */
+  const formatCurrency = useCallback((value: number) =>
+    `₹${value.toLocaleString('en-IN')}`,
+  [])
+
   // Show loading state while auth or projects are loading
   if (authLoading || (isLoading && activeProjects.length === 0)) {
     return (
@@ -128,181 +226,205 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Projects</h1>
-          <p className="text-muted-foreground">
-            Manage your active and completed projects
-          </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight">Projects Hub</h1>
+              <p className="text-muted-foreground">
+                Track momentum, reviews, and earnings in one place.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+              Refresh
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search projects by title, subject, or supervisor"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-11 rounded-full pl-10"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="rounded-full px-3 py-1">
+                Active {activeProjects.length}
+              </Badge>
+              <Badge variant="secondary" className="rounded-full px-3 py-1">
+                Review {reviewProjects.length}
+              </Badge>
+              <Badge variant="secondary" className="rounded-full px-3 py-1">
+                Completed {completedProjects.length}
+              </Badge>
+            </div>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="gap-2"
-        >
-          <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-          Refresh
-        </Button>
-      </div>
 
-      {/* Stats Overview */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="stat-gradient-teal">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                <FolderOpen className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{activeProjects.length}</p>
-                <p className="text-sm text-muted-foreground">Active Projects</p>
-              </div>
-              {revisionCount > 0 && (
-                <Badge variant="destructive" className="ml-auto">
-                  {revisionCount} revision{revisionCount > 1 ? 's' : ''}
-                </Badge>
-              )}
+        <Card className="relative overflow-hidden border border-border/70 bg-card/90">
+          <div className="absolute inset-x-0 top-0 h-1 gradient-primary" />
+          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+          <CardContent className="space-y-5 p-6">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                Focus today
+              </p>
+              <h2 className="text-xl font-semibold text-foreground">
+                {priorityProject?.title || 'Plan your next project sprint'}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {priorityProject
+                  ? `Due ${getTimeRemaining(priorityProject.deadline).text}`
+                  : 'Accept new work from the pool to keep your pipeline full.'}
+              </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="stat-gradient-amber">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{reviewProjects.length}</p>
-                <p className="text-sm text-muted-foreground">Under Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-gradient-emerald">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{completedProjects.length}</p>
-                <p className="text-sm text-muted-foreground">Completed</p>
-              </div>
-              <div className="ml-auto text-right">
-                <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-                  ₹{totalCompleted.toLocaleString('en-IN')}
-                </p>
-                <p className="text-xs text-muted-foreground">earned</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Revision Alert */}
-      {revisionCount > 0 && (
-        <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-red-700 dark:text-red-400">
-                  {revisionCount} project{revisionCount > 1 ? 's' : ''} need{revisionCount === 1 ? 's' : ''} revision
-                </p>
-                <p className="text-sm text-red-600/70 dark:text-red-400/70">
-                  Please check the feedback and make the required changes
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-muted/60 p-3">
+                <p className="text-xs text-muted-foreground">Pipeline</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {formatCurrency(totalPipeline)}
                 </p>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setActiveTab('active')}
-              >
-                View Now
-              </Button>
+              <div className="rounded-2xl bg-muted/60 p-3">
+                <p className="text-xs text-muted-foreground">Revisions</p>
+                <p className="text-lg font-semibold text-foreground">{revisionCount}</p>
+              </div>
+              <div className="rounded-2xl bg-muted/60 p-3">
+                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {formatCurrency(totalCompleted)}
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <TabsList className="grid w-full sm:w-auto grid-cols-3 h-12">
-            <TabsTrigger value="active" className="relative gap-2">
-              <FolderOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Active</span>
-              {revisionCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+            {priorityProject && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/80 p-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Next priority</p>
+                  <p className="text-sm font-semibold text-foreground line-clamp-1">
+                    {priorityProject.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {priorityProject.supervisor_name || 'AssignX Team'}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => handleOpenWorkspace(priorityProject.id)}
                 >
-                  {revisionCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="review" className="gap-2">
-              <Clock className="h-4 w-4" />
-              <span className="hidden sm:inline">Review</span>
-              <Badge variant="secondary" className="ml-1">
-                {reviewProjects.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Completed</span>
-              <Badge variant="secondary" className="ml-1">
-                {completedProjects.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+                  Open Workspace
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Search - Future enhancement */}
-          {/* <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div> */}
-        </div>
+      {/* KPI Row */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Active"
+          value={activeProjects.length}
+          helper="Projects in motion"
+          icon={FolderOpen}
+          tone="bg-teal-100 text-teal-700"
+        />
+        <StatCard
+          title="Review"
+          value={reviewProjects.length}
+          helper="Awaiting approval"
+          icon={Clock}
+          tone="bg-amber-100 text-amber-700"
+        />
+        <StatCard
+          title="Completed"
+          value={completedProjects.length}
+          helper="Projects delivered"
+          icon={CheckCircle2}
+          tone="bg-emerald-100 text-emerald-700"
+        />
+        <StatCard
+          title="Revisions"
+          value={revisionCount}
+          helper="Need attention"
+          icon={AlertTriangle}
+          tone="bg-rose-100 text-rose-700"
+        />
+      </div>
 
-        <TabsContent value="active" className="mt-6">
+      {/* Content Grid */}
+      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
+        <div className="space-y-6">
           <ActiveProjectsTab
-            projects={activeProjects}
+            projects={filteredActiveProjects}
             isLoading={isLoading}
             onProjectClick={handleProjectClick}
             onOpenWorkspace={handleOpenWorkspace}
           />
-        </TabsContent>
-
-        <TabsContent value="review" className="mt-6">
           <UnderReviewTab
-            projects={reviewProjects}
+            projects={filteredReviewProjects}
             isLoading={isLoading}
             onProjectClick={handleProjectClick}
           />
-        </TabsContent>
-
-        <TabsContent value="completed" className="mt-6">
+        </div>
+        <div className="space-y-6">
           <CompletedProjectsTab
-            projects={completedProjects}
+            projects={filteredCompletedProjects}
             isLoading={isLoading}
             onProjectClick={handleProjectClick}
             onDownloadInvoice={(id) => console.log('Download invoice:', id)}
           />
-        </TabsContent>
-      </Tabs>
+          <Card className="border border-border/70 bg-card/90">
+            <CardContent className="space-y-4 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">
+                    Momentum
+                  </p>
+                  <p className="text-lg font-semibold text-foreground">Weekly delivery pace</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Active to review</span>
+                  <span className="text-foreground font-semibold">
+                    {activeProjects.length} → {reviewProjects.length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Review to completion</span>
+                  <span className="text-foreground font-semibold">
+                    {reviewProjects.length} → {completedProjects.length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Lifetime earnings</span>
+                  <span className="text-foreground font-semibold">
+                    {formatCurrency(totalCompleted)}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

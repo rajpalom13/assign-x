@@ -9,11 +9,12 @@ import {
   Download,
   Trophy,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Project, ProjectStatus } from '@/types/database'
+import { formatDate } from './utils'
 
 interface CompletedProjectsTabProps {
   /** List of completed projects */
@@ -61,23 +62,13 @@ function getPaymentStatus(status: ProjectStatus): {
   }
 }
 
-/** Format date */
-function formatDate(dateString: string | null): string {
-  if (!dateString) return 'Unknown'
-  return new Date(dateString).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 /**
  * Completed projects tab component
  * Shows historical completed projects with earnings
  */
 export function CompletedProjectsTab({
   projects,
-  isLoading = false,
+  isLoading: _isLoading = false,
   onProjectClick,
   onDownloadInvoice,
 }: CompletedProjectsTabProps) {
@@ -91,156 +82,139 @@ export function CompletedProjectsTab({
   // Calculate total earnings
   const totalEarnings = projects.reduce((sum, p) => sum + (p.price ?? p.doer_payout ?? 0), 0)
 
-  if (projects.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
-      >
-        <Trophy className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium">No Completed Projects Yet</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-          Complete your first project to see your achievements here
-        </p>
-      </motion.div>
-    )
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Summary card */}
-      <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Earnings</p>
-              <p className="text-3xl font-bold text-green-600">
-                Rs. {totalEarnings.toLocaleString('en-IN')}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Projects Completed</p>
-              <p className="text-3xl font-bold">{projects.length}</p>
-            </div>
+    <Card className="border border-border/70 bg-card/90">
+      <CardHeader className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg font-semibold">Completed highlights</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Celebrate delivered work and track earnings.
+            </CardDescription>
           </div>
-        </CardContent>
-      </Card>
-
-      <p className="text-sm text-muted-foreground">
-        {projects.length} completed project{projects.length !== 1 ? 's' : ''}
-      </p>
-
-      <AnimatePresence mode="popLayout">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedProjects.map((project, index) => {
-            const paymentInfo = getPaymentStatus(project.status)
-
-            return (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => onProjectClick?.(project.id)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base line-clamp-2 flex-1">
-                        {project.title}
-                      </CardTitle>
-                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    </div>
-                    {project.subject_name && (
-                      <Badge variant="secondary" className="mt-1 text-xs w-fit">
-                        {project.subject_name}
-                      </Badge>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    {/* Payment status */}
-                    <Badge
-                      variant="outline"
-                      className={cn('gap-1', paymentInfo.color)}
-                    >
-                      {paymentInfo.icon}
-                      {paymentInfo.label}
-                    </Badge>
-
-                    {/* Earnings */}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Earned</span>
-                      <span className="font-bold text-green-600 text-lg">
-                        Rs. {(project.price ?? project.doer_payout ?? 0).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    {/* Completion date */}
-                    <div className="flex items-center justify-between text-sm border-t pt-3">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Completed</span>
-                      </div>
-                      <span className="font-medium">
-                        {formatDate(project.completed_at)}
-                      </span>
-                    </div>
-
-                    {/* Supervisor */}
-                    {project.supervisor_name && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Supervisor</span>
-                        <span className="font-medium truncate ml-2">
-                          {project.supervisor_name}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    {(project.status === 'delivered' || project.status === 'completed') && onDownloadInvoice && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDownloadInvoice(project.id)
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        Download Invoice
-                      </Button>
-                    )}
-
-                    {/* Rating placeholder */}
-                    <div className="flex items-center justify-center gap-1 pt-2 border-t">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={cn(
-                            'h-4 w-4',
-                            star <= 4
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-muted-foreground'
-                          )}
-                        />
-                      ))}
-                      <span className="text-sm text-muted-foreground ml-1">
-                        4.0
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
+          <Badge variant="secondary" className="rounded-full px-3 py-1">
+            {projects.length} completed
+          </Badge>
         </div>
-      </AnimatePresence>
-    </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
+            <p className="text-xs text-emerald-700">Total earnings</p>
+            <p className="text-2xl font-semibold text-emerald-700">
+              ₹{totalEarnings.toLocaleString('en-IN')}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-muted/60 p-3">
+            <p className="text-xs text-muted-foreground">Projects delivered</p>
+            <p className="text-2xl font-semibold text-foreground">{projects.length}</p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {projects.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center"
+          >
+            <Trophy className="h-12 w-12 text-muted-foreground mb-3" />
+            <h3 className="text-base font-semibold">No completed projects yet</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Complete your first project to see achievements here.
+            </p>
+          </motion.div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            <div className="space-y-3">
+              {sortedProjects.map((project, index) => {
+                const paymentInfo = getPaymentStatus(project.status)
+                const payout = project.price ?? project.doer_payout ?? 0
+
+                return (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ delay: index * 0.04 }}
+                  >
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/70 bg-background/80 p-4 transition hover:shadow-lg"
+                      onClick={() => onProjectClick?.(project.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') onProjectClick?.(project.id)
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <p className="text-sm font-semibold text-foreground line-clamp-1">
+                            {project.title}
+                          </p>
+                          <Badge variant="outline" className={cn('rounded-full px-2 py-0.5 text-xs', paymentInfo.color)}>
+                            {paymentInfo.label}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          {project.subject_name && <span>{project.subject_name}</span>}
+                          {project.subject_name && project.supervisor_name && <span>•</span>}
+                          {project.supervisor_name && <span>{project.supervisor_name}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          Completed {project.completed_at ? formatDate(project.completed_at) : 'Unknown'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Earned</p>
+                          <p className="text-lg font-semibold text-emerald-600">
+                            ₹{payout.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                        {(project.status === 'delivered' || project.status === 'completed') && onDownloadInvoice && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full gap-2"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onDownloadInvoice(project.id)
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                            Invoice
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between rounded-2xl bg-muted/50 px-4 py-2 text-xs text-muted-foreground">
+                      <span>Quality score</span>
+                      <span className="flex items-center gap-1 text-foreground">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={cn(
+                              'h-3.5 w-3.5',
+                              star <= 4
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-muted-foreground'
+                            )}
+                          />
+                        ))}
+                        <span className="text-xs">4.0</span>
+                      </span>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </AnimatePresence>
+        )}
+      </CardContent>
+    </Card>
   )
 }
