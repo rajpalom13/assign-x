@@ -72,6 +72,8 @@ interface SupportSectionProps {
   whatsappNumber?: string
   /** Support email */
   supportEmail?: string
+  /** Layout variant */
+  variant?: 'default' | 'compact'
   /** Callback when ticket is created */
   onCreateTicket?: (ticket: TicketFormData) => Promise<void>
   /** Additional class name */
@@ -87,9 +89,11 @@ export function SupportSection({
   faqs = mockFAQs,
   whatsappNumber = '+919876543210',
   supportEmail = 'support@talentconnect.com',
+  variant = 'default',
   onCreateTicket,
   className,
 }: SupportSectionProps) {
+  const isCompact = variant === 'compact'
   const [showTicketDialog, setShowTicketDialog] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -178,14 +182,17 @@ export function SupportSection({
           <CardDescription>Get help with any issues or questions</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className={cn('grid gap-3', isCompact ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
             {supportOptions.map((option) => {
               const Icon = option.icon
               return (
                 <button
                   key={option.id}
                   onClick={() => handleOptionClick(option.id)}
-                  className="p-4 rounded-lg border text-left hover:border-primary/50 hover:shadow-md transition-all group"
+                  className={cn(
+                    'rounded-xl border text-left transition-all group',
+                    isCompact ? 'p-3 hover:border-primary/40 hover:bg-muted/50' : 'p-4 hover:border-primary/50 hover:shadow-md'
+                  )}
                 >
                   <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', option.bgColor)}>
                     <Icon className={cn('h-5 w-5', option.color)} />
@@ -208,7 +215,7 @@ export function SupportSection({
       </Card>
 
       {/* Active tickets */}
-      {tickets.length > 0 && (
+      {tickets.length > 0 && !isCompact && (
         <Card>
           <CardHeader>
             <CardTitle>Your Tickets</CardTitle>
@@ -256,7 +263,7 @@ export function SupportSection({
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq) => (
+            {(isCompact ? faqs.slice(0, 3) : faqs).map((faq) => (
               <AccordionItem key={faq.id} value={faq.id}>
                 <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>

@@ -137,26 +137,24 @@ export function RatingBreakdown({
       {/* Overall rating card */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Overall score */}
-            <div className="text-center">
-              <div className="relative">
-                <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-4 rounded-2xl border bg-muted/30 p-4">
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <div className="text-center">
-                    <p className={cn('text-4xl font-bold', getRatingColor(overall))}>{overall.toFixed(1)}</p>
+                    <p className={cn('text-3xl font-bold', getRatingColor(overall))}>{overall.toFixed(1)}</p>
                     <p className="text-xs text-muted-foreground">out of 5</p>
                   </div>
                 </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                <div>
                   <Badge className="bg-primary">{getRatingLabel(overall)}</Badge>
+                  <div className="mt-3">{renderStars(overall, 'md')}</div>
+                  <p className="text-xs text-muted-foreground mt-2">{totalReviews} reviews</p>
                 </div>
               </div>
-              <div className="mt-4 flex justify-center">{renderStars(overall, 'md')}</div>
-              <p className="text-sm text-muted-foreground mt-1">Based on {totalReviews} reviews</p>
             </div>
 
-            {/* Category breakdown */}
-            <div className="flex-1 w-full sm:w-auto space-y-4">
+            <div className="space-y-4">
               {categories.map((cat) => {
                 const Icon = cat.icon
                 const value = categoryValues[cat.key]
@@ -171,7 +169,7 @@ export function RatingBreakdown({
                       </div>
                       <span className={cn('text-sm font-bold', getRatingColor(value))}>{value.toFixed(1)}</span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted/60 rounded-full overflow-hidden">
                       <motion.div
                         initial="hidden"
                         animate="visible"
@@ -208,7 +206,7 @@ export function RatingBreakdown({
                   <span className="text-sm font-medium">{stars}</span>
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 </div>
-                <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+                <div className="flex-1 h-3 bg-muted/60 rounded-full overflow-hidden">
                   <motion.div
                     initial="hidden"
                     animate="visible"
@@ -246,7 +244,7 @@ export function RatingBreakdown({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="p-4 rounded-lg border"
+                className="p-4 rounded-xl border bg-background/80"
               >
                 <div className="flex items-start gap-3">
                   <Avatar className="h-10 w-10">

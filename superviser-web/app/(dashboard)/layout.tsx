@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebarV2 } from "@/components/layout/app-sidebar-v2"
 import { HeaderV2 } from "@/components/layout/header-v2"
+import { AuthSessionSync } from "@/components/providers/auth-session-sync"
 
 interface UserProfile {
   full_name: string | null
@@ -23,6 +24,7 @@ export default async function DashboardLayout({
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
 
   if (!user) {
     redirect("/login")
@@ -88,6 +90,10 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <AuthSessionSync
+        accessToken={session?.access_token ?? null}
+        refreshToken={session?.refresh_token ?? null}
+      />
       <AppSidebarV2
         user={userData}
         unreadChats={0}

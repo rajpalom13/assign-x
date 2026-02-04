@@ -127,15 +127,15 @@ export function PaymentHistory({
     <div className={cn('space-y-6', className)}>
       {/* Balance cards */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
+        <Card className="border-emerald-200/60 bg-emerald-50/60">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+                <CreditCard className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Available Balance</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm text-emerald-700/70">Available Balance</p>
+                <p className="text-2xl font-bold text-emerald-700">
                   ₹{balance.toLocaleString()}
                 </p>
               </div>
@@ -143,15 +143,15 @@ export function PaymentHistory({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-amber-200/60 bg-amber-50/60">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Pending Earnings</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-sm text-amber-700/70">Pending Earnings</p>
+                <p className="text-2xl font-bold text-amber-700">
                   ₹{pendingBalance.toLocaleString()}
                 </p>
               </div>
@@ -163,15 +163,19 @@ export function PaymentHistory({
       {/* Transaction history */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Transaction History</CardTitle>
               <CardDescription>View all your payment transactions</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{totals.all} total</Badge>
+              <Badge variant="secondary">{totals.completed} completed</Badge>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -194,7 +198,7 @@ export function PaymentHistory({
           </Tabs>
 
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col lg:flex-row gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -205,7 +209,7 @@ export function PaymentHistory({
               />
             </div>
             <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full lg:w-56">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
@@ -221,7 +225,7 @@ export function PaymentHistory({
           </div>
 
           {/* Transaction table */}
-          <div className="rounded-lg border overflow-hidden">
+          <div className="rounded-xl border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>

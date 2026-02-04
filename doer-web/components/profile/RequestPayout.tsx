@@ -83,6 +83,7 @@ export function RequestPayout({
   const hasBankDetails = Boolean(doer.bank_account_name && doer.bank_account_number && doer.bank_ifsc_code)
   const hasUPI = Boolean(doer.upi_id)
   const quickAmounts = [1000, 2000, 5000, 10000].filter((amt) => amt <= availableBalance)
+  const stepLabels = ['Amount', 'Method', 'Confirm']
 
   /** Validate amount */
   const validateAmount = () => {
@@ -154,7 +155,7 @@ export function RequestPayout({
 
   return (
     <div className={className}>
-      <Card>
+      <Card className="border-emerald-200/60 bg-emerald-50/60">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
@@ -172,7 +173,7 @@ export function RequestPayout({
             )}
           </div>
 
-          <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-muted/50">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm p-3 rounded-xl bg-white/80 border border-emerald-100">
             <span className="text-muted-foreground">Minimum payout</span>
             <span className="font-medium">₹{minPayout}</span>
           </div>
@@ -187,10 +188,19 @@ export function RequestPayout({
 
             <DialogContent className="sm:max-w-md">
               {/* Progress indicator */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[1, 2, 3].map((s) => (
-                  <div key={s} className={cn('h-2 w-16 rounded-full transition-colors', s <= step ? 'bg-primary' : 'bg-muted')} />
-                ))}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {stepLabels.map((label, index) => {
+                  const stepIndex = index + 1
+                  const isActive = step >= stepIndex
+                  return (
+                    <div key={label} className="space-y-2">
+                      <div className={cn('h-2 rounded-full transition-colors', isActive ? 'bg-primary' : 'bg-muted')} />
+                      <p className={cn('text-xs text-center', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+                        {label}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
 
               <AnimatePresence mode="wait">

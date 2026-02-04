@@ -112,23 +112,32 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
  * AppSidebar component for doer-web
  * Professional sidebar with gradient logo and active indicators
  */
-export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
+export function AppSidebar({ userData, stats, className, ...props }: AppSidebarProps) {
   const pathname = usePathname()
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border/50">
+    <Sidebar
+      collapsible="icon"
+      className={cn(
+        "bg-[#F8FAFF] text-slate-700 border-r border-[#EEF2FF] shadow-[0_20px_50px_rgba(148,163,184,0.12)]",
+        "[&_[data-slot=sidebar-inner]]:bg-[linear-gradient(180deg,#F8FAFF_0%,#F4F7FF_55%,#EEF4FF_100%)]",
+        "[&_[data-slot=sidebar]]:bg-[linear-gradient(180deg,#F8FAFF_0%,#F4F7FF_55%,#EEF4FF_100%)]",
+        className
+      )}
+      {...props}
+    >
+      <SidebarHeader className="border-b border-[#EEF2FF] bg-white/90">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="hover:bg-sidebar-accent/50">
+            <SidebarMenuButton size="lg" asChild className="hover:bg-[#F3F6FF]">
               <Link href="/dashboard">
                 {/* Gradient Logo */}
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 via-teal-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20 transition-transform group-hover:scale-105">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] flex items-center justify-center shadow-[0_14px_28px_rgba(91,124,255,0.25)] transition-transform group-hover:scale-105">
                   <span className="text-base font-bold text-white">AX</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">AssignX Doer</span>
-                  <span className="truncate text-xs text-sidebar-foreground/60">Freelancer Portal</span>
+                  <span className="truncate font-semibold text-slate-900">AssignX Doer</span>
+                  <span className="truncate text-xs text-slate-500">Freelancer Portal</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -140,14 +149,14 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
         {/* Quick Stats (when sidebar is expanded) */}
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
           <div className="px-2 py-3">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500/10 to-emerald-500/5 border border-teal-500/10">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-[#F4F6FF] via-[#F7F9FF] to-[#EEF4FF] border border-[#E9EEFF] shadow-[0_12px_28px_rgba(148,163,184,0.12)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Zap className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-[#4F6CF7] shadow-[0_8px_18px_rgba(148,163,184,0.18)]">
+                  <Zap className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Ready to work</p>
-                  <p className="text-sm font-semibold text-teal-700 dark:text-teal-400">
+                  <p className="text-xs text-slate-500">Ready to work</p>
+                  <p className="text-sm font-semibold text-slate-800">
                     {stats?.activeProjects || 0} Active Projects
                   </p>
                 </div>
@@ -158,7 +167,7 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
 
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-wider font-semibold">
+          <SidebarGroupLabel className="text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
             Main Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -171,25 +180,21 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
                       <Link href={item.url}>
-                        {/* Active indicator */}
-                        {isActive && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal-500 rounded-r-full" />
-                        )}
                         <item.icon className={cn(
                           "transition-colors",
-                          isActive ? "text-teal-500" : "text-sidebar-foreground/70"
+                          isActive ? "text-[#4F6CF7]" : "text-slate-400"
                         )} />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                     {/* Badge for projects */}
                     {item.url === '/projects' && stats?.activeProjects && stats.activeProjects > 0 && (
-                      <SidebarMenuBadge className="bg-teal-500 text-white">
+                      <SidebarMenuBadge className="bg-[#5A7CFF] text-white shadow-[0_8px_18px_rgba(91,124,255,0.2)]">
                         {stats.activeProjects}
                       </SidebarMenuBadge>
                     )}
@@ -202,7 +207,7 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
 
         {/* Profile Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-wider font-semibold">
+          <SidebarGroupLabel className="text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
             Profile & Stats
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -215,17 +220,14 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
                       <Link href={item.url}>
-                        {isActive && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal-500 rounded-r-full" />
-                        )}
                         <item.icon className={cn(
                           "transition-colors",
-                          isActive ? "text-teal-500" : "text-sidebar-foreground/70"
+                          isActive ? "text-[#4F6CF7]" : "text-slate-400"
                         )} />
                         <span>{item.title}</span>
                       </Link>
@@ -239,7 +241,7 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
 
         {/* Support Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50 uppercase text-[10px] tracking-wider font-semibold">
+          <SidebarGroupLabel className="text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
             Support
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -252,17 +254,14 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
                       <Link href={item.url}>
-                        {isActive && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-teal-500 rounded-r-full" />
-                        )}
                         <item.icon className={cn(
                           "transition-colors",
-                          isActive ? "text-teal-500" : "text-sidebar-foreground/70"
+                          isActive ? "text-[#4F6CF7]" : "text-slate-400"
                         )} />
                         <span>{item.title}</span>
                       </Link>
@@ -277,14 +276,14 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
         {/* Earnings Card (when sidebar is expanded) */}
         <SidebarGroup className="group-data-[collapsible=icon]:hidden mt-auto">
           <div className="px-2 py-3">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-[#F4F6FF] via-[#F7F9FF] to-[#EEF4FF] border border-[#E9EEFF] shadow-[0_12px_28px_rgba(148,163,184,0.12)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-[#4B9BFF] shadow-[0_8px_18px_rgba(148,163,184,0.18)]">
+                  <TrendingUp className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Pending</p>
-                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  <p className="text-xs text-slate-500">Pending</p>
+                  <p className="text-sm font-semibold text-slate-800">
                     ₹{(stats?.pendingEarnings || 0).toLocaleString('en-IN')}
                   </p>
                 </div>
@@ -294,7 +293,7 @@ export function AppSidebar({ userData, stats, ...props }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50">
+      <SidebarFooter className="border-t border-[#EEF2FF] bg-white/90">
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />

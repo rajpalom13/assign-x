@@ -48,6 +48,31 @@ interface TrainingCenterProps {
   className?: string
 }
 
+type LearningStatCardProps = {
+  label: string
+  value: string
+  tone: 'cool' | 'fresh' | 'warm'
+}
+
+/**
+ * Small stat card used in the Training Center header.
+ */
+function LearningStatCard({ label, value, tone }: LearningStatCardProps) {
+  const toneStyles = {
+    cool: 'bg-[#E3E9FF] text-[#4F6CF7]',
+    fresh: 'bg-[#E6F4FF] text-[#4B9BFF]',
+    warm: 'bg-[#FFE7E1] text-[#FF8B6A]',
+  }
+
+  return (
+    <div className="rounded-2xl bg-white/85 p-4 shadow-[0_12px_28px_rgba(30,58,138,0.08)]">
+      <div className={cn('h-9 w-9 rounded-2xl', toneStyles[tone])} />
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
+    </div>
+  )
+}
+
 /**
  * Training Center component
  * Displays training modules with video/PDF viewer and progress tracking
@@ -78,6 +103,10 @@ export function TrainingCenter({
         (progress.filter((p) => p.is_completed).length / modules.length) * 100
       )
     : 0
+
+  const completedCount = progress.filter((p) => p.is_completed).length
+  const mandatoryCount = modules.filter((m) => m.is_mandatory).length
+  const bookmarkCount = bookmarkedModules.length
 
   /**
    * Toggle bookmark state for a module
@@ -114,14 +143,15 @@ export function TrainingCenter({
   if (isLoading) {
     return (
       <div className={cn('space-y-6', className)}>
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10" />
-          <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-28 w-full rounded-[28px]" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))}
         </div>
-        <Skeleton className="h-20 w-full" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-48 rounded-lg" />
+            <Skeleton key={i} className="h-48 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -132,51 +162,52 @@ export function TrainingCenter({
   if (selectedModule) {
     return (
       <div className={cn('space-y-6', className)}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="rounded-[28px] bg-gradient-to-br from-[#EEF2FF] via-[#F3F5FF] to-[#E9FAFA] p-6 shadow-[0_24px_60px_rgba(30,58,138,0.12)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSelectedModule(null)}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h2 className="text-xl font-bold">{selectedModule.title}</h2>
-              <p className="text-sm text-muted-foreground">
-                {selectedModule.description}
-              </p>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedModule(null)}
+                className="bg-white/70"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#4F6CF7]">Module Viewer</p>
+                <h2 className="text-2xl font-semibold text-slate-900">{selectedModule.title}</h2>
+                <p className="text-sm text-slate-500">{selectedModule.description}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => toggleBookmark(selectedModule.id)}
-            >
-              {bookmarkedModules.includes(selectedModule.id) ? (
-                <BookmarkCheck className="h-5 w-5 text-primary" />
-              ) : (
-                <Bookmark className="h-5 w-5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSelectedModule(null)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleBookmark(selectedModule.id)}
+                className="bg-white/70"
+              >
+                {bookmarkedModules.includes(selectedModule.id) ? (
+                  <BookmarkCheck className="h-5 w-5 text-[#4F6CF7]" />
+                ) : (
+                  <Bookmark className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedModule(null)}
+                className="bg-white/70"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Content viewer */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-none bg-white/85 shadow-[0_20px_50px_rgba(30,58,138,0.1)]">
           <CardContent className="p-0">
             {selectedModule.content_type === 'video' ? (
               <div className="aspect-video bg-black">
-                {/* YouTube embed or custom video player */}
                 <iframe
                   src={selectedModule.content_url || ''}
                   className="w-full h-full"
@@ -197,8 +228,7 @@ export function TrainingCenter({
               <div className="p-6">
                 <ScrollArea className="h-[500px]">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    {/* Article content would be rendered here */}
-                    <p className="text-muted-foreground">
+                    <p className="text-slate-500">
                       Article content loading...
                     </p>
                   </div>
@@ -208,9 +238,8 @@ export function TrainingCenter({
           </CardContent>
         </Card>
 
-        {/* Module info and actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-sm text-slate-500">
             <span className="flex items-center gap-1">
               {getTypeIcon(selectedModule.content_type)}
               <span className="capitalize">{selectedModule.content_type}</span>
@@ -227,7 +256,7 @@ export function TrainingCenter({
                 onModuleComplete?.(selectedModule.id)
                 setSelectedModule(null)
               }}
-              className="gap-2"
+              className="gap-2 rounded-full bg-[#FF9B7A] px-5 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(255,155,122,0.35)]"
             >
               <CheckCircle2 className="h-4 w-4" />
               Mark as Complete
@@ -235,7 +264,7 @@ export function TrainingCenter({
           )}
 
           {getModuleProgress(selectedModule.id)?.is_completed && (
-            <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600">
+            <Badge variant="outline" className="gap-1 bg-[#E3E9FF] text-[#4F6CF7]">
               <CheckCircle2 className="h-3 w-3" />
               Completed
             </Badge>
@@ -247,47 +276,49 @@ export function TrainingCenter({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {onBack && (
-            <Button variant="ghost" size="icon" onClick={onBack}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
-          <div>
-            <h2 className="text-xl font-bold">Training Center</h2>
-            <p className="text-sm text-muted-foreground">
-              Learn best practices and quality standards
-            </p>
+      <div className="rounded-[28px] bg-white/85 p-6 shadow-[0_24px_60px_rgba(30,58,138,0.12)]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              {onBack && (
+                <Button variant="ghost" size="icon" onClick={onBack} className="bg-white/70">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#4F6CF7]">Training Center</p>
+                <h2 className="text-2xl font-semibold text-slate-900">Grow your delivery mastery</h2>
+                <p className="text-sm text-slate-500">
+                  Learn best practices and quality standards at your pace.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-slate-50/80 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Overall Progress</span>
+                <span className="text-sm text-slate-500">
+                  {completedCount} / {modules.length} modules
+                </span>
+              </div>
+              <Progress value={overallProgress} className="mt-3 h-2" />
+              <p className="mt-2 text-xs text-slate-500">{overallProgress}% complete</p>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <LearningStatCard label="Completed" value={String(completedCount)} tone="cool" />
+            <LearningStatCard label="Mandatory" value={String(mandatoryCount)} tone="fresh" />
+            <LearningStatCard label="Bookmarked" value={String(bookmarkCount)} tone="warm" />
           </div>
         </div>
       </div>
 
-      {/* Overall progress */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Overall Progress</span>
-            <span className="text-sm text-muted-foreground">
-              {progress.filter((p) => p.is_completed).length} / {modules.length} modules
-            </span>
-          </div>
-          <Progress value={overallProgress} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-2">
-            {overallProgress}% complete
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Bookmarked modules */}
       {bookmarkedModules.length > 0 && (
-        <div>
-          <h3 className="font-medium mb-3 flex items-center gap-2">
-            <BookmarkCheck className="h-4 w-4 text-primary" />
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <BookmarkCheck className="h-4 w-4 text-[#4F6CF7]" />
             Bookmarked
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {modules
               .filter((m) => bookmarkedModules.includes(m.id))
               .map((module) => (
@@ -304,9 +335,8 @@ export function TrainingCenter({
         </div>
       )}
 
-      {/* All modules */}
-      <div>
-        <h3 className="font-medium mb-3">All Modules</h3>
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-slate-900">All Modules</h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
             {modules.map((module, index) => (
@@ -330,10 +360,10 @@ export function TrainingCenter({
       </div>
 
       {modules.length === 0 && (
-        <Card className="p-8 text-center">
-          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-medium">No Training Modules</h3>
-          <p className="text-sm text-muted-foreground mt-1">
+        <Card className="p-8 text-center border-none bg-white/85">
+          <BookOpen className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="font-medium text-slate-900">No Training Modules</h3>
+          <p className="text-sm text-slate-500 mt-1">
             Training modules will appear here when available.
           </p>
         </Card>
@@ -395,14 +425,13 @@ function ModuleCard({
   return (
     <Card
       className={cn(
-        'relative cursor-pointer transition-all hover:shadow-md group',
-        isCompleted && 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20'
+        'group cursor-pointer border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)] transition-all hover:-translate-y-1',
+        isCompleted && 'bg-[#EEF2FF]/70'
       )}
       onClick={onClick}
     >
-      {/* Thumbnail */}
       {module.thumbnail_url && (
-        <div className="aspect-video bg-muted relative overflow-hidden rounded-t-lg">
+        <div className="aspect-video bg-muted relative overflow-hidden rounded-t-2xl">
           <img
             src={module.thumbnail_url}
             alt={module.title}
@@ -411,7 +440,7 @@ function ModuleCard({
           {module.content_type === 'video' && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                <Play className="h-6 w-6 text-primary ml-1" />
+                <Play className="h-6 w-6 text-[#4F6CF7] ml-1" />
               </div>
             </div>
           )}
@@ -421,10 +450,10 @@ function ModuleCard({
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-base line-clamp-1 group-hover:text-primary transition-colors">
+            <CardTitle className="text-base line-clamp-1 text-slate-900 group-hover:text-[#4F6CF7] transition-colors">
               {module.title}
             </CardTitle>
-            <CardDescription className="line-clamp-2 mt-1">
+            <CardDescription className="line-clamp-2 mt-1 text-slate-500">
               {module.description}
             </CardDescription>
           </div>
@@ -438,16 +467,16 @@ function ModuleCard({
             }}
           >
             {isBookmarked ? (
-              <BookmarkCheck className="h-4 w-4 text-primary" />
+              <BookmarkCheck className="h-4 w-4 text-[#4F6CF7]" />
             ) : (
-              <Bookmark className="h-4 w-4 text-muted-foreground" />
+              <Bookmark className="h-4 w-4 text-slate-400" />
             )}
           </Button>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+        <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
           <span className="flex items-center gap-1">
             {getTypeIcon(module.content_type)}
             <span className="capitalize">{module.content_type}</span>
@@ -459,21 +488,21 @@ function ModuleCard({
         </div>
 
         {isCompleted ? (
-          <div className="flex items-center gap-1 text-green-600">
+          <div className="flex items-center gap-1 text-[#4F6CF7]">
             <CheckCircle2 className="h-4 w-4" />
             <span className="text-xs font-medium">Completed</span>
           </div>
         ) : progressPercent > 0 ? (
           <div className="space-y-1">
             <Progress value={progressPercent} className="h-1.5" />
-            <p className="text-xs text-muted-foreground">{progressPercent}% complete</p>
+            <p className="text-xs text-slate-500">{progressPercent}% complete</p>
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs border-white/70">
               {module.is_mandatory ? 'Required' : 'Optional'}
             </Badge>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#4F6CF7] group-hover:translate-x-1 transition-all" />
           </div>
         )}
       </CardContent>

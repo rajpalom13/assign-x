@@ -208,227 +208,244 @@ export function EditProfile({
         )}
       </AnimatePresence>
 
-      {/* Avatar section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={formData.avatar_url || undefined} alt={formData.full_name} />
-                <AvatarFallback className="text-2xl">
-                  {formData.full_name.split(' ').map((n) => n[0]).join('').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Camera className="h-6 w-6 text-white" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold">{formData.full_name}</h3>
-              <p className="text-sm text-muted-foreground">{profile.email}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={handleAvatarClick}
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Change Photo
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-6">
+          <Card className="overflow-hidden">
+            <div className="h-16 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15" />
+            <CardContent className="-mt-6 space-y-4">
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <Avatar className="h-24 w-24 border-4 border-background">
+                    <AvatarImage src={formData.avatar_url || undefined} alt={formData.full_name} />
+                    <AvatarFallback className="text-2xl">
+                      {formData.full_name.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Camera className="h-6 w-6 text-white" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{formData.full_name}</h3>
+                  <p className="text-sm text-muted-foreground">{profile.email}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={handleAvatarClick}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Change Photo
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={(e) => handleChange('full_name', e.target.value)}
+                      placeholder="Your full name"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="email" value={profile.email} readOnly className="pl-9 bg-muted" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => handleChange('phone', e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Personal Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Personal Information
-          </CardTitle>
-          <CardDescription>
-            Update your basic profile information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => handleChange('full_name', e.target.value)}
-                placeholder="Your full name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="pl-9"
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                About You
+              </CardTitle>
+              <CardDescription>Share a quick summary of your expertise</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio || ''}
+                  onChange={(e) => handleChange('bio', e.target.value)}
+                  placeholder="Tell us about yourself..."
+                  rows={4}
                 />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              value={formData.bio || ''}
-              onChange={(e) => handleChange('bio', e.target.value)}
-              placeholder="Tell us about yourself..."
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Education & Experience */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Education & Experience
-          </CardTitle>
-          <CardDescription>
-            Your academic background and experience level
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="qualification">Qualification</Label>
-              <Select
-                value={formData.qualification || undefined}
-                onValueChange={(v) => handleChange('qualification', v as Qualification)}
-              >
-                <SelectTrigger id="qualification">
-                  <SelectValue placeholder="Select qualification" />
-                </SelectTrigger>
-                <SelectContent>
-                  {qualificationOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="university">University</Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="university"
-                  placeholder="Your university"
-                  className="pl-9"
-                />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Skills & Expertise
+              </CardTitle>
+              <CardDescription>Select the skills you have experience with</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <Badge
+                    key={skill.id}
+                    variant={formData.skills.includes(skill.id) ? 'default' : 'outline'}
+                    className={cn(
+                      'cursor-pointer transition-all',
+                      formData.skills.includes(skill.id)
+                        ? 'bg-primary hover:bg-primary/80'
+                        : 'hover:bg-muted'
+                    )}
+                    onClick={() => toggleSkill(skill.id)}
+                  >
+                    {skill.name}
+                    {formData.skills.includes(skill.id) && (
+                      <X className="h-3 w-3 ml-1" />
+                    )}
+                  </Badge>
+                ))}
               </div>
-            </div>
-          </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                {formData.skills.length} skills selected
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="space-y-2">
-            <Label>Experience Level</Label>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {experienceOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleChange('experience_level', option.value)}
-                  className={cn(
-                    'p-3 rounded-lg border text-left transition-all',
-                    formData.experience_level === option.value
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  )}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Education
+              </CardTitle>
+              <CardDescription>Your academic background and institution</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="qualification">Qualification</Label>
+                <Select
+                  value={formData.qualification || undefined}
+                  onValueChange={(v) => handleChange('qualification', v as Qualification)}
                 >
-                  <p className="font-medium">{option.label}</p>
-                  <p className="text-xs text-muted-foreground">{option.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                  <SelectTrigger id="qualification">
+                    <SelectValue placeholder="Select qualification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {qualificationOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-      {/* Skills */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            Skills & Expertise
-          </CardTitle>
-          <CardDescription>
-            Select the skills you have experience with
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <Badge
-                key={skill.id}
-                variant={formData.skills.includes(skill.id) ? 'default' : 'outline'}
-                className={cn(
-                  'cursor-pointer transition-all',
-                  formData.skills.includes(skill.id)
-                    ? 'bg-primary hover:bg-primary/80'
-                    : 'hover:bg-muted'
-                )}
-                onClick={() => toggleSkill(skill.id)}
-              >
-                {skill.name}
-                {formData.skills.includes(skill.id) && (
-                  <X className="h-3 w-3 ml-1" />
-                )}
-              </Badge>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            {formData.skills.length} skills selected
-          </p>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="university">University</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="university"
+                    value={formData.university_name || ''}
+                    onChange={(e) => handleChange('university_name', e.target.value)}
+                    placeholder="Your university"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Experience Level
+              </CardTitle>
+              <CardDescription>Highlight your current expertise</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {experienceOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleChange('experience_level', option.value)}
+                    className={cn(
+                      'p-3 rounded-lg border text-left transition-all',
+                      formData.experience_level === option.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    )}
+                  >
+                    <p className="font-medium">{option.label}</p>
+                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Action buttons */}
-      <div className="flex items-center justify-end gap-2 sticky bottom-0 bg-background py-4 border-t">
-        {onCancel && (
-          <Button variant="outline" onClick={onCancel} disabled={isSaving}>
-            Cancel
-          </Button>
-        )}
-        <Button onClick={handleSubmit} disabled={isSaving} className="gap-2">
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              Save Changes
-            </>
+      <Card className="sticky bottom-0 z-10 bg-background/90 backdrop-blur border-muted/60">
+        <CardContent className="flex items-center justify-end gap-2 py-4">
+          {onCancel && (
+            <Button variant="outline" onClick={onCancel} disabled={isSaving}>
+              Cancel
+            </Button>
           )}
-        </Button>
-      </div>
+          <Button onClick={handleSubmit} disabled={isSaving} className="gap-2">
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -155,7 +155,7 @@ export function EarningsGraph({
               Your earnings performance over time
             </CardDescription>
           </div>
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+          <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-xl">
             {periodOptions.map((option) => (
               <Button
                 key={option.value}
@@ -173,7 +173,7 @@ export function EarningsGraph({
       <CardContent className="space-y-6">
         {/* Stats cards */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 rounded-lg bg-muted/50">
+          <div className="p-4 rounded-xl border bg-muted/30">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Total Earnings</span>
@@ -181,7 +181,7 @@ export function EarningsGraph({
             <p className="text-2xl font-bold">₹{stats.total.toLocaleString()}</p>
           </div>
 
-          <div className="p-4 rounded-lg bg-muted/50">
+          <div className="p-4 rounded-xl border bg-muted/30">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Daily Average</span>
@@ -189,7 +189,7 @@ export function EarningsGraph({
             <p className="text-2xl font-bold">₹{Math.round(stats.average).toLocaleString()}</p>
           </div>
 
-          <div className="p-4 rounded-lg bg-muted/50">
+          <div className="p-4 rounded-xl border bg-muted/30">
             <div className="flex items-center gap-2 mb-1">
               <Briefcase className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Projects</span>
@@ -197,7 +197,7 @@ export function EarningsGraph({
             <p className="text-2xl font-bold">{stats.projects}</p>
           </div>
 
-          <div className="p-4 rounded-lg bg-muted/50">
+          <div className="p-4 rounded-xl border bg-muted/30">
             <div className="flex items-center gap-2 mb-1">
               {stats.change >= 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-600" />
@@ -218,7 +218,7 @@ export function EarningsGraph({
         </div>
 
         {/* Chart */}
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full rounded-xl border bg-muted/20 p-3">
           {isLoading ? (
             <div className="h-full w-full flex items-center justify-center">
               <div className="animate-pulse text-muted-foreground">Loading chart...</div>

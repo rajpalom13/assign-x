@@ -4,7 +4,7 @@ import { useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/authStore'
-import { ROUTES } from '@/lib/constants'
+import { API_ROUTES, ROUTES } from '@/lib/constants'
 import { clearAppStorage } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import type { Profile, Doer } from '@/types/database'
@@ -228,15 +228,21 @@ export function useAuth() {
    * Clears all localStorage data and forces full page reload
    */
   const signOut = async () => {
-    // Clear auth store first
+    // Sign out on server to clear auth cookies
+    const response = await fetch(API_ROUTES.auth.logout, { method: 'POST' })
+    if (!response.ok) {
+      throw new Error('Server logout failed')
+    }
+
+    // Sign out from Supabase client to revoke tokens
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+
+    // Clear auth store
     clearAuth()
 
     // Clear all localStorage (auth tokens, cached data)
     clearAppStorage()
-
-    // Sign out from Supabase
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
 
     // Force full page reload to clear all cached state
     window.location.href = ROUTES.login

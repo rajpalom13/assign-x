@@ -19,6 +19,7 @@ import {
   FileType,
   CheckCircle2,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -136,62 +137,68 @@ export function FormatTemplates({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
+      <div className="rounded-[28px] bg-white/85 p-6 shadow-[0_24px_60px_rgba(30,58,138,0.12)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="bg-white/70">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#4F6CF7]">Template Vault</p>
+              <h2 className="text-2xl font-semibold text-slate-900 flex items-center gap-2">
+                <FileText className="h-6 w-6 text-[#4F6CF7]" />
+                Format Templates
+              </h2>
+              <p className="text-sm text-slate-500">
+                Download professionally formatted templates for your work.
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-[#E6F4FF] text-[#4B9BFF]">{templates.length} templates</Badge>
+        </div>
+
+        <div className="mt-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button variant="outline" className="rounded-full">
+            <Sparkles className="h-4 w-4 mr-2 text-[#4F6CF7]" />
+            Most downloaded
           </Button>
-        )}
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <FileText className="h-6 w-6 text-primary" />
-            Format Templates
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Download professionally formatted templates for your work
-          </p>
         </div>
       </div>
 
-      {/* Search and filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
-
-      {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as typeof activeCategory)}>
-        <TabsList className="grid w-full grid-cols-4 max-w-lg">
-          <TabsTrigger value="all" className="gap-1">
+        <TabsList className="grid w-full grid-cols-4 max-w-xl h-11 rounded-full bg-white/85 p-1 shadow-[0_10px_22px_rgba(30,58,138,0.08)]">
+          <TabsTrigger value="all" className="gap-1 rounded-full">
             All
             <Badge variant="secondary" className="ml-1 text-xs">
               {categoryStats.all}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="document" className="gap-1">
+          <TabsTrigger value="document" className="gap-1 rounded-full">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Docs</span>
           </TabsTrigger>
-          <TabsTrigger value="presentation" className="gap-1">
+          <TabsTrigger value="presentation" className="gap-1 rounded-full">
             <Presentation className="h-4 w-4" />
             <span className="hidden sm:inline">Slides</span>
           </TabsTrigger>
-          <TabsTrigger value="spreadsheet" className="gap-1">
+          <TabsTrigger value="spreadsheet" className="gap-1 rounded-full">
             <Table className="h-4 w-4" />
             <span className="hidden sm:inline">Sheets</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* Templates grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <AnimatePresence>
           {filteredTemplates.map((template, index) => {
@@ -207,10 +214,9 @@ export function FormatTemplates({
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="group overflow-hidden h-full flex flex-col hover:shadow-lg transition-shadow">
-                  {/* Preview image */}
+                <Card className="group overflow-hidden h-full flex flex-col border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)] transition-all hover:-translate-y-1">
                   <div
-                    className="aspect-[4/3] bg-muted relative cursor-pointer overflow-hidden"
+                    className="aspect-[4/3] bg-slate-50/80 relative cursor-pointer overflow-hidden"
                     onClick={() => setPreviewTemplate(template)}
                   >
                     {template.preview_url ? (
@@ -221,7 +227,7 @@ export function FormatTemplates({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <CategoryIcon className="h-16 w-16 text-muted-foreground/30" />
+                        <CategoryIcon className="h-16 w-16 text-slate-300" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -241,18 +247,18 @@ export function FormatTemplates({
                         <CategoryIcon className="h-3 w-3 mr-1" />
                         {template.category}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-slate-500">
                         {formatFileSize(template.file_size)}
                       </span>
                     </div>
 
-                    <h3 className="font-medium line-clamp-1 mb-1">{template.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
+                    <h3 className="font-medium line-clamp-1 mb-1 text-slate-900">{template.name}</h3>
+                    <p className="text-sm text-slate-500 line-clamp-2 flex-1">
                       {template.description}
                     </p>
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/70">
+                      <span className="text-xs text-slate-500">
                         {template.download_count.toLocaleString()} downloads
                       </span>
                       <Button
@@ -260,13 +266,13 @@ export function FormatTemplates({
                         variant={isDownloaded ? 'outline' : 'default'}
                         disabled={isDownloading}
                         onClick={() => handleDownload(template)}
-                        className="gap-1"
+                        className="gap-1 rounded-full"
                       >
                         {isDownloading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : isDownloaded ? (
                           <>
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <CheckCircle2 className="h-4 w-4 text-[#4F6CF7]" />
                             Downloaded
                           </>
                         ) : (
@@ -285,13 +291,12 @@ export function FormatTemplates({
         </AnimatePresence>
       </div>
 
-      {/* Empty state */}
       {filteredTemplates.length === 0 && !isLoading && (
-        <Card className="p-8 text-center">
-          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-medium">No templates found</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Try adjusting your search or filter criteria
+        <Card className="p-8 text-center border-none bg-white/85">
+          <FileText className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h3 className="font-medium text-slate-900">No templates found</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Try adjusting your search or filter criteria.
           </p>
           <Button
             variant="outline"
@@ -306,14 +311,13 @@ export function FormatTemplates({
         </Card>
       )}
 
-      {/* Preview dialog */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{previewTemplate?.name}</DialogTitle>
             <DialogDescription>{previewTemplate?.description}</DialogDescription>
           </DialogHeader>
-          <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+          <div className="aspect-[4/3] bg-slate-50/80 rounded-2xl overflow-hidden">
             {previewTemplate?.preview_url ? (
               <img
                 src={previewTemplate.preview_url}
@@ -322,12 +326,12 @@ export function FormatTemplates({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <FileText className="h-24 w-24 text-muted-foreground/30" />
+                <FileText className="h-24 w-24 text-slate-300" />
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-4 text-sm text-slate-500">
               <span>{formatFileSize(previewTemplate?.file_size ?? 0)}</span>
               <span>{previewTemplate?.download_count.toLocaleString()} downloads</span>
             </div>
@@ -336,7 +340,7 @@ export function FormatTemplates({
                 if (previewTemplate) handleDownload(previewTemplate)
                 setPreviewTemplate(null)
               }}
-              className="gap-2"
+              className="gap-2 rounded-full"
             >
               <Download className="h-4 w-4" />
               Download Template

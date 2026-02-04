@@ -184,128 +184,126 @@ export function BankSettings({
         </Alert>
       )}
 
-      {/* Bank details card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              <div>
-                <CardTitle>Bank Account</CardTitle>
-                <CardDescription>Your primary payout account</CardDescription>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Bank details card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <CardTitle>Bank Account</CardTitle>
+                  <CardDescription>Your primary payout account</CardDescription>
+                </div>
               </div>
+              {hasCompleteDetails && (
+                <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
+                  <Shield className="h-3 w-3" />
+                  Verified
+                </Badge>
+              )}
             </div>
-            {hasCompleteDetails && (
-              <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
-                <Shield className="h-3 w-3" />
-                Verified
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {hasCompleteDetails ? (
-            <div className="space-y-4">
-              {/* Account holder */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Holder</p>
-                  <p className="font-medium">{doer.bank_account_name}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {hasCompleteDetails ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Account Holder</p>
+                    <p className="font-medium">{doer.bank_account_name}</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Account number */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Number</p>
-                  <p className="font-medium font-mono">
-                    {showAccountNumber
-                      ? doer.bank_account_number
-                      : maskAccountNumber(doer.bank_account_number || '')}
-                  </p>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Account Number</p>
+                    <p className="font-medium font-mono">
+                      {showAccountNumber
+                        ? doer.bank_account_number
+                        : maskAccountNumber(doer.bank_account_number || '')}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowAccountNumber(!showAccountNumber)}
+                  >
+                    {showAccountNumber ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-xl bg-muted/40">
+                    <p className="text-sm text-muted-foreground">IFSC Code</p>
+                    <p className="font-medium font-mono">{doer.bank_ifsc_code}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40">
+                    <p className="text-sm text-muted-foreground">Bank</p>
+                    <p className="font-medium">{doer.bank_name || 'N/A'}</p>
+                  </div>
+                </div>
+
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowAccountNumber(!showAccountNumber)}
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  className="w-full gap-2"
                 >
-                  {showAccountNumber ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  <Edit2 className="h-4 w-4" />
+                  Update Bank Details
                 </Button>
               </div>
-
-              {/* IFSC & Bank */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">IFSC Code</p>
-                  <p className="font-medium font-mono">{doer.bank_ifsc_code}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Bank</p>
-                  <p className="font-medium">{doer.bank_name || 'N/A'}</p>
-                </div>
+            ) : (
+              <div className="text-center py-6">
+                <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  No bank account linked yet
+                </p>
+                <Button onClick={() => setIsEditing(true)} className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Add Bank Account
+                </Button>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              {/* Edit button */}
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(true)}
-                className="w-full gap-2"
-              >
-                <Edit2 className="h-4 w-4" />
-                Update Bank Details
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">
-                No bank account linked yet
-              </p>
-              <Button onClick={() => setIsEditing(true)} className="gap-2">
-                <Building2 className="h-4 w-4" />
-                Add Bank Account
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* UPI card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-primary" />
-            <div>
-              <CardTitle>UPI ID</CardTitle>
-              <CardDescription>Alternative payment method</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {doer.upi_id ? (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+        {/* UPI card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">UPI ID</p>
-                <p className="font-medium">{doer.upi_id}</p>
+                <CardTitle>UPI ID</CardTitle>
+                <CardDescription>Alternative payment method</CardDescription>
               </div>
-              <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
-                <CheckCircle2 className="h-3 w-3" />
-                Active
-              </Badge>
             </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
-                No UPI ID added (optional)
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {doer.upi_id ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+                <div>
+                  <p className="text-sm text-muted-foreground">UPI ID</p>
+                  <p className="font-medium">{doer.upi_id}</p>
+                </div>
+                <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Active
+                </Badge>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  No UPI ID added (optional)
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Edit dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>

@@ -145,10 +145,8 @@ export function ProjectCard({
       <Card
         className={cn(
           'cursor-pointer transition-all duration-300 overflow-hidden group',
-          'hover:shadow-lg hover:shadow-black/5 hover:border-primary/20',
-          showUrgent && !isOverdue && 'border-amber-500/50 dark:border-amber-500/30',
-          isOverdue && 'border-red-500/50 dark:border-red-500/30',
-          status === 'revision_requested' && 'border-red-500/50'
+          'border border-white/70 bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)]',
+          'hover:shadow-[0_22px_50px_rgba(91,124,255,0.18)] hover:border-[#B8C4FF]'
         )}
         onClick={handleClick}
       >
@@ -156,9 +154,9 @@ export function ProjectCard({
         {(showUrgent || status === 'revision_requested') && (
           <div className={cn(
             "h-1 w-full",
-            isOverdue ? "bg-red-500" :
-            status === 'revision_requested' ? "bg-red-500" :
-            "bg-gradient-to-r from-amber-400 to-orange-500"
+            isOverdue ? "bg-[#FF8B6A]" :
+            status === 'revision_requested' ? "bg-[#FF8B6A]" :
+            "bg-gradient-to-r from-[#FFB39A] to-[#FF8B6A]"
           )} />
         )}
 
@@ -166,12 +164,12 @@ export function ProjectCard({
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0 space-y-2">
               {/* Subject badge */}
-              <Badge variant="outline" className="text-xs font-normal">
+              <Badge variant="outline" className="text-xs font-normal border-[#DDE5FF] text-[#4F6CF7]">
                 {subject}
               </Badge>
 
               {/* Title */}
-              <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-[#4F6CF7] transition-colors">
                 {title}
               </h3>
             </div>
@@ -181,8 +179,8 @@ export function ProjectCard({
               <div className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium shrink-0",
                 isOverdue
-                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  ? "bg-[#FFE7E1] text-[#FF8B6A]"
+                  : "bg-[#FFF1EC] text-[#FF8B6A]"
               )}>
                 {isOverdue ? (
                   <AlertTriangle className="h-3 w-3" />
@@ -211,9 +209,9 @@ export function ProjectCard({
           {/* Meta info grid */}
           <div className="grid grid-cols-2 gap-3">
             {/* Price */}
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-              <IndianRupee className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-[#EEF2FF]">
+              <IndianRupee className="h-4 w-4 text-[#4F6CF7]" />
+              <span className="text-sm font-semibold text-[#3E5BEA]">
                 {price.toLocaleString('en-IN')}
               </span>
             </div>
@@ -222,26 +220,26 @@ export function ProjectCard({
             <div className={cn(
               "flex items-center gap-2 p-2 rounded-lg",
               isOverdue
-                ? "bg-red-50 dark:bg-red-900/20"
+                ? "bg-[#FFE7E1]"
                 : showUrgent
-                  ? "bg-amber-50 dark:bg-amber-900/20"
-                  : "bg-muted/50"
+                  ? "bg-[#FFF1EC]"
+                  : "bg-[#F5F7FF]"
             )}>
               <Clock className={cn(
                 "h-4 w-4",
                 isOverdue
-                  ? "text-red-600 dark:text-red-400"
+                  ? "text-[#FF8B6A]"
                   : showUrgent
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-muted-foreground"
+                    ? "text-[#FF8B6A]"
+                    : "text-slate-500"
               )} />
               <span className={cn(
                 "text-sm font-medium",
                 isOverdue
-                  ? "text-red-700 dark:text-red-400"
+                  ? "text-[#FF8B6A]"
                   : showUrgent
-                    ? "text-amber-700 dark:text-amber-400"
-                    : "text-muted-foreground"
+                    ? "text-[#FF8B6A]"
+                    : "text-slate-500"
               )}>
                 {timeRemaining}
               </span>
@@ -270,9 +268,9 @@ export function ProjectCard({
 
         {/* Action footer */}
         {status === 'paid' && onAccept ? (
-          <CardFooter className="pt-3 border-t">
+          <CardFooter className="pt-3 border-t border-white/70">
             <Button
-              className="w-full gap-2 gradient-primary hover:opacity-90"
+              className="w-full gap-2 rounded-full bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white shadow-[0_14px_28px_rgba(91,124,255,0.25)] hover:opacity-90"
               onClick={handleAccept}
               disabled={isAccepting}
             >
@@ -290,10 +288,10 @@ export function ProjectCard({
             </Button>
           </CardFooter>
         ) : (
-          <CardFooter className="pt-3 border-t">
+          <CardFooter className="pt-3 border-t border-white/70">
             <div className="w-full flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">View details</span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              <span className="text-slate-500">View details</span>
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-[#4F6CF7] group-hover:translate-x-1 transition-all" />
             </div>
           </CardFooter>
         )}

@@ -36,9 +36,8 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from 'next-themes'
-import { ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 type SettingsClientProps = {
@@ -52,8 +51,8 @@ type SettingsClientProps = {
  * Professional tabbed interface for user preferences
  */
 export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps) {
-  const router = useRouter()
   const supabase = createClient()
+  const { signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('account')
@@ -103,10 +102,7 @@ export function SettingsClient({ userEmail, profile, doer }: SettingsClientProps
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      router.push(ROUTES.login)
-      router.refresh()
+      await signOut()
     } catch (error) {
       toast.error('Failed to log out')
       console.error('Error logging out:', error)

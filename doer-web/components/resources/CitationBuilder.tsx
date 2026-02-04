@@ -19,6 +19,7 @@ import {
   FileText,
   History,
   Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 import { referenceStyles, sourceTypes, generateCitationByStyle, type SourceTypeValue } from './constants'
 import type { ReferenceStyleType, Citation } from '@/types/database'
 
@@ -74,7 +74,6 @@ export function CitationBuilder({
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<'generate' | 'manual' | 'history'>('generate')
 
-  // Manual entry fields
   const [manualTitle, setManualTitle] = useState('')
   const [manualAuthor, setManualAuthor] = useState('')
   const [manualYear, setManualYear] = useState('')
@@ -94,7 +93,6 @@ export function CitationBuilder({
       if (onGenerate) {
         citation = await onGenerate(url, style)
       } else {
-        // Simulated generation using shared utility
         await new Promise((resolve) => setTimeout(resolve, 1000))
         const domain = new URL(url).hostname.replace('www.', '')
         const date = new Date().toLocaleDateString('en-US', {
@@ -188,35 +186,36 @@ export function CitationBuilder({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Quote className="h-6 w-6 text-primary" />
-            Citation Builder
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Generate properly formatted references in any style
-          </p>
+      <div className="rounded-[28px] bg-white/85 p-6 shadow-[0_24px_60px_rgba(30,58,138,0.12)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack} className="bg-white/70">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#4F6CF7]">Reference Desk</p>
+              <h2 className="text-2xl font-semibold text-slate-900 flex items-center gap-2">
+                <Quote className="h-6 w-6 text-[#4F6CF7]" />
+                Citation Builder
+              </h2>
+              <p className="text-sm text-slate-500">
+                Generate properly formatted references in any style.
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-[#E6F4FF] text-[#4B9BFF]">Auto format</Badge>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Input section */}
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <Card className="border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)]">
           <CardHeader>
             <CardTitle>Generate Citation</CardTitle>
-            <CardDescription>
-              Enter a URL or fill in details manually
-            </CardDescription>
+            <CardDescription>Enter a URL or fill in details manually.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Style selector */}
             <div className="space-y-2">
               <Label>Reference Style</Label>
               <Select value={style} onValueChange={(v) => setStyle(v as ReferenceStyleType)}>
@@ -228,7 +227,7 @@ export function CitationBuilder({
                     <SelectItem key={s.value} value={s.value}>
                       <div className="flex flex-col">
                         <span>{s.label}</span>
-                        <span className="text-xs text-muted-foreground">{s.description}</span>
+                        <span className="text-xs text-slate-500">{s.description}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -237,23 +236,22 @@ export function CitationBuilder({
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="generate" className="gap-1">
+              <TabsList className="grid w-full grid-cols-3 h-11 rounded-full bg-white/85 p-1 shadow-[0_10px_22px_rgba(30,58,138,0.08)]">
+                <TabsTrigger value="generate" className="gap-1 rounded-full">
                   <Link className="h-4 w-4" />
                   URL
                 </TabsTrigger>
-                <TabsTrigger value="manual" className="gap-1">
+                <TabsTrigger value="manual" className="gap-1 rounded-full">
                   <FileText className="h-4 w-4" />
                   Manual
                 </TabsTrigger>
-                <TabsTrigger value="history" className="gap-1">
+                <TabsTrigger value="history" className="gap-1 rounded-full">
                   <History className="h-4 w-4" />
                   History
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="generate" className="space-y-4 mt-4">
-                {/* Source type */}
                 <div className="space-y-2">
                   <Label>Source Type</Label>
                   <div className="flex gap-2 flex-wrap">
@@ -264,7 +262,7 @@ export function CitationBuilder({
                           key={type.value}
                           variant={sourceType === type.value ? 'default' : 'outline'}
                           size="sm"
-                          className="gap-1"
+                          className="gap-1 rounded-full"
                           onClick={() => setSourceType(type.value as typeof sourceType)}
                         >
                           <Icon className="h-4 w-4" />
@@ -275,7 +273,6 @@ export function CitationBuilder({
                   </div>
                 </div>
 
-                {/* URL input */}
                 <div className="space-y-2">
                   <Label htmlFor="url">Source URL</Label>
                   <div className="flex gap-2">
@@ -289,6 +286,7 @@ export function CitationBuilder({
                     <Button
                       onClick={handleGenerate}
                       disabled={!url.trim() || isGenerating}
+                      className="rounded-full"
                     >
                       {isGenerating ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -342,7 +340,7 @@ export function CitationBuilder({
                 <Button
                   onClick={handleGenerateManual}
                   disabled={!manualTitle.trim()}
-                  className="w-full"
+                  className="w-full rounded-full"
                 >
                   Generate Citation
                 </Button>
@@ -355,23 +353,23 @@ export function CitationBuilder({
                       {history.map((citation) => (
                         <div
                           key={citation.id}
-                          className="p-3 rounded-lg border bg-muted/30 text-sm cursor-pointer hover:bg-muted/50"
+                          className="p-3 rounded-2xl border border-white/70 bg-white/80 text-sm cursor-pointer hover:bg-white"
                           onClick={() => setGeneratedCitation(citation.formatted_citation)}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <Badge variant="outline" className="text-xs">
                               {citation.style}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-slate-500">
                               {new Date(citation.created_at).toLocaleDateString()}
                             </span>
                           </div>
-                          <p className="line-clamp-2">{citation.formatted_citation}</p>
+                          <p className="line-clamp-2 text-slate-600">{citation.formatted_citation}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">
+                    <p className="text-sm text-slate-500 text-center py-8">
                       No citation history yet
                     </p>
                   )}
@@ -379,7 +377,6 @@ export function CitationBuilder({
               </TabsContent>
             </Tabs>
 
-            {/* Generated citation preview */}
             <AnimatePresence>
               {generatedCitation && (
                 <motion.div
@@ -389,8 +386,8 @@ export function CitationBuilder({
                   className="space-y-2"
                 >
                   <Label>Generated Citation</Label>
-                  <div className="p-4 rounded-lg border bg-muted/30">
-                    <p className="text-sm">{generatedCitation}</p>
+                  <div className="p-4 rounded-2xl border border-white/70 bg-white/80">
+                    <p className="text-sm text-slate-600">{generatedCitation}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -417,79 +414,94 @@ export function CitationBuilder({
           </CardContent>
         </Card>
 
-        {/* Citation list */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Your Citations</CardTitle>
-                <CardDescription>
-                  {citations.length} citation{citations.length !== 1 ? 's' : ''} collected
-                </CardDescription>
-              </div>
-              {citations.length > 0 && (
-                <Button variant="outline" size="sm" onClick={copyAll}>
-                  {copiedIndex === -1 ? (
-                    <Check className="h-4 w-4 mr-1" />
-                  ) : (
-                    <Copy className="h-4 w-4 mr-1" />
-                  )}
-                  Copy All
-                </Button>
-              )}
+        <div className="space-y-4">
+          <Card className="border-none bg-gradient-to-br from-[#EEF2FF] via-[#F3F5FF] to-[#E9FAFA] p-6 shadow-[0_20px_50px_rgba(30,58,138,0.12)]">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#4F6CF7]">Style Preview</p>
+              <p className="text-base font-semibold text-slate-900">Current style: {style}</p>
+              <p className="text-sm text-slate-500">
+                Use consistent formatting across all citations before final submission.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              {citations.length > 0 ? (
-                <div className="space-y-3">
-                  {citations.map((citation, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="group p-4 rounded-lg border hover:border-primary/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm flex-1">{citation}</p>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => copyToClipboard(citation, index)}
-                          >
-                            {copiedIndex === index ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => removeCitation(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+          </Card>
+
+          <Card className="border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)]">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Your Citations</CardTitle>
+                  <CardDescription>
+                    {citations.length} citation{citations.length !== 1 ? 's' : ''} collected
+                  </CardDescription>
+                </div>
+                {citations.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={copyAll}>
+                    {copiedIndex === -1 ? (
+                      <Check className="h-4 w-4 mr-1" />
+                    ) : (
+                      <Copy className="h-4 w-4 mr-1" />
+                    )}
+                    Copy All
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[360px]">
+                {citations.length > 0 ? (
+                  <div className="space-y-3">
+                    {citations.map((citation, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="group p-4 rounded-2xl border border-white/70 bg-white/80 hover:border-[#B8C4FF] transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm flex-1 text-slate-600">{citation}</p>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => copyToClipboard(citation, index)}
+                            >
+                              {copiedIndex === index ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => removeCitation(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Quote className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-medium">No citations yet</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Generate citations and add them to your list
-                  </p>
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Quote className="h-12 w-12 text-slate-400 mb-4" />
+                    <h3 className="font-medium text-slate-900">No citations yet</h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Generate citations and add them to your list.
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-1 text-xs text-slate-500">
+                      <Sparkles className="h-3 w-3" />
+                      Your citations sync automatically
+                    </div>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

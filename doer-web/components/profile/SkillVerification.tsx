@@ -133,52 +133,52 @@ export function SkillVerification({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Verification overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Skill Verification
-          </CardTitle>
-          <CardDescription>Verified skills get priority in project matching</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Progress */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Verification Progress</span>
-              <span className="font-medium">{stats.verified} of {stats.total} skills verified</span>
+      <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+        {/* Verification overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Skill Verification
+            </CardTitle>
+            <CardDescription>Verified skills get priority in project matching</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Verification Progress</span>
+                <span className="font-medium">{stats.verified} of {stats.total} skills verified</span>
+              </div>
+              <Progress value={verificationPercentage} className="h-2" />
             </div>
-            <Progress value={verificationPercentage} className="h-2" />
-          </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 pt-2">
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <p className="text-2xl font-bold text-primary">{stats.total}</p>
-              <p className="text-xs text-muted-foreground">Total Skills</p>
+            <div className="grid grid-cols-3 gap-4 pt-2">
+              <div className="text-center p-3 rounded-xl border bg-muted/30">
+                <p className="text-2xl font-bold text-primary">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total Skills</p>
+              </div>
+              <div className="text-center p-3 rounded-xl border bg-green-500/10">
+                <p className="text-2xl font-bold text-green-600">{stats.verified}</p>
+                <p className="text-xs text-muted-foreground">Verified</p>
+              </div>
+              <div className="text-center p-3 rounded-xl border bg-yellow-500/10">
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
             </div>
-            <div className="text-center p-3 rounded-lg bg-green-500/10">
-              <p className="text-2xl font-bold text-green-600">{stats.verified}</p>
-              <p className="text-xs text-muted-foreground">Verified</p>
-            </div>
-            <div className="text-center p-3 rounded-lg bg-yellow-500/10">
-              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              <p className="text-xs text-muted-foreground">Pending</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Info alert */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Why verify skills?</AlertTitle>
-        <AlertDescription>
-          Verified skills help you get more projects. Verification involves a short assessment
-          to confirm your proficiency level.
-        </AlertDescription>
-      </Alert>
+        {/* Info alert */}
+        <Alert className="border-sky-200/60 bg-sky-50/60">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Why verify skills?</AlertTitle>
+          <AlertDescription>
+            Verified skills help you get more projects. Verification involves a short assessment
+            to confirm your proficiency level.
+          </AlertDescription>
+        </Alert>
+      </div>
 
       {/* Skills list */}
       <Card>
@@ -205,7 +205,7 @@ export function SkillVerification({
                       onClick={() => !skill.is_verified && setSelectedSkill(skill)}
                       disabled={skill.is_verified || isLoading}
                       className={cn(
-                        'w-full flex items-center justify-between p-4 rounded-lg border transition-all',
+                        'w-full flex items-center justify-between p-4 rounded-xl border transition-all',
                         skill.is_verified
                           ? 'bg-green-500/5 border-green-500/30 cursor-default'
                           : 'hover:border-primary/50 hover:bg-muted/50 cursor-pointer'
