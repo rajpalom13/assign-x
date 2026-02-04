@@ -174,7 +174,7 @@ export default function UsersPage() {
         avatar: user.avatar_url,
         projects: user.total_projects,
         revenue: user.total_spent,
-        status: isUserActive(user) ? "active" : "inactive",
+        status: (isUserActive(user) ? "active" : "inactive") as "active" | "inactive",
         lastActive: user.last_active_at || user.joined_at,
       })),
     [paginatedUsers, thirtyDaysAgo]
@@ -596,7 +596,7 @@ export default function UsersPage() {
                   className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
                 >
                   {filteredUsers.map((user) => (
-                    <UserCardEnhanced key={user.id} user={user} onClick={setSelectedUser} />
+                    <UserCardEnhanced key={user.id} user={user} onClick={() => setSelectedUser(user)} />
                   ))}
                 </motion.div>
               ) : (

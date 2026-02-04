@@ -57,7 +57,7 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
   const visibleTags = user.tags?.slice(0, 3) || []
   const remainingTags = (user.tags?.length || 0) - visibleTags.length
 
-  const handleMenuAction = (e: Event, action: string) => {
+  const handleMenuAction = (e: React.MouseEvent, action: string) => {
     e.preventDefault()
     e.stopPropagation()
     onMenuAction?.(action, user)

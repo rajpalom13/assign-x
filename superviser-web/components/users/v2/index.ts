@@ -1,4 +1,4 @@
-export { EmptyState } from "./empty-state"
+export { UsersEmptyState } from "./empty-state"
 export { UsersIllustration } from "./users-illustration"
 export { UsersStatsPills } from "./users-stats-pills"
 export { UserGrowthChart } from "./user-growth-chart"
