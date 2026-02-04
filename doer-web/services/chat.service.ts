@@ -15,6 +15,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 
 /**
  * Get or create a chat room for a project
+ * Automatically adds supervisor and doer as participants when creating a new room
  */
 export async function getOrCreateProjectChatRoom(
   projectId: string
@@ -30,6 +31,8 @@ export async function getOrCreateProjectChatRoom(
     .single()
 
   if (existingRoom) {
+    // Ensure current user is a participant
+    await ensureUserIsParticipant(existingRoom.id, projectId)
     return existingRoom
   }
 
@@ -50,6 +53,9 @@ export async function getOrCreateProjectChatRoom(
       throw createError
     }
 
+    // Add participants to the newly created room
+    await addProjectChatParticipants(newRoom.id, projectId)
+
     return newRoom
   }
 
@@ -59,6 +65,160 @@ export async function getOrCreateProjectChatRoom(
   }
 
   throw new Error('Unexpected state in getOrCreateProjectChatRoom')
+}
+
+/**
+ * Ensure the current user is a participant in the chat room
+ */
+async function ensureUserIsParticipant(
+  roomId: string,
+  projectId: string
+): Promise<void> {
+  const supabase = createClient()
+
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  // Check if already a participant
+  const { data: existing } = await supabase
+    .from('chat_participants')
+    .select('id')
+    .eq('chat_room_id', roomId)
+    .eq('profile_id', user.id)
+    .single()
+
+  if (existing) return
+
+  // Get project to determine role
+  const { data: project } = await supabase
+    .from('projects')
+    .select(`
+      doer_id,
+      doers!projects_doer_id_fkey(profile_id),
+      supervisor_id,
+      supervisors!projects_supervisor_id_fkey(profile_id)
+    `)
+    .eq('id', projectId)
+    .single()
+
+  if (!project) return
+
+  // Determine user's role
+  let role: 'supervisor' | 'doer' | null = null
+  // Handle both array and single object responses from Supabase
+  const doersData = project.doers as unknown
+  const supervisorsData = project.supervisors as unknown
+  const doerProfileId = Array.isArray(doersData)
+    ? (doersData[0] as { profile_id: string } | undefined)?.profile_id
+    : (doersData as { profile_id: string } | null)?.profile_id
+  const supervisorProfileId = Array.isArray(supervisorsData)
+    ? (supervisorsData[0] as { profile_id: string } | undefined)?.profile_id
+    : (supervisorsData as { profile_id: string } | null)?.profile_id
+
+  if (doerProfileId === user.id) {
+    role = 'doer'
+  } else if (supervisorProfileId === user.id) {
+    role = 'supervisor'
+  }
+
+  if (role) {
+    await supabase
+      .from('chat_participants')
+      .insert({
+        chat_room_id: roomId,
+        profile_id: user.id,
+        participant_role: role,
+        is_active: true,
+        notifications_enabled: true,
+        unread_count: 0,
+        has_left: false,
+      })
+      .select()
+      .single()
+  }
+}
+
+/**
+ * Add supervisor and doer as participants to a project chat room
+ */
+async function addProjectChatParticipants(
+  roomId: string,
+  projectId: string
+): Promise<void> {
+  const supabase = createClient()
+
+  // Get project with supervisor and doer info
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select(`
+      doer_id,
+      doers!projects_doer_id_fkey(profile_id),
+      supervisor_id,
+      supervisors!projects_supervisor_id_fkey(profile_id)
+    `)
+    .eq('id', projectId)
+    .single()
+
+  if (projectError || !project) {
+    console.error('Error fetching project for chat participants:', projectError)
+    return
+  }
+
+  const participants: Array<{
+    chat_room_id: string
+    profile_id: string
+    participant_role: string
+    is_active: boolean
+    notifications_enabled: boolean
+    unread_count: number
+    has_left: boolean
+  }> = []
+
+  // Add supervisor if assigned
+  // Handle both array and single object responses from Supabase
+  const supervisorsData = project.supervisors as unknown
+  const supervisorProfileId = Array.isArray(supervisorsData)
+    ? (supervisorsData[0] as { profile_id: string } | undefined)?.profile_id
+    : (supervisorsData as { profile_id: string } | null)?.profile_id
+  if (supervisorProfileId) {
+    participants.push({
+      chat_room_id: roomId,
+      profile_id: supervisorProfileId,
+      participant_role: 'supervisor',
+      is_active: true,
+      notifications_enabled: true,
+      unread_count: 0,
+      has_left: false,
+    })
+  }
+
+  // Add doer if assigned
+  const doersData = project.doers as unknown
+  const doerProfileId = Array.isArray(doersData)
+    ? (doersData[0] as { profile_id: string } | undefined)?.profile_id
+    : (doersData as { profile_id: string } | null)?.profile_id
+  if (doerProfileId) {
+    participants.push({
+      chat_room_id: roomId,
+      profile_id: doerProfileId,
+      participant_role: 'doer',
+      is_active: true,
+      notifications_enabled: true,
+      unread_count: 0,
+      has_left: false,
+    })
+  }
+
+  if (participants.length > 0) {
+    const { error: insertError } = await supabase
+      .from('chat_participants')
+      .insert(participants)
+
+    if (insertError) {
+      console.error('Error adding chat participants:', insertError)
+    }
+  }
 }
 
 /**

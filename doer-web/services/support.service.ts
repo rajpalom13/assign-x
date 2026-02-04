@@ -83,7 +83,7 @@ export async function getFAQs(category?: string): Promise<FAQ[]> {
     .from('faqs')
     .select('*')
     .eq('is_active', true)
-    .order('order_index', { ascending: true })
+    .order('display_order', { ascending: true })
 
   if (category) {
     query = query.eq('category', category)

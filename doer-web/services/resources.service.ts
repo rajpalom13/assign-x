@@ -23,7 +23,7 @@ export async function getTrainingModules(): Promise<TrainingModule[]> {
     .from('training_modules')
     .select('*')
     .eq('is_active', true)
-    .order('order_index', { ascending: true })
+    .order('sequence_order', { ascending: true })
 
   if (error) {
     console.error('Error fetching training modules:', error)

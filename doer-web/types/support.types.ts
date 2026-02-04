@@ -87,11 +87,15 @@ export interface FAQ {
   /** Category for grouping */
   category: string
   /** Display order */
-  order_index: number
+  display_order: number
   /** Active status */
   is_active: boolean
-  /** Roles that can see this FAQ */
-  role_filter: UserRole[] | null
+  /** Target role for this FAQ */
+  target_role: string | null
+  /** Helpful votes count */
+  helpful_count: number
+  /** Not helpful votes count */
+  not_helpful_count: number
   /** Creation timestamp */
   created_at: string
   /** Last update timestamp */
