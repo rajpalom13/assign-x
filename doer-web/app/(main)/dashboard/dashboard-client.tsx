@@ -103,34 +103,39 @@ function formatDeadline(date: Date) {
 
 /**
  * Top greeting bar with search and quick actions.
+ * Premium design with transparent background and enhanced visual hierarchy.
  */
 function DashboardTopBar() {
   return (
-    <div className="flex flex-col gap-4 rounded-3xl bg-white/55 p-5 shadow-[0_12px_30px_rgba(148,163,184,0.12)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm font-medium text-slate-600">
-        Good morning, <span className="font-semibold text-[#4F6CF7]">Jasvin</span>
-      </p>
+    <div className="flex flex-col gap-5 py-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-1">
+        <p className="text-lg font-semibold text-slate-800">
+          Good morning, <span className="bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] bg-clip-text text-transparent">Jasvin</span>
+        </p>
+        <p className="text-sm text-slate-500">Welcome back to your workspace</p>
+      </div>
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            className="h-11 w-full rounded-full border border-white/80 bg-white/85 pl-10 pr-4 text-sm text-slate-700 shadow-[0_10px_20px_rgba(148,163,184,0.12)] outline-none transition focus:border-[#B8C4FF] focus:ring-4 focus:ring-[#E7ECFF]"
+            className="h-12 w-full rounded-2xl border border-slate-200/80 bg-white/90 pl-11 pr-4 text-sm text-slate-700 shadow-[0_4px_20px_rgba(148,163,184,0.08)] outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#5A7CFF] focus:bg-white focus:ring-4 focus:ring-[#E7ECFF]"
             placeholder="Search tasks, projects, or messages"
             type="search"
           />
         </div>
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-[#4F6CF7] shadow-[0_12px_25px_rgba(148,163,184,0.12)] transition hover:text-[#3652F0]"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/90 text-[#4F6CF7] shadow-[0_4px_20px_rgba(148,163,184,0.08)] transition hover:border-[#5A7CFF] hover:bg-white hover:text-[#3652F0] hover:shadow-[0_8px_30px_rgba(90,124,255,0.15)]"
           type="button"
           aria-label="View notifications"
         >
           <Bell className="h-5 w-5" />
         </button>
         <button
-          className="h-11 rounded-full bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] px-5 text-sm font-semibold text-white shadow-[0_16px_35px_rgba(91,124,255,0.35)] transition hover:-translate-y-0.5"
+          className="flex h-12 items-center justify-start gap-2 rounded-2xl bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] px-6 text-sm font-semibold text-white shadow-[0_8px_30px_rgba(90,124,255,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(90,124,255,0.45)]"
           type="button"
         >
-          + Quick
+          <span className="text-2xl font-bold">+</span>
+          <span>Quick</span>
         </button>
       </div>
     </div>
@@ -568,9 +573,9 @@ export function DashboardClient({ initialDoer }: DashboardClientProps) {
             value={assignedTasks.length}
             subtitle={`${activeCount} in progress`}
             icon={Briefcase}
-            gradient="bg-gradient-to-br from-[#F2F5FF] via-[#F7F9FF] to-[#EAF6FF]"
-            iconBg="bg-[#E3E9FF]"
-            iconColor="text-[#4F6CF7]"
+            gradient="bg-gradient-to-br from-[#F5F3FF] via-[#F8F7FF] to-[#EEE9FF]"
+            iconBg="bg-[#E9E3FF]"
+            iconColor="text-[#7C3AED]"
           />
           <QuickStatCard
             title="Available Tasks"
@@ -614,16 +619,15 @@ export function DashboardClient({ initialDoer }: DashboardClientProps) {
             <h2 className="text-lg font-semibold text-slate-900">Open works for doers</h2>
             <p className="text-sm text-slate-500">Review assigned tasks and pick from the pool.</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="gap-2 border-white/70 bg-white/80 shadow-[0_10px_22px_rgba(30,58,138,0.08)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/70 bg-white/80 text-slate-600 shadow-[0_10px_22px_rgba(30,58,138,0.08)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_28px_rgba(30,58,138,0.12)] disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Refresh tasks"
           >
-            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-            Refresh
-          </Button>
+            <RefreshCw className={cn('h-4 w-4 transition-transform duration-300', isRefreshing && 'animate-spin')} />
+          </button>
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 max-w-md h-12 rounded-full bg-white/85 p-1 shadow-[0_14px_28px_rgba(30,58,138,0.08)]">

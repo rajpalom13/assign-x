@@ -126,17 +126,17 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
       )}
       {...props}
     >
-      <SidebarHeader className="border-b border-[#EEF2FF] bg-white/90">
+      <SidebarHeader className="border-b border-[#E5EDFF]/40 bg-transparent">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild className="hover:bg-[#F3F6FF]">
+            <SidebarMenuButton size="lg" asChild className="hover:bg-[#F3F6FF] hover:text-slate-700">
               <Link href="/dashboard">
                 {/* Gradient Logo */}
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] flex items-center justify-center shadow-[0_14px_28px_rgba(91,124,255,0.25)] transition-transform group-hover:scale-105">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] flex items-center justify-center shadow-[0_14px_28px_rgba(91,124,255,0.25)] transition-transform hover:scale-105">
                   <span className="text-base font-bold text-white">AX</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-slate-900">AssignX Doer</span>
+                  <span className="truncate font-semibold text-slate-800">AssignX Doer</span>
                   <span className="truncate text-xs text-slate-500">Freelancer Portal</span>
                 </div>
               </Link>
@@ -180,7 +180,9 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        "relative transition-all rounded-full text-slate-600",
+                        "hover:bg-[#F3F6FF] hover:text-slate-700",
+                        "active:bg-[#E8EDFF] active:text-slate-800",
                         isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
@@ -220,7 +222,9 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        "relative transition-all rounded-full text-slate-600",
+                        "hover:bg-[#F3F6FF] hover:text-slate-700",
+                        "active:bg-[#E8EDFF] active:text-slate-800",
                         isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
@@ -254,7 +258,9 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative transition-all rounded-full text-slate-600 hover:bg-[#F3F6FF]",
+                        "relative transition-all rounded-full text-slate-600",
+                        "hover:bg-[#F3F6FF] hover:text-slate-700",
+                        "active:bg-[#E8EDFF] active:text-slate-800",
                         isActive && "bg-gradient-to-r from-[#EEF2FF] to-[#E5F7FF] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.16)]"
                       )}
                     >
@@ -293,7 +299,7 @@ export function AppSidebar({ userData, stats, className, ...props }: AppSidebarP
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[#EEF2FF] bg-white/90">
+      <SidebarFooter className="border-t border-[#E5EDFF]/40 bg-transparent">
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />

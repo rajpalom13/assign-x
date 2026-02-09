@@ -34,33 +34,33 @@ interface StatCardConfig {
   format: (value: number) => string
 }
 
-/** Stat card configurations */
+/** Stat card configurations with premium blue theme */
 const statConfigs: StatCardConfig[] = [
   {
     key: 'activeAssignments',
     label: 'Active Assignments',
     icon: Briefcase,
     color: 'text-blue-600',
-    bgColor: 'bg-blue-500/10',
-    accent: 'from-blue-500/60 to-cyan-500/20',
+    bgColor: 'bg-[#E3E9FF]',
+    accent: 'from-blue-500/60 to-indigo-500/20',
     format: (v) => v.toString(),
   },
   {
     key: 'completedProjects',
     label: 'Completed Projects',
     icon: CheckCircle2,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-500/10',
-    accent: 'from-emerald-500/60 to-teal-500/20',
+    color: 'text-blue-700',
+    bgColor: 'bg-[#E6F4FF]',
+    accent: 'from-blue-600/60 to-sky-500/20',
     format: (v) => v.toString(),
   },
   {
     key: 'totalEarnings',
     label: 'Total Earnings',
     icon: DollarSign,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-500/10',
-    accent: 'from-teal-500/60 to-emerald-500/20',
+    color: 'text-indigo-600',
+    bgColor: 'bg-[#E3E9FF]',
+    accent: 'from-indigo-500/60 to-blue-500/20',
     format: (v) => `₹${v.toLocaleString()}`,
   },
   {
@@ -68,7 +68,7 @@ const statConfigs: StatCardConfig[] = [
     label: 'Average Rating',
     icon: Star,
     color: 'text-amber-600',
-    bgColor: 'bg-amber-500/10',
+    bgColor: 'bg-amber-50',
     accent: 'from-amber-500/60 to-yellow-500/20',
     format: (v) => v.toFixed(1),
   },
@@ -76,18 +76,18 @@ const statConfigs: StatCardConfig[] = [
     key: 'successRate',
     label: 'Success Rate',
     icon: TrendingUp,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-500/10',
-    accent: 'from-emerald-500/60 to-lime-500/20',
+    color: 'text-blue-600',
+    bgColor: 'bg-[#E6F4FF]',
+    accent: 'from-blue-500/60 to-cyan-500/20',
     format: (v) => `${v}%`,
   },
   {
     key: 'onTimeDeliveryRate',
     label: 'On-Time Delivery',
     icon: Clock,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-500/10',
-    accent: 'from-cyan-500/60 to-sky-500/20',
+    color: 'text-indigo-600',
+    bgColor: 'bg-[#E3E9FF]',
+    accent: 'from-indigo-500/60 to-blue-500/20',
     format: (v) => `${v}%`,
   },
 ]
@@ -126,12 +126,15 @@ export function Scorecard({ stats, isLoading, className }: ScorecardProps) {
     return (
       <div className={cn('grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-6', className)}>
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse overflow-hidden">
-            <CardContent className="p-4">
-              <div className="h-1 w-full bg-muted mb-4" />
-              <div className="h-10 w-10 rounded-lg bg-muted mb-4" />
-              <div className="h-6 w-20 bg-muted rounded mb-2" />
-              <div className="h-4 w-24 bg-muted rounded" />
+          <Card key={i} className="animate-pulse overflow-hidden border-none bg-white/85 shadow-[0_12px_28px_rgba(30,58,138,0.08)]">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 w-20 bg-slate-200 rounded" />
+                  <div className="h-7 w-16 bg-slate-200 rounded" />
+                </div>
+                <div className="h-11 w-11 rounded-2xl bg-slate-200" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -152,16 +155,19 @@ export function Scorecard({ stats, isLoading, className }: ScorecardProps) {
 
         return (
           <motion.div key={config.key} variants={itemVariants}>
-            <Card className="relative overflow-hidden border-muted/60 bg-background/80 transition-all hover:shadow-lg">
-              <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r', config.accent)} />
-              <CardContent className="p-4">
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', config.bgColor)}>
-                  <Icon className={cn('h-5 w-5', config.color)} />
+            <Card className="w-full max-w-full relative overflow-hidden border-none bg-white/85 shadow-[0_12px_28px_rgba(30,58,138,0.08)] transition-all hover:shadow-[0_16px_35px_rgba(30,58,138,0.12)]">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 truncate">{config.label}</p>
+                    <p className="text-2xl font-semibold text-slate-900 truncate">
+                      {config.format(value)}
+                    </p>
+                  </div>
+                  <div className={cn('h-11 w-11 flex-shrink-0 rounded-2xl flex items-center justify-center', config.bgColor)}>
+                    <Icon className={cn('h-5 w-5', config.color)} />
+                  </div>
                 </div>
-                <p className={cn('text-2xl font-bold mb-1', config.color)}>
-                  {config.format(value)}
-                </p>
-                <p className="text-xs text-muted-foreground line-clamp-1">{config.label}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -183,17 +189,17 @@ interface CompactScorecardProps {
 export function CompactScorecard({ stats, className }: CompactScorecardProps) {
   const primaryStats = [
     { label: 'Active', value: stats.activeAssignments, color: 'text-blue-600' },
-    { label: 'Completed', value: stats.completedProjects, color: 'text-emerald-600' },
+    { label: 'Completed', value: stats.completedProjects, color: 'text-blue-700' },
     { label: 'Rating', value: stats.averageRating.toFixed(1), color: 'text-amber-600' },
-    { label: 'Earnings', value: `₹${stats.totalEarnings.toLocaleString()}`, color: 'text-teal-600' },
+    { label: 'Earnings', value: `₹${stats.totalEarnings.toLocaleString()}`, color: 'text-indigo-600' },
   ]
 
   return (
     <div className={cn('flex items-center gap-4 flex-wrap', className)}>
       {primaryStats.map((stat) => (
         <div key={stat.label} className="text-center">
-          <p className={cn('text-lg font-bold', stat.color)}>{stat.value}</p>
-          <p className="text-xs text-muted-foreground">{stat.label}</p>
+          <p className={cn('text-lg font-semibold', stat.color)}>{stat.value}</p>
+          <p className="text-xs text-slate-500">{stat.label}</p>
         </div>
       ))}
     </div>

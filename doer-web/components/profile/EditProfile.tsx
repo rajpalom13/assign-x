@@ -178,7 +178,7 @@ export function EditProfile({
   }
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('w-full max-w-full overflow-hidden space-y-6', className)}>
       {/* Success/Error alerts */}
       <AnimatePresence>
         {success && (
@@ -187,9 +187,9 @@ export function EditProfile({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            <Alert className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
+            <Alert className="border-green-500/50 bg-green-50 rounded-xl shadow-sm">
               <Check className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-600">
+              <AlertDescription className="text-green-700 font-medium">
                 Profile updated successfully!
               </AlertDescription>
             </Alert>
@@ -201,30 +201,30 @@ export function EditProfile({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="rounded-xl shadow-sm">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <Card className="overflow-hidden">
-            <div className="h-16 bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15" />
-            <CardContent className="-mt-6 space-y-4">
-              <div className="flex items-center gap-6">
-                <div className="relative group">
-                  <Avatar className="h-24 w-24 border-4 border-background">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] w-full max-w-full">
+        <div className="space-y-6 min-w-0">
+          <Card className="overflow-hidden border-slate-200 shadow-sm w-full">
+            <div className="h-20 bg-gradient-to-r from-[#5A7CFF]/10 via-[#5A7CFF]/5 to-[#EEF2FF]" />
+            <CardContent className="-mt-8 space-y-6 pt-2 p-6">
+              <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                <div className="relative group flex-shrink-0">
+                  <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-background shadow-lg">
                     <AvatarImage src={formData.avatar_url || undefined} alt={formData.full_name} />
-                    <AvatarFallback className="text-2xl">
+                    <AvatarFallback className="text-2xl bg-[#EEF2FF] text-[#5A7CFF]">
                       {formData.full_name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <button
                     type="button"
                     onClick={handleAvatarClick}
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 flex items-center justify-center bg-[#5A7CFF]/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
                   >
                     <Camera className="h-6 w-6 text-white" />
                   </button>
@@ -236,13 +236,13 @@ export function EditProfile({
                     className="hidden"
                   />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{formData.full_name}</h3>
-                  <p className="text-sm text-muted-foreground">{profile.email}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-semibold text-slate-700 truncate">{formData.full_name}</h3>
+                  <p className="text-sm text-slate-500 mt-1 truncate">{profile.email}</p>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-3"
+                    className="mt-3 border-[#5A7CFF] text-[#5A7CFF] hover:bg-[#EEF2FF] hover:border-[#5A7CFF] rounded-lg"
                     onClick={handleAvatarClick}
                   >
                     <Camera className="h-4 w-4 mr-2" />
@@ -250,37 +250,42 @@ export function EditProfile({
                   </Button>
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+              <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
+                <div className="space-y-2.5">
+                  <Label htmlFor="full_name" className="text-sm font-medium text-slate-700">Full Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                       id="full_name"
                       value={formData.full_name}
                       onChange={(e) => handleChange('full_name', e.target.value)}
                       placeholder="Your full name"
-                      className="pl-9"
+                      className="w-full pl-10 h-11 rounded-xl border-slate-200 focus:border-[#5A7CFF] focus:ring-2 focus:ring-[#5A7CFF]/20 transition-all"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="email" value={profile.email} readOnly className="pl-9 bg-muted" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      id="email"
+                      value={profile.email}
+                      readOnly
+                      className="w-full pl-10 h-11 rounded-xl border-slate-200 bg-slate-50"
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                <div className="space-y-2.5 sm:col-span-2">
+                  <Label htmlFor="phone" className="text-sm font-medium text-slate-700">Phone Number</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="pl-9"
+                      className="w-full pl-10 h-11 rounded-xl border-slate-200 focus:border-[#5A7CFF] focus:ring-2 focus:ring-[#5A7CFF]/20 transition-all"
                     />
                   </div>
                 </div>
@@ -288,86 +293,93 @@ export function EditProfile({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
+          <Card className="border-slate-200 shadow-sm w-full">
+            <CardHeader className="space-y-1.5 pb-5 px-6 pt-6">
+              <CardTitle className="flex items-center gap-2.5 text-slate-700">
+                <Briefcase className="h-5 w-5 text-[#5A7CFF]" />
                 About You
               </CardTitle>
-              <CardDescription>Share a quick summary of your expertise</CardDescription>
+              <CardDescription className="text-slate-500">Share a quick summary of your expertise</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+            <CardContent className="space-y-4 px-6 pb-6">
+              <div className="space-y-2.5">
+                <Label htmlFor="bio" className="text-sm font-medium text-slate-700">Bio</Label>
                 <Textarea
                   id="bio"
                   value={formData.bio || ''}
                   onChange={(e) => handleChange('bio', e.target.value)}
                   placeholder="Tell us about yourself..."
                   rows={4}
+                  className="w-full max-w-full rounded-xl border-slate-200 focus:border-[#5A7CFF] focus:ring-2 focus:ring-[#5A7CFF]/20 resize-none transition-all"
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
+          <Card className="border-slate-200 shadow-sm w-full">
+            <CardHeader className="space-y-1.5 pb-5 px-6 pt-6">
+              <CardTitle className="flex items-center gap-2.5 text-slate-700">
+                <Briefcase className="h-5 w-5 text-[#5A7CFF]" />
                 Skills & Expertise
               </CardTitle>
-              <CardDescription>Select the skills you have experience with</CardDescription>
+              <CardDescription className="text-slate-500">Select the skills you have experience with</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
+            <CardContent className="px-6 pb-6">
+              <div className="flex flex-wrap gap-2.5 max-w-full">
                 {skills.map((skill) => (
                   <Badge
                     key={skill.id}
                     variant={formData.skills.includes(skill.id) ? 'default' : 'outline'}
                     className={cn(
-                      'cursor-pointer transition-all',
+                      'cursor-pointer transition-all rounded-lg px-3.5 py-1.5 text-sm font-medium',
                       formData.skills.includes(skill.id)
-                        ? 'bg-primary hover:bg-primary/80'
-                        : 'hover:bg-muted'
+                        ? 'bg-[#5A7CFF] hover:bg-[#5A7CFF]/90 text-white border-[#5A7CFF]'
+                        : 'hover:bg-[#EEF2FF] hover:border-[#5A7CFF] border-slate-200 text-slate-600'
                     )}
                     onClick={() => toggleSkill(skill.id)}
                   >
                     {skill.name}
                     {formData.skills.includes(skill.id) && (
-                      <X className="h-3 w-3 ml-1" />
+                      <X className="h-3.5 w-3.5 ml-1.5" />
                     )}
                   </Badge>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                {formData.skills.length} skills selected
+              <p className="text-xs text-slate-500 mt-4 flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EEF2FF] text-[#5A7CFF] text-xs font-semibold">
+                  {formData.skills.length}
+                </span>
+                skills selected
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
+        <div className="space-y-6 min-w-0">
+          <Card className="border-slate-200 shadow-sm w-full">
+            <CardHeader className="space-y-1.5 pb-5 px-6 pt-6">
+              <CardTitle className="flex items-center gap-2.5 text-slate-700">
+                <GraduationCap className="h-5 w-5 text-[#5A7CFF]" />
                 Education
               </CardTitle>
-              <CardDescription>Your academic background and institution</CardDescription>
+              <CardDescription className="text-slate-500">Your academic background and institution</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="qualification">Qualification</Label>
+            <CardContent className="space-y-5 px-6 pb-6">
+              <div className="space-y-2.5">
+                <Label htmlFor="qualification" className="text-sm font-medium text-slate-700">Qualification</Label>
                 <Select
                   value={formData.qualification || undefined}
                   onValueChange={(v) => handleChange('qualification', v as Qualification)}
                 >
-                  <SelectTrigger id="qualification">
+                  <SelectTrigger
+                    id="qualification"
+                    className="w-full h-11 rounded-xl border-slate-200 focus:border-[#5A7CFF] focus:ring-2 focus:ring-[#5A7CFF]/20 transition-all"
+                  >
                     <SelectValue placeholder="Select qualification" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {qualificationOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem key={option.value} value={option.value} className="rounded-lg">
                         {option.label}
                       </SelectItem>
                     ))}
@@ -375,46 +387,46 @@ export function EditProfile({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="university">University</Label>
+              <div className="space-y-2.5">
+                <Label htmlFor="university" className="text-sm font-medium text-slate-700">University</Label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     id="university"
                     value={formData.university_name || ''}
                     onChange={(e) => handleChange('university_name', e.target.value)}
                     placeholder="Your university"
-                    className="pl-9"
+                    className="w-full pl-10 h-11 rounded-xl border-slate-200 focus:border-[#5A7CFF] focus:ring-2 focus:ring-[#5A7CFF]/20 transition-all"
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
+          <Card className="border-slate-200 shadow-sm w-full">
+            <CardHeader className="space-y-1.5 pb-5 px-6 pt-6">
+              <CardTitle className="flex items-center gap-2.5 text-slate-700">
+                <Briefcase className="h-5 w-5 text-[#5A7CFF]" />
                 Experience Level
               </CardTitle>
-              <CardDescription>Highlight your current expertise</CardDescription>
+              <CardDescription className="text-slate-500">Highlight your current expertise</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 sm:grid-cols-3">
+            <CardContent className="px-6 pb-6">
+              <div className="grid gap-3 w-full">
                 {experienceOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => handleChange('experience_level', option.value)}
                     className={cn(
-                      'p-3 rounded-lg border text-left transition-all',
+                      'w-full p-4 rounded-xl border text-left transition-all duration-200',
                       formData.experience_level === option.value
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                        ? 'border-[#5A7CFF] bg-[#EEF2FF] shadow-sm'
+                        : 'border-slate-200 hover:border-[#5A7CFF] hover:bg-[#EEF2FF]/50'
                     )}
                   >
-                    <p className="font-medium">{option.label}</p>
-                    <p className="text-xs text-muted-foreground">{option.description}</p>
+                    <p className="font-semibold text-slate-700">{option.label}</p>
+                    <p className="text-sm text-slate-500 mt-0.5">{option.description}</p>
                   </button>
                 ))}
               </div>
@@ -424,14 +436,23 @@ export function EditProfile({
       </div>
 
       {/* Action buttons */}
-      <Card className="sticky bottom-0 z-10 bg-background/90 backdrop-blur border-muted/60">
-        <CardContent className="flex items-center justify-end gap-2 py-4">
+      <Card className="sticky bottom-0 z-10 bg-white/95 backdrop-blur-lg border-slate-200 shadow-lg w-full max-w-full">
+        <CardContent className="flex items-center justify-end gap-3 p-5">
           {onCancel && (
-            <Button variant="outline" onClick={onCancel} disabled={isSaving}>
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSaving}
+              className="h-11 px-6 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700"
+            >
               Cancel
             </Button>
           )}
-          <Button onClick={handleSubmit} disabled={isSaving} className="gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="h-11 px-8 gap-2 rounded-xl bg-gradient-to-r from-[#5A7CFF] to-[#5A7CFF]/90 hover:from-[#5A7CFF]/90 hover:to-[#5A7CFF]/80 text-white shadow-lg shadow-[#5A7CFF]/25 transition-all duration-200"
+          >
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

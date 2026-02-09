@@ -57,40 +57,65 @@ function ResourceStatCard({ label, value, icon: Icon, tone }: ResourceStatCardPr
 }
 
 /**
- * Summary panel for learning progress.
+ * Summary panel for learning progress - Horizontal full-width card.
  */
 function LearningPulseCard({ completed, total, mandatory }: { completed: number; total: number; mandatory: number }) {
   const progressValue = total ? Math.round((completed / total) * 100) : 0
 
   return (
-    <Card className="border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)]">
-      <CardContent className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">Learning pulse</p>
-            <p className="text-xs text-slate-500">Track your training progress</p>
+    <Card className="relative overflow-hidden border-none bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,rgba(79,108,247,0.08),transparent_50%)]" />
+      <CardContent className="relative p-6 lg:p-8">
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+          {/* Left section - Title and progress */}
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-[#EEF2FF] text-[#4F6CF7] shadow-lg">
+                <Target className="h-6 w-6" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xl font-semibold text-slate-900">Learning Pulse</h3>
+                  <Badge className="bg-[#E6F4FF] text-[#4B9BFF] border-0">
+                    {progressValue}% Complete
+                  </Badge>
+                </div>
+                <p className="text-sm text-slate-500">Track your training progress and complete mandatory modules</p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-slate-700">{completed} of {total} modules completed</span>
+                <span className="text-slate-500">{mandatory} mandatory remaining</span>
+              </div>
+              <Progress value={progressValue} className="h-3" />
+            </div>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EEF2FF] text-[#4F6CF7]">
-            <Target className="h-5 w-5" />
+
+          {/* Middle section - Focus card */}
+          <div className="rounded-2xl bg-gradient-to-br from-[#EEF2FF] to-[#E6F4FF] p-5 lg:w-80">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#4F6CF7]" />
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4F6CF7]">Focus Today</p>
+              </div>
+              <p className="text-base font-semibold text-slate-900">Complete the mandatory checklist</p>
+              <p className="text-xs text-slate-600">Stay on track with required training modules</p>
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>{completed} completed</span>
-            <span>{mandatory} required</span>
+
+          {/* Right section - CTA button */}
+          <div className="flex flex-col gap-3 lg:w-48">
+            <Button className="h-11 rounded-full bg-gradient-to-r from-[#5A7CFF] via-[#5B86FF] to-[#49C5FF] text-white shadow-[0_14px_28px_rgba(91,124,255,0.25)] hover:-translate-y-0.5 transition-all">
+              <span className="flex items-center gap-2">
+                Resume training
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </Button>
+            <p className="text-center text-xs text-slate-400">Pick up where you left off</p>
           </div>
-          <Progress value={progressValue} className="h-2" />
-          <p className="text-xs text-slate-500">{progressValue}% of total modules</p>
-        </div>
-        <div className="grid gap-3">
-          <div className="rounded-2xl bg-slate-50/80 px-3 py-2">
-            <p className="text-xs font-medium text-slate-500">Focus today</p>
-            <p className="text-sm font-semibold text-slate-800">Complete the mandatory checklist</p>
-          </div>
-          <Button variant="outline" className="justify-between border-white/70 bg-white/80">
-            Resume training
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>
@@ -223,13 +248,13 @@ export default function ResourcesPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-32 w-full rounded-[28px]" />
+        <Skeleton className="h-32 w-full rounded-[28px] bg-[#EEF2FF]" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
+            <Skeleton key={i} className="h-32 rounded-2xl bg-[#EEF2FF]" />
           ))}
         </div>
-        <Skeleton className="h-64 w-full rounded-[28px]" />
+        <Skeleton className="h-64 w-full rounded-[28px] bg-[#EEF2FF]" />
       </div>
     )
   }
@@ -329,7 +354,7 @@ export default function ResourcesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+              className="space-y-8"
             >
               <ResourcesGrid onResourceClick={handleResourceClick} />
               <LearningPulseCard completed={completedModules} total={trainingModules.length} mandatory={totalMandatory} />

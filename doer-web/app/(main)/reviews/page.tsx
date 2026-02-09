@@ -1,112 +1,86 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Filter, TrendingUp, Award, MessageSquare, ThumbsUp } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { useAuthToken } from '@/hooks/useAuthToken'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  ReviewsHeroBanner,
+  RatingAnalyticsDashboard,
+  ReviewHighlightsSection,
+  ReviewsListSection,
+  AchievementCards,
+  type Review,
+  type RatingDistributionItem,
+  type CategoryAverages,
+} from '@/components/reviews'
 
-/** Review type from database */
-interface Review {
-  id: string
-  overall_rating: number
-  quality_rating: number
-  timeliness_rating: number
-  communication_rating: number
-  review_text: string | null
-  created_at: string
-  project: {
-    title: string
-  } | null
-  reviewer: {
-    full_name: string
-    avatar_url: string | null
-  } | null
+/**
+ * Animation variants for page elements
+ */
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
 }
 
-/** Star rating display component */
-function StarRating({ rating, size = 'default' }: { rating: number; size?: 'sm' | 'default' | 'lg' }) {
-  const sizeClasses = {
-    sm: 'h-3 w-3',
-    default: 'h-4 w-4',
-    lg: 'h-5 w-5',
-  }
-
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            sizeClasses[size],
-            star <= rating
-              ? 'fill-amber-400 text-amber-400'
-              : 'text-muted-foreground/30'
-          )}
-        />
-      ))}
-    </div>
-  )
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
 }
 
 /**
- * Reviews page
- * Professional design showing feedback scores and rating history
+ * Reviews Page Component
+ *
+ * Complete redesign with modular component architecture.
+ * Features hero banner, analytics dashboard, highlights section,
+ * full reviews list, and achievement cards.
+ *
+ * Layout Structure:
+ * 1. Hero Banner (full width) - Overall performance metrics
+ * 2. Analytics Dashboard - Rating distribution + category performance
+ * 3. Review Highlights (Bento Grid) - Featured + recent reviews
+ * 4. Reviews List (Tabbed) - All reviews with filtering
+ * 5. Achievements - Milestone cards
+ *
+ * Data Management:
+ * - Fetches reviews from Supabase doer_reviews table
+ * - Calculates all derived metrics (averages, distributions)
+ * - Handles loading, empty, and error states
+ * - Real-time filtering and sorting
+ *
+ * @example
+ * Access at: /reviews
  */
 export default function ReviewsPage() {
-  const { hasToken, isReady } = useAuthToken({ redirectOnMissing: true })
-  const [filter, setFilter] = useState('all')
+  const { doer, isLoading: authLoading } = useAuth()
   const [reviews, setReviews] = useState<Review[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   /**
-   * Fetch reviews from database
+   * Fetch reviews from Supabase
+   * Preserves existing data fetching logic from original page
    */
   useEffect(() => {
-    if (!isReady || !hasToken) return
+    if (!doer?.id) {
+      setIsLoading(false)
+      return
+    }
 
     const fetchReviews = async () => {
       try {
         const supabase = createClient()
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser()
-
-        if (!user) {
-          setIsLoading(false)
-          return
-        }
-
-        // Get doer record
-        const { data: doer } = await supabase
-          .from('doers')
-          .select('id')
-          .eq('profile_id', user.id)
-          .single()
-
-        if (!doer) {
-          setIsLoading(false)
-          return
-        }
-
         // Fetch reviews for this doer
         const { data: reviewsData, error } = await supabase
           .from('doer_reviews')
-          .select(`
+          .select(
+            `
             id,
             overall_rating,
             quality_rating,
@@ -116,13 +90,15 @@ export default function ReviewsPage() {
             created_at,
             project:projects(title),
             reviewer:profiles!reviewer_id(full_name, avatar_url)
-          `)
+          `
+          )
           .eq('doer_id', doer.id)
           .eq('is_public', true)
           .order('created_at', { ascending: false })
 
         if (error) {
           console.error('Error fetching reviews:', error)
+          toast.error('Failed to load reviews')
         } else {
           // Transform data to match Review type (Supabase returns arrays for single relations)
           const transformedReviews: Review[] = (reviewsData || []).map((r) => ({
@@ -133,396 +109,235 @@ export default function ReviewsPage() {
             communication_rating: r.communication_rating,
             review_text: r.review_text,
             created_at: r.created_at,
-            project: Array.isArray(r.project) ? r.project[0] || null : r.project,
-            reviewer: Array.isArray(r.reviewer) ? r.reviewer[0] || null : r.reviewer,
+            project: Array.isArray(r.project) ? r.project[0] || undefined : r.project || undefined,
+            reviewer: Array.isArray(r.reviewer)
+              ? r.reviewer[0] || undefined
+              : r.reviewer || undefined,
           }))
           setReviews(transformedReviews)
         }
       } catch (err) {
         console.error('Error:', err)
+        toast.error('An error occurred while loading reviews')
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchReviews()
-  }, [isReady, hasToken])
+  }, [doer?.id])
 
-  // Calculate rating statistics
-  const totalReviews = reviews.length
-  const averageRating = totalReviews > 0
-    ? reviews.reduce((acc, r) => acc + r.overall_rating, 0) / totalReviews
-    : 0
+  /**
+   * Calculate derived metrics from reviews
+   */
+  const metrics = useMemo(() => {
+    const totalReviews = reviews.length
 
-  const ratingDistribution = [5, 4, 3, 2, 1].map((rating) => ({
-    rating,
-    count: reviews.filter((r) => r.overall_rating === rating).length,
-    percentage: totalReviews > 0
-      ? (reviews.filter((r) => r.overall_rating === rating).length / totalReviews) * 100
-      : 0,
-  }))
-
-  const categoryAverages = totalReviews > 0
-    ? {
-        quality: reviews.reduce((acc, r) => acc + r.quality_rating, 0) / totalReviews,
-        timeliness: reviews.reduce((acc, r) => acc + r.timeliness_rating, 0) / totalReviews,
-        communication: reviews.reduce((acc, r) => acc + r.communication_rating, 0) / totalReviews,
+    if (totalReviews === 0) {
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        fiveStarPercentage: 0,
+        fiveStarCount: 0,
+        trendingPercent: 0,
+        ratingDistribution: [
+          { stars: 5, count: 0 },
+          { stars: 4, count: 0 },
+          { stars: 3, count: 0 },
+          { stars: 2, count: 0 },
+          { stars: 1, count: 0 },
+        ] as RatingDistributionItem[],
+        categoryAverages: {
+          quality: 0,
+          timeliness: 0,
+          communication: 0,
+        } as CategoryAverages,
+        featuredReview: null,
+        recentReviews: [],
       }
-    : { quality: 0, timeliness: 0, communication: 0 }
+    }
 
-  // Filter reviews
-  const filteredReviews = filter === 'all'
-    ? reviews
-    : reviews.filter((r) => r.overall_rating === parseInt(filter))
+    // Calculate averages
+    const averageRating =
+      reviews.reduce((acc, r) => acc + r.overall_rating, 0) / totalReviews
 
-  // Get rating color based on score
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return 'text-emerald-600 dark:text-emerald-400'
-    if (rating >= 4) return 'text-teal-600 dark:text-teal-400'
-    if (rating >= 3) return 'text-amber-600 dark:text-amber-400'
-    return 'text-red-600 dark:text-red-400'
+    const categoryAverages: CategoryAverages = {
+      quality: reviews.reduce((acc, r) => acc + r.quality_rating, 0) / totalReviews,
+      timeliness:
+        reviews.reduce((acc, r) => acc + r.timeliness_rating, 0) / totalReviews,
+      communication:
+        reviews.reduce((acc, r) => acc + r.communication_rating, 0) / totalReviews,
+    }
+
+    // Calculate rating distribution
+    const distribution = [5, 4, 3, 2, 1].map((stars) => ({
+      stars,
+      count: reviews.filter((r) => Math.round(r.overall_rating) === stars).length,
+    }))
+
+    // Calculate 5-star metrics
+    const fiveStarCount = distribution[0].count
+    const fiveStarPercentage = Math.round((fiveStarCount / totalReviews) * 100)
+
+    // Calculate trending (simplified: compare recent vs older reviews)
+    const recentCount = Math.min(10, Math.floor(totalReviews / 2))
+    const recentAvg =
+      recentCount > 0
+        ? reviews
+            .slice(0, recentCount)
+            .reduce((acc, r) => acc + r.overall_rating, 0) / recentCount
+        : averageRating
+    const olderAvg =
+      totalReviews > recentCount
+        ? reviews
+            .slice(recentCount)
+            .reduce((acc, r) => acc + r.overall_rating, 0) /
+          (totalReviews - recentCount)
+        : averageRating
+    const trendingPercent = Math.round(
+      ((recentAvg - olderAvg) / Math.max(olderAvg, 0.1)) * 100
+    )
+
+    // Get featured review (highest rated)
+    const featuredReview = [...reviews].sort(
+      (a, b) => b.overall_rating - a.overall_rating
+    )[0]
+
+    // Get recent reviews (last 3)
+    const recentReviews = reviews.slice(0, 3)
+
+    return {
+      averageRating,
+      totalReviews,
+      fiveStarPercentage,
+      fiveStarCount,
+      trendingPercent,
+      ratingDistribution: distribution,
+      categoryAverages,
+      featuredReview,
+      recentReviews,
+    }
+  }, [reviews])
+
+  /**
+   * Handle review click (optional navigation or modal)
+   */
+  const handleReviewClick = (review: Review) => {
+    console.log('Review clicked:', review.id)
+    // Optional: Navigate to review detail or open modal
   }
 
-  if (!isReady || isLoading) {
+  /**
+   * Handle Request Reviews action
+   */
+  const handleRequestReviews = () => {
+    toast.info('Request reviews feature coming soon!')
+  }
+
+  /**
+   * Handle View Insights action
+   */
+  const handleViewInsights = () => {
+    // Scroll to analytics section
+    const analyticsSection = document.getElementById('analytics-section')
+    analyticsSection?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  // Loading state
+  if (authLoading || isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-32 mb-2" />
-          <Skeleton className="h-4 w-64" />
+      <div className="space-y-8">
+        <Skeleton className="h-64 rounded-[28px] bg-[#EEF2FF]" />
+        <Skeleton className="h-96 rounded-2xl bg-[#EEF2FF]" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-96 rounded-2xl bg-[#EEF2FF]" />
+          <Skeleton className="h-96 rounded-2xl bg-[#EEF2FF]" />
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+        <Skeleton className="h-96 rounded-2xl bg-[#EEF2FF]" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-48 rounded-2xl bg-[#EEF2FF]" />
           ))}
         </div>
-        <Skeleton className="h-96 rounded-xl" />
       </div>
     )
   }
 
-  if (!hasToken) {
-    return null // Will redirect via useAuthToken
-  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Reviews & Ratings</h1>
-          <p className="text-muted-foreground">
-            See what supervisors say about your work
-          </p>
-        </div>
-        {totalReviews > 0 && (
-          <Badge variant="secondary" className="w-fit gap-2 py-1.5 px-3">
-            <Award className="h-4 w-4 text-amber-500" />
-            <span className="font-semibold">{averageRating.toFixed(1)}</span>
-            <span className="text-muted-foreground">average rating</span>
-          </Badge>
-        )}
-      </div>
+    <motion.div
+      className="relative space-y-8"
+      initial="initial"
+      animate="animate"
+      variants={staggerContainer}
+    >
+      {/* Radial gradient background overlay - design system pattern */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(90,124,255,0.18),transparent_55%)]" />
 
-      {/* Stats Overview */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Overall Rating */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="stat-gradient-amber">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <Star className="h-6 w-6 text-amber-600 dark:text-amber-400 fill-amber-600 dark:fill-amber-400" />
-                </div>
-                <div>
-                  <p className={cn("text-3xl font-bold", getRatingColor(averageRating))}>
-                    {averageRating.toFixed(1)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Overall Rating</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* ================================================================
+          1. HERO BANNER SECTION
+          Component: ReviewsHeroBanner
+          Displays overall performance metrics and CTAs
+          ================================================================ */}
+      <motion.div variants={fadeInUp}>
+        <ReviewsHeroBanner
+          overallRating={metrics.averageRating}
+          totalReviews={metrics.totalReviews}
+          fiveStarPercentage={metrics.fiveStarPercentage}
+          trendingPercent={metrics.trendingPercent}
+          onRequestReviews={handleRequestReviews}
+          onViewInsights={handleViewInsights}
+        />
+      </motion.div>
+
+      {/* ================================================================
+          2. ANALYTICS DASHBOARD
+          Component: RatingAnalyticsDashboard
+          Two-column layout: Rating distribution (35%) + Category performance (65%)
+          ================================================================ */}
+      <motion.div id="analytics-section" variants={fadeInUp}>
+        <RatingAnalyticsDashboard
+          ratingDistribution={metrics.ratingDistribution}
+          categoryAverages={metrics.categoryAverages}
+        />
+      </motion.div>
+
+      {/* ================================================================
+          3. REVIEW HIGHLIGHTS (Bento Grid)
+          Component: ReviewHighlightsSection
+          Two-column layout: Featured review (left) + Recent reviews (right)
+          ================================================================ */}
+      {metrics.featuredReview && (
+        <motion.div variants={fadeInUp}>
+          <ReviewHighlightsSection
+            featuredReview={metrics.featuredReview}
+            recentReviews={metrics.recentReviews}
+            onReviewClick={handleReviewClick}
+          />
         </motion.div>
+      )}
 
-        {/* Total Reviews */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
-          <Card className="stat-gradient-teal">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                  <MessageSquare className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">{totalReviews}</p>
-                  <p className="text-sm text-muted-foreground">Total Reviews</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* ================================================================
+          4. REVIEWS LIST (Tabbed)
+          Component: ReviewsListSection
+          Full reviews list with search, filter, and tabs
+          ================================================================ */}
+      <motion.div variants={fadeInUp}>
+        <ReviewsListSection reviews={reviews} onReviewClick={handleReviewClick} />
+      </motion.div>
 
-        {/* 5-Star Percentage */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="stat-gradient-emerald">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <ThumbsUp className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-3xl font-bold">
-                    {totalReviews > 0 ? Math.round(ratingDistribution[0].percentage) : 0}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">5-Star Reviews</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Trending */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <Card className="stat-gradient-purple">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {averageRating >= 4 ? '+' : ''}{((averageRating - 4) * 25).toFixed(0)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">vs. Platform Avg</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Rating Details Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Rating Distribution */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Rating Distribution</CardTitle>
-            <CardDescription>Breakdown of all ratings received</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {ratingDistribution.map((item) => (
-              <div key={item.rating} className="flex items-center gap-3">
-                <div className="flex items-center gap-1 w-12">
-                  <span className="text-sm font-medium">{item.rating}</span>
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                </div>
-                <Progress
-                  value={item.percentage}
-                  className="flex-1 h-2.5"
-                />
-                <span className="text-sm text-muted-foreground w-8 text-right">
-                  {item.count}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Category Ratings */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Category Performance</CardTitle>
-            <CardDescription>Your ratings across different categories</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  label: 'Quality',
-                  value: categoryAverages.quality,
-                  color: 'teal',
-                  description: 'Work meets standards'
-                },
-                {
-                  label: 'Timeliness',
-                  value: categoryAverages.timeliness,
-                  color: 'emerald',
-                  description: 'Deadline adherence'
-                },
-                {
-                  label: 'Communication',
-                  value: categoryAverages.communication,
-                  color: 'amber',
-                  description: 'Clear and responsive'
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className={cn(
-                    "p-4 rounded-xl",
-                    item.color === 'teal' && "bg-teal-50 dark:bg-teal-900/20",
-                    item.color === 'emerald' && "bg-emerald-50 dark:bg-emerald-900/20",
-                    item.color === 'amber' && "bg-amber-50 dark:bg-amber-900/20"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{item.label}</span>
-                    <span className={cn(
-                      "text-lg font-bold",
-                      getRatingColor(item.value)
-                    )}>
-                      {item.value.toFixed(1)}
-                    </span>
-                  </div>
-                  <StarRating rating={Math.round(item.value)} size="sm" />
-                  <p className="text-xs text-muted-foreground mt-2">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Reviews List */}
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle>All Reviews</CardTitle>
-            <CardDescription>
-              Feedback from supervisors on your completed projects
-            </CardDescription>
-          </div>
-
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-40">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Ratings</SelectItem>
-              <SelectItem value="5">5 Stars</SelectItem>
-              <SelectItem value="4">4 Stars</SelectItem>
-              <SelectItem value="3">3 Stars</SelectItem>
-              <SelectItem value="2">2 Stars</SelectItem>
-              <SelectItem value="1">1 Star</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {filteredReviews.map((review, index) => (
-            <motion.div
-              key={review.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              {index > 0 && <Separator className="mb-6" />}
-
-              <div className="space-y-4">
-                {/* Review header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                      <AvatarImage src={review.reviewer?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-teal-400 to-emerald-500 text-white">
-                        {review.reviewer?.full_name
-                          ? review.reviewer.full_name.split(' ').map((n) => n[0]).join('')
-                          : 'S'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{review.reviewer?.full_name || 'Supervisor'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(review.created_at).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StarRating rating={review.overall_rating} />
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "ml-2",
-                        review.overall_rating >= 4 && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-                        review.overall_rating === 3 && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-                        review.overall_rating < 3 && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      )}
-                    >
-                      {review.overall_rating}.0
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Project reference */}
-                {review.project?.title && (
-                  <Badge variant="outline" className="font-normal text-muted-foreground">
-                    Project: {review.project.title}
-                  </Badge>
-                )}
-
-                {/* Review comment */}
-                {review.review_text && (
-                  <p className="text-sm leading-relaxed bg-muted/50 p-3 rounded-lg">
-                    "{review.review_text}"
-                  </p>
-                )}
-
-                {/* Category ratings */}
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 dark:bg-teal-900/20">
-                    <span className="text-teal-700 dark:text-teal-400 font-medium">Quality</span>
-                    <StarRating rating={review.quality_rating} size="sm" />
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20">
-                    <span className="text-emerald-700 dark:text-emerald-400 font-medium">Timeliness</span>
-                    <StarRating rating={review.timeliness_rating} size="sm" />
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20">
-                    <span className="text-amber-700 dark:text-amber-400 font-medium">Communication</span>
-                    <StarRating rating={review.communication_rating} size="sm" />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-
-          {filteredReviews.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="font-medium text-muted-foreground">
-                {totalReviews === 0 ? 'No reviews yet' : 'No reviews found for this filter'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {totalReviews === 0
-                  ? 'Complete projects to start receiving feedback'
-                  : 'Try adjusting your filter criteria'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {/* ================================================================
+          5. ACHIEVEMENTS
+          Component: AchievementCards
+          Grid of achievement milestone cards with progress tracking
+          ================================================================ */}
+      <motion.div variants={fadeInUp}>
+        <AchievementCards
+          totalReviews={metrics.totalReviews}
+          averageRating={metrics.averageRating}
+          fiveStarCount={metrics.fiveStarCount}
+        />
+      </motion.div>
+    </motion.div>
   )
 }

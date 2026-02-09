@@ -162,9 +162,9 @@ export function SupportSection({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            <Alert className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-600">
+            <Alert className="border-blue-500/30 bg-gradient-to-r from-blue-50/80 to-cyan-50/80 dark:from-blue-950/30 dark:to-cyan-950/30 shadow-sm">
+              <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-700 dark:text-blue-300 font-medium">
                 Support ticket created successfully! We'll respond within 24 hours.
               </AlertDescription>
             </Alert>
@@ -173,16 +173,18 @@ export function SupportSection({
       </AnimatePresence>
 
       {/* Support options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
-            Contact Support
+      <Card className="w-full max-w-full overflow-hidden border-blue-100/50 dark:border-blue-900/30 shadow-lg shadow-blue-500/5">
+        <CardHeader className="p-6 pb-4">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <HelpCircle className="h-5 w-5 text-white" />
+            </div>
+            <span className="truncate">Contact Support</span>
           </CardTitle>
-          <CardDescription>Get help with any issues or questions</CardDescription>
+          <CardDescription className="text-base line-clamp-2">Get help with any issues or questions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className={cn('grid gap-3', isCompact ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
+        <CardContent className="p-6">
+          <div className={cn('grid gap-4', isCompact ? 'sm:grid-cols-2' : 'sm:grid-cols-3')}>
             {supportOptions.map((option) => {
               const Icon = option.icon
               return (
@@ -190,23 +192,34 @@ export function SupportSection({
                   key={option.id}
                   onClick={() => handleOptionClick(option.id)}
                   className={cn(
-                    'rounded-xl border text-left transition-all group',
-                    isCompact ? 'p-3 hover:border-primary/40 hover:bg-muted/50' : 'p-4 hover:border-primary/50 hover:shadow-md'
+                    'group relative rounded-2xl border border-blue-100/50 dark:border-blue-900/30 text-left transition-all duration-300',
+                    'bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20',
+                    'hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-300/50 dark:hover:border-blue-700/50',
+                    'hover:-translate-y-1 hover:scale-[1.02]',
+                    isCompact ? 'p-4' : 'p-5'
                   )}
                 >
-                  <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', option.bgColor)}>
-                    <Icon className={cn('h-5 w-5', option.color)} />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/5 group-hover:to-cyan-500/5 transition-all duration-300" />
+
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25 group-hover:shadow-xl group-hover:shadow-blue-500/30 transition-all duration-300 group-hover:scale-110">
+                      <Icon className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-1.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {option.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                      {option.description}
+                    </p>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-cyan-700 transition-all">
+                      {option.action}
+                      {option.id === 'ticket' ? (
+                        <ChevronRight className="h-4 w-4 text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4 text-blue-600 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
+                      )}
+                    </span>
                   </div>
-                  <p className="font-medium group-hover:text-primary transition-colors">{option.title}</p>
-                  <p className="text-sm text-muted-foreground mb-3">{option.description}</p>
-                  <span className="text-sm text-primary flex items-center gap-1">
-                    {option.action}
-                    {option.id === 'ticket' ? (
-                      <ChevronRight className="h-3 w-3" />
-                    ) : (
-                      <ExternalLink className="h-3 w-3" />
-                    )}
-                  </span>
                 </button>
               )
             })}
@@ -216,20 +229,30 @@ export function SupportSection({
 
       {/* Active tickets */}
       {tickets.length > 0 && !isCompact && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Tickets</CardTitle>
-            <CardDescription>Track your support requests</CardDescription>
+        <Card className="w-full max-w-full overflow-hidden border-blue-100/50 dark:border-blue-900/30 shadow-lg shadow-blue-500/5">
+          <CardHeader className="p-6">
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                <FileText className="h-4 w-4 text-white" />
+              </div>
+              <span className="truncate">Your Tickets</span>
+            </CardTitle>
+            <CardDescription className="line-clamp-2">Track your support requests</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-3">
               {tickets.slice(0, 3).map((ticket) => (
-                <div key={ticket.id} className="flex items-center justify-between p-3 rounded-lg border">
+                <div
+                  key={ticket.id}
+                  className="group flex items-center justify-between p-4 rounded-xl border border-blue-100/50 dark:border-blue-900/30 bg-gradient-to-br from-white to-blue-50/20 dark:from-gray-900 dark:to-blue-950/10 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-200 hover:border-blue-300/50 dark:hover:border-blue-700/50"
+                >
                   <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
                     <div>
-                      <p className="font-medium">{ticket.subject}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-gray-900 dark:text-white">{ticket.subject}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {new Date(ticket.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -237,11 +260,12 @@ export function SupportSection({
                   <Badge
                     variant="outline"
                     className={cn(
+                      'font-medium shadow-sm',
                       ticket.status === 'open'
-                        ? 'bg-blue-500/10 text-blue-600 border-blue-500/30'
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 dark:border-blue-500/50'
                         : ticket.status === 'in_progress'
-                        ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30'
-                        : 'bg-green-500/10 text-green-600 border-green-500/30'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 dark:border-amber-500/50'
+                        : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 dark:border-emerald-500/50'
                     )}
                   >
                     {ticket.status.replace('_', ' ')}
@@ -254,19 +278,29 @@ export function SupportSection({
       )}
 
       {/* FAQs */}
-      <Card>
-        <CardHeader>
+      <Card className="w-full max-w-full overflow-hidden border-blue-100/50 dark:border-blue-900/30 shadow-lg shadow-blue-500/5">
+        <CardHeader className="p-6">
           <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
-            Frequently Asked Questions
+            <div className="w-10 h-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <HelpCircle className="h-5 w-5 text-white" />
+            </div>
+            <span className="truncate">Frequently Asked Questions</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
+        <CardContent className="p-6">
+          <Accordion type="single" collapsible className="w-full space-y-2">
             {(isCompact ? faqs.slice(0, 3) : faqs).map((faq) => (
-              <AccordionItem key={faq.id} value={faq.id}>
-                <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+              <AccordionItem
+                key={faq.id}
+                value={faq.id}
+                className="border border-blue-100/50 dark:border-blue-900/30 rounded-xl px-5 bg-gradient-to-br from-white to-blue-50/20 dark:from-gray-900 dark:to-blue-950/10 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-200"
+              >
+                <AccordionTrigger className="text-left font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:no-underline py-4">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 dark:text-gray-400 pb-4 leading-relaxed">
+                  {faq.answer}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -275,29 +309,34 @@ export function SupportSection({
 
       {/* Create ticket dialog */}
       <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create Support Ticket</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-lg border-blue-100/50 dark:border-blue-900/30 shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30">
+              <HelpCircle className="h-6 w-6 text-white" />
+            </div>
+            <DialogTitle className="text-xl text-center">Create Support Ticket</DialogTitle>
+            <DialogDescription className="text-center text-base">
               Describe your issue and we'll get back to you within 24 hours
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="border-red-200 dark:border-red-800">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </Label>
               <Select
                 value={ticketForm.category}
                 onValueChange={(v) => setTicketForm((prev) => ({ ...prev, category: v as TicketFormData['category'] }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-blue-200/50 dark:border-blue-800/50 focus:ring-blue-500">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -309,30 +348,46 @@ export function SupportSection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
+              <Label htmlFor="subject" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Subject
+              </Label>
               <Input
                 id="subject"
                 value={ticketForm.subject}
                 onChange={(e) => setTicketForm((prev) => ({ ...prev, subject: e.target.value }))}
                 placeholder="Brief summary of your issue"
+                className="border-blue-200/50 dark:border-blue-800/50 focus:ring-blue-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description
+              </Label>
               <Textarea
                 id="description"
                 value={ticketForm.description}
                 onChange={(e) => setTicketForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Provide detailed information about your issue..."
                 rows={4}
+                className="border-blue-200/50 dark:border-blue-800/50 focus:ring-blue-500 resize-none"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTicketDialog(false)}>Cancel</Button>
-            <Button onClick={handleSubmitTicket} disabled={isSubmitting} className="gap-2">
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowTicketDialog(false)}
+              className="border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitTicket}
+              disabled={isSubmitting}
+              className="gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />

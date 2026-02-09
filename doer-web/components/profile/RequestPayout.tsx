@@ -155,47 +155,71 @@ export function RequestPayout({
 
   return (
     <div className={className}>
-      <Card className="border-emerald-200/60 bg-emerald-50/60">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
-            Available Balance
+      <Card className="w-full max-w-full overflow-hidden border-blue-200/60 bg-gradient-to-br from-blue-50/80 via-blue-50/50 to-white shadow-lg shadow-blue-100/50">
+        <CardHeader className="p-6 space-y-1">
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2.5 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
+            <span className="bg-gradient-to-r from-blue-700 to-blue-600 bg-clip-text text-transparent truncate">
+              Available Balance
+            </span>
           </CardTitle>
-          <CardDescription>Amount available for withdrawal</CardDescription>
+          <CardDescription className="text-blue-600/70 line-clamp-2">Amount available for withdrawal</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center py-4">
-            <p className="text-4xl font-bold text-primary">₹{availableBalance.toLocaleString()}</p>
+        <CardContent className="p-6 space-y-5">
+          <div className="text-center py-6 px-4 rounded-2xl bg-gradient-to-br from-blue-500/5 via-blue-500/10 to-blue-600/5 border border-blue-200/50">
+            <p className="text-5xl font-bold bg-gradient-to-r from-blue-700 via-blue-600 to-blue-700 bg-clip-text text-transparent">
+              ₹{availableBalance.toLocaleString()}
+            </p>
             {wallet.locked_amount > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                ₹{wallet.locked_amount.toLocaleString()} locked (pending clearance)
-              </p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <p className="text-sm text-blue-600/80 font-medium">
+                  ₹{wallet.locked_amount.toLocaleString()} locked (pending clearance)
+                </p>
+              </div>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm p-3 rounded-xl bg-white/80 border border-emerald-100">
-            <span className="text-muted-foreground">Minimum payout</span>
-            <span className="font-medium">₹{minPayout}</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm p-4 rounded-xl bg-white border border-blue-100 shadow-sm">
+            <span className="text-blue-600/70 font-medium">Minimum payout</span>
+            <span className="font-semibold text-blue-700">₹{minPayout.toLocaleString()}</span>
           </div>
 
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full gap-2" disabled={availableBalance < minPayout || !hasBankDetails}>
-                <Wallet className="h-4 w-4" />
-                Request Payout
+              <Button
+                className="w-full gap-2 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+                disabled={availableBalance < minPayout || !hasBankDetails}
+              >
+                <Wallet className="h-5 w-5" />
+                <span className="font-semibold">Request Payout</span>
               </Button>
             </DialogTrigger>
 
             <DialogContent className="sm:max-w-md">
               {/* Progress indicator */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-6">
                 {stepLabels.map((label, index) => {
                   const stepIndex = index + 1
                   const isActive = step >= stepIndex
                   return (
                     <div key={label} className="space-y-2">
-                      <div className={cn('h-2 rounded-full transition-colors', isActive ? 'bg-primary' : 'bg-muted')} />
-                      <p className={cn('text-xs text-center', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+                      <div
+                        className={cn(
+                          'h-2.5 rounded-full transition-all duration-300',
+                          isActive
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm shadow-blue-500/50'
+                            : 'bg-blue-100'
+                        )}
+                      />
+                      <p
+                        className={cn(
+                          'text-xs text-center font-medium transition-colors',
+                          isActive ? 'text-blue-700' : 'text-blue-400'
+                        )}
+                      >
                         {label}
                       </p>
                     </div>
@@ -255,9 +279,11 @@ export function RequestPayout({
           </Dialog>
 
           {!hasBankDetails && (
-            <Alert variant="default" className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-600">Add bank details to request payouts</AlertDescription>
+            <Alert variant="default" className="border-amber-200 bg-gradient-to-br from-amber-50 to-amber-50/50">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-700 font-medium">
+                Add bank details to request payouts
+              </AlertDescription>
             </Alert>
           )}
         </CardContent>
@@ -269,15 +295,31 @@ export function RequestPayout({
 /** Success state component */
 function SuccessState({ netAmount, paymentMethod, onClose }: { netAmount: number; paymentMethod: string; onClose: () => void }) {
   return (
-    <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-      <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-        <CheckCircle2 className="h-8 w-8 text-green-600" />
+    <motion.div
+      key="success"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center py-10"
+    >
+      <div className="relative mx-auto mb-6">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-xl shadow-green-500/30">
+          <CheckCircle2 className="h-10 w-10 text-white" />
+        </div>
+        <div className="absolute -inset-2 rounded-full bg-green-500/20 animate-ping" />
       </div>
-      <DialogTitle className="text-xl mb-2">Payout Request Submitted!</DialogTitle>
-      <DialogDescription>
-        ₹{netAmount.toLocaleString()} will be credited to your {paymentMethod === 'bank_transfer' ? 'bank account' : 'UPI'} within 2-3 business days.
+      <DialogTitle className="text-2xl mb-3 bg-gradient-to-r from-green-700 to-green-600 bg-clip-text text-transparent font-bold">
+        Payout Request Submitted!
+      </DialogTitle>
+      <DialogDescription className="text-base">
+        <span className="font-bold text-green-700">₹{netAmount.toLocaleString()}</span> will be credited to your{' '}
+        {paymentMethod === 'bank_transfer' ? 'bank account' : 'UPI'} within 2-3 business days.
       </DialogDescription>
-      <Button onClick={onClose} className="mt-6">Done</Button>
+      <Button
+        onClick={onClose}
+        className="mt-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 px-8"
+      >
+        Done
+      </Button>
     </motion.div>
   )
 }
@@ -296,34 +338,82 @@ function AmountStep({
         <DialogDescription>How much would you like to withdraw?</DialogDescription>
       </DialogHeader>
 
-      <div className="py-6 space-y-4">
-        {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+      <div className="py-6 space-y-5">
+        {error && (
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <div className="space-y-2">
-          <Label htmlFor="amount">Amount (₹)</Label>
+        <div className="space-y-2.5">
+          <Label htmlFor="amount" className="text-blue-700 font-semibold">
+            Amount (₹)
+          </Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
-            <Input id="amount" type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setError(null) }} placeholder="0" className="pl-8 text-2xl font-bold h-14" />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 font-bold text-xl">₹</span>
+            <Input
+              id="amount"
+              type="number"
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value)
+                setError(null)
+              }}
+              placeholder="0"
+              className="pl-10 text-3xl font-bold h-16 border-blue-200 focus:border-blue-500 focus:ring-blue-500/20 bg-gradient-to-br from-blue-50/50 to-white"
+            />
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
           {quickAmounts.map((amt) => (
-            <Button key={amt} variant="outline" size="sm" onClick={() => setAmount(amt.toString())} className={cn(amount === amt.toString() && 'border-primary bg-primary/5')}>
+            <Button
+              key={amt}
+              variant="outline"
+              size="sm"
+              onClick={() => setAmount(amt.toString())}
+              className={cn(
+                'border-blue-200 hover:border-blue-500 hover:bg-blue-50 transition-all',
+                amount === amt.toString() &&
+                  'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-semibold shadow-sm'
+              )}
+            >
               ₹{amt.toLocaleString()}
             </Button>
           ))}
-          <Button variant="outline" size="sm" onClick={() => setAmount(availableBalance.toString())} className={cn(amount === availableBalance.toString() && 'border-primary bg-primary/5')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAmount(availableBalance.toString())}
+            className={cn(
+              'border-blue-200 hover:border-blue-500 hover:bg-blue-50 transition-all',
+              amount === availableBalance.toString() &&
+                'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 font-semibold shadow-sm'
+            )}
+          >
             Max (₹{availableBalance.toLocaleString()})
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground">Available: ₹{availableBalance.toLocaleString()} • Min: ₹{minPayout}</p>
+        <div className="p-3 rounded-lg bg-blue-50/50 border border-blue-100">
+          <p className="text-sm text-blue-600 font-medium">
+            Available: ₹{availableBalance.toLocaleString()} • Min: ₹{minPayout.toLocaleString()}
+          </p>
+        </div>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button onClick={onNext} className="gap-2">Continue<ArrowRight className="h-4 w-4" /></Button>
+        <Button variant="outline" onClick={onClose} className="border-blue-200 hover:bg-blue-50">
+          Cancel
+        </Button>
+        <Button
+          onClick={onNext}
+          className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30"
+        >
+          Continue
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </DialogFooter>
     </motion.div>
   )
@@ -345,34 +435,86 @@ function PaymentMethodStep({
       </DialogHeader>
 
       <div className="py-6 space-y-4">
-        {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+        {error && (
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <RadioGroup value={paymentMethod} onValueChange={(v) => { setPaymentMethod(v as typeof paymentMethod); setError(null) }} className="space-y-3">
-          <Label htmlFor="bank" className={cn('flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all', paymentMethod === 'bank_transfer' ? 'border-primary bg-primary/5' : 'hover:border-primary/50', !hasBankDetails && 'opacity-50 cursor-not-allowed')}>
+        <RadioGroup
+          value={paymentMethod}
+          onValueChange={(v) => {
+            setPaymentMethod(v as typeof paymentMethod)
+            setError(null)
+          }}
+          className="space-y-3"
+        >
+          <Label
+            htmlFor="bank"
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all',
+              paymentMethod === 'bank_transfer'
+                ? 'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-md shadow-blue-500/20'
+                : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50/50',
+              !hasBankDetails && 'opacity-50 cursor-not-allowed'
+            )}
+          >
             <RadioGroupItem value="bank_transfer" id="bank" disabled={!hasBankDetails} />
-            <Building2 className="h-5 w-5 text-blue-600" />
-            <div className="flex-1">
-              <p className="font-medium">Bank Transfer</p>
-              <p className="text-sm text-muted-foreground">{hasBankDetails ? `${doer.bank_name} - ****${doer.bank_account_number?.slice(-4)}` : 'No bank account added'}</p>
+            <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-            {hasBankDetails && <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Verified</Badge>}
+            <div className="flex-1">
+              <p className="font-semibold text-blue-900">Bank Transfer</p>
+              <p className="text-sm text-blue-600/70">
+                {hasBankDetails ? `${doer.bank_name} - ****${doer.bank_account_number?.slice(-4)}` : 'No bank account added'}
+              </p>
+            </div>
+            {hasBankDetails && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 font-semibold">
+                Verified
+              </Badge>
+            )}
           </Label>
 
-          <Label htmlFor="upi" className={cn('flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all', paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'hover:border-primary/50', !hasUPI && 'opacity-50 cursor-not-allowed')}>
+          <Label
+            htmlFor="upi"
+            className={cn(
+              'flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all',
+              paymentMethod === 'upi'
+                ? 'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-md shadow-blue-500/20'
+                : 'border-blue-200 hover:border-blue-400 hover:bg-blue-50/50',
+              !hasUPI && 'opacity-50 cursor-not-allowed'
+            )}
+          >
             <RadioGroupItem value="upi" id="upi" disabled={!hasUPI} />
-            <Smartphone className="h-5 w-5 text-purple-600" />
-            <div className="flex-1">
-              <p className="font-medium">UPI</p>
-              <p className="text-sm text-muted-foreground">{hasUPI ? doer.upi_id : 'No UPI ID added'}</p>
+            <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30">
+              <Smartphone className="h-5 w-5 text-white" />
             </div>
-            {hasUPI && <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>}
+            <div className="flex-1">
+              <p className="font-semibold text-blue-900">UPI</p>
+              <p className="text-sm text-blue-600/70">{hasUPI ? doer.upi_id : 'No UPI ID added'}</p>
+            </div>
+            {hasUPI && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 font-semibold">
+                Active
+              </Badge>
+            )}
           </Label>
         </RadioGroup>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onBack}>Back</Button>
-        <Button onClick={onNext} className="gap-2">Continue<ArrowRight className="h-4 w-4" /></Button>
+        <Button variant="outline" onClick={onBack} className="border-blue-200 hover:bg-blue-50">
+          Back
+        </Button>
+        <Button
+          onClick={onNext}
+          className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30"
+        >
+          Continue
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </DialogFooter>
     </motion.div>
   )
@@ -392,51 +534,86 @@ function ConfirmStep({
         <DialogDescription>Review your payout request details</DialogDescription>
       </DialogHeader>
 
-      <div className="py-6 space-y-4">
-        {error && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+      <div className="py-6 space-y-5">
+        {error && (
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <div className="space-y-3 p-4 rounded-lg bg-muted/50">
+        <div className="space-y-4 p-5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-200 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Payout Amount</span>
-            <span className="font-medium">₹{payoutAmount.toLocaleString()}</span>
+            <span className="text-blue-600/70 font-medium">Payout Amount</span>
+            <span className="font-semibold text-blue-900">₹{payoutAmount.toLocaleString()}</span>
           </div>
           {fee > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Processing Fee</span>
-              <span className="font-medium text-red-600">-₹{fee.toLocaleString()}</span>
+              <span className="text-blue-600/70 font-medium">Processing Fee</span>
+              <span className="font-semibold text-red-600">-₹{fee.toLocaleString()}</span>
             </div>
           )}
-          <div className="border-t pt-3 flex items-center justify-between">
-            <span className="font-medium">You'll Receive</span>
-            <span className="text-xl font-bold text-primary">₹{netAmount.toLocaleString()}</span>
+          <div className="border-t-2 border-blue-200/50 pt-4 flex items-center justify-between">
+            <span className="font-semibold text-blue-900">You'll Receive</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-blue-600 bg-clip-text text-transparent">
+              ₹{netAmount.toLocaleString()}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-3 rounded-lg border">
+        <div className="flex items-center gap-4 p-5 rounded-xl border-2 border-blue-200 bg-white shadow-sm">
           {paymentMethod === 'bank_transfer' ? (
             <>
-              <Building2 className="h-5 w-5 text-blue-600" />
-              <div><p className="font-medium">{doer.bank_name}</p><p className="text-sm text-muted-foreground">****{doer.bank_account_number?.slice(-4)}</p></div>
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-blue-900">{doer.bank_name}</p>
+                <p className="text-sm text-blue-600/70">****{doer.bank_account_number?.slice(-4)}</p>
+              </div>
             </>
           ) : (
             <>
-              <Smartphone className="h-5 w-5 text-purple-600" />
-              <div><p className="font-medium">UPI</p><p className="text-sm text-muted-foreground">{doer.upi_id}</p></div>
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30">
+                <Smartphone className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-blue-900">UPI</p>
+                <p className="text-sm text-blue-600/70">{doer.upi_id}</p>
+              </div>
             </>
           )}
         </div>
 
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertTitle>Processing Time</AlertTitle>
-          <AlertDescription>Payouts are typically processed within 2-3 business days.</AlertDescription>
+        <Alert className="border-blue-200 bg-blue-50/50">
+          <Clock className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-900">Processing Time</AlertTitle>
+          <AlertDescription className="text-blue-600/80">
+            Payouts are typically processed within 2-3 business days.
+          </AlertDescription>
         </Alert>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onBack}>Back</Button>
-        <Button onClick={onConfirm} disabled={isProcessing} className="gap-2">
-          {isProcessing ? (<><Loader2 className="h-4 w-4 animate-spin" />Processing...</>) : (<><CheckCircle2 className="h-4 w-4" />Confirm Payout</>)}
+        <Button variant="outline" onClick={onBack} className="border-blue-200 hover:bg-blue-50">
+          Back
+        </Button>
+        <Button
+          onClick={onConfirm}
+          disabled={isProcessing}
+          className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 disabled:opacity-50"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              Confirm Payout
+            </>
+          )}
         </Button>
       </DialogFooter>
     </motion.div>

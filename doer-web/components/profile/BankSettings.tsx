@@ -15,6 +15,8 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Lock,
+  BadgeCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -163,9 +165,9 @@ export function BankSettings({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            <Alert className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-600">
+            <Alert className="border-blue-500/50 bg-gradient-to-r from-blue-50/80 to-blue-100/80 dark:from-blue-950/30 dark:to-blue-900/30">
+              <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-700 dark:text-blue-300 font-medium">
                 Bank details updated successfully!
               </AlertDescription>
             </Alert>
@@ -175,10 +177,10 @@ export function BankSettings({
 
       {/* Verification status */}
       {!hasCompleteDetails && (
-        <Alert variant="default" className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <AlertTitle className="text-yellow-600">Incomplete Bank Details</AlertTitle>
-          <AlertDescription>
+        <Alert variant="default" className="border-amber-500/50 bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertTitle className="text-amber-700 dark:text-amber-300 font-semibold">Incomplete Bank Details</AlertTitle>
+          <AlertDescription className="text-amber-600 dark:text-amber-400">
             Add your bank details to receive payouts. This is required for withdrawing earnings.
           </AlertDescription>
         </Alert>
@@ -186,38 +188,45 @@ export function BankSettings({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Bank details card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle>Bank Account</CardTitle>
-                  <CardDescription>Your primary payout account</CardDescription>
+        <Card className="w-full max-w-full overflow-hidden border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-white via-blue-50/30 to-white dark:from-gray-900 dark:via-blue-950/20 dark:to-gray-900 shadow-xl shadow-blue-500/5">
+          <CardHeader className="p-6 pb-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2.5 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent truncate">
+                    Bank Account
+                  </CardTitle>
+                  <CardDescription className="text-sm truncate">Your primary payout account</CardDescription>
                 </div>
               </div>
               {hasCompleteDetails && (
-                <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
-                  <Shield className="h-3 w-3" />
+                <Badge className="gap-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg shadow-blue-500/30 px-3 py-1">
+                  <BadgeCheck className="h-3.5 w-3.5" />
                   Verified
                 </Badge>
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-6 space-y-4">
             {hasCompleteDetails ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+              <div className="w-full space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200/40 dark:border-blue-800/30">
                   <div>
-                    <p className="text-sm text-muted-foreground">Account Holder</p>
-                    <p className="font-medium">{doer.bank_account_name}</p>
+                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wide">Account Holder</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{doer.bank_account_name}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Account Number</p>
-                    <p className="font-medium font-mono">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200/40 dark:border-blue-800/30 group">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Lock className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                      <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Account Number</p>
+                    </div>
+                    <p className="font-mono font-semibold text-gray-900 dark:text-gray-100 tracking-wider">
                       {showAccountNumber
                         ? doer.bank_account_number
                         : maskAccountNumber(doer.bank_account_number || '')}
@@ -227,42 +236,48 @@ export function BankSettings({
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowAccountNumber(!showAccountNumber)}
+                    className="hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                   >
                     {showAccountNumber ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     )}
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-xl bg-muted/40">
-                    <p className="text-sm text-muted-foreground">IFSC Code</p>
-                    <p className="font-medium font-mono">{doer.bank_ifsc_code}</p>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200/40 dark:border-blue-800/30">
+                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wide">IFSC Code</p>
+                    <p className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm">{doer.bank_ifsc_code}</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-muted/40">
-                    <p className="text-sm text-muted-foreground">Bank</p>
-                    <p className="font-medium">{doer.bank_name || 'N/A'}</p>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200/40 dark:border-blue-800/30">
+                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wide">Bank</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{doer.bank_name || 'N/A'}</p>
                   </div>
                 </div>
 
                 <Button
                   variant="outline"
                   onClick={() => setIsEditing(true)}
-                  className="w-full gap-2"
+                  className="w-full gap-2 border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-700 dark:text-blue-300 font-medium transition-all hover:shadow-md hover:shadow-blue-500/10"
                 >
                   <Edit2 className="h-4 w-4" />
                   Update Bank Details
                 </Button>
               </div>
             ) : (
-              <div className="text-center py-6">
-                <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-8">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center">
+                  <CreditCard className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 font-medium">
                   No bank account linked yet
                 </p>
-                <Button onClick={() => setIsEditing(true)} className="gap-2">
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+                >
                   <Building2 className="h-4 w-4" />
                   Add Bank Account
                 </Button>
@@ -272,31 +287,38 @@ export function BankSettings({
         </Card>
 
         {/* UPI card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-primary" />
-              <div>
-                <CardTitle>UPI ID</CardTitle>
-                <CardDescription>Alternative payment method</CardDescription>
+        <Card className="w-full max-w-full overflow-hidden border-blue-200/60 dark:border-blue-800/40 bg-gradient-to-br from-white via-blue-50/30 to-white dark:from-gray-900 dark:via-blue-950/20 dark:to-gray-900 shadow-xl shadow-blue-500/5">
+          <CardHeader className="p-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+                <Smartphone className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent truncate">
+                  UPI ID
+                </CardTitle>
+                <CardDescription className="text-sm truncate">Alternative payment method</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {doer.upi_id ? (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-100/40 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200/40 dark:border-blue-800/30">
                 <div>
-                  <p className="text-sm text-muted-foreground">UPI ID</p>
-                  <p className="font-medium">{doer.upi_id}</p>
+                  <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wide">UPI ID</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{doer.upi_id}</p>
                 </div>
-                <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/30">
-                  <CheckCircle2 className="h-3 w-3" />
+                <Badge className="gap-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg shadow-blue-500/30 px-3 py-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                   Active
                 </Badge>
               </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center">
+                  <Smartphone className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                   No UPI ID added (optional)
                 </p>
               </div>
@@ -307,36 +329,47 @@ export function BankSettings({
 
       {/* Edit dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border-blue-200 dark:border-blue-800">
           <DialogHeader>
-            <DialogTitle>
-              {hasCompleteDetails ? 'Update Bank Details' : 'Add Bank Account'}
-            </DialogTitle>
-            <DialogDescription>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30">
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-xl bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent">
+                {hasCompleteDetails ? 'Update Bank Details' : 'Add Bank Account'}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm">
               Enter your bank account details for receiving payouts
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="border-red-300 dark:border-red-800">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="bank_account_name">Account Holder Name</Label>
+              <Label htmlFor="bank_account_name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Account Holder Name
+              </Label>
               <Input
                 id="bank_account_name"
                 value={formData.bank_account_name}
                 onChange={(e) => handleChange('bank_account_name', e.target.value)}
                 placeholder="As per bank records"
+                className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bank_account_number">Account Number</Label>
+              <Label htmlFor="bank_account_number" className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                Account Number
+              </Label>
               <Input
                 id="bank_account_number"
                 value={formData.bank_account_number}
@@ -344,12 +377,15 @@ export function BankSettings({
                 placeholder="Enter account number"
                 type="text"
                 inputMode="numeric"
+                className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20 font-mono"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bank_ifsc_code">IFSC Code</Label>
+                <Label htmlFor="bank_ifsc_code" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  IFSC Code
+                </Label>
                 <Input
                   id="bank_ifsc_code"
                   value={formData.bank_ifsc_code}
@@ -362,38 +398,51 @@ export function BankSettings({
                   }}
                   placeholder="e.g., SBIN0001234"
                   maxLength={11}
-                  className="uppercase"
+                  className="uppercase border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20 font-mono"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bank_name">Bank Name</Label>
+                <Label htmlFor="bank_name" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Bank Name
+                </Label>
                 <Input
                   id="bank_name"
                   value={formData.bank_name}
                   onChange={(e) => handleChange('bank_name', e.target.value)}
                   placeholder="Auto-detected"
                   readOnly
-                  className="bg-muted"
+                  className="bg-blue-100/50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="upi_id">UPI ID (Optional)</Label>
+              <Label htmlFor="upi_id" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                UPI ID (Optional)
+              </Label>
               <Input
                 id="upi_id"
                 value={formData.upi_id}
                 onChange={(e) => handleChange('upi_id', e.target.value)}
                 placeholder="yourname@upi"
+                className="border-blue-200 dark:border-blue-800 focus:border-blue-500 focus:ring-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20"
               />
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-700 dark:text-blue-300"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+            >
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />

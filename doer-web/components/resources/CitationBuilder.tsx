@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select'
 import { referenceStyles, sourceTypes, generateCitationByStyle, type SourceTypeValue } from './constants'
 import type { ReferenceStyleType, Citation } from '@/types/database'
+import { cn } from '@/lib/utils'
 
 /**
  * CitationBuilder component props

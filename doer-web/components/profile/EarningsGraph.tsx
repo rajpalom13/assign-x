@@ -81,13 +81,13 @@ const CustomTooltip = ({ active, payload, label, period }: {
   if (!active || !payload?.length || !label) return null
 
   return (
-    <div className="bg-popover border rounded-lg p-3 shadow-lg">
-      <p className="text-sm font-medium mb-2">{formatDate(label, period)}</p>
+    <div className="bg-white dark:bg-slate-950 border-2 border-[#5A7CFF]/20 rounded-xl p-4 shadow-xl backdrop-blur-sm">
+      <p className="text-sm font-semibold mb-2 text-slate-900 dark:text-slate-100">{formatDate(label, period)}</p>
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-primary" />
-          <span className="text-sm text-muted-foreground">Earnings:</span>
-          <span className="text-sm font-medium">₹{payload[0].value.toLocaleString()}</span>
+          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF]" />
+          <span className="text-sm text-slate-600 dark:text-slate-400">Earnings:</span>
+          <span className="text-sm font-bold text-[#5A7CFF]">₹{payload[0].value.toLocaleString()}</span>
         </div>
       </div>
     </div>
@@ -143,26 +143,33 @@ export function EarningsGraph({
   ]
 
   return (
-    <Card className={className}>
-      <CardHeader>
+    <Card className={cn("w-full max-w-full overflow-hidden bg-gradient-to-br from-white to-slate-50 dark:from-slate-950 dark:to-slate-900 border-2 shadow-xl", className)}>
+      <CardHeader className="p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Earnings Overview
+              <div className="p-2 flex-shrink-0 bg-gradient-to-br from-[#5A7CFF] to-[#49C5FF] rounded-lg">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <span className="bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] bg-clip-text text-transparent truncate">
+                Earnings Overview
+              </span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-1 line-clamp-2">
               Your earnings performance over time
             </CardDescription>
           </div>
-          <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-xl">
+          <div className="flex items-center gap-1 p-1 bg-gradient-to-r from-[#5A7CFF]/10 to-[#49C5FF]/10 rounded-xl border border-[#5A7CFF]/20">
             {periodOptions.map((option) => (
               <Button
                 key={option.value}
                 variant={period === option.value ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handlePeriodChange(option.value)}
-                className="text-xs"
+                className={cn(
+                  "text-xs transition-all",
+                  period === option.value && "bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] text-white hover:from-[#4A6CFF] hover:to-[#39B5FF]"
+                )}
               >
                 {option.label}
               </Button>
@@ -170,41 +177,47 @@ export function EarningsGraph({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="p-6 space-y-6">
         {/* Stats cards */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 rounded-xl border bg-muted/30">
+        <div className="w-full grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <div className="p-4 rounded-xl border-2 border-[#5A7CFF]/20 bg-gradient-to-br from-[#5A7CFF]/5 to-[#49C5FF]/5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Earnings</span>
+              <DollarSign className="h-4 w-4 text-[#5A7CFF]" />
+              <span className="text-sm text-slate-600 dark:text-slate-400">Total Earnings</span>
             </div>
-            <p className="text-2xl font-bold">₹{stats.total.toLocaleString()}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] bg-clip-text text-transparent">
+              ₹{stats.total.toLocaleString()}
+            </p>
           </div>
 
-          <div className="p-4 rounded-xl border bg-muted/30">
+          <div className="p-4 rounded-xl border-2 border-[#5A7CFF]/20 bg-gradient-to-br from-[#5A7CFF]/5 to-[#49C5FF]/5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Daily Average</span>
+              <Calendar className="h-4 w-4 text-[#49C5FF]" />
+              <span className="text-sm text-slate-600 dark:text-slate-400">Daily Average</span>
             </div>
-            <p className="text-2xl font-bold">₹{Math.round(stats.average).toLocaleString()}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] bg-clip-text text-transparent">
+              ₹{Math.round(stats.average).toLocaleString()}
+            </p>
           </div>
 
-          <div className="p-4 rounded-xl border bg-muted/30">
+          <div className="p-4 rounded-xl border-2 border-[#5A7CFF]/20 bg-gradient-to-br from-[#5A7CFF]/5 to-[#49C5FF]/5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center gap-2 mb-1">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Projects</span>
+              <Briefcase className="h-4 w-4 text-[#5A7CFF]" />
+              <span className="text-sm text-slate-600 dark:text-slate-400">Projects</span>
             </div>
-            <p className="text-2xl font-bold">{stats.projects}</p>
+            <p className="text-2xl font-bold bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] bg-clip-text text-transparent">
+              {stats.projects}
+            </p>
           </div>
 
-          <div className="p-4 rounded-xl border bg-muted/30">
+          <div className="p-4 rounded-xl border-2 border-[#5A7CFF]/20 bg-gradient-to-br from-[#5A7CFF]/5 to-[#49C5FF]/5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center gap-2 mb-1">
               {stats.change >= 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-600" />
               ) : (
                 <TrendingDown className="h-4 w-4 text-red-600" />
               )}
-              <span className="text-sm text-muted-foreground">Change</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">Change</span>
             </div>
             <p
               className={cn(
@@ -218,36 +231,46 @@ export function EarningsGraph({
         </div>
 
         {/* Chart */}
-        <div className="h-[300px] w-full rounded-xl border bg-muted/20 p-3">
+        <div className="h-[300px] w-full rounded-xl border-2 border-[#5A7CFF]/20 bg-gradient-to-br from-white to-[#5A7CFF]/5 dark:from-slate-950 dark:to-[#5A7CFF]/5 p-4 shadow-inner">
           {isLoading ? (
             <div className="h-full w-full flex items-center justify-center">
-              <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+              <div className="animate-pulse bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF] bg-clip-text text-transparent font-semibold">
+                Loading chart...
+              </div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <linearGradient id="colorEarningsBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#5A7CFF" stopOpacity={0.4} />
+                    <stop offset="50%" stopColor="#49C5FF" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#49C5FF" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="strokeGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#5A7CFF" />
+                    <stop offset="100%" stopColor="#49C5FF" />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
+                  stroke="#5A7CFF"
+                  strokeOpacity={0.1}
                   vertical={false}
                 />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(date) => formatDate(date, period)}
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="#5A7CFF"
+                  strokeOpacity={0.5}
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="#5A7CFF"
+                  strokeOpacity={0.5}
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -257,9 +280,10 @@ export function EarningsGraph({
                 <Area
                   type="monotone"
                   dataKey="amount"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  fill="url(#colorEarnings)"
+                  stroke="url(#strokeGradient)"
+                  strokeWidth={3}
+                  fill="url(#colorEarningsBlue)"
+                  fillOpacity={1}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -268,11 +292,14 @@ export function EarningsGraph({
 
         {/* Legend */}
         <div className="flex items-center justify-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-primary" />
-            <span className="text-muted-foreground">Earnings</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#5A7CFF]/10 to-[#49C5FF]/10 border border-[#5A7CFF]/20">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-[#5A7CFF] to-[#49C5FF]" />
+            <span className="text-slate-700 dark:text-slate-300 font-medium">Earnings</span>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge
+            variant="outline"
+            className="text-xs border-[#5A7CFF]/30 bg-gradient-to-r from-[#5A7CFF]/5 to-[#49C5FF]/5 text-[#5A7CFF] font-semibold px-3 py-1"
+          >
             {period === 'week'
               ? 'Last 7 days'
               : period === 'month'
