@@ -281,24 +281,29 @@ export default function ProjectWorkspacePage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push(ROUTES.projects)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold line-clamp-1">{project.title}</h1>
-          <p className="text-sm text-muted-foreground">Project Workspace</p>
+    <div className="relative min-h-screen">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(90,124,255,0.18),transparent_55%),radial-gradient(circle_at_80%_20%,rgba(67,209,197,0.16),transparent_50%)]" />
+      <div className="space-y-6">
+        {/* Header - Doer dashboard style */}
+        <div className="rounded-[24px] bg-white/85 p-5 shadow-[0_16px_35px_rgba(30,58,138,0.08)]">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push(ROUTES.projects)}
+              className="h-10 w-10 rounded-xl hover:bg-[#EEF2FF] hover:text-[#5B7CFF] transition-all duration-200"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-semibold text-slate-900 line-clamp-1">{project.title}</h1>
+              <p className="text-sm text-slate-500 mt-0.5">Project Workspace</p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Workspace */}
-      <WorkspaceView
+        {/* Workspace */}
+        <WorkspaceView
         project={project}
         files={files}
         deliverables={deliverables}
@@ -317,6 +322,7 @@ export default function ProjectWorkspacePage() {
         onSendFile={handleSendFile}
         onStartRevision={handleStartRevision}
       />
+    </div>
     </div>
   )
 }

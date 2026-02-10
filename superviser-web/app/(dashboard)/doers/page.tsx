@@ -81,48 +81,44 @@ function DoerCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.04 }}
       whileHover={{ y: -2 }}
-      className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-orange-200 hover:shadow-md transition-all"
+      className="bg-white rounded-2xl border border-gray-200 p-4 hover:border-orange-200 hover:shadow-md transition-all"
     >
-      <div className="flex flex-col xl:flex-row xl:items-center gap-5">
-        <div className="flex items-start gap-4 flex-1 min-w-0">
+      {/* Header: Avatar + Name + Status */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="relative shrink-0">
-            <Avatar className="h-14 w-14 ring-2 ring-white shadow-sm">
+            <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
               <AvatarImage src={doer.avatar_url} alt={doer.full_name} />
-              <AvatarFallback className="bg-[#1C1C1C] text-white font-semibold text-lg">
+              <AvatarFallback className="bg-[#1C1C1C] text-white font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <span
               className={cn(
-                "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white",
-                doer.is_blacklisted
-                  ? "bg-red-500"
-                  : doer.is_available
-                    ? "bg-emerald-500"
-                    : "bg-gray-400"
+                "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white",
+                doer.is_blacklisted ? "bg-red-500" : doer.is_available ? "bg-emerald-500" : "bg-gray-400"
               )}
             />
           </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-[#1C1C1C] truncate group-hover:text-orange-600">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-semibold text-[#1C1C1C] truncate">
                 {doer.full_name}
               </h3>
-              {doer.is_verified && <CheckCircle className="h-4 w-4 text-[#F97316]" />}
-              {doer.is_blacklisted && <Ban className="h-4 w-4 text-red-500" />}
+              {doer.is_verified && <CheckCircle className="h-3.5 w-3.5 text-[#F97316] shrink-0" />}
+              {doer.is_blacklisted && <Ban className="h-3.5 w-3.5 text-red-500 shrink-0" />}
             </div>
-            <p className="text-sm text-gray-500">
-              {doer.qualification} · {doer.years_of_experience} yrs experience
+            <p className="text-xs text-gray-500 mt-0.5 truncate">
+              {doer.qualification} · {doer.years_of_experience}y exp
             </p>
-
-            <div className="flex items-center gap-2 mt-2 text-sm">
+            <div className="flex items-center gap-1 mt-1.5">
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     className={cn(
-                      "h-3.5 w-3.5",
+                      "h-3 w-3",
                       star <= Math.round(doer.rating)
                         ? "fill-amber-400 text-amber-400"
                         : "fill-gray-200 text-gray-200"
@@ -130,78 +126,82 @@ function DoerCard({
                   />
                 ))}
               </div>
-              <span className="font-semibold text-[#1C1C1C]">{doer.rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-400">({doer.total_reviews})</span>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mt-3">
-              {doer.skills.slice(0, 3).map((skill) => (
-                <Badge
-                  key={skill}
-                  variant="secondary"
-                  className="text-xs font-normal px-2 py-0.5 bg-gray-100 text-gray-600 border-0"
-                >
-                  {skill}
-                </Badge>
-              ))}
-              {doer.skills.length > 3 && (
-                <Badge variant="outline" className="text-xs font-normal px-2 py-0.5 border-gray-200">
-                  +{doer.skills.length - 3}
-                </Badge>
-              )}
+              <span className="text-xs font-semibold text-[#1C1C1C]">{doer.rating.toFixed(1)}</span>
+              <span className="text-[10px] text-gray-400">({doer.total_reviews})</span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-xl px-4 py-3 xl:min-w-[240px]">
-          <div>
-            <p className="text-lg font-semibold text-[#1C1C1C]">{doer.completed_projects}</p>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400">Projects</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-[#1C1C1C]">
-              {doer.total_earnings ? `$${(doer.total_earnings / 1000).toFixed(1)}k` : "$0"}
-            </p>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400">Earnings</p>
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-[#1C1C1C]">{doer.success_rate}%</p>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400">Success</p>
-          </div>
-        </div>
+        <Badge className={cn("rounded-full border px-2.5 py-0.5 text-[10px] whitespace-nowrap shrink-0", statusClass)}>
+          {statusLabel}
+        </Badge>
+      </div>
 
-        <div className="flex flex-row xl:flex-col items-start xl:items-end gap-3">
-          <Badge className={cn("rounded-full border px-3 py-1", statusClass)}>{statusLabel}</Badge>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg text-xs h-9"
-              onClick={onViewProfile}
-            >
-              <Eye className="h-3.5 w-3.5 mr-1" />
-              View
-            </Button>
-            <Button
-              size="sm"
-              className="rounded-lg text-xs h-9 bg-[#F97316] hover:bg-[#EA580C] text-white"
-              onClick={onAssignProject}
-              disabled={!doer.is_available || doer.is_blacklisted}
-            >
-              <Briefcase className="h-3.5 w-3.5 mr-1" />
-              Assign
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-lg text-xs h-9"
-              onClick={onMessage}
-            >
-              <MessageSquare className="h-3.5 w-3.5 mr-1" />
-              Message
-            </Button>
-          </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded-lg">
+          <p className="text-sm font-semibold text-[#1C1C1C]">{doer.completed_projects}</p>
+          <p className="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Projects</p>
         </div>
+        <div className="text-center p-2 bg-gray-50 rounded-lg">
+          <p className="text-sm font-semibold text-[#1C1C1C]">
+            {doer.total_earnings ? `$${(doer.total_earnings / 1000).toFixed(1)}k` : "$0"}
+          </p>
+          <p className="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Earnings</p>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded-lg">
+          <p className="text-sm font-semibold text-[#1C1C1C]">{doer.success_rate}%</p>
+          <p className="text-[9px] uppercase tracking-wide text-gray-400 mt-0.5">Success</p>
+        </div>
+      </div>
+
+      {/* Skills */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {doer.skills.slice(0, 3).map((skill) => (
+          <Badge
+            key={skill}
+            variant="secondary"
+            className="text-[10px] font-normal px-2 py-0.5 bg-gray-100 text-gray-600 border-0"
+          >
+            {skill}
+          </Badge>
+        ))}
+        {doer.skills.length > 3 && (
+          <Badge variant="outline" className="text-[10px] font-normal px-2 py-0.5 border-gray-200">
+            +{doer.skills.length - 3}
+          </Badge>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 rounded-lg text-xs h-8 border-gray-200 hover:border-orange-200 hover:bg-orange-50"
+          onClick={onViewProfile}
+        >
+          <Eye className="h-3.5 w-3.5 mr-1.5" />
+          View
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1 rounded-lg text-xs h-8 bg-[#F97316] hover:bg-[#EA580C] text-white"
+          onClick={onAssignProject}
+          disabled={!doer.is_available || doer.is_blacklisted}
+        >
+          <Briefcase className="h-3.5 w-3.5 mr-1.5" />
+          Assign
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 rounded-lg text-xs h-8 hover:bg-gray-100"
+          onClick={onMessage}
+        >
+          <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+          Chat
+        </Button>
       </div>
     </motion.div>
   )
@@ -211,27 +211,40 @@ function LoadingCard() {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5">
       <div className="flex flex-col xl:flex-row xl:items-center gap-5">
-        <div className="flex items-start gap-4 flex-1">
-          <Skeleton className="h-14 w-14 rounded-full" />
-          <div className="flex-1 space-y-2">
+        <div className="flex items-start gap-4 flex-1 min-w-0">
+          <Skeleton className="h-14 w-14 rounded-full shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2.5">
             <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-            <Skeleton className="h-4 w-32" />
-            <div className="flex gap-2">
-              <Skeleton className="h-6 w-16 rounded-full" />
-              <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-3.5 w-1/2" />
+            <Skeleton className="h-4 w-32 mt-2" />
+            <div className="flex gap-2 mt-3">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-14 rounded-full" />
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3 bg-gray-50 rounded-xl px-4 py-3 xl:min-w-[240px]">
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
-          <Skeleton className="h-8" />
+        <div className="grid grid-cols-3 gap-4 bg-gray-50 rounded-xl px-3 py-3 xl:min-w-[280px]">
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-12 mx-auto" />
+            <Skeleton className="h-3 w-16 mx-auto" />
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-12 mx-auto" />
+            <Skeleton className="h-3 w-16 mx-auto" />
+          </div>
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-12 mx-auto" />
+            <Skeleton className="h-3 w-14 mx-auto" />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Skeleton className="h-9 w-20 rounded-lg" />
-          <Skeleton className="h-9 w-20 rounded-lg" />
-          <Skeleton className="h-9 w-20 rounded-lg" />
+        <div className="flex flex-col items-start xl:items-end gap-2.5 min-w-0">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <div className="flex flex-wrap gap-1.5">
+            <Skeleton className="h-8 w-16 rounded-lg" />
+            <Skeleton className="h-8 w-18 rounded-lg" />
+            <Skeleton className="h-8 w-20 rounded-lg" />
+          </div>
         </div>
       </div>
     </div>
@@ -448,8 +461,8 @@ export default function DoersPage() {
   ].filter(Boolean) as string[]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="relative">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="relative overflow-x-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 right-0 h-64 w-64 rounded-full bg-orange-100/60 blur-3xl" />
           <div className="absolute top-40 left-10 h-56 w-56 rounded-full bg-amber-100/50 blur-3xl" />
@@ -813,7 +826,7 @@ export default function DoersPage() {
                   </Button>
                 </motion.div>
               ) : isLoading ? (
-                <div className="grid gap-4 xl:grid-cols-2">
+                <div className="grid gap-4 2xl:grid-cols-2">
                   {[...Array(6)].map((_, i) => (
                     <LoadingCard key={i} />
                   ))}
@@ -825,7 +838,7 @@ export default function DoersPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="grid gap-4 xl:grid-cols-2"
+                  className="grid gap-4 2xl:grid-cols-2"
                 >
                   {filteredDoers.map((doer, index) => (
                     <DoerCard

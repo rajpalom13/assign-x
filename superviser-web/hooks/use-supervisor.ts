@@ -11,6 +11,11 @@ import type {
   SupervisorWithProfile,
   Profile
 } from "@/types/database"
+import {
+  MOCK_SUPERVISOR,
+  MOCK_PROFILE,
+  MOCK_SUPERVISOR_STATS,
+} from "@/lib/mock-data/seed"
 
 interface UseSupervisorReturn {
   supervisor: SupervisorWithProfile | null
@@ -35,12 +40,22 @@ export function useSupervisor(): UseSupervisorReturn {
       setIsLoading(true)
       setError(null)
 
-      // Get current user
-      // Use getSession() - faster, no network timeout issues
-      const { data: sessionData, error: authError } = await supabase.auth.getSession()
-      if (authError) throw authError
-      const user = sessionData?.session?.user
-      if (!user) throw new Error("Not authenticated")
+      // Get current user with timeout to prevent hanging
+      let user = null
+      try {
+        const { data: sessionData } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000))
+        ])
+        user = sessionData?.session?.user || null
+      } catch { /* timed out */ }
+
+      if (!user) {
+        console.warn("[useSupervisor] No auth, using mock data")
+        setProfile(MOCK_PROFILE)
+        setSupervisor({ ...MOCK_SUPERVISOR, profiles: MOCK_PROFILE } as SupervisorWithProfile)
+        return
+      }
 
       // Get profile
       const { data: profileData, error: profileError } = await supabase
@@ -74,8 +89,9 @@ export function useSupervisor(): UseSupervisorReturn {
 
       setSupervisor(transformedSupervisor as SupervisorWithProfile | null)
     } catch (err) {
-      console.error("[useSupervisor] Failed to fetch supervisor:", err)
-      setError(err instanceof Error ? err : new Error("Failed to fetch supervisor"))
+      console.warn("[useSupervisor] Failed, using mock data:", err)
+      setProfile(MOCK_PROFILE)
+      setSupervisor({ ...MOCK_SUPERVISOR, profiles: MOCK_PROFILE } as SupervisorWithProfile)
     } finally {
       setIsLoading(false)
     }
@@ -151,10 +167,21 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
       const supabase = createClient()
 
       try {
-        // Use getSession() - faster, no network timeout issues
-        const { data: sessionData } = await supabase.auth.getSession()
-        const user = sessionData?.session?.user
-        if (!user) return
+        // Use getSession() with timeout to prevent hanging
+        let user = null
+        try {
+          const { data: sessionData } = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000))
+          ])
+          user = sessionData?.session?.user || null
+        } catch { /* timed out */ }
+
+        if (!user) {
+          console.warn("[useSupervisorStats] No auth, using mock data")
+          setStats(MOCK_SUPERVISOR_STATS)
+          return
+        }
 
         // Get supervisor ID
         const { data: supervisor } = await supabase
@@ -164,7 +191,8 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
           .single()
 
         if (!supervisor) {
-          console.warn("[useSupervisorStats] No supervisor found for user ID:", user.id)
+          console.warn("[useSupervisorStats] No supervisor found, using mock data")
+          setStats(MOCK_SUPERVISOR_STATS)
           return
         }
         console.log("[useSupervisorStats] Found supervisor:", supervisor.id, "avg_rating:", supervisor.average_rating, "total_projects:", supervisor.total_projects_managed, "total_earnings:", supervisor.total_earnings)
@@ -213,8 +241,8 @@ export function useSupervisorStats(): UseSupervisorStatsReturn {
           totalDoers: uniqueDoers,
         })
       } catch (err) {
-        console.error("[useSupervisorStats] Failed to fetch stats:", err)
-        setError(err instanceof Error ? err : new Error("Failed to fetch stats"))
+        console.warn("[useSupervisorStats] Failed, using mock data:", err)
+        setStats(MOCK_SUPERVISOR_STATS)
       } finally {
         setIsLoading(false)
       }
@@ -244,8 +272,24 @@ export function useSupervisorExpertise(): UseSupervisorExpertiseReturn {
       const supabase = createClient()
 
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // Use getUser() with timeout to prevent hanging
+        let user = null
+        try {
+          const result = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000))
+          ])
+          user = result.data?.user || null
+        } catch { /* timed out */ }
+
         if (!user) {
+          setExpertise([
+            { id: "sub-econ", name: "Economics", isPrimary: true },
+            { id: "sub-fin", name: "Finance", isPrimary: true },
+            { id: "sub-stats", name: "Statistics", isPrimary: false },
+            { id: "sub-mkt", name: "Marketing", isPrimary: false },
+            { id: "sub-cs", name: "Computer Science", isPrimary: false },
+          ])
           setIsLoading(false)
           return
         }

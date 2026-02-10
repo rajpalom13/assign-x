@@ -1,12 +1,14 @@
 'use client'
 
 /**
- * Workspace View component
+ * Workspace View component - Modern minimal design
  * Full project workspace with details, chat, and file upload
+ * Charcoal + Orange accent palette matching dashboard aesthetic
  * @module components/projects/WorkspaceView
  */
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   Clock,
   FileText,
@@ -17,6 +19,8 @@ import {
   Send,
   File,
   Download,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -134,43 +138,56 @@ export function WorkspaceView({
     <div className="space-y-6">
       {/* Revision Banner */}
       {hasRevision && pendingRevision && (
-        <RevisionList
-          revisions={revisions}
-          supervisorName={project.supervisor_name || undefined}
-          onStartRevision={onStartRevision}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <RevisionList
+            revisions={revisions}
+            supervisorName={project.supervisor_name || undefined}
+            onStartRevision={onStartRevision}
+          />
+        </motion.div>
       )}
 
-      {/* Header with deadline timer */}
-      <Card
+      {/* Header with deadline timer - Doer dashboard style */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className={cn(
-          'border-2',
-          timeInfo.isUrgent ? 'border-red-500 bg-red-50/50' : 'border-primary/20'
+          'relative overflow-hidden rounded-[28px] shadow-[0_20px_50px_rgba(30,58,138,0.1)] transition-all duration-300',
+          timeInfo.isUrgent
+            ? 'bg-gradient-to-br from-[#FFF4F0] via-[#FFF7F4] to-[#FFEFE9]'
+            : 'bg-white/85'
         )}
       >
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             {/* Deadline */}
             <div className="flex items-center gap-4">
               <div
                 className={cn(
-                  'p-3 rounded-full',
-                  timeInfo.isUrgent ? 'bg-red-100' : 'bg-primary/10'
+                  'h-14 w-14 rounded-2xl flex items-center justify-center transition-colors duration-300',
+                  timeInfo.isUrgent
+                    ? 'bg-[#FFE7E1]'
+                    : 'bg-[#E6F4FF]'
                 )}
               >
                 {timeInfo.isUrgent ? (
-                  <Flame className="h-6 w-6 text-red-500" />
+                  <AlertCircle className="h-7 w-7 text-[#FF8B6A]" />
                 ) : (
-                  <Clock className="h-6 w-6 text-primary" />
+                  <Clock className="h-7 w-7 text-[#4B9BFF]" />
                 )}
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">Time Remaining</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Time Remaining</p>
                 <p
                   className={cn(
-                    'text-2xl font-bold',
-                    timeInfo.isUrgent ? 'text-red-500' : 'text-foreground'
+                    'text-2xl lg:text-3xl font-semibold transition-colors',
+                    timeInfo.isUrgent ? 'text-[#FF8B6A]' : 'text-slate-900'
                   )}
                 >
                   {timeInfo.text}
@@ -179,143 +196,189 @@ export function WorkspaceView({
             </div>
 
             {/* Countdown boxes */}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {[
                 { value: timeInfo.days, label: 'Days' },
                 { value: timeInfo.hours, label: 'Hours' },
                 { value: timeInfo.minutes, label: 'Mins' },
-              ].map((item) => (
-                <div
+              ].map((item, index) => (
+                <motion.div
                   key={item.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1, duration: 0.3 }}
                   className={cn(
-                    'px-4 py-2 rounded-lg text-center min-w-[60px]',
+                    'px-5 py-3 rounded-2xl text-center min-w-[70px] transition-all duration-300',
                     timeInfo.isUrgent
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-muted'
+                      ? 'bg-[#FFE7E1]'
+                      : 'bg-slate-50/80'
                   )}
                 >
-                  <p className="text-xl font-bold">{item.value}</p>
-                  <p className="text-xs">{item.label}</p>
-                </div>
+                  <p className={cn(
+                    'text-2xl font-semibold',
+                    timeInfo.isUrgent ? 'text-[#FF8B6A]' : 'text-slate-900'
+                  )}>
+                    {item.value}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.label}</p>
+                </motion.div>
               ))}
             </div>
 
-            {/* Price */}
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Earnings</p>
-              <p className="text-2xl font-bold text-green-600 flex items-center justify-end gap-1">
-                <IndianRupee className="h-5 w-5" />
+            {/* Earnings */}
+            <div className="bg-gradient-to-br from-[#EEF2FF] via-[#F5F6FF] to-[#E9EDFF] rounded-2xl px-5 py-3 text-right min-w-[140px] shadow-[0_12px_28px_rgba(30,58,138,0.08)]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Earnings</p>
+              <p className="text-2xl lg:text-3xl font-semibold text-[#5B7CFF] flex items-center justify-end gap-1">
+                <IndianRupee className="h-6 w-6" />
                 {(project.price ?? project.doer_payout ?? 0).toLocaleString('en-IN')}
               </p>
             </div>
           </div>
 
           {/* Progress bar */}
-          <Progress
-            value={timeInfo.percentage}
-            className={cn('h-2 mt-4', timeInfo.isUrgent && '[&>div]:bg-red-500')}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Main workspace tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="details" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="submit" className="gap-2">
-            <Upload className="h-4 w-4" />
-            Submit
-          </TabsTrigger>
-          <TabsTrigger value="chat" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Chat
-            {messages.filter((m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId)
-              .length > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
-                {
-                  messages.filter(
-                    (m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId
-                  ).length
-                }
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Details Tab */}
-        <TabsContent value="details" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{project.title}</CardTitle>
-              <div className="flex items-center gap-2 mt-2">
-                {project.subject_name && (
-                  <Badge variant="secondary">{project.subject_name}</Badge>
+          <div className="mt-6">
+            <div className="flex h-2 overflow-hidden rounded-full bg-slate-100">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${timeInfo.percentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={cn(
+                  'transition-all duration-500',
+                  timeInfo.isUrgent
+                    ? 'bg-[#FF8B6A]'
+                    : 'bg-[#5B7CFF]'
                 )}
-                <Badge
-                  variant="outline"
-                  className={getStatusColor(project.status)}
-                >
+                style={{ width: `${timeInfo.percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Main workspace tabs - Doer dashboard style */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full grid grid-cols-3 h-12 rounded-full bg-white/85 p-1 shadow-[0_14px_28px_rgba(30,58,138,0.08)]">
+            <TabsTrigger
+              value="details"
+              className="relative gap-2 rounded-full text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:via-[#5B86FF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all duration-300"
+            >
+              <FileText className="h-4 w-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger
+              value="submit"
+              className="gap-2 rounded-full text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:via-[#5B86FF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all duration-300"
+            >
+              <Upload className="h-4 w-4" />
+              Submit
+            </TabsTrigger>
+            <TabsTrigger
+              value="chat"
+              className="gap-2 rounded-full text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#5A7CFF] data-[state=active]:via-[#5B86FF] data-[state=active]:to-[#49C5FF] data-[state=active]:text-white transition-all duration-300"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Chat
+              {messages.filter((m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId)
+                .length > 0 && (
+                <Badge className="ml-1 h-5 w-5 rounded-full bg-white/80 p-0 text-xs font-semibold text-[#4F6CF7]">
+                  {
+                    messages.filter(
+                      (m) => !(m.read_by || []).includes(currentUserId) && m.sender_id !== currentUserId
+                    ).length
+                  }
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+        {/* Details Tab - Doer dashboard style */}
+        <TabsContent value="details" className="space-y-6 mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[24px] bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)] overflow-hidden"
+          >
+            <div className="p-6 border-b border-slate-100">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-3">{project.title}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                {project.subject_name && (
+                  <Badge className="bg-[#EEF2FF] text-[#5B7CFF] hover:bg-[#E3E9FF] border-0 px-3 py-1 font-medium">
+                    {project.subject_name}
+                  </Badge>
+                )}
+                <Badge className="bg-[#E6F4FF] text-[#4B9BFF] hover:bg-[#D6ECFF] border-0 px-3 py-1 font-medium">
                   {project.status.replace(/_/g, ' ')}
                 </Badge>
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent className="space-y-4">
-              {/* Project Brief */}
-              <Accordion type="single" collapsible defaultValue="brief">
-                <AccordionItem value="brief">
-                  <AccordionTrigger>Project Brief</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="prose prose-sm max-w-none">
+            <div className="p-6 space-y-4">
+              {/* Project Brief - Doer dashboard style */}
+              <Accordion type="single" collapsible defaultValue="brief" className="space-y-3">
+                <AccordionItem value="brief" className="border-0">
+                  <AccordionTrigger className="px-5 py-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100 transition-colors font-semibold text-slate-900 text-base">
+                    Project Brief
+                  </AccordionTrigger>
+                  <AccordionContent className="px-5 py-4">
+                    <div className="prose prose-sm max-w-none text-slate-700 leading-relaxed">
                       {project.specific_instructions || project.description || 'No brief provided'}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="requirements">
-                  <AccordionTrigger>Requirements</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm">
+                <AccordionItem value="requirements" className="border-0">
+                  <AccordionTrigger className="px-5 py-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100 transition-colors font-semibold text-slate-900 text-base">
+                    Requirements
+                  </AccordionTrigger>
+                  <AccordionContent className="px-5 py-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       {project.word_count && (
-                        <p>
-                          <strong>Word Count:</strong> {project.word_count}
-                        </p>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Word Count</span>
+                          <span className="text-base font-semibold text-slate-900">{project.word_count}</span>
+                        </div>
                       )}
                       {project.page_count && (
-                        <p>
-                          <strong>Page Count:</strong> {project.page_count}
-                        </p>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Page Count</span>
+                          <span className="text-base font-semibold text-slate-900">{project.page_count}</span>
+                        </div>
                       )}
                       {project.reference_style_id && (
-                        <p>
-                          <strong>Reference Style ID:</strong> {project.reference_style_id}
-                        </p>
-                      )}
-                      {project.specific_instructions && (
-                        <div>
-                          <strong>Special Instructions:</strong>
-                          <p className="mt-1 text-muted-foreground">
-                            {project.specific_instructions}
-                          </p>
+                        <div className="flex flex-col gap-1 sm:col-span-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reference Style</span>
+                          <span className="text-base font-semibold text-slate-900">{project.reference_style_id}</span>
                         </div>
                       )}
                     </div>
+                    {project.specific_instructions && (
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 block mb-2">Special Instructions</span>
+                        <p className="text-sm text-slate-700 leading-relaxed">{project.specific_instructions}</p>
+                      </div>
+                    )}
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="files">
-                  <AccordionTrigger>
+                <AccordionItem value="files" className="border-0">
+                  <AccordionTrigger className="px-5 py-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100 transition-colors font-semibold text-slate-900 text-base">
                     Reference Files ({files.filter((f) => f.file_category === 'reference').length})
                   </AccordionTrigger>
-                  <AccordionContent>
+                  <AccordionContent className="px-5 py-4">
                     <div className="space-y-2">
                       {files.filter((f) => f.file_category === 'reference').length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No reference files attached
-                        </p>
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <div className="h-12 w-12 rounded-xl bg-[#E6F4FF] flex items-center justify-center mb-3">
+                            <File className="h-6 w-6 text-[#4B9BFF]" />
+                          </div>
+                          <p className="text-sm text-slate-500 font-medium">No reference files attached</p>
+                        </div>
                       ) : (
                         files
                           .filter((f) => f.file_category === 'reference')
@@ -325,14 +388,18 @@ export function WorkspaceView({
                               href={file.file_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
+                              className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-50/80 hover:bg-[#E6F4FF] transition-all duration-200"
                             >
-                              <File className="h-4 w-4 text-muted-foreground" />
-                              <span className="flex-1 text-sm">{file.file_name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.file_size_bytes || 0)}
-                              </span>
-                              <Download className="h-4 w-4" />
+                              <div className="h-10 w-10 rounded-lg bg-white group-hover:bg-[#D6ECFF] flex items-center justify-center transition-colors">
+                                <File className="h-5 w-5 text-slate-600 group-hover:text-[#4B9BFF] transition-colors" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-[#4B9BFF] transition-colors">
+                                  {file.file_name}
+                                </p>
+                                <p className="text-xs text-slate-500">{formatFileSize(file.file_size_bytes || 0)}</p>
+                              </div>
+                              <Download className="h-5 w-5 text-slate-400 group-hover:text-[#4B9BFF] transition-colors flex-shrink-0" />
                             </a>
                           ))
                       )}
@@ -341,100 +408,147 @@ export function WorkspaceView({
                 </AccordionItem>
               </Accordion>
 
-              <Separator />
-
               {/* Start project button */}
               {project.status === 'assigned' && onStartProject && (
-                <Button onClick={onStartProject} className="w-full" size="lg">
-                  Start Working on Project
-                </Button>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.3 }}
+                >
+                  <Button
+                    onClick={onStartProject}
+                    className="w-full h-11 rounded-full bg-[#FF9B7A] hover:bg-[#FF8B6A] text-white text-sm font-semibold shadow-[0_8px_30px_rgba(255,155,122,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,155,122,0.45)]"
+                    size="lg"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Start Working on Project
+                  </Button>
+                </motion.div>
               )}
 
               {/* Supervisor info */}
               {project.supervisor_name && (
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm">Supervisor</span>
-                  <span className="font-medium">{project.supervisor_name}</span>
+                <div className="flex items-center justify-between rounded-2xl bg-slate-50/80 px-4 py-3">
+                  <span className="text-sm font-medium text-slate-500">Supervisor</span>
+                  <span className="font-semibold text-slate-900">{project.supervisor_name}</span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
 
-        {/* Submit Tab */}
-        <TabsContent value="submit" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Submit Your Work</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Submit Tab - Doer dashboard style */}
+        <TabsContent value="submit" className="space-y-6 mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[24px] bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)] overflow-hidden"
+          >
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-xl font-semibold text-slate-900">Submit Your Work</h3>
+              <p className="text-sm text-slate-500 mt-1">Upload your completed work for review</p>
+            </div>
+
+            <div className="p-6 space-y-6">
               {/* Previous deliverables */}
               {deliverables.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">Previous Submissions</h4>
-                  {deliverables.map((d) => (
-                    <div
-                      key={d.id}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-sm">{d.file_name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          v{d.version}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Previous Submissions</h4>
+                  <div className="space-y-2">
+                    {deliverables.map((d, index) => (
+                      <motion.div
+                        key={d.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.3 }}
+                        className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100 transition-all"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="h-10 w-10 rounded-lg bg-[#E6F4FF] flex items-center justify-center flex-shrink-0">
+                            <FileText className="h-5 w-5 text-[#4B9BFF]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{d.file_name}</p>
+                            <Badge className="bg-[#EEF2FF] text-[#5B7CFF] hover:bg-[#E3E9FF] border-0 text-xs mt-1 px-2 py-0 font-medium">
+                              Version {d.version}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Badge className={cn(
+                          'px-3 py-1 font-semibold',
+                          d.qc_status === 'approved' && 'bg-[#D1FAE5] text-[#059669]',
+                          d.qc_status === 'pending' && 'bg-[#FFE7E1] text-[#FF8B6A]',
+                          d.qc_status === 'rejected' && 'bg-[#FEE2E2] text-[#DC2626]'
+                        )}>
+                          {d.qc_status}
                         </Badge>
-                      </div>
-                      <Badge className={getQCStatusColor(d.qc_status)}>
-                        {d.qc_status}
-                      </Badge>
-                    </div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* File upload */}
-              <FileUpload
-                onFilesSelected={() => {}}
-                onUpload={handleUpload}
-                isUploading={isUploading}
-                maxFiles={5}
-                multiple
-              />
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Upload Files</h4>
+                <FileUpload
+                  onFilesSelected={() => {}}
+                  onUpload={handleUpload}
+                  isUploading={isUploading}
+                  maxFiles={5}
+                  multiple
+                />
+              </div>
 
               {/* Submit button */}
               {deliverables.length > 0 && onSubmitProject && (
-                <Button
-                  onClick={onSubmitProject}
-                  disabled={isLoading}
-                  className="w-full gap-2"
-                  size="lg"
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
                 >
-                  <Send className="h-4 w-4" />
-                  Submit for Review
-                </Button>
+                  <Button
+                    onClick={onSubmitProject}
+                    disabled={isLoading}
+                    className="w-full h-11 rounded-full bg-[#FF9B7A] hover:bg-[#FF8B6A] text-white text-sm font-semibold shadow-[0_8px_30px_rgba(255,155,122,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(255,155,122,0.45)]"
+                    size="lg"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit for Review
+                  </Button>
+                </motion.div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </TabsContent>
 
-        {/* Chat Tab */}
-        <TabsContent value="chat" className="mt-4">
-          <Card className="h-[500px]">
-            <ChatPanel
-              roomId={chatRoomId || ''}
-              currentUserId={currentUserId}
-              currentUserName={currentUserName}
-              currentUserAvatar={currentUserAvatar}
-              messages={messages}
-              isLoading={isChatLoading}
-              isSending={isChatSending}
-              onSendMessage={onSendMessage}
-              onSendFile={onSendFile}
-              className="h-full"
-            />
-          </Card>
+        {/* Chat Tab - Doer dashboard style */}
+        <TabsContent value="chat" className="mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[24px] bg-white/85 shadow-[0_16px_35px_rgba(30,58,138,0.08)] overflow-hidden"
+          >
+            <div className="h-[600px]">
+              <ChatPanel
+                roomId={chatRoomId || ''}
+                currentUserId={currentUserId}
+                currentUserName={currentUserName}
+                currentUserAvatar={currentUserAvatar}
+                messages={messages}
+                isLoading={isChatLoading}
+                isSending={isChatSending}
+                onSendMessage={onSendMessage}
+                onSendFile={onSendFile}
+                className="h-full"
+              />
+            </div>
+          </motion.div>
         </TabsContent>
       </Tabs>
+      </motion.div>
     </div>
   )
 }

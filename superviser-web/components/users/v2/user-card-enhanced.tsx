@@ -103,13 +103,13 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
       onClick={handleCardClick}
     >
       {/* Header Section */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-5 gap-2">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {/* Avatar with Online Indicator */}
           <div className="relative flex-shrink-0">
-            <Avatar className="h-12 w-12 border-2 border-gray-100">
+            <Avatar className="h-14 w-14 border-2 border-gray-100">
               <AvatarImage src={user.avatar_url} alt={user.full_name} />
-              <AvatarFallback className="bg-gradient-to-br from-orange-400 to-orange-600 text-white font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-orange-400 to-orange-600 text-white font-semibold text-lg">
                 {getInitials(user.full_name)}
               </AvatarFallback>
             </Avatar>
@@ -124,10 +124,10 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
 
           {/* Name and Email */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate">
+            <h3 className="font-semibold text-gray-900 line-clamp-1 text-base leading-snug">
               {user.full_name}
             </h3>
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-gray-500 line-clamp-1 mt-0.5">
               {user.email}
             </p>
           </div>
@@ -168,34 +168,34 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-5">
         {/* Projects Stat */}
-        <div className="bg-gray-50 rounded-xl p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-              <FolderKanban className="h-4 w-4 text-orange-600" />
+        <div className="bg-gray-50 rounded-xl p-3.5">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-7 w-7 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <FolderKanban className="h-3.5 w-3.5 text-orange-600" />
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Projects</p>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-500">Projects</p>
-              <p className="text-lg font-bold text-gray-900">
-                {user.total_projects}
-              </p>
-            </div>
+            <p className="text-xl font-bold text-gray-900 ml-0.5">
+              {user.total_projects}
+            </p>
           </div>
         </div>
 
         {/* Revenue Stat */}
-        <div className="bg-gray-50 rounded-xl p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-              <IndianRupee className="h-4 w-4 text-green-600" />
+        <div className="bg-gray-50 rounded-xl p-3.5">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-7 w-7 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <IndianRupee className="h-3.5 w-3.5 text-green-600" />
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Revenue</p>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-gray-500">Revenue</p>
-              <p className="text-lg font-bold text-gray-900 truncate">
-                {formatCurrency(user.total_spent)}
-              </p>
-            </div>
+            <p className="text-base font-bold text-gray-900 line-clamp-1 ml-0.5">
+              {formatCurrency(user.total_spent)}
+            </p>
           </div>
         </div>
       </div>
@@ -224,11 +224,11 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100 gap-3">
         {/* Last Active */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <Calendar className="h-3.5 w-3.5" />
-          <span>
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 min-w-0 flex-1">
+          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
             {user.last_active_at ? getRelativeTime(user.last_active_at) : 'Never active'}
           </span>
         </div>
@@ -236,7 +236,7 @@ export function UserCardEnhanced({ user, onClick, onMenuAction }: UserCardEnhanc
         {/* Status Badge */}
         <Badge
           variant={isActive ? "default" : "secondary"}
-          className={`text-xs ${
+          className={`text-xs flex-shrink-0 whitespace-nowrap ${
             isActive
               ? "bg-green-100 text-green-700 hover:bg-green-100"
               : "bg-gray-100 text-gray-600 hover:bg-gray-100"

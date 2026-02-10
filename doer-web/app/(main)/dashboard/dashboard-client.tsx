@@ -58,6 +58,9 @@ type HeroStackCardProps = {
 type SummaryStatCardProps = {
   label: string
   value: string
+  icon: React.ElementType
+  iconBg: string
+  iconColor: string
 }
 
 type QuickStatCardProps = {
@@ -178,7 +181,7 @@ function HeroStackCard({ label, value, highlight }: HeroStackCardProps) {
 /**
  * Primary hero workspace card.
  */
-function HeroWorkspaceCard() {
+function HeroWorkspaceCard({ onExploreProjects, onViewInsights }: { onExploreProjects: () => void; onViewInsights: () => void }) {
   return (
     <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#EEF2FF] via-[#F3F5FF] to-[#E9FAFA] p-6 shadow-[0_24px_60px_rgba(30,58,138,0.12)]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.18),transparent_55%)]" />
@@ -194,14 +197,16 @@ function HeroWorkspaceCard() {
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button
-              className="h-11 rounded-full bg-[#FF9B7A] px-5 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(255,155,122,0.35)] transition hover:-translate-y-0.5"
+              className="h-11 rounded-full bg-[#FF9B7A] px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5"
               type="button"
+              onClick={onExploreProjects}
             >
               Explore projects
             </button>
             <button
               className="h-11 rounded-full border border-white/80 bg-white/85 px-5 text-sm font-semibold text-slate-600 shadow-[0_10px_22px_rgba(30,58,138,0.1)] transition hover:text-slate-800"
               type="button"
+              onClick={onViewInsights}
             >
               View insights
             </button>
@@ -218,12 +223,17 @@ function HeroWorkspaceCard() {
 }
 
 /**
- * Right-side summary panel.
+ * Right-side summary panel stat card with icon.
  */
-function SummaryStatCard({ label, value }: SummaryStatCardProps) {
+function SummaryStatCard({ label, value, icon: Icon, iconBg, iconColor }: SummaryStatCardProps) {
   return (
     <div className="rounded-2xl bg-white/85 p-4 shadow-[0_12px_28px_rgba(30,58,138,0.08)]">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+        <div className={cn('flex h-8 w-8 items-center justify-center rounded-xl', iconBg)}>
+          <Icon className={cn('h-4 w-4', iconColor)} />
+        </div>
+      </div>
       <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
     </div>
   )
@@ -239,9 +249,27 @@ function RightSummaryPanel() {
         <h3 className="text-base font-semibold text-slate-900">Today at a glance</h3>
       </div>
       <div className="mt-4 space-y-3">
-        <SummaryStatCard label="Assigned tasks" value="0" />
-        <SummaryStatCard label="Open pool" value="8" />
-        <SummaryStatCard label="Urgent reviews" value="0" />
+        <SummaryStatCard
+          label="Assigned tasks"
+          value="0"
+          icon={Briefcase}
+          iconBg="bg-[#E9E3FF]"
+          iconColor="text-[#7C3AED]"
+        />
+        <SummaryStatCard
+          label="Open pool"
+          value="8"
+          icon={Layers}
+          iconBg="bg-[#E6F4FF]"
+          iconColor="text-[#4B9BFF]"
+        />
+        <SummaryStatCard
+          label="Urgent reviews"
+          value="0"
+          icon={Clock}
+          iconBg="bg-[#FFE7E1]"
+          iconColor="text-[#FF8B6A]"
+        />
       </div>
     </div>
   )
@@ -502,6 +530,16 @@ export function DashboardClient({ initialDoer }: DashboardClientProps) {
     await loadTasks(true)
   }, [loadTasks])
 
+  /** Handle navigation to projects page */
+  const handleExploreProjects = useCallback(() => {
+    router.push(ROUTES.projects)
+  }, [router])
+
+  /** Handle navigation to statistics page */
+  const handleViewInsights = useCallback(() => {
+    router.push(ROUTES.statistics)
+  }, [router])
+
   /** Count of tasks needing attention. */
   const urgentCount = useMemo(() =>
     assignedTasks.filter(t => t.isUrgent || t.status === 'revision_requested').length,
@@ -564,7 +602,10 @@ export function DashboardClient({ initialDoer }: DashboardClientProps) {
         <DashboardTopBar />
         <DashboardTitle />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <HeroWorkspaceCard />
+          <HeroWorkspaceCard
+            onExploreProjects={handleExploreProjects}
+            onViewInsights={handleViewInsights}
+          />
           <RightSummaryPanel />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

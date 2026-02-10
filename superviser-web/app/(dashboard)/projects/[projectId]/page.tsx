@@ -193,265 +193,295 @@ export default function ProjectDetailPage() {
   const showQCActions = project.status === "submitted_for_qc" || project.status === "qc_in_progress"
 
   return (
-    <div className="space-y-6">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/projects")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">{project.title}</h2>
-            <Badge className={getStatusColor(project.status)}>
-              {project.status.replace(/_/g, " ")}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Project #{project.project_number}
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="relative">
+        {/* Background Gradients */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 right-0 h-64 w-64 rounded-full bg-orange-100/60 blur-3xl" />
+          <div className="absolute top-40 left-10 h-56 w-56 rounded-full bg-amber-100/50 blur-3xl" />
         </div>
-        {showQCActions && (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setQcModalState({ open: true, mode: "reject" })}
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Request Revision
-            </Button>
-            <Button
-              onClick={() => setQcModalState({ open: true, mode: "approve" })}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Approve Project
-            </Button>
-          </div>
-        )}
-      </div>
 
-      {/* Key Information Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Client</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Link
-              href={`/users/${project.user_id}`}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={project.profiles?.avatar_url || undefined} />
-                <AvatarFallback>
-                  {project.profiles?.full_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{project.profiles?.full_name || "Unknown User"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {project.profiles?.email || "No email"}
+        <div className="relative max-w-[1400px] mx-auto p-6 lg:p-10 space-y-8">
+          {/* Header with Back Button */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/projects")}
+                className="rounded-full hover:bg-orange-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-3 flex-wrap">
+                  <h2 className="text-3xl font-bold tracking-tight text-[#1C1C1C]">{project.title}</h2>
+                  <Badge className={`${getStatusColor(project.status)} text-xs font-medium px-3 py-1`}>
+                    {project.status.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-500 mt-2 font-mono">
+                  Project #{project.project_number}
                 </p>
               </div>
-            </Link>
-          </CardContent>
-        </Card>
+              {showQCActions && (
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    variant="outline"
+                    onClick={() => setQcModalState({ open: true, mode: "reject" })}
+                    className="rounded-full border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Request Revision
+                  </Button>
+                  <Button
+                    onClick={() => setQcModalState({ open: true, mode: "approve" })}
+                    className="rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Approve Project
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expert</CardTitle>
-            <UserCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {project.doer_id && project.doers ? (
+          {/* Key Information Cards */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Client Card */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-orange-200 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <User className="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 className="text-sm font-semibold text-[#1C1C1C]">Client</h3>
+              </div>
               <Link
-                href={`/doers/${project.doer_id}`}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                href={`/users/${project.user_id}`}
+                className="flex items-center gap-3 group"
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={project.doers.profiles?.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {project.doers.profiles?.full_name?.charAt(0) || "D"}
+                <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
+                  <AvatarImage src={project.profiles?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white font-semibold">
+                    {project.profiles?.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-medium">{project.doers.profiles?.full_name || "Unknown Doer"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Rating: {project.doers.average_rating?.toFixed(1) || "N/A"} ⭐
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#1C1C1C] group-hover:text-[#F97316] transition-colors truncate">
+                    {project.profiles?.full_name || "Unknown User"}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {project.profiles?.email || "No email"}
                   </p>
                 </div>
               </Link>
-            ) : (
-              <p className="text-sm text-muted-foreground">Not assigned yet</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Financials</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Quote:</span>
-              <span className="font-medium">₹{project.user_quote || 0}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Your Commission:</span>
-              <span className="font-medium text-green-600">₹{project.supervisor_commission || 0}</span>
-            </div>
-            {project.status === "analyzing" && (
-              <Button
-                size="sm"
-                className="w-full mt-2"
-                onClick={() => setQuoteModalOpen(true)}
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Set Quote
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="details" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="details">
-            <FileText className="h-4 w-4 mr-2" />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="timeline">
-            <Clock className="h-4 w-4 mr-2" />
-            Timeline
-          </TabsTrigger>
-          <TabsTrigger value="communication">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Communication
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Subject</p>
-                  <p className="text-sm">{project.subjects?.name || "General"}</p>
+            {/* Expert Card */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-orange-200 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                  <UserCircle className="h-5 w-5 text-purple-600" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Service Type</p>
-                  <p className="text-sm">{project.service_type?.replace(/_/g, " ")}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Word Count</p>
-                  <p className="text-sm">{project.word_count || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Page Count</p>
-                  <p className="text-sm">{project.page_count || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Deadline</p>
-                  <p className="text-sm">{formatDate(project.deadline)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Created</p>
-                  <p className="text-sm">{formatDate(project.created_at)}</p>
-                </div>
+                <h3 className="text-sm font-semibold text-[#1C1C1C]">Expert</h3>
               </div>
-
-              {project.description && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Description</p>
-                    <p className="text-sm whitespace-pre-wrap">{project.description}</p>
+              {project.doer_id && project.doers ? (
+                <Link
+                  href={`/doers/${project.doer_id}`}
+                  className="flex items-center gap-3 group"
+                >
+                  <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
+                    <AvatarImage src={project.doers.profiles?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
+                      {project.doers.profiles?.full_name?.charAt(0) || "D"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[#1C1C1C] group-hover:text-[#F97316] transition-colors truncate">
+                      {project.doers.profiles?.full_name || "Unknown Doer"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Rating: {project.doers.average_rating?.toFixed(1) || "N/A"} ⭐
+                    </p>
                   </div>
-                </>
+                </Link>
+              ) : (
+                <p className="text-sm text-gray-500">Not assigned yet</p>
               )}
+            </div>
 
-              {project.specific_instructions && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Special Instructions</p>
-                    <p className="text-sm whitespace-pre-wrap">{project.specific_instructions}</p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="timeline" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
-              <CardDescription>Track the progress of this project</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            {/* Financials Card */}
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-[#F97316]" />
+                </div>
+                <h3 className="text-sm font-semibold text-[#1C1C1C]">Financials</h3>
+              </div>
               <div className="space-y-3">
-                <TimelineItem
-                  icon={<Calendar className="h-4 w-4" />}
-                  title="Project Created"
-                  timestamp={formatDate(project.created_at)}
-                  status="completed"
-                />
-                {project.doer_assigned_at && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Quote:</span>
+                  <span className="text-lg font-bold text-[#1C1C1C]">₹{project.user_quote || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Your Commission:</span>
+                  <span className="text-lg font-bold text-green-600">₹{project.supervisor_commission || 0}</span>
+                </div>
+                {project.status === "analyzing" && (
+                  <Button
+                    size="sm"
+                    className="w-full mt-3 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl shadow-lg"
+                    onClick={() => setQuoteModalOpen(true)}
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Set Quote
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="details" className="space-y-6">
+            <TabsList className="bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
+              <TabsTrigger
+                value="details"
+                className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white rounded-lg"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger
+                value="timeline"
+                className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white rounded-lg"
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger
+                value="communication"
+                className="data-[state=active]:bg-[#F97316] data-[state=active]:text-white rounded-lg"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Communication
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details" className="space-y-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-[#1C1C1C] mb-6">Project Details</h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Subject</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{project.subjects?.name || "General"}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Service Type</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{project.service_type?.replace(/_/g, " ")}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Word Count</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{project.word_count || "N/A"}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Page Count</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{project.page_count || "N/A"}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Deadline</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{formatDate(project.deadline)}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 font-medium">Created</p>
+                    <p className="text-base font-semibold text-[#1C1C1C]">{formatDate(project.created_at)}</p>
+                  </div>
+                </div>
+
+                {project.description && (
+                  <>
+                    <div className="my-6 border-t border-gray-200" />
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-3">Description</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{project.description}</p>
+                    </div>
+                  </>
+                )}
+
+                {project.specific_instructions && (
+                  <>
+                    <div className="my-6 border-t border-gray-200" />
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400 font-medium mb-3">Special Instructions</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{project.specific_instructions}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="timeline" className="space-y-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-[#1C1C1C] mb-2">Project Timeline</h3>
+                <p className="text-sm text-gray-500 mb-6">Track the progress of this project</p>
+                <div className="space-y-4">
                   <TimelineItem
-                    icon={<UserCircle className="h-4 w-4" />}
-                    title="Expert Assigned"
-                    timestamp={formatDate(project.doer_assigned_at)}
+                    icon={<Calendar className="h-4 w-4" />}
+                    title="Project Created"
+                    timestamp={formatDate(project.created_at)}
                     status="completed"
                   />
-                )}
-                {project.status_updated_at && (
-                  <TimelineItem
-                    icon={<TrendingUp className="h-4 w-4" />}
-                    title={`Status: ${project.status.replace(/_/g, " ")}`}
-                    timestamp={formatDate(project.status_updated_at)}
-                    status="current"
-                  />
-                )}
-                {project.deadline && (
-                  <TimelineItem
-                    icon={<Clock className="h-4 w-4" />}
-                    title="Deadline"
-                    timestamp={formatDate(project.deadline)}
-                    status={new Date(project.deadline) < new Date() ? "overdue" : "upcoming"}
-                  />
-                )}
+                  {project.doer_assigned_at && (
+                    <TimelineItem
+                      icon={<UserCircle className="h-4 w-4" />}
+                      title="Expert Assigned"
+                      timestamp={formatDate(project.doer_assigned_at)}
+                      status="completed"
+                    />
+                  )}
+                  {project.status_updated_at && (
+                    <TimelineItem
+                      icon={<TrendingUp className="h-4 w-4" />}
+                      title={`Status: ${project.status.replace(/_/g, " ")}`}
+                      timestamp={formatDate(project.status_updated_at)}
+                      status="current"
+                    />
+                  )}
+                  {project.deadline && (
+                    <TimelineItem
+                      icon={<Clock className="h-4 w-4" />}
+                      title="Deadline"
+                      timestamp={formatDate(project.deadline)}
+                      status={new Date(project.deadline) < new Date() ? "overdue" : "upcoming"}
+                    />
+                  )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="communication" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Communication</CardTitle>
-              <CardDescription>Messages and updates for this project</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <MessageSquare className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  Chat functionality will be integrated here
-                </p>
-                <Button variant="outline" className="mt-4" disabled>
-                  Start Conversation
-                </Button>
+            <TabsContent value="communication" className="space-y-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-[#1C1C1C] mb-2">Communication</h3>
+                <p className="text-sm text-gray-500 mb-6">Messages and updates for this project</p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="h-16 w-16 rounded-2xl bg-orange-50 flex items-center justify-center mb-4">
+                    <MessageSquare className="h-8 w-8 text-[#F97316]" />
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Chat functionality coming soon
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    You'll be able to communicate with clients and experts here
+                  </p>
+                  <Button variant="outline" className="mt-6 rounded-full border-gray-200" disabled>
+                    Start Conversation
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {/* QC Review Modal */}
       <QCReviewModal
@@ -523,20 +553,20 @@ interface TimelineItemProps {
 
 function TimelineItem({ icon, title, timestamp, status }: TimelineItemProps) {
   const statusColors = {
-    completed: "border-green-500 bg-green-50",
-    current: "border-blue-500 bg-blue-50",
-    upcoming: "border-gray-300 bg-gray-50",
-    overdue: "border-red-500 bg-red-50",
+    completed: "border-green-500 bg-green-50 text-green-600",
+    current: "border-orange-500 bg-orange-50 text-[#F97316]",
+    upcoming: "border-gray-300 bg-gray-50 text-gray-600",
+    overdue: "border-red-500 bg-red-50 text-red-600",
   }
 
   return (
-    <div className="flex gap-3">
-      <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${statusColors[status]}`}>
+    <div className="flex gap-4 items-start">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 ${statusColors[status]} flex-shrink-0`}>
         {icon}
       </div>
-      <div className="flex-1">
-        <p className="font-medium text-sm">{title}</p>
-        <p className="text-xs text-muted-foreground">{timestamp}</p>
+      <div className="flex-1 min-w-0 pt-1">
+        <p className="font-semibold text-sm text-[#1C1C1C]">{title}</p>
+        <p className="text-xs text-gray-500 mt-1">{timestamp}</p>
       </div>
     </div>
   )

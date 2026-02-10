@@ -97,6 +97,7 @@ export const ROUTES = {
   profileSetup: '/profile-setup',
   dashboard: '/dashboard',
   projects: '/projects',
+  statistics: '/statistics',
   resources: '/resources',
   profile: '/profile',
   training: '/training',

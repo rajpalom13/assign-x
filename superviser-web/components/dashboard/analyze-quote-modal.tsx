@@ -202,222 +202,257 @@ export function AnalyzeQuoteModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 bg-white">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 bg-white">
+          <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-[#1C1C1C]">
+            <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center">
+              <Calculator className="h-5 w-5 text-[#F97316]" />
+            </div>
             Analyze & Set Quote
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600 mt-2">
             Review the project requirements and set the client quote
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-6">
+        <ScrollArea className="max-h-[60vh] p-6">
+          <div className="space-y-4">
             {/* Project Info Section */}
-            <Card>
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-start justify-between">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <Badge variant="outline" className="mb-1.5 font-mono text-xs bg-gray-100 text-gray-700 border-gray-300">
+                    #{request.project_number}
+                  </Badge>
+                  <h3 className="font-bold text-lg text-[#1C1C1C]">{request.title}</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {request.subject}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" className="rounded-full border-gray-200 shrink-0">
+                  <Download className="h-4 w-4 mr-2" />
+                  Files
+                </Button>
+              </div>
+
+              <div className="border-t border-gray-200 my-3" />
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <User className="h-4 w-4 text-blue-600" />
+                  </div>
                   <div>
-                    <Badge variant="outline" className="mb-2 font-mono">
-                      {request.project_number}
-                    </Badge>
-                    <h3 className="font-semibold text-lg">{request.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {request.subject}
+                    <p className="text-xs text-gray-500">Client</p>
+                    <p className="font-semibold text-[#1C1C1C]">{request.user_name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-4 w-4 text-[#F97316]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Deadline</p>
+                    <p className="font-semibold text-[#1C1C1C]">
+                      {format(new Date(request.deadline), "PPp")}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Files
-                  </Button>
                 </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                {request.word_count && (
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Client:</span>
-                    <span className="font-medium">{request.user_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Deadline:</span>
-                    <span className="font-medium">
-                      {format(new Date(request.deadline), "PPp")}
-                    </span>
-                  </div>
-                  {request.word_count && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Words:</span>
-                      <span className="font-medium">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Words</p>
+                      <p className="font-semibold text-[#1C1C1C]">
                         {request.word_count.toLocaleString()}
-                      </span>
+                      </p>
                     </div>
-                  )}
-                  {request.page_count && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Pages:</span>
-                      <span className="font-medium">{request.page_count}</span>
+                  </div>
+                )}
+                {request.page_count && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-4 w-4 text-green-600" />
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    <div>
+                      <p className="text-xs text-gray-500">Pages</p>
+                      <p className="font-semibold text-[#1C1C1C]">{request.page_count}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Suggested Quote */}
-            <Card className="border-primary/50 bg-primary/5">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Suggested Quote</span>
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                    <Info className="h-5 w-5 text-[#F97316]" />
                   </div>
-                  <div className="text-2xl font-bold text-primary">
-                    ₹{suggestedQuote.toLocaleString("en-IN")}
+                  <div>
+                    <p className="text-sm font-semibold text-[#1C1C1C]">Suggested Quote</p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      Based on word count, deadline, and pricing guidelines
+                    </p>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Based on word count, deadline, and pricing guidelines
-                </p>
-              </CardContent>
-            </Card>
+                <div className="text-3xl font-bold text-[#F97316]">
+                  ₹{suggestedQuote.toLocaleString("en-IN")}
+                </div>
+              </div>
+            </div>
 
             {/* Quote Form */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="userQuote"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Quote (₹)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="number"
-                              placeholder="Enter quote amount"
-                              className="pl-9"
-                              {...field}
-                              onChange={(e) =>
-                                handleQuoteChange(parseInt(e.target.value) || 0)
-                              }
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Amount client will pay
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="userQuote"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-[#1C1C1C]">Client Quote (₹)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                type="number"
+                                placeholder="Enter quote amount"
+                                className="pl-9 border-gray-200 focus:border-orange-300 focus:ring-orange-200 rounded-lg"
+                                {...field}
+                                onChange={(e) =>
+                                  handleQuoteChange(parseInt(e.target.value) || 0)
+                                }
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription className="text-xs text-gray-500">
+                            Amount client will pay
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
+                    <FormField
+                      control={form.control}
+                      name="doerPayout"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-semibold text-[#1C1C1C]">Doer Payout (₹)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Input
+                                type="number"
+                                placeholder="Enter payout amount"
+                                className="pl-9 border-gray-200 focus:border-orange-300 focus:ring-orange-200 rounded-lg"
+                                {...field}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) || 0)
+                                }
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription className="text-xs text-gray-500">
+                            Amount doer will receive
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Earnings Breakdown */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                  <h4 className="text-sm font-semibold text-[#1C1C1C] mb-3 flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <Calculator className="h-4 w-4 text-purple-600" />
+                    </div>
+                    Earnings Breakdown
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-gray-600">Client Quote</span>
+                      <span className="font-semibold text-[#1C1C1C]">
+                        ₹{form.watch("userQuote")?.toLocaleString("en-IN") || 0}
+                      </span>
+                    </div>
+                    <Separator className="bg-gray-200" />
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-gray-600">
+                        Doer Payout ({100 - pricing.supervisor_percentage - pricing.platform_percentage}%)
+                      </span>
+                      <span className="font-semibold text-red-600">
+                        -₹{form.watch("doerPayout")?.toLocaleString("en-IN") || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1.5">
+                      <span className="text-gray-600">
+                        Platform Fee ({pricing.platform_percentage}%)
+                      </span>
+                      <span className="font-semibold text-red-600">
+                        -₹
+                        {Math.ceil(
+                          (form.watch("userQuote") * pricing.platform_percentage) / 100
+                        ).toLocaleString("en-IN") || 0}
+                      </span>
+                    </div>
+                    <Separator className="bg-gray-200" />
+                    <div className="flex justify-between items-center py-2 px-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <span className="font-semibold text-emerald-700">Your Commission ({pricing.supervisor_percentage}%)</span>
+                      <span className="text-lg font-bold text-emerald-600">₹{supervisorEarning.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                   <FormField
                     control={form.control}
-                    name="doerPayout"
+                    name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Doer Payout (₹)</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-[#1C1C1C]">Internal Notes (Optional)</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="number"
-                              placeholder="Enter payout amount"
-                              className="pl-9"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value) || 0)
-                              }
-                            />
-                          </div>
+                          <Textarea
+                            placeholder="Any notes about pricing decisions..."
+                            className="resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-200 rounded-lg min-h-[80px]"
+                            {...field}
+                          />
                         </FormControl>
-                        <FormDescription>
-                          Amount doer will receive
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                {/* Earnings Breakdown */}
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-medium mb-3">Earnings Breakdown</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Client Quote</span>
-                        <span className="font-medium">
-                          ₹{form.watch("userQuote")?.toLocaleString("en-IN") || 0}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Doer Payout ({100 - pricing.supervisor_percentage - pricing.platform_percentage}%)
-                        </span>
-                        <span className="font-medium">
-                          -₹{form.watch("doerPayout")?.toLocaleString("en-IN") || 0}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Platform Fee ({pricing.platform_percentage}%)
-                        </span>
-                        <span className="font-medium">
-                          -₹
-                          {Math.ceil(
-                            (form.watch("userQuote") * pricing.platform_percentage) / 100
-                          ).toLocaleString("en-IN") || 0}
-                        </span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between text-green-600 font-semibold">
-                        <span>Your Commission ({pricing.supervisor_percentage}%)</span>
-                        <span>₹{supervisorEarning.toLocaleString("en-IN")}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Internal Notes (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Any notes about pricing decisions..."
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </form>
             </Form>
           </div>
         </ScrollArea>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+        <DialogFooter className="gap-3 p-6 border-t border-gray-200 bg-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="rounded-xl border-gray-200 hover:bg-gray-50"
+          >
             Cancel
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+            className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl shadow-sm"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
+                Submitting Quote...
               </>
             ) : (
               <>

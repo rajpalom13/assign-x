@@ -244,14 +244,14 @@ export default function DashboardPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="max-w-[1400px] mx-auto p-8 lg:p-10"
+        className="max-w-[1400px] mx-auto px-8 lg:px-10 pt-4 pb-8"
       >
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-8"
+          className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-6"
         >
           {/* Left - Greeting */}
           <div className="flex-1 space-y-4">
@@ -289,7 +289,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"
         >
           {statusItems.map((item, index) => (
             <Link key={item.label} href={item.href}>
@@ -333,7 +333,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Analytics + Quick Actions Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 mb-6">
           {/* Analytics Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -50,6 +50,7 @@ export interface ProjectCardV2Data {
 export interface ProjectCardV2Props {
   project: ProjectCardV2Data
   variant: "new" | "ready" | "ongoing" | "review" | "completed"
+  highlighted?: boolean
   onClaim?: () => void
   onApprove?: () => void
   onReject?: () => void
@@ -139,6 +140,7 @@ function getInitials(name: string): string {
 export function ProjectCardV2({
   project,
   variant,
+  highlighted = false,
   onClaim,
   onApprove,
   onReject,
@@ -177,84 +179,89 @@ export function ProjectCardV2({
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: highlighted ? 1.02 : 1
+      }}
       transition={{ duration: 0.3 }}
       whileHover={{ y: -2 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className={cn(
-        "group bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-300",
-        isHovered && "shadow-lg border-orange-200",
-        isCritical && "border-l-4 border-l-red-500",
-        isUrgent && !isCritical && "border-l-4 border-l-orange-500",
-        isOverdue && "border-l-4 border-l-red-700"
+        "group bg-white rounded-2xl border overflow-hidden transition-all duration-300",
+        highlighted && "border-orange-500 shadow-lg shadow-orange-200 ring-2 ring-orange-200",
+        !highlighted && "border-gray-200",
+        isHovered && !highlighted && "shadow-lg border-orange-200"
       )}
     >
-      <div className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
+      <div className="p-4 space-y-3">
+        {/* Header: status badge + project number + amount */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <StatusBadge status={project.status} variant={variant} />
-            <span className="text-xs font-mono text-gray-400">#{project.project_number}</span>
+            <span className="text-xs font-mono text-gray-400 shrink-0">#{project.project_number}</span>
             {project.revision_count && project.revision_count > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                <RotateCcw className="h-3 w-3" />
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
+                <RotateCcw className="h-2.5 w-2.5" />
                 Rev {project.revision_count}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            {(variant === "ready" || variant === "completed") && project.quoted_amount && (
-              <span className="text-sm font-semibold text-emerald-600 flex items-center">
-                <IndianRupee className="h-3.5 w-3.5" />
-                {project.quoted_amount.toLocaleString("en-IN")}
-              </span>
-            )}
-          </div>
+          {(variant === "ready" || variant === "completed") && project.quoted_amount ? (
+            <span className="text-sm font-semibold text-emerald-600 flex items-center shrink-0">
+              <IndianRupee className="h-3.5 w-3.5" />
+              {project.quoted_amount.toLocaleString("en-IN")}
+            </span>
+          ) : null}
         </div>
 
+        {/* Subject + Title + Service Type */}
         <div>
           <p className="text-[11px] uppercase tracking-wide text-gray-400">{project.subject}</p>
-          <h3 className="text-base font-semibold text-[#1C1C1C] mt-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
+          <h3 className="text-sm font-semibold text-[#1C1C1C] mt-1 line-clamp-2 leading-snug group-hover:text-orange-600 transition-colors">
             {project.title}
           </h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             {project.service_type.replace(/_/g, " ")}
           </p>
         </div>
 
+        {/* Deadline band */}
         <div className={urgencyBand}>
-          <div className="flex items-center justify-between gap-3 text-xs">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="flex items-center gap-1 min-w-0 truncate">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
               {format(deadlineDate, "MMM d, h:mm a")}
             </span>
-            {project.quoted_amount && (
-              <span className="flex items-center gap-1 font-semibold">
-                <IndianRupee className="h-3.5 w-3.5" />
+            {project.quoted_amount ? (
+              <span className="flex items-center gap-0.5 font-semibold shrink-0">
+                <IndianRupee className="h-3 w-3" />
                 {project.quoted_amount.toLocaleString("en-IN")}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
+        {/* User info + due label */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-7 w-7 shrink-0">
               <AvatarImage src="" alt={displayName} />
-              <AvatarFallback className="bg-orange-100 text-orange-700 text-xs">
+              <AvatarFallback className="bg-orange-100 text-orange-700 text-[10px]">
                 {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="text-sm font-medium text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-500">{displayRole}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
+              <p className="text-[11px] text-gray-500">{displayRole}</p>
             </div>
           </div>
 
           <div
             className={cn(
-              "flex items-center gap-1.5 text-xs",
+              "flex items-center gap-1 text-xs shrink-0",
               isCritical && "text-red-600 font-medium",
               isUrgent && !isCritical && "text-orange-600 font-medium",
               isOverdue && "text-red-700 font-semibold",
@@ -262,39 +269,41 @@ export function ProjectCardV2({
             )}
           >
             <Clock className="h-3.5 w-3.5" />
-            <span>{dueLabel}</span>
+            <span className="whitespace-nowrap">{dueLabel}</span>
           </div>
         </div>
 
+        {/* Commission row */}
         {(variant === "ongoing" || variant === "review" || variant === "completed") &&
-          project.supervisor_commission && (
-            <div className="flex items-center justify-between py-2 px-3 rounded-lg border border-emerald-100 bg-emerald-50">
-              <span className="text-xs text-gray-600">Your commission</span>
+          project.supervisor_commission ? (
+            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg border border-emerald-100 bg-emerald-50">
+              <span className="text-xs text-gray-600">Commission</span>
               <span className="text-sm font-semibold text-emerald-600 flex items-center">
                 <IndianRupee className="h-3.5 w-3.5" />
                 {project.supervisor_commission.toLocaleString("en-IN")}
               </span>
             </div>
-          )}
+          ) : null}
 
+        {/* Unread messages */}
         {project.has_unread_messages && (
-          <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
-            <MessageSquare className="h-3.5 w-3.5" />
-            New messages available
+          <div className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
+            <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+            New messages
           </div>
         )}
       </div>
 
-      <div className="border-t border-gray-100 px-5 py-4 bg-gray-50/40">
+      <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/40">
         <div className="flex items-center gap-2">
           {variant === "new" && (
             <Button
-              className="flex-1 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl"
+              className="flex-1 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl text-sm"
               onClick={onClaim}
               disabled={isLoading}
             >
-              <Zap className="h-4 w-4 mr-1.5" />
-              Claim & Analyze
+              <Zap className="h-4 w-4 mr-1 shrink-0" />
+              <span className="truncate">Claim & Analyze</span>
             </Button>
           )}
 
@@ -356,26 +365,24 @@ export function ProjectCardV2({
           {variant === "review" && (
             <>
               <Button
-                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl"
+                className="flex-[1_1_0%] bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl min-w-0"
                 onClick={onApprove}
                 disabled={isLoading}
               >
-                <CheckCircle2 className="h-4 w-4 mr-1.5" />
                 Approve
               </Button>
               <Button
                 variant="destructive"
-                className="flex-1 rounded-xl"
+                className="flex-[1_1_0%] rounded-xl min-w-0"
                 onClick={onReject}
                 disabled={isLoading}
               >
-                <XCircle className="h-4 w-4 mr-1.5" />
                 Reject
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-xl shrink-0"
                 asChild
               >
                 <Link href={`/projects/${project.id}`}>
@@ -389,23 +396,22 @@ export function ProjectCardV2({
             <>
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl border-gray-200"
+                className="flex-[1.2_1_0%] rounded-xl border-gray-200 min-w-0"
                 asChild
               >
-                <Link href={`/projects/${project.id}`}>
-                  <Eye className="h-4 w-4 mr-1.5" />
-                  View Details
-                  <ChevronRight className="h-4 w-4 ml-auto" />
+                <Link href={`/projects/${project.id}`} className="flex items-center gap-1.5">
+                  <Eye className="h-4 w-4 shrink-0" />
+                  <span className="truncate">View Details</span>
                 </Link>
               </Button>
               <Button
                 variant="ghost"
-                className="rounded-xl"
+                className="flex-[0.8_1_0%] rounded-xl min-w-0"
                 asChild
               >
-                <Link href={`/chat/${project.id}`}>
-                  <MessageSquare className="h-4 w-4 mr-1.5" />
-                  Chat
+                <Link href={`/chat/${project.id}`} className="flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Chat</span>
                 </Link>
               </Button>
             </>

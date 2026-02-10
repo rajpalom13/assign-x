@@ -158,27 +158,38 @@ export function ChatWindow({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 via-orange-50/20 to-gray-50">
       {/* Header */}
-      <div className="flex items-center gap-4 p-4 border-b">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/projects/${projectId}`}>
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
+      <div className="relative bg-white/80 backdrop-blur-sm border-b border-gray-200/80 shadow-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-transparent to-orange-500/5" />
+        <div className="relative flex items-center gap-4 p-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="rounded-full hover:bg-orange-50 hover:text-orange-600 transition-colors"
+          >
+            <Link href={`/projects/${projectId}`}>
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
 
-        <div className="flex-1 min-w-0">
-          <h2 className="font-semibold truncate">Project Chat</h2>
-          <p className="text-sm text-muted-foreground">{projectNumber}</p>
-        </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-[#1C1C1C] truncate">Project Chat</h2>
+            <p className="text-sm text-gray-600 font-medium">{projectNumber}</p>
+          </div>
 
-        {/* Room Info Sheet */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Info className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
+          {/* Room Info Sheet */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                <Info className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
           <SheetContent>
             <SheetHeader>
               <SheetTitle>Chat Details</SheetTitle>
@@ -238,13 +249,17 @@ export function ChatWindow({
           </SheetContent>
         </Sheet>
 
-        {/* Chat Actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
+          {/* Chat Actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {activeRoom?.is_suspended ? (
               <DropdownMenuItem onClick={() => onResumeChat(activeRoom.id)}>
@@ -270,47 +285,49 @@ export function ChatWindow({
               Video Call
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Chat Room Tabs */}
       {rooms.length > 1 && (
-        <Tabs
-          value={activeRoomId}
-          onValueChange={setActiveRoomId}
-          className="border-b"
-        >
-          <TabsList className="w-full justify-start rounded-none bg-transparent h-auto p-0">
-            {rooms.map((room) => {
-              const Icon = getRoomIcon(room.type)
-              const config = CHAT_ROOM_TYPE_CONFIG[room.type]
-              return (
-                <TabsTrigger
-                  key={room.id}
-                  value={room.id}
-                  className={cn(
-                    "relative rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent",
-                    room.is_suspended && "text-destructive"
-                  )}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">{config.label}</span>
-                  {room.unread_count > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-2 h-5 px-1.5 text-[10px]"
-                    >
-                      {room.unread_count}
-                    </Badge>
-                  )}
-                  {room.is_suspended && (
-                    <ShieldAlert className="h-3.5 w-3.5 ml-1 text-destructive" />
-                  )}
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-        </Tabs>
+        <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200/80 px-6">
+          <Tabs
+            value={activeRoomId}
+            onValueChange={setActiveRoomId}
+          >
+            <TabsList className="w-full justify-start rounded-none bg-transparent h-auto p-0 gap-1">
+              {rooms.map((room) => {
+                const Icon = getRoomIcon(room.type)
+                const config = CHAT_ROOM_TYPE_CONFIG[room.type]
+                return (
+                  <TabsTrigger
+                    key={room.id}
+                    value={room.id}
+                    className={cn(
+                      "relative rounded-t-xl border-b-2 border-transparent px-6 py-3 font-semibold text-gray-600 transition-all data-[state=active]:border-orange-500 data-[state=active]:bg-orange-50/50 data-[state=active]:text-orange-700 hover:bg-gray-50",
+                      room.is_suspended && "text-destructive"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">{config.label}</span>
+                    {room.unread_count > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="ml-2 h-5 px-1.5 text-[10px]"
+                      >
+                        {room.unread_count}
+                      </Badge>
+                    )}
+                    {room.is_suspended && (
+                      <ShieldAlert className="h-3.5 w-3.5 ml-1 text-destructive" />
+                    )}
+                  </TabsTrigger>
+                )
+              })}
+            </TabsList>
+          </Tabs>
+        </div>
       )}
 
       {/* Messages Area */}

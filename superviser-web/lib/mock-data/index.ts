@@ -17,3 +17,12 @@ export {
 } from "./resources"
 
 export { MOCK_USERS } from "./users"
+
+export {
+  MOCK_PROJECT_REQUESTS,
+  MOCK_ACTIVE_PROJECTS,
+  MOCK_READY_TO_ASSIGN,
+  MOCK_COMPLETED_PROJECTS,
+  getMockProjectsByStatus,
+  getMockSupervisorStats,
+} from "./projects"

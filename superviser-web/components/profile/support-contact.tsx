@@ -92,44 +92,59 @@ function ContactCard({ contact }: ContactCardProps) {
   return (
     <Card className="transition-all hover:shadow-md">
       <CardContent className="pt-6">
-        <div className="flex items-start gap-4">
-          <div
-            className={cn(
-              "h-12 w-12 rounded-lg flex items-center justify-center shrink-0",
-              getIconBg()
-            )}
-          >
-            {getIcon()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium">{contact.label}</p>
-            <p className="text-lg font-semibold mt-1">{contact.value}</p>
-            {contact.available_hours && (
-              <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                {contact.available_hours}
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div
+                className={cn(
+                  "h-12 w-12 rounded-lg flex items-center justify-center shrink-0",
+                  getIconBg()
+                )}
+              >
+                {getIcon()}
               </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-base text-[#1C1C1C]">
+                  {contact.label}
+                </h3>
+                {contact.type !== "chat" && (
+                  <p className="text-base font-medium mt-1 text-[#1C1C1C] break-all">
+                    {contact.value}
+                  </p>
+                )}
+              </div>
+            </div>
+            {contact.type !== "chat" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                className="shrink-0 h-9 px-3"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1.5" />
+                    <span className="whitespace-nowrap">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-1.5" />
+                    <span className="whitespace-nowrap">Copy</span>
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button variant="default" size="sm" className="shrink-0 h-9 px-3 bg-[#1C1C1C] hover:bg-[#2C2C2C]">
+                <ExternalLink className="h-4 w-4 mr-1.5" />
+                <span className="whitespace-nowrap">Start Chat</span>
+              </Button>
             )}
           </div>
-          {contact.type !== "chat" ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="shrink-0"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 mr-1" />
-              ) : (
-                <Copy className="h-4 w-4 mr-1" />
-              )}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-          ) : (
-            <Button variant="default" size="sm" className="shrink-0">
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Start Chat
-            </Button>
+          {contact.available_hours && (
+            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span>{contact.available_hours}</span>
+            </div>
           )}
         </div>
       </CardContent>

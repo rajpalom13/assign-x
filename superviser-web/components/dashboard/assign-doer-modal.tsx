@@ -257,60 +257,63 @@ export function AssignDoerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Assign Doer
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 bg-white">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 bg-white">
+          <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-[#1C1C1C]">
+            <div className="h-10 w-10 rounded-xl bg-orange-100 flex items-center justify-center">
+              <User className="h-5 w-5 text-[#F97316]" />
+            </div>
+            Assign Expert
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600 mt-2">
             Select an expert for{" "}
-            <span className="font-medium">{project.project_number}</span> -{" "}
-            {project.title}
+            <span className="font-semibold text-[#1C1C1C]">#{project.project_number}</span> - {project.title}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="p-6 space-y-4">
           {/* Project Info Bar */}
-          <Card className="bg-muted/50">
-            <CardContent className="p-3 flex items-center justify-between">
+          <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  <span>{project.subject}</span>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <BookOpen className="h-4 w-4 text-[#F97316]" />
+                  </div>
+                  <span className="font-semibold text-[#1C1C1C]">{project.subject}</span>
                 </div>
-                <div className="flex items-center gap-1 text-green-600 font-medium">
+                <div className="flex items-center gap-1 text-emerald-600 font-semibold">
                   <span>Payout: ₹{project.doer_payout.toLocaleString("en-IN")}</span>
                 </div>
               </div>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs bg-white border-gray-300 text-gray-700">
                 Deadline: {new Date(project.deadline).toLocaleDateString()}
               </Badge>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Search and Filters */}
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search by name, skills, or subject..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 border-gray-200 focus:border-orange-300 focus:ring-orange-200 rounded-lg"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
-                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  <X className="h-4 w-4 text-gray-400 hover:text-[#1C1C1C]" />
                 </button>
               )}
             </div>
 
             <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[140px] border-gray-200 rounded-lg">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -322,7 +325,7 @@ export function AssignDoerModal({
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[160px] border-gray-200 rounded-lg">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -354,9 +357,9 @@ export function AssignDoerModal({
                   <Card
                     key={doer.id}
                     className={cn(
-                      "cursor-pointer transition-all hover:shadow-md",
+                      "cursor-pointer transition-all hover:shadow-md hover:border-orange-200 rounded-xl",
                       selectedDoer?.id === doer.id &&
-                        "border-primary ring-2 ring-primary/20",
+                        "border-orange-500 ring-2 ring-orange-200 shadow-md",
                       !doer.is_available && "opacity-60"
                     )}
                     onClick={() => setSelectedDoer(doer)}
@@ -456,23 +459,29 @@ export function AssignDoerModal({
           </ScrollArea>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isAssigning}>
+        <DialogFooter className="gap-3 p-6 border-t border-gray-200 bg-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isAssigning}
+            className="rounded-xl border-gray-200 hover:bg-gray-50"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleAssign}
             disabled={!selectedDoer || isAssigning || !selectedDoer?.is_available}
+            className="bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl shadow-sm"
           >
             {isAssigning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Assigning...
+                Assigning Expert...
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Assign {selectedDoer?.full_name?.split(" ")[0] || "Doer"}
+                Assign {selectedDoer?.full_name?.split(" ")[0] || "Expert"}
               </>
             )}
           </Button>

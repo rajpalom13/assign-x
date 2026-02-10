@@ -6,9 +6,9 @@
 
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   FileText,
   Zap,
@@ -39,6 +39,8 @@ import {
 } from "@/components/projects/v2"
 import type { ProjectCardV2Data } from "@/components/projects/v2"
 import { QCReviewModal, type ActiveProject } from "@/components/projects"
+import { AssignDoerModal } from "@/components/dashboard/assign-doer-modal"
+import type { PaidProject } from "@/components/dashboard/ready-to-assign-card"
 
 // Subject list for filter
 const SUBJECTS = [
@@ -56,11 +58,14 @@ const SUBJECTS = [
 
 export default function ProjectsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const firstName = user?.full_name?.split(" ")[0] || "Supervisor"
+  const highlightedProjectRef = useRef<string | null>(null)
 
   // Active filter state
   const [activeFilter, setActiveFilter] = useState<string>("new")
+  const [highlightedProject, setHighlightedProject] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSubject, setSelectedSubject] = useState("all")
   const [sortBy, setSortBy] = useState<"deadline" | "created" | "amount">("deadline")
@@ -71,6 +76,31 @@ export default function ProjectsPage() {
     project: ActiveProject | null
     mode: "approve" | "reject" | null
   }>({ open: false, project: null, mode: null })
+
+  // Assign Doer Modal state
+  const [assignModalState, setAssignModalState] = useState<{
+    open: boolean
+    project: PaidProject | null
+  }>({ open: false, project: null })
+
+  // Handle query parameters for filter and highlight
+  useEffect(() => {
+    const filter = searchParams.get("filter")
+    const highlight = searchParams.get("highlight")
+
+    if (filter && ["new", "ready", "ongoing", "review", "completed"].includes(filter)) {
+      setActiveFilter(filter)
+    }
+
+    if (highlight) {
+      setHighlightedProject(highlight)
+      highlightedProjectRef.current = highlight
+      // Clear highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedProject(null)
+      }, 3000)
+    }
+  }, [searchParams])
 
   // Fetch projects data
   const {
@@ -199,7 +229,13 @@ export default function ProjectsPage() {
 
   const upcomingProjects = useMemo(() => {
     const projects = [...inProgress, ...needsQC]
-    return projects
+
+    // Deduplicate by ID using Map
+    const uniqueProjects = Array.from(
+      new Map(projects.map(p => [p.id, p])).values()
+    )
+
+    return uniqueProjects
       .filter((project) => project.deadline)
       .sort((a, b) => new Date(a.deadline || 0).getTime() - new Date(b.deadline || 0).getTime())
       .slice(0, 3)
@@ -390,6 +426,34 @@ export default function ProjectsPage() {
     return needsQC.find(p => p.id === id)
   }
 
+  // Find project for assign modal
+  const findProjectForAssign = (id: string): PaidProject | null => {
+    const project = readyToAssign.find(p => p.id === id)
+    if (!project) return null
+
+    return {
+      id: project.id,
+      project_number: project.project_number,
+      title: project.title,
+      subject: project.subjects?.name || "General",
+      service_type: project.service_type,
+      user_name: project.profiles?.full_name || "Unknown User",
+      deadline: project.deadline || new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
+      word_count: project.word_count ?? undefined,
+      page_count: project.page_count ?? undefined,
+      quoted_amount: project.user_quote || 0,
+      doer_payout: project.doer_payout || 0,
+      paid_at: project.payment_received_at || new Date().toISOString(),
+      created_at: project.created_at || new Date().toISOString(),
+    }
+  }
+
+  // Handle assign doer
+  const handleAssignDoer = useCallback(async (projectId: string, doerId: string) => {
+    await refetch()
+    setAssignModalState({ open: false, project: null })
+  }, [refetch])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="relative">
@@ -509,17 +573,19 @@ export default function ProjectsPage() {
                   <div className="mt-3 space-y-3">
                     {upcomingProjects.map((project) => (
                       <div key={project.id} className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 line-clamp-1">{project.title}</p>
                           <p className="text-xs text-gray-500 mt-1">
                             #{project.project_number} • {project.profiles?.full_name || "Client"}
                           </p>
                         </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {project.deadline
-                            ? formatDistanceToNow(new Date(project.deadline), { addSuffix: true })
-                            : "No deadline"}
+                        <div className="text-xs text-gray-500 flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
+                          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span>
+                            {project.deadline
+                              ? formatDistanceToNow(new Date(project.deadline), { addSuffix: true })
+                              : "No deadline"}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -560,7 +626,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {isLoading && (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                       <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
                         <div className="flex items-center justify-between">
@@ -600,14 +666,20 @@ export default function ProjectsPage() {
                 )}
 
                 {!isLoading && filteredProjects.length > 0 && (
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {filteredProjects.map((project) => (
                       <ProjectCardV2
                         key={project.id}
                         project={project}
                         variant={getCardVariant()}
+                        highlighted={highlightedProject === project.id}
                         onClaim={() => handleClaimProject(project.id)}
-                        onAssign={() => router.push(`/projects/${project.id}`)}
+                        onAssign={() => {
+                          const paidProject = findProjectForAssign(project.id)
+                          if (paidProject) {
+                            setAssignModalState({ open: true, project: paidProject })
+                          }
+                        }}
                         onApprove={() => {
                           const original = findOriginalProject(project.id)
                           if (original) openQCModal(original, "approve")
@@ -636,6 +708,14 @@ export default function ProjectsPage() {
         }
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      {/* Assign Doer Modal */}
+      <AssignDoerModal
+        project={assignModalState.project}
+        isOpen={assignModalState.open}
+        onClose={() => setAssignModalState({ open: false, project: null })}
+        onAssign={handleAssignDoer}
       />
     </div>
   )

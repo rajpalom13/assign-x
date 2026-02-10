@@ -75,11 +75,11 @@ function MenuItem({
       )}
       onClick={disabled ? undefined : onClick}
     >
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-4">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2.5">
           <div
             className={cn(
-              "h-11 w-11 rounded-xl flex items-center justify-center",
+              "h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0",
               variant === "default" && "bg-orange-50 text-orange-600",
               variant === "destructive" && "bg-rose-50 text-rose-600"
             )}
@@ -90,7 +90,7 @@ function MenuItem({
             <div className="flex items-center gap-2">
               <p
                 className={cn(
-                  "text-base font-semibold text-[#1C1C1C] group-hover:text-orange-600 transition-colors",
+                  "text-sm font-semibold text-[#1C1C1C] group-hover:text-orange-600 transition-colors",
                   variant === "destructive" && "group-hover:text-rose-600"
                 )}
               >
@@ -99,13 +99,13 @@ function MenuItem({
               {badge && (
                 <Badge
                   variant="secondary"
-                  className="border border-gray-200 bg-gray-50 text-gray-600"
+                  className="border border-gray-200 bg-gray-50 text-gray-600 text-xs"
                 >
                   {badge}
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-gray-500">{description}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
           </div>
         </div>
       </CardContent>
@@ -614,20 +614,20 @@ export default function ProfilePage() {
               )}
               onClick={isLoggingOut ? undefined : handleLogout}
             >
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-11 w-11 rounded-xl flex items-center justify-center bg-rose-50 text-rose-600">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-rose-50 text-rose-600">
                     {isLoggingOut ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <LogOut className="h-5 w-5" />
+                      <LogOut className="h-4 w-4" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-[#1C1C1C] group-hover:text-rose-600 transition-colors">
+                    <p className="text-sm font-semibold text-[#1C1C1C] group-hover:text-rose-600 transition-colors">
                       {isLoggingOut ? "Logging out..." : "Log Out"}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       Sign out of your account
                     </p>
                   </div>

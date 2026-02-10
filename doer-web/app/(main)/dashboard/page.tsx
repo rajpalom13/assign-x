@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants'
 import { DashboardClient } from './dashboard-client'
 
+/** Prevent Next.js from caching this page — always fetch fresh auth data */
+export const dynamic = 'force-dynamic'
+
 /**
  * Checks if a Supabase error indicates a missing row.
  */

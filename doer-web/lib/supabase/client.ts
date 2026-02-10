@@ -1,15 +1,20 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+let _client: SupabaseClient | null = null
+
 /**
- * Creates the Supabase client for browser/client-side usage
- * Uses default configuration with localStorage storage
- * The server sets httpOnly cookies, and we use server components to pass session data to client
- * @returns Supabase browser client instance
+ * Returns a singleton Supabase browser client.
+ * Prevents creating multiple client instances which cause duplicate
+ * auth listeners, session re-fetches, and real-time subscription issues.
  */
 export function createClient(): SupabaseClient {
-  return createBrowserClient(
+  if (_client) return _client
+
+  _client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+
+  return _client
 }

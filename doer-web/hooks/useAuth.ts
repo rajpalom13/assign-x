@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/authStore'
@@ -10,12 +10,19 @@ import { logger } from '@/lib/logger'
 import type { Profile, Doer } from '@/types/database'
 
 /**
- * Custom hook for authentication management
- * @returns Auth state and methods
+ * Module-level flag to prevent duplicate auth initialization.
+ * When multiple components call useAuth(), only the first triggers initAuth.
+ * Reset on sign-out so the next sign-in properly initializes.
+ */
+let _authInitStarted = false
+
+/**
+ * Custom hook for authentication management.
+ * Uses a singleton initialization pattern so navigating between pages
+ * does NOT re-fetch auth data or flash loading skeletons.
  */
 export function useAuth() {
   const router = useRouter()
-  // Memoize supabase client to prevent recreation on every render
   const supabase = useMemo(() => createClient(), [])
 
   const {
@@ -57,91 +64,98 @@ export function useAuth() {
     return doerData as Doer | null
   }, [supabase])
 
+  // Stable refs for callbacks used inside effects
+  const fetchProfileRef = useRef(fetchProfile)
+  fetchProfileRef.current = fetchProfile
+  const fetchDoerRef = useRef(fetchDoer)
+  fetchDoerRef.current = fetchDoer
+  const routerRef = useRef(router)
+  routerRef.current = router
+  const setUserRef = useRef(setUser)
+  setUserRef.current = setUser
+  const setDoerRef = useRef(setDoer)
+  setDoerRef.current = setDoer
+  const setLoadingRef = useRef(setLoading)
+  setLoadingRef.current = setLoading
+  const setOnboardedRef = useRef(setOnboarded)
+  setOnboardedRef.current = setOnboarded
+  const clearAuthRef = useRef(clearAuth)
+  clearAuthRef.current = clearAuth
+
   /**
-   * Initialize auth state on mount
+   * One-time auth initialization.
+   * Runs only once across the entire app lifecycle (until sign-out resets it).
+   * Subsequent component mounts that call useAuth() skip re-fetching.
    */
   useEffect(() => {
+    if (_authInitStarted) {
+      // Already initialized or in progress — if loading is still true
+      // but we already have user data (stale flag), clear it.
+      if (isLoading && user) {
+        setLoadingRef.current(false)
+      }
+      return
+    }
+    _authInitStarted = true
+
     let isMounted = true
 
     const initAuth = async () => {
-      setLoading(true)
       logger.debug('Auth', 'Initializing auth...')
 
       try {
-        // First get session to establish client-side session from server cookies
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         logger.debug('Auth', 'Session:', session ? 'Found' : 'None', sessionError ? 'Error occurred' : '')
 
         if (!session || sessionError) {
           logger.debug('Auth', 'No session found')
-          setLoading(false)
+          if (isMounted) setLoadingRef.current(false)
           return
         }
 
-        // Now get the user from the established session
         const authUser = session.user
-        logger.debug('Auth', 'User:', authUser ? 'Found' : 'None')
-
         if (!isMounted) return
 
         if (authUser) {
           logger.debug('Auth', 'User found, fetching profile')
-          const profile = await fetchProfile(authUser.id)
-          logger.debug('Auth', 'Profile:', profile ? 'Found' : 'Not found')
+          const profile = await fetchProfileRef.current(authUser.id)
 
           if (!isMounted) return
 
           if (!profile) {
-            // Profile doesn't exist - user needs to go through OAuth again to create records
             logger.debug('Auth', 'No profile found, redirecting to login')
-            setLoading(false)
-            router.push(ROUTES.login)
+            setLoadingRef.current(false)
+            routerRef.current.push(ROUTES.login)
             return
           }
 
-          setUser(profile)
+          setUserRef.current(profile)
 
-          const doerData = await fetchDoer(profile.id)
-          logger.debug('Auth', 'Doer:', doerData ? 'Found' : 'Not found')
-
+          const doerData = await fetchDoerRef.current(profile.id)
           if (!isMounted) return
 
           if (!doerData) {
-            // Doer record doesn't exist - redirect to profile setup (if not already there)
             const pathname = window.location.pathname
             if (pathname !== '/profile-setup') {
               logger.debug('Auth', 'No doer found, redirecting to profile-setup')
-              setLoading(false)
-              router.push('/profile-setup')
+              setLoadingRef.current(false)
+              routerRef.current.push('/profile-setup')
               return
             }
-            logger.debug('Auth', 'No doer found, already on profile-setup')
-            setLoading(false)
+            setLoadingRef.current(false)
             return
           }
 
-          setDoer(doerData)
-          // Doer exists means profile setup is complete (doer created in profile-setup)
-          setOnboarded(true)
+          setDoerRef.current(doerData)
+          setOnboardedRef.current(true)
         } else {
           logger.debug('Auth', 'No user found')
-          // No authenticated user - redirect to login if on protected route
           const pathname = window.location.pathname
 
-          // Complete list of protected route prefixes
           const PROTECTED_ROUTE_PREFIXES = [
-            '/dashboard',
-            '/projects',
-            '/profile',
-            '/resources',
-            '/reviews',
-            '/statistics',
-            '/wallet',
-            '/payouts',
-            '/settings',
-            '/notifications',
-            '/earnings',
-            '/tasks',
+            '/dashboard', '/projects', '/profile', '/resources',
+            '/reviews', '/statistics', '/wallet', '/payouts',
+            '/settings', '/notifications', '/earnings', '/tasks',
           ]
 
           const isProtectedRoute = PROTECTED_ROUTE_PREFIXES.some(
@@ -159,37 +173,46 @@ export function useAuth() {
       }
 
       if (isMounted) {
-        setLoading(false)
+        setLoadingRef.current(false)
         logger.debug('Auth', 'Init complete')
       }
     }
 
     initAuth()
 
-    // Listen for auth changes
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase])
+
+  /**
+   * Auth state change listener — always active.
+   * Separate from init so it stays alive across the session.
+   */
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await fetchProfile(session.user.id)
-          setUser(profile)
+          const profile = await fetchProfileRef.current(session.user.id)
+          setUserRef.current(profile)
 
           if (profile) {
-            const doerData = await fetchDoer(profile.id)
-            setDoer(doerData)
-            // Doer exists means profile setup is complete
-            setOnboarded(!!doerData)
+            const doerData = await fetchDoerRef.current(profile.id)
+            setDoerRef.current(doerData)
+            setOnboardedRef.current(!!doerData)
           }
         } else if (event === 'SIGNED_OUT') {
-          clearAuth()
+          clearAuthRef.current()
+          _authInitStarted = false
         }
       }
     )
 
     return () => {
-      isMounted = false
       subscription.unsubscribe()
     }
-  }, [supabase, fetchProfile, fetchDoer, setUser, setDoer, setLoading, setOnboarded, clearAuth])
+  }, [supabase])
 
   /**
    * Sign up with email and password
@@ -238,8 +261,9 @@ export function useAuth() {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
 
-    // Clear auth store
+    // Clear auth store and reset init flag
     clearAuth()
+    _authInitStarted = false
 
     // Clear all localStorage (auth tokens, cached data)
     clearAppStorage()

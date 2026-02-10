@@ -41,7 +41,7 @@ interface MetricCardProps {
   /** Card title */
   title: string
   /** Main value to display */
-  value: string | number
+  value: React.ReactNode
   /** Icon component */
   icon: React.ElementType
   /** Icon background color class */
@@ -75,7 +75,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: [0.4, 0, 0.2, 1],
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
     },
   },
 }

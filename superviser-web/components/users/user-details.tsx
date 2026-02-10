@@ -6,6 +6,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import {
   Star,
   Briefcase,
@@ -51,6 +52,7 @@ export function UserDetails({
   onOpenChange,
   onChat,
 }: UserDetailsProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
 
   // Fetch real projects data from Supabase
@@ -98,16 +100,40 @@ export function UserDetails({
         new Date(user.last_active_at).getTime() > thirtyDaysAgo)
   }, [user.active_projects, user.last_active_at, thirtyDaysAgo])
 
+  // Map project status to projects page filter
+  const getFilterFromStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      analyzing: "new",
+      quoted: "ready",
+      payment_pending: "ready",
+      paid: "ready",
+      in_progress: "ongoing",
+      submitted_for_qc: "review",
+      qc_approved: "review",
+      qc_rejected: "ongoing",
+      completed: "completed",
+      delivered: "completed",
+    }
+    return statusMap[status] || "new"
+  }
+
+  // Navigate to projects page with specific project highlighted
+  const handleProjectClick = (projectId: string, status: string) => {
+    const filter = getFilterFromStatus(status)
+    router.push(`/projects?filter=${filter}&highlight=${projectId}`)
+    onOpenChange(false) // Close the side panel
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-hidden flex flex-col">
-        <SheetHeader className="space-y-4">
+      <SheetContent className="w-full sm:max-w-xl overflow-hidden flex flex-col p-0">
+        <SheetHeader className="space-y-5 p-6 bg-gradient-to-br from-gray-50 to-orange-50/30 border-b border-gray-200">
           {/* Profile Header */}
           <div className="flex items-start gap-4">
             <div className="relative">
-              <Avatar className="h-16 w-16">
+              <Avatar className="h-20 w-20 ring-4 ring-white shadow-lg">
                 <AvatarImage src={user.avatar_url} alt={user.full_name} />
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-xl bg-gradient-to-br from-orange-400 to-orange-600 text-white font-semibold">
                   {user.full_name
                     .split(" ")
                     .map((n) => n[0])
@@ -115,27 +141,27 @@ export function UserDetails({
                 </AvatarFallback>
               </Avatar>
               {isActive && (
-                <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-background" />
+                <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-green-500 border-4 border-white shadow-sm animate-pulse" />
               )}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <SheetTitle className="text-left">{user.full_name}</SheetTitle>
+                <SheetTitle className="text-left text-[#1C1C1C] text-xl">{user.full_name}</SheetTitle>
                 {user.is_verified && (
-                  <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                  <CheckCircle2 className="h-5 w-5 text-[#F97316]" />
                 )}
               </div>
-              <SheetDescription className="text-left">
+              <SheetDescription className="text-left text-gray-600 mt-1">
                 {user.course ? `${user.course}${user.year ? ` - ${user.year}` : ""}` : "Client"}
               </SheetDescription>
               {onChat && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-2"
+                  className="mt-3 rounded-full border-[#F97316] text-[#F97316] hover:bg-orange-50"
                   onClick={() => onChat(user.id)}
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
+                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                   Message
                 </Button>
               )}
@@ -143,115 +169,141 @@ export function UserDetails({
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="font-bold">{user.total_projects}</p>
-              <p className="text-xs text-muted-foreground">Projects</p>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="text-center p-3 bg-white rounded-xl shadow-sm border border-gray-200">
+              <p className="font-bold text-lg text-[#1C1C1C]">{user.total_projects}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium mt-1">Projects</p>
             </div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="font-bold">{user.active_projects}</p>
-              <p className="text-xs text-muted-foreground">Active</p>
+            <div className="text-center p-3 bg-white rounded-xl shadow-sm border border-gray-200">
+              <p className="font-bold text-lg text-[#1C1C1C]">{user.active_projects}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium mt-1">Active</p>
             </div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="font-bold">{user.completed_projects}</p>
-              <p className="text-xs text-muted-foreground">Completed</p>
+            <div className="text-center p-3 bg-white rounded-xl shadow-sm border border-gray-200">
+              <p className="font-bold text-lg text-[#1C1C1C]">{user.completed_projects}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium mt-1">Completed</p>
             </div>
-            <div className="text-center p-2 bg-muted/50 rounded-lg">
-              <p className="font-bold text-sm">
+            <div className="text-center p-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-sm border border-orange-200">
+              <p className="font-bold text-base text-[#1C1C1C]">
                 {user.average_project_value.toLocaleString("en-IN", {
                   style: "currency",
                   currency: "INR",
                   maximumFractionDigits: 0,
                 }).replace("₹", "₹")}
               </p>
-              <p className="text-xs text-muted-foreground">Avg Value</p>
+              <p className="text-[10px] uppercase tracking-wide text-orange-600 font-medium mt-1">Avg Value</p>
             </div>
           </div>
         </SheetHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="projects">Projects</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="px-6 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-2 mt-4 bg-gray-100 p-1">
+              <TabsTrigger
+                value="overview"
+                className="data-[state=active]:bg-white data-[state=active]:text-[#F97316] data-[state=active]:shadow-sm"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="projects"
+                className="data-[state=active]:bg-white data-[state=active]:text-[#F97316] data-[state=active]:shadow-sm"
+              >
+                Projects
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <ScrollArea className="flex-1 mt-4">
-            <TabsContent value="overview" className="m-0 space-y-4">
+          <ScrollArea className="flex-1 mt-4 min-h-0" type="auto">
+            <div className="px-6">
+            <TabsContent value="overview" className="m-0 space-y-5 pb-6 pt-0">
               {/* Contact Info */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Contact</h4>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
+              <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <Mail className="h-3.5 w-3.5 text-[#F97316]" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-[#1C1C1C]">Contact</h4>
+                </div>
+                <div className="space-y-2.5 ml-9">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Mail className="h-4 w-4 text-gray-400" />
                     <span>{user.email}</span>
                   </div>
                   {user.phone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <Phone className="h-4 w-4 text-gray-400" />
                       <span>{user.phone}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <Separator />
-
               {/* Academic Info */}
               {(user.college || user.course) && (
-                <>
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Academic Details</h4>
-                    <div className="space-y-1">
-                      {user.college && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.college}</span>
-                        </div>
-                      )}
-                      {user.course && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {user.course}
-                            {user.year && ` - ${user.year}`}
-                          </span>
-                        </div>
-                      )}
+                <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
                     </div>
+                    <h4 className="text-sm font-semibold text-[#1C1C1C]">Academic Details</h4>
                   </div>
-                  <Separator />
-                </>
+                  <div className="space-y-2.5 ml-9">
+                    {user.college && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                        <span>{user.college}</span>
+                      </div>
+                    )}
+                    {user.course && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <GraduationCap className="h-4 w-4 text-gray-400" />
+                        <span>
+                          {user.course}
+                          {user.year && ` - ${user.year}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
 
               {/* Account Info */}
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Account</h4>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <Calendar className="h-3.5 w-3.5 text-purple-600" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-[#1C1C1C]">Account</h4>
+                </div>
+                <div className="space-y-2.5 ml-9">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Calendar className="h-4 w-4 text-gray-400" />
                     <span>Joined {formatDate(user.joined_at)}</span>
                   </div>
                   {user.last_active_at && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <Calendar className="h-4 w-4 text-gray-400" />
                       <span>Last active {formatDate(user.last_active_at)}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <Separator />
-
               {/* Spending Summary */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium">Spending Summary</h4>
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-4 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <IndianRupee className="h-3.5 w-3.5 text-[#F97316]" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-[#1C1C1C]">Spending Summary</h4>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <IndianRupee className="h-4 w-4" />
-                      <span className="text-xs">Total Spent</span>
+                  <div className="p-3.5 bg-white rounded-xl border border-orange-100 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-gray-500 mb-2">
+                      <IndianRupee className="h-3.5 w-3.5" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium">Total Spent</span>
                     </div>
-                    <p className="text-lg font-bold">
+                    <p className="text-xl font-bold text-[#1C1C1C]">
                       {user.total_spent.toLocaleString("en-IN", {
                         style: "currency",
                         currency: "INR",
@@ -259,12 +311,12 @@ export function UserDetails({
                       })}
                     </p>
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Briefcase className="h-4 w-4" />
-                      <span className="text-xs">Avg Project</span>
+                  <div className="p-3.5 bg-white rounded-xl border border-orange-100 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-gray-500 mb-2">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      <span className="text-[10px] uppercase tracking-wide font-medium">Avg Project</span>
                     </div>
-                    <p className="text-lg font-bold">
+                    <p className="text-xl font-bold text-[#1C1C1C]">
                       {user.average_project_value.toLocaleString("en-IN", {
                         style: "currency",
                         currency: "INR",
@@ -276,11 +328,11 @@ export function UserDetails({
               </div>
             </TabsContent>
 
-            <TabsContent value="projects" className="m-0 space-y-3">
+            <TabsContent value="projects" className="m-0 space-y-3 pb-6 pt-0">
               {isLoadingProjects ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="p-3 border rounded-lg space-y-2">
+                    <div key={i} className="p-4 border border-gray-200 rounded-xl bg-white space-y-3">
                       <Skeleton className="h-4 w-24" />
                       <Skeleton className="h-5 w-48" />
                       <Skeleton className="h-3 w-32" />
@@ -288,50 +340,59 @@ export function UserDetails({
                   ))}
                 </div>
               ) : projects.length === 0 ? (
-                <div className="text-center py-8">
-                  <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">No projects yet</p>
+                <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                  <div className="h-16 w-16 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium">No projects yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Projects will appear here once created</p>
                 </div>
               ) : (
                 projects.map((project) => (
                   <div
                     key={project.id}
-                    className="p-3 border rounded-lg space-y-2 hover:bg-muted/30 transition-colors"
+                    onClick={() => handleProjectClick(project.id, project.status)}
+                    className="p-4 border border-gray-200 rounded-xl bg-white space-y-3 hover:border-orange-200 hover:shadow-md transition-all cursor-pointer group"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground">
-                            {project.project_number}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                            #{project.project_number}
                           </span>
-                          <Badge className={cn("text-xs", getStatusColor(project.status))}>
+                          <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
                             {project.status.replace(/_/g, " ")}
                           </Badge>
                         </div>
-                        <p className="font-medium mt-1">{project.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
+                        <p className="font-semibold text-[#1C1C1C] mt-2 group-hover:text-[#F97316] transition-colors">
+                          {project.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                             {project.subject}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-gray-500">
                             {getServiceTypeLabel(project.service_type)}
                           </span>
                         </div>
                       </div>
                       {project.rating && (
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                          <span className="text-sm font-medium">{project.rating}</span>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <span className="text-sm font-semibold text-amber-700">{project.rating}</span>
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-muted-foreground">
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="text-sm text-gray-600">
                         {project.doer_name && (
-                          <span>Doer: {project.doer_name}</span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-gray-400">Doer:</span>
+                            <span className="font-medium">{project.doer_name}</span>
+                          </span>
                         )}
                       </div>
-                      <span className="font-medium">
+                      <span className="text-base font-bold text-[#1C1C1C]">
                         {project.user_amount.toLocaleString("en-IN", {
                           style: "currency",
                           currency: "INR",
@@ -339,15 +400,19 @@ export function UserDetails({
                         })}
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {project.status === "completed"
-                        ? `Completed ${formatDate(project.completed_at!)}`
-                        : `Due ${formatDate(project.deadline)}`}
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>
+                        {project.status === "completed"
+                          ? `Completed ${formatDate(project.completed_at!)}`
+                          : `Due ${formatDate(project.deadline)}`}
+                      </span>
                     </div>
                   </div>
                 ))
               )}
             </TabsContent>
+            </div>
           </ScrollArea>
         </Tabs>
       </SheetContent>

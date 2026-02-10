@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants'
 import { SettingsClient } from './settings-client'
 
+/** Prevent Next.js from caching this page — always fetch fresh auth data */
+export const dynamic = 'force-dynamic'
+
 /**
  * Settings server component
  * Fetches session and user data from server-side httpOnly cookies

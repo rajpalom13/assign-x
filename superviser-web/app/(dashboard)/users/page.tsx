@@ -34,22 +34,40 @@ const currencyFormatter = new Intl.NumberFormat("en-IN", {
 
 function UsersGridSkeleton() {
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
         <Card key={index} className="bg-white border-gray-200 rounded-2xl">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-3 w-1/2" />
+          <CardContent className="p-6 space-y-5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-3 flex-1">
+                <Skeleton className="h-14 w-14 rounded-full flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3.5 w-1/2" />
+                </div>
               </div>
+              <Skeleton className="h-8 w-8 rounded-lg flex-shrink-0" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Skeleton className="h-16 rounded-xl" />
-              <Skeleton className="h-16 rounded-xl" />
+              <div className="bg-gray-50 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Skeleton className="h-7 w-7 rounded-lg" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-5 w-10 ml-0.5" />
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Skeleton className="h-7 w-7 rounded-lg" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-4 w-16 ml-0.5" />
+              </div>
             </div>
-            <Skeleton className="h-8 w-full rounded-lg" />
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -593,7 +611,7 @@ export default function UsersPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+                  className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-3"
                 >
                   {filteredUsers.map((user) => (
                     <UserCardEnhanced key={user.id} user={user} onClick={() => setSelectedUser(user)} />
@@ -636,6 +654,10 @@ export default function UsersPage() {
             user={selectedUser}
             open={!!selectedUser}
             onOpenChange={(open) => !open && setSelectedUser(null)}
+            onChat={(userId) => {
+              router.push(`/chat/${userId}`)
+              setSelectedUser(null)
+            }}
             onChat={(userId) => console.log("Chat with user:", userId)}
           />
         )}

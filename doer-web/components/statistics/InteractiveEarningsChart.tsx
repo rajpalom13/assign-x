@@ -44,8 +44,8 @@ const CustomTooltip = ({
   chartType,
 }: {
   active?: boolean;
-  payload?: Array<{ value: number }>;
-  label?: string;
+  payload?: ReadonlyArray<{ value: number }>;
+  label?: string | number;
   chartType: "earnings" | "projects";
 }) => {
   if (active && payload && payload.length) {
