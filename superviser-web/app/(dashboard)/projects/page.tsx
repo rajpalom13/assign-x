@@ -443,7 +443,7 @@ export default function ProjectsPage() {
       page_count: project.page_count ?? undefined,
       quoted_amount: project.user_quote || 0,
       doer_payout: project.doer_payout || 0,
-      paid_at: project.payment_received_at || new Date().toISOString(),
+      paid_at: (project as any).payment_received_at || project.created_at || new Date().toISOString(),
       created_at: project.created_at || new Date().toISOString(),
     }
   }

@@ -654,10 +654,6 @@ export default function UsersPage() {
             user={selectedUser}
             open={!!selectedUser}
             onOpenChange={(open) => !open && setSelectedUser(null)}
-            onChat={(userId) => {
-              router.push(`/chat/${userId}`)
-              setSelectedUser(null)
-            }}
             onChat={(userId) => console.log("Chat with user:", userId)}
           />
         )}
