@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/project_model.dart';
 import '../models/deliverable_model.dart';
 import '../../domain/entities/project_status.dart';
@@ -13,20 +14,47 @@ class ProjectRepository {
 
   final SupabaseClient _client;
 
-  /// Gets the current user ID.
-  String? get _userId => _client.auth.currentUser?.id;
+  /// Cached supervisor ID to avoid repeated lookups.
+  String? _cachedSupervisorId;
+
+  /// Gets the current user ID (profile ID).
+  String? get _userId => getCurrentUserId();
+
+  /// Gets the supervisor table ID from the supervisors table.
+  Future<String?> _getSupervisorId() async {
+    if (_cachedSupervisorId != null) return _cachedSupervisorId;
+    final userId = getCurrentUserId();
+    if (userId == null) return null;
+    try {
+      final response = await _client
+          .from('supervisors')
+          .select('id')
+          .eq('profile_id', userId)
+          .maybeSingle();
+      _cachedSupervisorId = response?['id'] as String?;
+      return _cachedSupervisorId;
+    } catch (e) {
+      debugPrint('ProjectRepository._getSupervisorId error: $e');
+      return null;
+    }
+  }
 
   /// Fetches projects for the current supervisor.
   ///
   /// Can filter by [status] if provided.
   Future<List<ProjectModel>> getProjects({ProjectStatus? status}) async {
     try {
+      final supervisorId = await _getSupervisorId();
+      if (supervisorId == null) throw Exception('Supervisor not found');
       var query = _client.from('projects').select('''
         *,
         user:profiles!user_id(full_name, email, avatar_url),
-        doer:profiles!doer_id(full_name, email, avatar_url),
+        doer:doers!doer_id(
+          id,
+          profile:profiles!profile_id(full_name, email, avatar_url)
+        ),
         subject:subjects(id, name)
-      ''').eq('supervisor_id', _userId!);
+      ''').eq('supervisor_id', supervisorId);
 
       if (status != null) {
         query = query.eq('status', status.value);
@@ -48,12 +76,17 @@ class ProjectRepository {
   /// Fetches active projects (in progress, assigned, etc.).
   Future<List<ProjectModel>> getActiveProjects() async {
     try {
+      final supervisorId = await _getSupervisorId();
+      if (supervisorId == null) throw Exception('Supervisor not found');
       final response = await _client.from('projects').select('''
         *,
         user:profiles!user_id(full_name, email, avatar_url),
-        doer:profiles!doer_id(full_name, email, avatar_url),
+        doer:doers!doer_id(
+          id,
+          profile:profiles!profile_id(full_name, email, avatar_url)
+        ),
         subject:subjects(id, name)
-      ''').eq('supervisor_id', _userId!).inFilter('status', [
+      ''').eq('supervisor_id', supervisorId).inFilter('status', [
         ProjectStatus.assigned.value,
         ProjectStatus.inProgress.value,
         ProjectStatus.delivered.value,
@@ -75,12 +108,17 @@ class ProjectRepository {
   /// Fetches projects ready for QC review.
   Future<List<ProjectModel>> getForReviewProjects() async {
     try {
+      final supervisorId = await _getSupervisorId();
+      if (supervisorId == null) throw Exception('Supervisor not found');
       final response = await _client.from('projects').select('''
         *,
         user:profiles!user_id(full_name, email, avatar_url),
-        doer:profiles!doer_id(full_name, email, avatar_url),
+        doer:doers!doer_id(
+          id,
+          profile:profiles!profile_id(full_name, email, avatar_url)
+        ),
         subject:subjects(id, name)
-      ''').eq('supervisor_id', _userId!).inFilter('status', [
+      ''').eq('supervisor_id', supervisorId).inFilter('status', [
         ProjectStatus.delivered.value,
         ProjectStatus.forReview.value,
       ]).order('delivered_at', ascending: true);
@@ -100,12 +138,17 @@ class ProjectRepository {
   /// Fetches completed projects.
   Future<List<ProjectModel>> getCompletedProjects() async {
     try {
+      final supervisorId = await _getSupervisorId();
+      if (supervisorId == null) throw Exception('Supervisor not found');
       final response = await _client.from('projects').select('''
         *,
         user:profiles!user_id(full_name, email, avatar_url),
-        doer:profiles!doer_id(full_name, email, avatar_url),
+        doer:doers!doer_id(
+          id,
+          profile:profiles!profile_id(full_name, email, avatar_url)
+        ),
         subject:subjects(id, name)
-      ''').eq('supervisor_id', _userId!).inFilter('status', [
+      ''').eq('supervisor_id', supervisorId).inFilter('status', [
         ProjectStatus.completed.value,
         ProjectStatus.cancelled.value,
         ProjectStatus.refunded.value,
@@ -129,7 +172,10 @@ class ProjectRepository {
       final response = await _client.from('projects').select('''
         *,
         user:profiles!user_id(full_name, email, avatar_url),
-        doer:profiles!doer_id(full_name, email, avatar_url),
+        doer:doers!doer_id(
+          id,
+          profile:profiles!profile_id(full_name, email, avatar_url)
+        ),
         subject:subjects(id, name)
       ''').eq('id', projectId).single();
 
@@ -289,11 +335,13 @@ class ProjectRepository {
   }
 
   /// Watches projects for real-time updates.
-  Stream<List<ProjectModel>> watchProjects() {
-    return _client
+  Stream<List<ProjectModel>> watchProjects() async* {
+    final supervisorId = await _getSupervisorId();
+    if (supervisorId == null) return;
+    yield* _client
         .from('projects')
         .stream(primaryKey: ['id'])
-        .eq('supervisor_id', _userId!)
+        .eq('supervisor_id', supervisorId)
         .order('updated_at', ascending: false)
         .map((data) => data.map((json) => ProjectModel.fromJson(json)).toList());
   }

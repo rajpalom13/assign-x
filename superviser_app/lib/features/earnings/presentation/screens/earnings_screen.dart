@@ -138,6 +138,46 @@ class _OverviewTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Period Selector
+            PeriodSelector(
+              selectedPeriod: state.selectedPeriod,
+              onPeriodChanged: onPeriodChanged,
+            ),
+
+            // Empty state when no data
+            if (state.summary == null && !state.isLoading) ...[
+              const SizedBox(height: 80),
+              Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 64,
+                      color: AppColors.textSecondaryLight.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No earnings yet',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 48),
+                      child: Text(
+                        'Your earnings will appear here once you complete projects.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // Balance Card
             if (state.summary != null)
               BalanceCard(
@@ -147,11 +187,21 @@ class _OverviewTab extends StatelessWidget {
                 onWithdraw: onWithdraw,
               ),
 
-            // Period Selector
-            PeriodSelector(
-              selectedPeriod: state.selectedPeriod,
-              onPeriodChanged: onPeriodChanged,
-            ),
+            // Goal Tracker
+            if (state.summary != null)
+              _GoalTracker(
+                currentEarnings: state.summary!.totalEarnings,
+                goalAmount: 5000,
+              ),
+
+            // Earnings Snapshot
+            if (state.summary != null)
+              _EarningsSnapshot(
+                totalEarnings: state.summary!.totalEarnings,
+                monthlyEarnings: state.summary!.totalEarnings -
+                    (state.summary!.previousPeriodEarnings ?? 0),
+                todayEarnings: state.summary!.pendingEarnings,
+              ),
 
             const SizedBox(height: 8),
 
@@ -519,6 +569,191 @@ class _CommissionItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Goal tracker showing monthly earnings progress toward a target.
+class _GoalTracker extends StatelessWidget {
+  const _GoalTracker({
+    required this.currentEarnings,
+    required this.goalAmount,
+  });
+
+  final double currentEarnings;
+  final double goalAmount;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = (currentEarnings / goalAmount).clamp(0.0, 1.0);
+    final percentage = (progress * 100).toInt();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Monthly Goal',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              Text(
+                '\$${goalAmount.toStringAsFixed(0)}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accent,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor:
+                        AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.accent),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$percentage%',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.accent,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '\$${currentEarnings.toStringAsFixed(0)} earned this month',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Earnings snapshot row with Total, This Month, and Today cards.
+class _EarningsSnapshot extends StatelessWidget {
+  const _EarningsSnapshot({
+    required this.totalEarnings,
+    required this.monthlyEarnings,
+    required this.todayEarnings,
+  });
+
+  final double totalEarnings;
+  final double monthlyEarnings;
+  final double todayEarnings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SnapshotCard(
+              label: 'Total',
+              value: '\$${totalEarnings.toStringAsFixed(0)}',
+              icon: Icons.account_balance_wallet,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _SnapshotCard(
+              label: 'This Month',
+              value: '\$${monthlyEarnings.toStringAsFixed(0)}',
+              icon: Icons.calendar_month,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _SnapshotCard(
+              label: 'Today',
+              value: '\$${todayEarnings.toStringAsFixed(0)}',
+              icon: Icons.today,
+              color: Colors.green,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual snapshot card used in [_EarningsSnapshot].
+class _SnapshotCard extends StatelessWidget {
+  const _SnapshotCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 10,
+                ),
+          ),
+        ],
       ),
     );
   }

@@ -74,14 +74,15 @@ class ChatRoomModel {
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) {
     return ChatRoomModel(
       id: json['id'] as String,
-      projectId: json['project_id'] as String,
+      projectId: json['project_id'] as String? ?? '',
       projectTitle: json['project'] is Map
           ? json['project']['title'] as String?
-          : json['project_title'] as String?,
+          : json['project_title'] as String? ?? json['name'] as String?,
       projectNumber: json['project'] is Map
           ? json['project']['project_number'] as String?
           : json['project_number'] as String?,
-      type: ChatRoomType.fromString(json['type'] as String?),
+      type: ChatRoomType.fromString(
+          json['room_type'] as String? ?? json['type'] as String?),
       participants: (json['participants'] as List?)?.cast<String>(),
       lastMessage: json['last_message'] as String?,
       lastMessageAt: json['last_message_at'] != null
@@ -192,6 +193,12 @@ enum ChatRoomType {
   /// Chat between doer and supervisor
   doerSupervisor('doer_supervisor'),
 
+  /// Project chat with supervisor and doer (DB enum)
+  projectSupervisorDoer('project_supervisor_doer'),
+
+  /// Project chat with user and supervisor (DB enum)
+  projectUserSupervisor('project_user_supervisor'),
+
   /// Group chat with all parties
   group('group');
 
@@ -210,8 +217,10 @@ enum ChatRoomType {
   String get displayName {
     switch (this) {
       case ChatRoomType.clientSupervisor:
+      case ChatRoomType.projectUserSupervisor:
         return 'Client Chat';
       case ChatRoomType.doerSupervisor:
+      case ChatRoomType.projectSupervisorDoer:
         return 'Doer Chat';
       case ChatRoomType.group:
         return 'Group Chat';

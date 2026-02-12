@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
@@ -44,18 +45,27 @@ class MenuDrawer extends ConsumerWidget {
                       _MenuItem(
                         icon: Icons.dashboard_outlined,
                         title: 'Overview',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.dashboard);
+                        },
                       ),
                       _MenuItem(
                         icon: Icons.pending_actions_outlined,
                         title: 'Pending Requests',
                         badge: dashboardState.pendingCount.toString(),
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.projects);
+                        },
                       ),
                       _MenuItem(
                         icon: Icons.assignment_turned_in_outlined,
                         title: 'Assigned Projects',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.projects);
+                        },
                       ),
                     ],
                   ),
@@ -65,12 +75,18 @@ class MenuDrawer extends ConsumerWidget {
                       _MenuItem(
                         icon: Icons.people_outline,
                         title: 'My Doers',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.doers);
+                        },
                       ),
                       _MenuItem(
                         icon: Icons.person_add_outlined,
                         title: 'Find Doers',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.doers);
+                        },
                       ),
                     ],
                   ),
@@ -80,12 +96,18 @@ class MenuDrawer extends ConsumerWidget {
                       _MenuItem(
                         icon: Icons.analytics_outlined,
                         title: 'Analytics',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.earnings);
+                        },
                       ),
                       _MenuItem(
                         icon: Icons.payments_outlined,
                         title: 'Earnings',
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.go(RoutePaths.earnings);
+                        },
                       ),
                     ],
                   ),
@@ -95,13 +117,16 @@ class MenuDrawer extends ConsumerWidget {
                     title: 'Settings',
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/settings');
+                      context.go(RoutePaths.settings);
                     },
                   ),
                   _MenuItem(
                     icon: Icons.help_outline,
                     title: 'Help & Support',
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.go(RoutePaths.support);
+                    },
                   ),
                 ],
               ),

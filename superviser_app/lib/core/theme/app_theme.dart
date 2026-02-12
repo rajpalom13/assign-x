@@ -241,7 +241,7 @@ abstract class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         elevation: 0,
         backgroundColor: AppColors.surfaceLight,
-        selectedItemColor: AppColors.primary,
+        selectedItemColor: AppColors.accent,
         unselectedItemColor: AppColors.textTertiaryLight,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.labelSmall,
@@ -250,7 +250,7 @@ abstract class AppTheme {
 
       // Floating Action Button
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         elevation: 4,
         shape: CircleBorder(),
@@ -299,10 +299,18 @@ abstract class AppTheme {
         ),
       ),
 
+      // Tab Bar
+      tabBarTheme: const TabBarThemeData(
+        indicatorColor: AppColors.accent,
+        labelColor: AppColors.accent,
+        unselectedLabelColor: AppColors.textSecondaryLight,
+        indicatorSize: TabBarIndicatorSize.tab,
+      ),
+
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariantLight,
-        selectedColor: AppColors.primaryLight,
+        selectedColor: AppColors.accent.withValues(alpha: 0.15),
         disabledColor: AppColors.surfaceVariantLight,
         labelStyle: AppTypography.labelMedium,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -323,13 +331,13 @@ abstract class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primary;
+            return AppColors.accent;
           }
           return AppColors.secondaryLight;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryLight.withValues(alpha: 0.5);
+            return AppColors.accent.withValues(alpha: 0.3);
           }
           return AppColors.borderLight;
         }),
@@ -337,7 +345,7 @@ abstract class AppTheme {
 
       // Progress Indicator
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primary,
+        color: AppColors.accent,
         linearTrackColor: AppColors.borderLight,
         circularTrackColor: AppColors.borderLight,
       ),
@@ -529,7 +537,7 @@ abstract class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         elevation: 0,
         backgroundColor: AppColors.surfaceDark,
-        selectedItemColor: AppColors.primaryLight,
+        selectedItemColor: AppColors.accent,
         unselectedItemColor: AppColors.textTertiaryDark,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: AppTypography.labelSmall,
@@ -538,7 +546,7 @@ abstract class AppTheme {
 
       // Floating Action Button
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primaryLight,
+        backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         elevation: 4,
         shape: CircleBorder(),
@@ -587,10 +595,18 @@ abstract class AppTheme {
         ),
       ),
 
+      // Tab Bar
+      tabBarTheme: const TabBarThemeData(
+        indicatorColor: AppColors.accent,
+        labelColor: AppColors.accent,
+        unselectedLabelColor: AppColors.textSecondaryDark,
+        indicatorSize: TabBarIndicatorSize.tab,
+      ),
+
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariantDark,
-        selectedColor: AppColors.primary,
+        selectedColor: AppColors.accent.withValues(alpha: 0.2),
         disabledColor: AppColors.surfaceVariantDark,
         labelStyle: AppTypography.labelMedium,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -611,13 +627,13 @@ abstract class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primaryLight;
+            return AppColors.accent;
           }
           return AppColors.secondaryLight;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primary.withValues(alpha: 0.5);
+            return AppColors.accent.withValues(alpha: 0.3);
           }
           return AppColors.borderDark;
         }),
@@ -625,7 +641,7 @@ abstract class AppTheme {
 
       // Progress Indicator
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.primaryLight,
+        color: AppColors.accent,
         linearTrackColor: AppColors.borderDark,
         circularTrackColor: AppColors.borderDark,
       ),

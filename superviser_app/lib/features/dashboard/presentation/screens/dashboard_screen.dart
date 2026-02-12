@@ -8,6 +8,7 @@
 /// ready for doer assignment, with filtering and quick action capabilities.
 library;
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -88,6 +89,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onNotificationTap: _openNotifications,
                 notificationCount: dashboardState.pendingCount,
               ),
+            ),
+            // KPI stat cards
+            SliverToBoxAdapter(
+              child: _KpiCardsRow(
+                newRequestsCount: dashboardState.filteredNewRequests.length,
+              ),
+            ),
+            // Mini analytics chart
+            const SliverToBoxAdapter(
+              child: _MiniChart(),
             ),
             // Field filter
             SliverToBoxAdapter(
@@ -555,6 +566,300 @@ class _QuickActionTile extends StatelessWidget {
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+}
+
+/// A row of 4 KPI stat cards displayed at the top of the dashboard.
+///
+/// Shows quick summary metrics:
+/// - **New Requests**: Live count from dashboard state
+/// - **In Progress**: Mock value (8)
+/// - **Pending QC**: Mock value (3)
+/// - **Earnings**: Mock value ($2,450)
+///
+/// Each card shows a colored icon circle, a bold count, and a small label.
+class _KpiCardsRow extends StatelessWidget {
+  /// Creates a new [_KpiCardsRow] instance.
+  const _KpiCardsRow({required this.newRequestsCount});
+
+  /// The number of new requests to display in the first card.
+  final int newRequestsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _KpiCard(
+              icon: Icons.fiber_new,
+              iconColor: AppColors.info,
+              value: newRequestsCount.toString(),
+              label: 'New Requests',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _KpiCard(
+              icon: Icons.trending_up,
+              iconColor: AppColors.accent,
+              value: '8',
+              label: 'In Progress',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _KpiCard(
+              icon: Icons.rate_review_outlined,
+              iconColor: AppColors.warning,
+              value: '3',
+              label: 'Pending QC',
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _KpiCard(
+              icon: Icons.attach_money,
+              iconColor: AppColors.success,
+              value: '\$2,450',
+              label: 'Earnings',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single KPI stat card with a colored icon, bold value, and label.
+///
+/// Used inside [_KpiCardsRow] to present individual metrics.
+class _KpiCard extends StatelessWidget {
+  /// Creates a new [_KpiCard] instance.
+  const _KpiCard({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
+
+  /// The icon displayed in the colored circle.
+  final IconData icon;
+
+  /// The background tint color for the icon circle and text.
+  final Color iconColor;
+
+  /// The bold metric value (e.g., "8" or "$2,450").
+  final String value;
+
+  /// The descriptive label below the value.
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondaryLight,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A small line chart showing weekly completion trends.
+///
+/// Displays 7 mock data points (Mon-Sun) in an accent-colored line chart
+/// with a gradient fill beneath the line. Used as a quick analytics
+/// preview on the dashboard.
+class _MiniChart extends StatelessWidget {
+  /// Creates a new [_MiniChart] instance.
+  const _MiniChart();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: AppColors.borderLight),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Weekly Completions',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tasks completed this week',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 160,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: 2,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: AppColors.borderLight,
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          interval: 2,
+                          getTitlesWidget: (value, meta) => Text(
+                            value.toInt().toString(),
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 24,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            const days = [
+                              'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+                            ];
+                            final idx = value.toInt();
+                            if (idx < 0 || idx >= days.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                days[idx],
+                                style: TextStyle(
+                                  color: AppColors.textSecondaryLight,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: 6,
+                    minY: 0,
+                    maxY: 10,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: const [
+                          FlSpot(0, 3),
+                          FlSpot(1, 5),
+                          FlSpot(2, 4),
+                          FlSpot(3, 7),
+                          FlSpot(4, 6),
+                          FlSpot(5, 8),
+                          FlSpot(6, 5),
+                        ],
+                        isCurved: true,
+                        color: AppColors.accent,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, bar, index) =>
+                              FlDotCirclePainter(
+                            radius: 3,
+                            color: AppColors.accent,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          ),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: AppColors.accent.withValues(alpha: 0.1),
+                        ),
+                      ),
+                    ],
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            return LineTooltipItem(
+                              '${spot.y.toInt()} tasks',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/profile_model.dart';
 import '../models/review_model.dart';
 
@@ -16,7 +17,7 @@ class ProfileRepository {
   /// Get current user's profile.
   Future<SupervisorProfile?> getProfile() async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return null;
 
       final response = await _client
@@ -57,7 +58,7 @@ class ProfileRepository {
   /// Upload avatar image.
   Future<String?> uploadAvatar(File imageFile) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return null;
 
       final fileName = 'avatar_$userId.jpg';
@@ -83,7 +84,7 @@ class ProfileRepository {
   /// Update availability status.
   Future<bool> updateAvailability(bool isAvailable) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return false;
 
       await _client
@@ -109,7 +110,7 @@ class ProfileRepository {
     ReviewFilter? filter,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return [];
 
       var query = _client
@@ -142,7 +143,7 @@ class ProfileRepository {
   /// Get reviews summary.
   Future<ReviewsSummary> getReviewsSummary() async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) {
         throw Exception('User not authenticated');
       }
@@ -183,7 +184,7 @@ class ProfileRepository {
   /// Get blacklisted doers.
   Future<List<DoerInfo>> getBlacklistedDoers() async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return [];
 
       final response = await _client
@@ -211,7 +212,7 @@ class ProfileRepository {
   /// Add doer to blacklist.
   Future<bool> blacklistDoer(String doerId, String reason) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return false;
 
       await _client.from('doer_blacklist').insert({
@@ -233,7 +234,7 @@ class ProfileRepository {
   /// Remove doer from blacklist.
   Future<bool> unblacklistDoer(String doerId) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return false;
 
       await _client

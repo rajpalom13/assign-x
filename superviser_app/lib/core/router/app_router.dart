@@ -87,6 +87,8 @@ import '../../features/support/presentation/screens/ticket_detail_screen.dart';
 import '../../features/support/presentation/screens/faq_screen.dart';
 import '../../features/users/presentation/screens/users_screen.dart';
 import '../../features/doers/presentation/screens/doers_screen.dart';
+import '../../features/doers/presentation/screens/doer_detail_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import 'routes.dart';
 
 /// Riverpod provider for the application router.
@@ -419,6 +421,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: RoutePaths.doers,
             name: RouteNames.doers,
             builder: (context, state) => const DoersScreen(),
+            routes: [
+              GoRoute(
+                path: ':doerId',
+                name: RouteNames.doerDetail,
+                builder: (context, state) {
+                  final doerId = state.pathParameters['doerId']!;
+                  return DoerDetailScreen(doerId: doerId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: RoutePaths.settings,
+            name: RouteNames.settings,
+            builder: (context, state) => const SettingsScreen(),
           ),
         ],
       ),

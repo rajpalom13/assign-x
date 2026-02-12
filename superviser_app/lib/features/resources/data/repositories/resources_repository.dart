@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/tool_model.dart';
 import '../models/training_video_model.dart';
 import '../models/pricing_model.dart';
@@ -55,7 +56,7 @@ class ResourcesRepository {
   /// Track tool usage.
   Future<void> trackToolUsage(String toolId) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return;
 
       await _client.from('tool_usage').insert({
@@ -138,7 +139,7 @@ class ResourcesRepository {
     bool? isCompleted,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return;
 
       await _client.from('video_progress').upsert({

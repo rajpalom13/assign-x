@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/router/routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/profile_model.dart';
 import '../providers/profile_provider.dart';
 
@@ -13,21 +16,37 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
+    final authUser = ref.watch(currentUserProvider);
+
+    // Build an effective profile: use API profile if available, otherwise
+    // fall back to a basic profile constructed from auth state user data.
+    final effectiveProfile = profileState.profile ??
+        (authUser != null
+            ? SupervisorProfile(
+                id: authUser.id,
+                userId: authUser.id,
+                fullName: authUser.fullName ?? authUser.email,
+                email: authUser.email,
+                avatarUrl: authUser.avatarUrl,
+                phone: authUser.phone,
+                isVerified: authUser.isVerified,
+              )
+            : null);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
         actions: [
-          if (profileState.profile != null)
+          if (effectiveProfile != null)
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _navigateToEdit(context, profileState.profile!),
+              onPressed: () => _navigateToEdit(context, effectiveProfile),
             ),
         ],
       ),
-      body: profileState.isLoading && profileState.profile == null
+      body: profileState.isLoading && effectiveProfile == null
           ? const Center(child: CircularProgressIndicator())
-          : profileState.profile == null
+          : effectiveProfile == null
               ? const Center(child: Text('Failed to load profile'))
               : RefreshIndicator(
                   onRefresh: () =>
@@ -35,7 +54,7 @@ class ProfileScreen extends ConsumerWidget {
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: _ProfileContent(
-                      profile: profileState.profile!,
+                      profile: effectiveProfile,
                       onAvatarTap: () =>
                           _showAvatarOptions(context, ref),
                     ),
@@ -226,6 +245,39 @@ class _ProfileContent extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.shield,
+                      size: 14,
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Supervisor',
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -401,8 +453,124 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
 
+        // Profile Menu
+        const _ProfileMenu(),
+
         const SizedBox(height: 32),
       ],
+    );
+  }
+}
+
+/// Profile menu with navigation items and logout button.
+class _ProfileMenu extends ConsumerWidget {
+  const _ProfileMenu();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Menu',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.bar_chart, color: AppColors.accent),
+            title: const Text('Stats Dashboard'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.go(RoutePaths.earnings),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: Icon(Icons.rate_review, color: AppColors.accent),
+            title: const Text('My Reviews'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.goNamed(RouteNames.reviews),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: Icon(Icons.block, color: AppColors.accent),
+            title: const Text('Doer Blacklist'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.goNamed(RouteNames.blacklist),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: Icon(Icons.support_agent, color: AppColors.accent),
+            title: const Text('Support Contact'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.goNamed(RouteNames.support),
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: Icon(Icons.settings, color: AppColors.accent),
+            title: const Text('Settings'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.go(RoutePaths.settings),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Logout'),
+                      content: const Text(
+                        'Are you sure you want to logout?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true && context.mounted) {
+                    ref.read(authProvider.notifier).signOut();
+                    context.go(RoutePaths.login);
+                  }
+                },
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

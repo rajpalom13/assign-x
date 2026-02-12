@@ -188,8 +188,10 @@ class ChatRoomTile extends StatelessWidget {
   Color _getTypeColor() {
     switch (room.type) {
       case ChatRoomType.clientSupervisor:
+      case ChatRoomType.projectUserSupervisor:
         return Colors.blue;
       case ChatRoomType.doerSupervisor:
+      case ChatRoomType.projectSupervisorDoer:
         return Colors.purple;
       case ChatRoomType.group:
         return Colors.teal;
@@ -240,8 +242,10 @@ class _ChatAvatar extends StatelessWidget {
   Color _getAvatarColor() {
     switch (room.type) {
       case ChatRoomType.clientSupervisor:
+      case ChatRoomType.projectUserSupervisor:
         return Colors.blue;
       case ChatRoomType.doerSupervisor:
+      case ChatRoomType.projectSupervisorDoer:
         return Colors.purple;
       case ChatRoomType.group:
         return Colors.teal;
@@ -251,8 +255,10 @@ class _ChatAvatar extends StatelessWidget {
   IconData _getAvatarIcon() {
     switch (room.type) {
       case ChatRoomType.clientSupervisor:
+      case ChatRoomType.projectUserSupervisor:
         return Icons.person;
       case ChatRoomType.doerSupervisor:
+      case ChatRoomType.projectSupervisorDoer:
         return Icons.edit;
       case ChatRoomType.group:
         return Icons.groups;

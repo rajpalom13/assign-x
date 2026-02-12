@@ -8,40 +8,61 @@ import '../widgets/chat_room_tile.dart';
 
 /// Screen displaying list of chat rooms.
 ///
-/// Shows all active conversations grouped by project.
-class ChatListScreen extends ConsumerWidget {
+/// Shows all active conversations grouped by project with hero section,
+/// category filters, and mark-all-as-read functionality.
+class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
+}
+
+class _ChatListScreenState extends ConsumerState<ChatListScreen> {
+  String _selectedCategory = 'all';
+
+  /// Filters chat rooms based on the selected category.
+  List _filterRooms(List rooms) {
+    switch (_selectedCategory) {
+      case 'unread':
+        return rooms.where((r) => r.hasUnread).toList();
+      case 'client':
+        return rooms
+            .where((r) => r.type.value == 'client_supervisor')
+            .toList();
+      case 'expert':
+        return rooms
+            .where((r) => r.type.value == 'doer_supervisor')
+            .toList();
+      case 'group':
+        return rooms.where((r) => r.type.value == 'group').toList();
+      default:
+        return rooms;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(chatRoomsProvider);
+    final filteredRooms = _filterRooms(state.chatRooms);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),
         actions: [
+          // Mark all as read button
           if (state.totalUnread > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+            IconButton(
+              onPressed: () {
+                ref.read(chatRoomsProvider.notifier).refresh();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Marking all as read...'),
+                    duration: Duration(seconds: 1),
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${state.totalUnread} unread',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-              ),
+                );
+              },
+              icon: const Icon(Icons.done_all),
+              tooltip: 'Mark All as Read',
             ),
           IconButton(
             onPressed: () => ref.read(chatRoomsProvider.notifier).refresh(),
@@ -55,61 +76,231 @@ class ChatListScreen extends ConsumerWidget {
             ? const Center(child: CircularProgressIndicator())
             : state.chatRooms.isEmpty
                 ? const ChatListEmptyState()
-                : _ChatRoomsList(
-                    rooms: state.chatRooms,
-                    onTap: (room) {
-                      context.push('${RoutePaths.chat}/${room.projectId}');
-                    },
+                : ListView(
+                    children: [
+                      // Hero section
+                      _ChatHeroSection(
+                        totalUnread: state.totalUnread,
+                        totalChats: state.chatRooms.length,
+                      ),
+                      // Category filter chips
+                      _CategoryChips(
+                        selected: _selectedCategory,
+                        unreadCount: state.unreadRooms.length,
+                        onSelected: (category) {
+                          setState(() => _selectedCategory = category);
+                        },
+                      ),
+                      // Filtered chat list
+                      ..._buildFilteredList(filteredRooms),
+                      const SizedBox(height: 100),
+                    ],
                   ),
+      ),
+    );
+  }
+
+  /// Builds the filtered list of chat room tiles.
+  List<Widget> _buildFilteredList(List rooms) {
+    if (rooms.isEmpty) {
+      return [
+        Padding(
+          padding: const EdgeInsets.all(32),
+          child: Center(
+            child: Text(
+              'No chats in this category',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondaryLight,
+                  ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    final unreadRooms = rooms.where((r) => r.hasUnread).toList();
+    final readRooms = rooms.where((r) => !r.hasUnread).toList();
+
+    return [
+      if (unreadRooms.isNotEmpty) ...[
+        _SectionHeader(
+          title: 'Unread',
+          count: unreadRooms.length,
+          color: AppColors.primary,
+        ),
+        ...unreadRooms.map((room) => ChatRoomTile(
+              room: room,
+              onTap: () =>
+                  context.push('${RoutePaths.chat}/${room.projectId}'),
+            )),
+      ],
+      if (readRooms.isNotEmpty) ...[
+        _SectionHeader(
+          title: unreadRooms.isNotEmpty ? 'Other Chats' : 'All Chats',
+          count: readRooms.length,
+        ),
+        ...readRooms.map((room) => ChatRoomTile(
+              room: room,
+              onTap: () =>
+                  context.push('${RoutePaths.chat}/${room.projectId}'),
+            )),
+      ],
+    ];
+  }
+}
+
+/// Hero section with gradient background showing greeting and unread count.
+class _ChatHeroSection extends StatelessWidget {
+  const _ChatHeroSection({
+    required this.totalUnread,
+    required this.totalChats,
+  });
+
+  final int totalUnread;
+  final int totalChats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryLight],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Messages',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$totalChats conversations',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          if (totalUnread > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    totalUnread.toString(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    'unread',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white70,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// Chat rooms list widget.
-class _ChatRoomsList extends StatelessWidget {
-  const _ChatRoomsList({
-    required this.rooms,
-    required this.onTap,
+/// Horizontal scrolling category filter chips.
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({
+    required this.selected,
+    required this.unreadCount,
+    required this.onSelected,
   });
 
-  final List rooms;
-  final void Function(dynamic room) onTap;
+  final String selected;
+  final int unreadCount;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    // Group rooms by unread status
-    final unreadRooms = rooms.where((r) => r.hasUnread).toList();
-    final readRooms = rooms.where((r) => !r.hasUnread).toList();
+    final categories = [
+      ('all', 'All', Icons.chat_bubble_outline),
+      ('unread', 'Unread ($unreadCount)', Icons.mark_email_unread_outlined),
+      ('client', 'Client', Icons.person_outline),
+      ('expert', 'Expert', Icons.engineering_outlined),
+      ('group', 'Group', Icons.group_outlined),
+    ];
 
-    return ListView(
-      children: [
-        // Unread section
-        if (unreadRooms.isNotEmpty) ...[
-          _SectionHeader(
-            title: 'Unread',
-            count: unreadRooms.length,
-            color: AppColors.primary,
-          ),
-          ...unreadRooms.map((room) => ChatRoomTile(
-                room: room,
-                onTap: () => onTap(room),
-              )),
-        ],
-        // All chats section
-        if (readRooms.isNotEmpty) ...[
-          _SectionHeader(
-            title: unreadRooms.isNotEmpty ? 'Other Chats' : 'All Chats',
-            count: readRooms.length,
-          ),
-          ...readRooms.map((room) => ChatRoomTile(
-                room: room,
-                onTap: () => onTap(room),
-              )),
-        ],
-        // Bottom padding
-        const SizedBox(height: 100),
-      ],
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (value, label, icon) = categories[index];
+          final isSelected = selected == value;
+
+          return GestureDetector(
+            onTap: () => onSelected(value),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.accent
+                    : AppColors.surfaceVariantLight,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.accent
+                      : AppColors.borderLight,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: isSelected
+                        ? Colors.white
+                        : AppColors.textSecondaryLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondaryLight,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

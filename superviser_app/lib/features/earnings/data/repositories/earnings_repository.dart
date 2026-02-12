@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/earnings_model.dart';
 import '../models/transaction_model.dart';
 
@@ -18,7 +19,7 @@ class EarningsRepository {
     EarningsPeriod period = EarningsPeriod.monthly,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('User not authenticated');
 
       final response = await _client.rpc('get_earnings_summary', params: {
@@ -41,7 +42,7 @@ class EarningsRepository {
     int limit = 12,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('User not authenticated');
 
       final response = await _client.rpc('get_earnings_chart', params: {
@@ -66,7 +67,7 @@ class EarningsRepository {
     EarningsPeriod period = EarningsPeriod.monthly,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('User not authenticated');
 
       final response = await _client.rpc('get_commission_breakdown', params: {
@@ -88,7 +89,7 @@ class EarningsRepository {
   /// Get performance metrics.
   Future<PerformanceMetrics> getPerformanceMetrics() async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('User not authenticated');
 
       final response = await _client.rpc('get_performance_metrics', params: {
@@ -104,6 +105,27 @@ class EarningsRepository {
     }
   }
 
+  // ==================== WALLET ====================
+
+  /// Get wallet ID for current user.
+  Future<String?> _getWalletId() async {
+    final userId = getCurrentUserId();
+    if (userId == null) return null;
+    try {
+      final response = await _client
+          .from('wallets')
+          .select('id')
+          .eq('profile_id', userId)
+          .maybeSingle();
+      return response?['id'] as String?;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('EarningsRepository._getWalletId error: $e');
+      }
+      return null;
+    }
+  }
+
   // ==================== TRANSACTIONS ====================
 
   /// Get transactions.
@@ -113,16 +135,17 @@ class EarningsRepository {
     TransactionFilter? filter,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) throw Exception('User not authenticated');
+      final walletId = await _getWalletId();
+      if (walletId == null) throw Exception('Wallet not found');
 
       var query = _client
-          .from('transactions')
+          .from('wallet_transactions')
           .select()
-          .eq('user_id', userId);
+          .eq('wallet_id', walletId);
 
       if (filter?.types != null && filter!.types!.isNotEmpty) {
-        query = query.inFilter('type', filter.types!.map((t) => t.id).toList());
+        query = query.inFilter(
+            'transaction_type', filter.types!.map((t) => t.id).toList());
       }
       if (filter?.statuses != null && filter!.statuses!.isNotEmpty) {
         query = query.inFilter(
@@ -153,8 +176,11 @@ class EarningsRepository {
   /// Get transaction by ID.
   Future<TransactionModel?> getTransaction(String id) async {
     try {
-      final response =
-          await _client.from('transactions').select().eq('id', id).single();
+      final response = await _client
+          .from('wallet_transactions')
+          .select()
+          .eq('id', id)
+          .single();
 
       return TransactionModel.fromJson(response);
     } catch (e) {
@@ -172,21 +198,18 @@ class EarningsRepository {
     Map<String, dynamic>? paymentDetails,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) return null;
+      final walletId = await _getWalletId();
+      if (walletId == null) return null;
 
       final response = await _client
-          .from('transactions')
+          .from('wallet_transactions')
           .insert({
-            'user_id': userId,
-            'type': TransactionType.withdrawal.id,
+            'wallet_id': walletId,
+            'transaction_type': TransactionType.withdrawal.id,
             'amount': amount,
             'status': TransactionStatus.pending.id,
             'description': 'Withdrawal request',
-            'metadata': {
-              'payment_method': paymentMethod,
-              ...?paymentDetails,
-            },
+            'notes': paymentMethod,
           })
           .select()
           .single();

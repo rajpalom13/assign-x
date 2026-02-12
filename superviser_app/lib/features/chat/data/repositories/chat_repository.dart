@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/chat_room_model.dart';
 import '../models/message_model.dart';
 
@@ -13,19 +14,39 @@ class ChatRepository {
   final SupabaseClient _client;
 
   /// Gets the current user ID.
-  String? get _userId => _client.auth.currentUser?.id;
+  String? get _userId => getCurrentUserId();
 
   /// Fetches all chat rooms for the current supervisor.
   Future<List<ChatRoomModel>> getChatRooms() async {
     try {
+      // Get rooms via chat_participants join
+      final participantData = await _client
+          .from('chat_participants')
+          .select('chat_room_id, unread_count')
+          .eq('profile_id', _userId!)
+          .eq('is_active', true);
+
+      final roomIds = (participantData as List)
+          .map((p) => p['chat_room_id'] as String)
+          .toList();
+
+      if (roomIds.isEmpty) return [];
+
+      // Build unread count map
+      final unreadMap = <String, int>{};
+      for (final p in participantData) {
+        unreadMap[p['chat_room_id'] as String] = p['unread_count'] as int? ?? 0;
+      }
+
       final response = await _client.from('chat_rooms').select('''
         *,
         project:projects(id, title, project_number)
-      ''').contains('participants', [_userId!]).order('last_message_at', ascending: false);
+      ''').inFilter('id', roomIds).order('last_message_at', ascending: false);
 
-      return (response as List)
-          .map((json) => ChatRoomModel.fromJson(json))
-          .toList();
+      return (response as List).map((json) {
+        json['unread_count'] = unreadMap[json['id']] ?? 0;
+        return ChatRoomModel.fromJson(json);
+      }).toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.getChatRooms error: $e');
@@ -75,7 +96,7 @@ class ChatRepository {
     DateTime? before,
   }) async {
     try {
-      dynamic query = _client.from('chat_messages').select('''
+      var query = _client.from('chat_messages').select('''
         *,
         sender:profiles!sender_id(full_name, avatar_url, role)
       ''').eq('chat_room_id', roomId);
@@ -116,11 +137,11 @@ class ChatRepository {
         'chat_room_id': roomId,
         'sender_id': _userId,
         'content': content,
-        'type': type.value,
+        'message_type': type.value,
         'file_url': fileUrl,
         'file_name': fileName,
         'file_type': fileType,
-        'file_size': fileSize,
+        'file_size_bytes': fileSize,
         'reply_to_id': replyToId,
         'created_at': DateTime.now().toIso8601String(),
       }).select('''
@@ -128,11 +149,9 @@ class ChatRepository {
         sender:profiles!sender_id(full_name, avatar_url, role)
       ''').single();
 
-      // Update chat room's last message
+      // Update chat room's last message timestamp
       await _client.from('chat_rooms').update({
-        'last_message': content,
         'last_message_at': DateTime.now().toIso8601String(),
-        'last_message_by': _userId,
       }).eq('id', roomId);
 
       return MessageModel.fromJson(response);
@@ -147,16 +166,15 @@ class ChatRepository {
   /// Marks messages as read.
   Future<void> markAsRead(String roomId) async {
     try {
+      // Update participant's unread count and last read time
       await _client
-          .from('chat_messages')
-          .update({'is_read': true})
+          .from('chat_participants')
+          .update({
+            'unread_count': 0,
+            'last_read_at': DateTime.now().toIso8601String(),
+          })
           .eq('chat_room_id', roomId)
-          .neq('sender_id', _userId!);
-
-      // Update unread count
-      await _client.from('chat_rooms').update({
-        'unread_count': 0,
-      }).eq('id', roomId);
+          .eq('profile_id', _userId!);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ChatRepository.markAsRead error: $e');
@@ -244,14 +262,30 @@ class ChatRepository {
   }
 
   /// Watches chat rooms for real-time updates.
-  Stream<List<ChatRoomModel>> watchChatRooms() {
-    return _client
+  Stream<List<ChatRoomModel>> watchChatRooms() async* {
+    // Get room IDs the user participates in
+    final participantData = await _client
+        .from('chat_participants')
+        .select('chat_room_id, unread_count')
+        .eq('profile_id', _userId!)
+        .eq('is_active', true);
+
+    final roomIds = (participantData as List)
+        .map((p) => p['chat_room_id'] as String)
+        .toSet();
+
+    if (roomIds.isEmpty) {
+      yield [];
+      return;
+    }
+
+    yield* _client
         .from('chat_rooms')
         .stream(primaryKey: ['id'])
         .order('last_message_at', ascending: false)
         .map((data) => data
+            .where((json) => roomIds.contains(json['id']))
             .map((json) => ChatRoomModel.fromJson(json))
-            .where((room) => room.participants?.contains(_userId) ?? false)
             .toList());
   }
 

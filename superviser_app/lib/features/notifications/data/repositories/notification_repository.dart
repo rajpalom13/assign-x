@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/notification_model.dart';
 
 /// Repository for notification operations.
@@ -9,7 +10,7 @@ class NotificationRepository {
   final SupabaseClient _client;
 
   /// Get current user ID.
-  String? get _currentUserId => _client.auth.currentUser?.id;
+  String? get _currentUserId => getCurrentUserId();
 
   /// Fetch notifications with pagination.
   Future<List<NotificationModel>> getNotifications({
@@ -23,14 +24,14 @@ class NotificationRepository {
     var query = _client
         .from('notifications')
         .select()
-        .eq('user_id', _currentUserId!);
+        .eq('profile_id', _currentUserId!);
 
     if (isRead != null) {
       query = query.eq('is_read', isRead);
     }
 
     if (type != null) {
-      query = query.eq('type', type.name);
+      query = query.eq('notification_type', type.name);
     }
 
     final response = await query
@@ -49,7 +50,7 @@ class NotificationRepository {
     final response = await _client
         .from('notifications')
         .select('id')
-        .eq('user_id', _currentUserId!)
+        .eq('profile_id', _currentUserId!)
         .eq('is_read', false);
 
     return (response as List).length;
@@ -73,7 +74,7 @@ class NotificationRepository {
           'is_read': true,
           'read_at': DateTime.now().toIso8601String(),
         })
-        .eq('user_id', _currentUserId!)
+        .eq('profile_id', _currentUserId!)
         .eq('is_read', false);
   }
 
@@ -89,7 +90,7 @@ class NotificationRepository {
     await _client
         .from('notifications')
         .delete()
-        .eq('user_id', _currentUserId!);
+        .eq('profile_id', _currentUserId!);
   }
 
   /// Stream notifications in real-time.
@@ -101,7 +102,7 @@ class NotificationRepository {
     return _client
         .from('notifications')
         .stream(primaryKey: ['id'])
-        .eq('user_id', _currentUserId!)
+        .eq('profile_id', _currentUserId!)
         .order('created_at', ascending: false)
         .map((data) => data.map(NotificationModel.fromJson).toList());
   }
@@ -113,7 +114,7 @@ class NotificationRepository {
     final response = await _client
         .from('notification_settings')
         .select()
-        .eq('user_id', _currentUserId!)
+        .eq('profile_id', _currentUserId!)
         .maybeSingle();
 
     if (response == null) return const NotificationSettings();

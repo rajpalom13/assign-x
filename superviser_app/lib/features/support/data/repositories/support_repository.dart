@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/ticket_model.dart';
 
 /// Repository for support operations.
@@ -11,7 +12,7 @@ class SupportRepository {
   final SupabaseClient _client;
 
   /// Get current user ID.
-  String? get _currentUserId => _client.auth.currentUser?.id;
+  String? get _currentUserId => getCurrentUserId();
 
   /// Fetch tickets with pagination.
   Future<List<TicketModel>> getTickets({
@@ -25,7 +26,7 @@ class SupportRepository {
     var query = _client
         .from('support_tickets')
         .select()
-        .eq('user_id', _currentUserId!);
+        .eq('requester_id', _currentUserId!);
 
     if (status != null) {
       query = query.eq('status', _statusToString(status));
@@ -69,7 +70,7 @@ class SupportRepository {
     }
 
     final response = await _client.from('support_tickets').insert({
-      'user_id': _currentUserId!,
+      'requester_id': _currentUserId!,
       'subject': subject,
       'description': description,
       'category': category.name,
@@ -231,7 +232,7 @@ class SupportRepository {
     final response = await _client
         .from('support_tickets')
         .select('id')
-        .eq('user_id', _currentUserId!)
+        .eq('requester_id', _currentUserId!)
         .inFilter('status', ['open', 'in_progress', 'waiting_for_reply']);
 
     return (response as List).length;

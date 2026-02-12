@@ -70,25 +70,39 @@ import 'package:flutter/material.dart';
 /// );
 /// ```
 abstract class AppColors {
+  // ============ Accent Color ============
+
+  /// Accent color - Vibrant Orange.
+  ///
+  /// Use for CTAs, highlights, and brand emphasis.
+  /// Matches web app's orange accent. Hex: #F97316
+  static const accent = Color(0xFFF97316);
+
+  /// Lighter variant of accent color.
+  static const accentLight = Color(0xFFFB923C);
+
+  /// Darker variant of accent color (hover state).
+  static const accentDark = Color(0xFFEA580C);
+
   // ============ Primary Colors ============
 
-  /// Primary brand color - Dark Blue.
+  /// Primary brand color - Deep Charcoal.
   ///
   /// Use for primary actions, active states, and brand emphasis.
-  /// Hex: #1E3A5F
-  static const primary = Color(0xFF1E3A5F);
+  /// Hex: #1C1C1C
+  static const primary = Color(0xFF1C1C1C);
 
   /// Lighter variant of primary color.
   ///
   /// Use for hover states, backgrounds, and secondary emphasis.
-  /// Hex: #2E5077
-  static const primaryLight = Color(0xFF2E5077);
+  /// Hex: #2D3A4F
+  static const primaryLight = Color(0xFF2D3A4F);
 
   /// Darker variant of primary color.
   ///
   /// Use for pressed states and high-contrast scenarios.
-  /// Hex: #0F2744
-  static const primaryDark = Color(0xFF0F2744);
+  /// Hex: #0F172A
+  static const primaryDark = Color(0xFF0F172A);
 
   // ============ Secondary Colors ============
 

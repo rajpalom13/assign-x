@@ -9,6 +9,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../../../../core/network/api_exceptions.dart';
 import '../models/request_model.dart';
 import '../models/doer_model.dart';
@@ -82,7 +83,7 @@ class DashboardRepository {
   /// - [AppAuthException]: If no user is currently authenticated
   /// - [ServerException]: If the database query fails
   Future<String?> _getSupervisorId() async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) {
       throw const AppAuthException('User not authenticated');
     }
@@ -357,7 +358,7 @@ class DashboardRepository {
   /// await repository.assignDoer('project-123', 'doer-456');
   /// ```
   Future<void> assignDoer(String projectId, String doerId) async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) {
       throw const AppAuthException('User not authenticated');
     }
@@ -453,7 +454,7 @@ class DashboardRepository {
   /// await repository.updateAvailability(false);
   /// ```
   Future<void> updateAvailability(bool isAvailable) async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) {
       throw const AppAuthException('User not authenticated');
     }
@@ -489,7 +490,7 @@ class DashboardRepository {
   /// print('Supervisor is ${isAvailable ? 'available' : 'unavailable'}');
   /// ```
   Future<bool> getAvailability() async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) {
       throw const AppAuthException('User not authenticated');
     }

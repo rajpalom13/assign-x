@@ -155,9 +155,9 @@ class ProjectModel {
       wordCount: json['word_count'] as int?,
       pageCount: json['page_count'] as int?,
       userQuote: (json['user_quote'] as num?)?.toDouble(),
-      doerAmount: (json['doer_amount'] as num?)?.toDouble(),
-      supervisorAmount: (json['supervisor_amount'] as num?)?.toDouble(),
-      platformAmount: (json['platform_amount'] as num?)?.toDouble(),
+      doerAmount: (json['doer_payout'] as num?)?.toDouble() ?? (json['doer_amount'] as num?)?.toDouble(),
+      supervisorAmount: (json['supervisor_commission'] as num?)?.toDouble() ?? (json['supervisor_amount'] as num?)?.toDouble(),
+      platformAmount: (json['platform_fee'] as num?)?.toDouble() ?? (json['platform_amount'] as num?)?.toDouble(),
       clientName: json['user'] is Map
           ? json['user']['full_name'] as String?
           : json['client_name'] as String?,
@@ -165,7 +165,9 @@ class ProjectModel {
           ? json['user']['email'] as String?
           : json['client_email'] as String?,
       doerName: json['doer'] is Map
-          ? json['doer']['full_name'] as String?
+          ? (json['doer']['profile'] is Map
+              ? json['doer']['profile']['full_name'] as String?
+              : json['doer']['full_name'] as String?)
           : json['doer_name'] as String?,
       attachments: (json['attachments'] as List?)?.cast<String>(),
       chatRoomId: json['chat_room_id'] as String?,

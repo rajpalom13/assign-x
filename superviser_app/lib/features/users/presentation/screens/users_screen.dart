@@ -112,6 +112,8 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                   onRefresh: () => ref.read(clientsProvider.notifier).refresh(),
                   child: _ClientsList(
                     clients: state.clients,
+                    heroSection: _UsersHeroSection(clients: state.clients),
+                    statsPills: _StatsPills(clients: state.clients),
                     onClientTap: (client) {
                       context.pushNamed(
                         RouteNames.clientDetail,
@@ -129,10 +131,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   }
 }
 
-/// Clients list.
+/// Clients list with hero section and stats pills.
 class _ClientsList extends StatelessWidget {
   const _ClientsList({
     required this.clients,
+    required this.heroSection,
+    required this.statsPills,
     required this.onClientTap,
     required this.onLoadMore,
     required this.isLoadingMore,
@@ -140,6 +144,8 @@ class _ClientsList extends StatelessWidget {
   });
 
   final List<ClientModel> clients;
+  final Widget heroSection;
+  final Widget statsPills;
   final void Function(ClientModel) onClientTap;
   final VoidCallback onLoadMore;
   final bool isLoadingMore;
@@ -147,6 +153,10 @@ class _ClientsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 2 header items (hero + stats pills) + clients + optional loading
+    final headerCount = 2;
+    final totalCount = headerCount + clients.length + (isLoadingMore ? 1 : 0);
+
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollEndNotification &&
@@ -159,16 +169,20 @@ class _ClientsList extends StatelessWidget {
       },
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: clients.length + (isLoadingMore ? 1 : 0),
+        itemCount: totalCount,
         itemBuilder: (context, index) {
-          if (index == clients.length) {
+          if (index == 0) return heroSection;
+          if (index == 1) return statsPills;
+
+          final clientIndex = index - headerCount;
+          if (clientIndex == clients.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
 
-          final client = clients[index];
+          final client = clients[clientIndex];
           return _ClientCard(
             client: client,
             onTap: () => onClientTap(client),
@@ -179,7 +193,7 @@ class _ClientsList extends StatelessWidget {
   }
 }
 
-/// Client card.
+/// Client card with action buttons and availability indicator.
 class _ClientCard extends StatelessWidget {
   const _ClientCard({
     required this.client,
@@ -191,6 +205,10 @@ class _ClientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine availability based on last active time
+    final isRecentlyActive = client.lastActiveAt != null &&
+        DateTime.now().difference(client.lastActiveAt!).inDays < 7;
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -205,81 +223,155 @@ class _ClientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              // Avatar
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                backgroundImage: client.avatarUrl != null
-                    ? NetworkImage(client.avatarUrl!)
-                    : null,
-                child: client.avatarUrl == null
-                    ? Text(
-                        client.initials,
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-
-              // Client info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            client.name,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  // Avatar with availability indicator
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                        backgroundImage: client.avatarUrl != null
+                            ? NetworkImage(client.avatarUrl!)
+                            : null,
+                        child: client.avatarUrl == null
+                            ? Text(
+                                client.initials,
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: isRecentlyActive
+                                ? AppColors.success
+                                : AppColors.textSecondaryLight,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
                           ),
                         ),
-                        if (client.isVerified)
-                          Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: AppColors.success,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      client.email,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Client info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _StatChip(
-                          icon: Icons.folder_outlined,
-                          label: '${client.totalProjects} projects',
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                client.name,
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                            if (client.isVerified)
+                              Icon(
+                                Icons.verified,
+                                size: 16,
+                                color: AppColors.success,
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        if (client.activeProjects > 0)
-                          _StatChip(
-                            icon: Icons.play_circle_outline,
-                            label: '${client.activeProjects} active',
-                            color: AppColors.success,
-                          ),
+                        const SizedBox(height: 2),
+                        Text(
+                          client.email,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondaryLight,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _StatChip(
+                              icon: Icons.folder_outlined,
+                              label: '${client.totalProjects} projects',
+                            ),
+                            const SizedBox(width: 12),
+                            if (client.activeProjects > 0)
+                              _StatChip(
+                                icon: Icons.play_circle_outline,
+                                label: '${client.activeProjects} active',
+                                color: AppColors.success,
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Arrow
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ],
               ),
 
-              // Arrow
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondaryLight,
+              // Action buttons
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Navigate to client projects
+                      },
+                      icon: const Icon(Icons.folder_open, size: 16),
+                      label: const Text('View Projects'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.accent,
+                        side: const BorderSide(color: AppColors.accent),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Navigate to chat with client
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                      label: const Text('Chat'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(
+                          color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -320,6 +412,195 @@ class _StatChip extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+/// Hero section showing client statistics.
+class _UsersHeroSection extends StatelessWidget {
+  const _UsersHeroSection({required this.clients});
+
+  final List<ClientModel> clients;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalUsers = clients.length;
+    final activeUsers = clients.where((c) => c.activeProjects > 0).length;
+    final now = DateTime.now();
+    final newThisMonth = clients.where((c) {
+      if (c.joinedAt == null) return false;
+      return c.joinedAt!.year == now.year && c.joinedAt!.month == now.month;
+    }).length;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.accent,
+            AppColors.accentDark,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accent.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.groups_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Client Overview',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _UsersHeroStat(label: 'Total Users', value: '$totalUsers'),
+              _UsersHeroStat(label: 'Active', value: '$activeUsers'),
+              _UsersHeroStat(label: 'New This Month', value: '$newThisMonth'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single stat item in the users hero section.
+class _UsersHeroStat extends StatelessWidget {
+  const _UsersHeroStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 11,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stats pills row below the hero section.
+class _StatsPills extends StatelessWidget {
+  const _StatsPills({required this.clients});
+
+  final List<ClientModel> clients;
+
+  @override
+  Widget build(BuildContext context) {
+    final verified = clients.where((c) => c.isVerified).length;
+    final withActiveProjects = clients.where((c) => c.activeProjects > 0).length;
+    final totalProjects = clients.fold<int>(0, (sum, c) => sum + c.totalProjects);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _Pill(
+              icon: Icons.verified,
+              label: '$verified Verified',
+              color: AppColors.success,
+            ),
+            const SizedBox(width: 8),
+            _Pill(
+              icon: Icons.play_circle_fill,
+              label: '$withActiveProjects With Active',
+              color: AppColors.info,
+            ),
+            const SizedBox(width: 8),
+            _Pill(
+              icon: Icons.folder,
+              label: '$totalProjects Total Projects',
+              color: AppColors.accent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Individual pill widget for stats display.
+class _Pill extends StatelessWidget {
+  const _Pill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -177,15 +177,16 @@ class TransactionModel {
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] as String,
-      type: TransactionType.fromId(json['type'] as String? ?? 'earning'),
+      type: TransactionType.fromId(
+          json['transaction_type'] as String? ?? json['type'] as String? ?? 'earning'),
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      status: TransactionStatus.fromId(json['status'] as String? ?? 'pending'),
+      status: TransactionStatus.fromId(json['status'] as String? ?? 'completed'),
       createdAt: DateTime.parse(
           json['created_at'] as String? ?? DateTime.now().toIso8601String()),
-      projectId: json['project_id'] as String?,
+      projectId: json['reference_id'] as String? ?? json['project_id'] as String?,
       projectTitle: json['project_title'] as String?,
-      description: json['description'] as String?,
-      reference: json['reference'] as String?,
+      description: json['description'] as String? ?? json['notes'] as String?,
+      reference: json['reference_type'] as String? ?? json['reference'] as String?,
       balanceAfter: (json['balance_after'] as num?)?.toDouble(),
       processedAt: json['processed_at'] != null
           ? DateTime.parse(json['processed_at'] as String)

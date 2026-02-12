@@ -132,7 +132,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
 
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) {
         throw Exception('User not authenticated');
       }
@@ -165,7 +165,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     try {
       state = state.copyWith(isLoading: true);
 
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) {
         state = state.copyWith(isLoading: false);
         return;
@@ -224,7 +224,7 @@ class RegistrationNotifier extends StateNotifier<RegistrationState> {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
 
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) {
         throw Exception('User not authenticated');
       }

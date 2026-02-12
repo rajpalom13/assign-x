@@ -46,6 +46,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/env.dart';
 
+/// Whether the app is running in test bypass mode.
+const bool isTestBypass = bool.fromEnvironment('TEST_BYPASS', defaultValue: false);
+
+/// The test user ID used in test bypass mode.
+const String testUserId = '57a177c5-697b-40db-b30b-7930e742396c';
+
+/// Gets the current authenticated user ID, supporting test bypass mode.
+///
+/// In test bypass mode, returns the hardcoded test user ID.
+/// Otherwise, returns the actual Supabase auth user ID, or null if not authenticated.
+String? getCurrentUserId() {
+  if (isTestBypass) return testUserId;
+  return SupabaseService._client?.auth.currentUser?.id;
+}
+
 /// Service class for initializing and accessing the Supabase client.
 ///
 /// This class provides static methods and getters for interacting with

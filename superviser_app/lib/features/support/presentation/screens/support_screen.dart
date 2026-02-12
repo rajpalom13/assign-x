@@ -6,6 +6,7 @@ import '../../../../core/services/external_actions_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/ticket_model.dart';
 import '../providers/support_provider.dart';
+import '../widgets/faq_accordion.dart';
 import '../widgets/ticket_card.dart';
 import '../widgets/ticket_form.dart';
 
@@ -24,7 +25,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(ticketsProvider.notifier).loadTickets();
@@ -43,18 +44,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Support'),
-        actions: [
-          IconButton(
-            onPressed: () => context.pushNamed(RouteNames.faq),
-            icon: const Icon(Icons.quiz_outlined),
-            tooltip: 'FAQ',
-          ),
-        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'My Tickets'),
             Tab(text: 'New Ticket'),
+            Tab(text: 'FAQ'),
           ],
         ),
       ),
@@ -68,6 +63,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen>
               ref.read(ticketsProvider.notifier).refresh();
             },
           ),
+          const _FAQTab(),
         ],
       ),
     );
@@ -170,6 +166,104 @@ class _NewTicketTab extends ConsumerWidget {
           );
         }
       },
+    );
+  }
+}
+
+/// FAQ tab with search and accordion.
+class _FAQTab extends ConsumerStatefulWidget {
+  const _FAQTab();
+
+  @override
+  ConsumerState<_FAQTab> createState() => _FAQTabState();
+}
+
+class _FAQTabState extends ConsumerState<_FAQTab> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(faqProvider);
+
+    return Column(
+      children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search FAQ...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(faqProvider.notifier).clearSearch();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: AppColors.primary.withValues(alpha: 0.05),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.accent),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            onChanged: (query) {
+              ref.read(faqProvider.notifier).search(query);
+              setState(() {});
+            },
+          ),
+        ),
+
+        // FAQ content
+        Expanded(
+          child: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.items.isEmpty
+                  ? const EmptyFAQ()
+                  : state.searchQuery.isNotEmpty
+                      ? FAQSearchResults(
+                          results: state.searchResults,
+                          query: state.searchQuery,
+                          onItemTap: (item) {
+                            ref.read(faqProvider.notifier).toggleItem(item.id);
+                          },
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: FAQAccordion(
+                            items: state.items,
+                            onToggle: (itemId) {
+                              ref.read(faqProvider.notifier).toggleItem(itemId);
+                            },
+                          ),
+                        ),
+        ),
+      ],
     );
   }
 }

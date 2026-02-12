@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/client_model.dart';
 
 /// Repository for user/client operations.
@@ -9,7 +10,7 @@ class UsersRepository {
   final SupabaseClient _client;
 
   /// Get current user ID.
-  String? get _currentUserId => _client.auth.currentUser?.id;
+  String? get _currentUserId => getCurrentUserId();
 
   /// Fetch clients with pagination.
   Future<List<ClientModel>> getClients({

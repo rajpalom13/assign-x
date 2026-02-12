@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../../../dashboard/data/models/doer_model.dart';
 
 /// Repository for doer operations.
@@ -9,7 +10,28 @@ class DoersRepository {
   final SupabaseClient _client;
 
   /// Get current user ID.
-  String? get _currentUserId => _client.auth.currentUser?.id;
+  String? get _currentUserId => getCurrentUserId();
+
+  /// Cached supervisor ID to avoid repeated lookups.
+  String? _cachedSupervisorId;
+
+  /// Gets the supervisor table ID from the supervisors table.
+  Future<String?> _getSupervisorId() async {
+    if (_cachedSupervisorId != null) return _cachedSupervisorId;
+    final userId = getCurrentUserId();
+    if (userId == null) return null;
+    try {
+      final response = await _client
+          .from('supervisors')
+          .select('id')
+          .eq('profile_id', userId)
+          .maybeSingle();
+      _cachedSupervisorId = response?['id'] as String?;
+      return _cachedSupervisorId;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Fetch doers with pagination and filters.
   Future<List<DoerModel>> getDoers({
@@ -85,13 +107,14 @@ class DoersRepository {
     int limit = 20,
     int offset = 0,
   }) async {
-    if (_currentUserId == null) return [];
+    final supervisorId = await _getSupervisorId();
+    if (supervisorId == null) return [];
 
     final response = await _client
         .from('projects')
         .select('id, title, status, created_at, completed_at, doer_amount')
         .eq('doer_id', doerId)
-        .eq('supervisor_id', _currentUserId!)
+        .eq('supervisor_id', supervisorId)
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/supabase_client.dart';
 import '../models/training_module.dart';
 
 /// Repository for activation-related operations.
@@ -10,7 +11,7 @@ class ActivationRepository {
   /// Fetches training modules for the current user.
   Future<List<TrainingModule>> getTrainingModules() async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) throw Exception('User not authenticated');
 
       // In production, fetch from Supabase
@@ -47,7 +48,7 @@ class ActivationRepository {
 
   /// Marks a training module as complete.
   Future<void> markModuleComplete(String moduleId) async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) throw Exception('User not authenticated');
 
     await _client.from('training_progress').upsert({
@@ -71,7 +72,7 @@ class ActivationRepository {
 
   /// Submits quiz result.
   Future<void> submitQuizResult(QuizResult result) async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) throw Exception('User not authenticated');
 
     await _client.from('quiz_results').insert({
@@ -88,7 +89,7 @@ class ActivationRepository {
   /// Gets the number of quiz attempts for current user.
   Future<int> getQuizAttempts(String quizId) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = getCurrentUserId();
       if (userId == null) return 0;
 
       final response = await _client
@@ -111,7 +112,7 @@ class ActivationRepository {
 
   /// Activates the supervisor account.
   Future<void> activateSupervisor() async {
-    final userId = _client.auth.currentUser?.id;
+    final userId = getCurrentUserId();
     if (userId == null) throw Exception('User not authenticated');
 
     await _client.from('supervisors').update({

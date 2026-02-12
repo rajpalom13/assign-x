@@ -253,7 +253,7 @@ class TicketModel {
     return TicketModel(
       id: json['id'] as String,
       ticketNumber: json['ticket_number'] as String?,
-      userId: json['user_id'] as String,
+      userId: json['requester_id'] as String? ?? json['user_id'] as String? ?? '',
       subject: json['subject'] as String? ?? '',
       description: json['description'] as String?,
       category: _parseCategory(json['category'] as String?),
@@ -273,8 +273,8 @@ class TicketModel {
       closedAt: json['closed_at'] != null
           ? DateTime.parse(json['closed_at'] as String)
           : null,
-      rating: json['rating'] as int?,
-      feedback: json['feedback'] as String?,
+      rating: json['satisfaction_rating'] as int? ?? json['rating'] as int?,
+      feedback: json['satisfaction_feedback'] as String? ?? json['feedback'] as String?,
     );
   }
 
@@ -378,6 +378,7 @@ class TicketModel {
       case 'low':
         return TicketPriority.low;
       case 'normal':
+      case 'medium':
         return TicketPriority.normal;
       case 'high':
         return TicketPriority.high;

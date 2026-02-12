@@ -223,6 +223,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   ///
   /// Called automatically on construction.
   Future<void> _init() async {
+    // TODO: Remove this test bypass before production
+    const testBypass = bool.fromEnvironment('TEST_BYPASS', defaultValue: false);
+    if (testBypass) {
+      state = AuthState(
+        user: const UserModel(
+          id: '57a177c5-697b-40db-b30b-7930e742396c',
+          email: 'omrajpal.exe@gmail.com',
+          fullName: 'Om Rajpal',
+          role: 'supervisor',
+          isActivated: true,
+        ),
+        isActivated: true,
+        isLoading: false,
+      );
+      return;
+    }
+
     try {
       // Recover session from secure storage
       // This is critical for session persistence across app restarts

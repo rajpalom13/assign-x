@@ -105,18 +105,22 @@ class MessageModel {
           ? json['sender']['avatar_url'] as String?
           : json['sender_avatar'] as String?,
       content: json['content'] as String?,
-      type: MessageType.fromString(json['type'] as String?),
+      type: MessageType.fromString(
+          json['message_type'] as String? ?? json['type'] as String?),
       fileUrl: json['file_url'] as String?,
       fileName: json['file_name'] as String?,
       fileType: json['file_type'] as String?,
-      fileSize: json['file_size'] as int?,
+      fileSize: (json['file_size_bytes'] as num?)?.toInt() ??
+          (json['file_size'] as num?)?.toInt(),
       replyToId: json['reply_to_id'] as String?,
       replyToContent: json['reply_to_content'] as String?,
       isRead: json['is_read'] as bool? ?? false,
       isEdited: json['is_edited'] as bool? ?? false,
       isDeleted: json['is_deleted'] as bool? ?? false,
-      isFiltered: json['is_filtered'] as bool? ?? false,
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      isFiltered: json['contains_contact_info'] as bool? ??
+          json['is_filtered'] as bool? ?? false,
+      metadata: json['action_metadata'] as Map<String, dynamic>? ??
+          json['metadata'] as Map<String, dynamic>?,
       createdAt: DateTime.parse(json['created_at'] as String),
       editedAt: json['edited_at'] != null
           ? DateTime.parse(json['edited_at'] as String)

@@ -21,6 +21,8 @@ class ProjectsScreen extends ConsumerStatefulWidget {
 class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String _searchQuery = '';
+  String _sortMode = 'recent';
 
   @override
   void initState() {
@@ -47,6 +49,93 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
       appBar: AppBar(
         title: const Text('Projects'),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort projects',
+            onSelected: (value) {
+              setState(() => _sortMode = value);
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'recent',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 18,
+                      color: _sortMode == 'recent'
+                          ? AppColors.accent
+                          : AppColors.textSecondaryLight,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Recent',
+                      style: TextStyle(
+                        color: _sortMode == 'recent'
+                            ? AppColors.accent
+                            : null,
+                        fontWeight: _sortMode == 'recent'
+                            ? FontWeight.bold
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'due_soon',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 18,
+                      color: _sortMode == 'due_soon'
+                          ? AppColors.accent
+                          : AppColors.textSecondaryLight,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Due Soon',
+                      style: TextStyle(
+                        color: _sortMode == 'due_soon'
+                            ? AppColors.accent
+                            : null,
+                        fontWeight: _sortMode == 'due_soon'
+                            ? FontWeight.bold
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'priority',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.flag,
+                      size: 18,
+                      color: _sortMode == 'priority'
+                          ? AppColors.accent
+                          : AppColors.textSecondaryLight,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Priority',
+                      style: TextStyle(
+                        color: _sortMode == 'priority'
+                            ? AppColors.accent
+                            : null,
+                        fontWeight: _sortMode == 'priority'
+                            ? FontWeight.bold
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             onPressed: () => ref.read(projectsProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
@@ -55,6 +144,22 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen>
       ),
       body: Column(
         children: [
+          // Search bar
+          _SearchBar(
+            query: _searchQuery,
+            onChanged: (value) {
+              setState(() => _searchQuery = value);
+            },
+          ),
+          // Pipeline status bar
+          _PipelineBar(
+            activeCount: state.activeProjects.length,
+            reviewCount: state.forReviewProjects.length,
+            completedCount: state.completedProjects.length,
+            onTap: (index) {
+              _tabController.animateTo(index);
+            },
+          ),
           // Tab bar
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -310,6 +415,145 @@ class _EmptyState extends StatelessWidget {
                     color: AppColors.textSecondaryLight,
                   ),
               textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Search bar widget for filtering projects by name or number.
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.query,
+    required this.onChanged,
+  });
+
+  final String query;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariantLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: TextField(
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: 'Search projects...',
+          hintStyle: TextStyle(color: AppColors.textTertiaryLight),
+          prefixIcon: Icon(Icons.search, color: AppColors.textSecondaryLight),
+          suffixIcon: query.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.close, color: AppColors.textSecondaryLight),
+                  onPressed: () => onChanged(''),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pipeline status bar showing colored count pills for each project status.
+class _PipelineBar extends StatelessWidget {
+  const _PipelineBar({
+    required this.activeCount,
+    required this.reviewCount,
+    required this.completedCount,
+    required this.onTap,
+  });
+
+  final int activeCount;
+  final int reviewCount;
+  final int completedCount;
+  final void Function(int tabIndex) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          _StatusPill(
+            label: 'Active',
+            count: activeCount,
+            color: AppColors.statusInProgress,
+            onTap: () => onTap(0),
+          ),
+          const SizedBox(width: 8),
+          _StatusPill(
+            label: 'Review',
+            count: reviewCount,
+            color: AppColors.accent,
+            onTap: () => onTap(1),
+          ),
+          const SizedBox(width: 8),
+          _StatusPill(
+            label: 'Completed',
+            count: completedCount,
+            color: AppColors.success,
+            onTap: () => onTap(2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual colored pill showing a status label and count.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '$label: $count',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),

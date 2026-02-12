@@ -76,7 +76,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             },
           ),
 
-          // Notifications list
+          // Notifications list (grouped by date)
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -85,7 +85,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     : RefreshIndicator(
                         onRefresh: () =>
                             ref.read(notificationsProvider.notifier).refresh(),
-                        child: NotificationList(
+                        child: _GroupedNotificationList(
                           notifications: state.notifications,
                           onNotificationTap: (notification) =>
                               _handleNotificationTap(context, notification),
@@ -252,6 +252,148 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               ref.read(notificationsProvider.notifier).deleteAllNotifications();
             },
             child: const Text('Clear all'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Groups notifications by date category and renders section headers.
+class _GroupedNotificationList extends StatelessWidget {
+  const _GroupedNotificationList({
+    required this.notifications,
+    required this.onNotificationTap,
+    this.onDismiss,
+    this.onMarkAsRead,
+    this.onLoadMore,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+  });
+
+  final List<NotificationModel> notifications;
+  final void Function(NotificationModel) onNotificationTap;
+  final void Function(NotificationModel)? onDismiss;
+  final void Function(NotificationModel)? onMarkAsRead;
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
+  final bool hasMore;
+
+  /// Determines the date group label for a given DateTime.
+  static String _dateGroup(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final notifDate = DateTime(date.year, date.month, date.day);
+
+    if (notifDate == today) return 'Today';
+    if (notifDate == yesterday) return 'Yesterday';
+    if (notifDate.isAfter(weekStart) || notifDate == weekStart) {
+      return 'This Week';
+    }
+    return 'Older';
+  }
+
+  /// Builds grouped entries: a list of (String? header, NotificationModel? notification).
+  /// A header entry has header set and notification null. A notification entry is the opposite.
+  List<_GroupEntry> _buildGroupEntries() {
+    final entries = <_GroupEntry>[];
+    String? currentGroup;
+
+    for (final notification in notifications) {
+      final group = _dateGroup(notification.createdAt);
+      if (group != currentGroup) {
+        currentGroup = group;
+        entries.add(_GroupEntry(header: group));
+      }
+      entries.add(_GroupEntry(notification: notification));
+    }
+
+    return entries;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = _buildGroupEntries();
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollNotification) {
+        if (scrollNotification is ScrollEndNotification &&
+            scrollNotification.metrics.extentAfter < 100 &&
+            hasMore &&
+            !isLoadingMore) {
+          onLoadMore?.call();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        itemCount: entries.length + (isLoadingMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == entries.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final entry = entries[index];
+
+          // Section header
+          if (entry.header != null) {
+            return _DateSectionHeader(title: entry.header!);
+          }
+
+          // Notification card
+          final notification = entry.notification!;
+          return NotificationCard(
+            notification: notification,
+            onTap: () => onNotificationTap(notification),
+            onDismiss: () => onDismiss?.call(notification),
+            onMarkAsRead: () => onMarkAsRead?.call(notification),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Internal entry type for grouped list items.
+class _GroupEntry {
+  const _GroupEntry({this.header, this.notification});
+  final String? header;
+  final NotificationModel? notification;
+}
+
+/// Section header widget for date groups.
+class _DateSectionHeader extends StatelessWidget {
+  const _DateSectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              color: AppColors.accent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimaryLight,
+                  letterSpacing: 0.3,
+                ),
           ),
         ],
       ),

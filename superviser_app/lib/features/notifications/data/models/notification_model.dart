@@ -191,16 +191,26 @@ class NotificationModel {
   String? get ticketId => data?['ticket_id'] as String?;
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    // Build data map from reference fields if direct data not available
+    Map<String, dynamic>? data = json['data'] as Map<String, dynamic>?;
+    if (data == null && json['reference_id'] != null) {
+      data = {
+        'reference_type': json['reference_type'],
+        'reference_id': json['reference_id'],
+      };
+    }
+
     return NotificationModel(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
-      type: _parseType(json['type'] as String?),
+      userId: json['profile_id'] as String? ?? json['user_id'] as String? ?? '',
+      type: _parseType(
+          json['notification_type'] as String? ?? json['type'] as String?),
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
-      data: json['data'] as Map<String, dynamic>?,
+      data: data,
       imageUrl: json['image_url'] as String?,
       isRead: json['is_read'] as bool? ?? false,
       readAt: json['read_at'] != null
@@ -257,20 +267,25 @@ class NotificationModel {
   static NotificationType _parseType(String? type) {
     switch (type) {
       case 'project_assigned':
+      case 'task_assigned':
         return NotificationType.projectAssigned;
       case 'project_update':
+      case 'work_submitted':
         return NotificationType.projectUpdate;
       case 'quote_accepted':
+      case 'quote_ready':
         return NotificationType.quoteAccepted;
       case 'quote_rejected':
         return NotificationType.quoteRejected;
       case 'payment_received':
+      case 'payout_processed':
         return NotificationType.paymentReceived;
       case 'delivery_due':
         return NotificationType.deliveryDue;
       case 'revision_requested':
         return NotificationType.revisionRequested;
       case 'chat_message':
+      case 'new_message':
         return NotificationType.chatMessage;
       case 'system_alert':
         return NotificationType.systemAlert;
@@ -280,6 +295,9 @@ class NotificationModel {
         return NotificationType.review;
       case 'support':
         return NotificationType.support;
+      case 'project_delivered':
+      case 'project_completed':
+        return NotificationType.projectUpdate;
       default:
         return NotificationType.systemAlert;
     }
